@@ -106,7 +106,7 @@ function pii_check_for_reuse(message) {
     }
     else {
 	var user_log = sprintf("Checked password for '%s', MATCH was found: ", message.domain);
-	user_log += "{ " + os " }";
+	user_log += "{ " + os + " }";
 	console.log(user_log);
     }
 
