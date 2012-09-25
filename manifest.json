@@ -1,0 +1,31 @@
+{
+  "name": "Appu",
+  "version": "0.1",
+  "description": "Reduce your personal information footprint across the web",
+  "icons": {
+    "128" : "images/appu128.png",
+    "16"  : "images/appu16.png",
+    "32"  : "images/appu32.png",	   
+    "48"  : "images/appu48.png",
+    "64"  : "images/appu64.png"
+  },
+  "browser_action": {
+    "default_icon": "images/appu19.png", 
+    "default_title": "Appu: Password Protector"
+    //    "default_popup": "popup.html"        // optional
+  },
+  "background": {
+    "page": "background.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js" : ["thirdparty/jquery-1.8.0.min.js", "thirdparty/sha1.js", "passwd.js"]
+    }
+  ],
+  "permissions": [
+     "http://143.215.129.52:5005/methods"	 	 
+  ],
+
+  "manifest_version": 2
+}
