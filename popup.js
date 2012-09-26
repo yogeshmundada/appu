@@ -49,12 +49,6 @@ function click_handler_new() {
 
 document.addEventListener('DOMContentLoaded', function () {
     console.log("Registering stuff");
-    // $("#disable60").click(function() {
-    // 	alert("Handler for .click() called.");
-    // }, false);
-
-    // $("#disable60").click(click_handler_new, false);
-    //$("#disable60").bind("click",  click_handler_new, false);
     $("#disable60").bind("click", function() { disable(5);});
     $("#disable180").bind("click", function() { setTimeout( function() { disable(10);} , 1); });
     $("#enable").bind("click", function() { setTimeout( function() { enable();} , 1); });

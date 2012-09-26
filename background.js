@@ -90,12 +90,12 @@ function vault_update_domain_passwd(message) {
 
 function start_time_loop() {
     var curr_time = new Date();
-    if ((curr_time - pii_vault['disable_start']) > (60 * 1000 * pii_vault['disable_period'])) {
+    if ((curr_time - (new Date(pii_vault.disable_start))) > (60 * 1000 * pii_vault['disable_period'])) {
 	clearInterval(pii_vault['enable_timer']);
 	pii_vault['status'] = "active";
 	pii_vault['disable_period'] = -1;
 	chrome.browserAction.setIcon({path:'images/appu19.png'});
-	console.log(Date() + ": Enabling Appu");
+	console.log((new Date()) + ": Enabling Appu");
 	vault_write();
     } 
 }
@@ -109,10 +109,10 @@ function pii_modify_status(message) {
     else if (message.status == "disable") {
 	pii_vault['status'] = "disabled";
 	pii_vault['disable_period'] = message.minutes;
-	pii_vault['disable_start'] = new Date();
+	pii_vault['disable_start'] = (new Date()).toString();
 	pii_vault['enable_timer'] = setInterval(start_time_loop, 1000);
 	chrome.browserAction.setIcon({path:'images/appu19_offline.png'});
-	console.log(Date() + ": Disabling Appu for " + message.minutes + " minutes");
+	console.log((new Date()) + ": Disabling Appu for " + message.minutes + " minutes");
     }
     vault_write();
 }
@@ -168,17 +168,19 @@ if(!('initialized' in pii_vault)) {
     vault_init();
 }
 else {
-    if (pii_vault.status == "disable") {
-	if ((Date() - pii_vault['disable_start']) > (60 * 1000 * pii_vault['disable_period'])) {
+    if (pii_vault.status == "disabled") {
+	if (((new Date()) - (new Date(pii_vault.disable_start))) > (60 * 1000 * pii_vault['disable_period'])) {
 	    pii_vault['status'] = "active";
 	    pii_vault['disable_period'] = -1;
 	    chrome.browserAction.setIcon({path:'images/appu19.png'});
-	    console.log(Date() + ": Enabling Appu");
+	    console.log((new Date()) + ": Enabling Appu");
 	}
 	else {
+	    console.log("Appu disabled at '" + pii_vault.disable_start + "' for " 
+			+ pii_vault['disable_period'] + " minutes");
+
 	    pii_vault['enable_timer'] = setInterval(start_time_loop, 1000);
 	    chrome.browserAction.setIcon({path:'images/appu19_offline.png'});
-	    console.log(Date() + ": Appu is still Disabled");
 	}
     }
     vault_write();
