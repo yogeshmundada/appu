@@ -123,16 +123,18 @@ function pii_check_for_reuse(message) {
     r.is_password_reused = "no";
     r.sites = [];
 
-    for(var i = 0; i < 1000; i++) {
-	var salted_pwd = pii_vault.salt_table[i] + ":" + message.passwd;
-	//console.log("Checking for salted pwd: " + salted_pwd);
-	var pwd_sha1sum = CryptoJS.SHA1(salted_pwd).toString();
-	//console.log("salted pwd checksum: " + pwd_sha1sum);
-	for(var d in pii_vault.domains) {
-	    if (d != message.domain && pii_vault.domains[d] == pwd_sha1sum) {
-		r.is_password_reused = "yes";
-		r.sites.push(d);
-		os += d + ","; 
+    if(pii_vault.status == "active") {
+	for(var i = 0; i < 1000; i++) {
+	    var salted_pwd = pii_vault.salt_table[i] + ":" + message.passwd;
+	    //console.log("Checking for salted pwd: " + salted_pwd);
+	    var pwd_sha1sum = CryptoJS.SHA1(salted_pwd).toString();
+	    //console.log("salted pwd checksum: " + pwd_sha1sum);
+	    for(var d in pii_vault.domains) {
+		if (d != message.domain && pii_vault.domains[d] == pwd_sha1sum) {
+		    r.is_password_reused = "yes";
+		    r.sites.push(d);
+		    os += d + ","; 
+		}
 	    }
 	}
     }
@@ -194,5 +196,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "statuschange") {
 	pii_modify_status(message);
+    }
+    else if (message.type == "querystatus") {
+	r = {};
+	r.status = pii_vault.status;
+	sendResponse(r);
     }
 });

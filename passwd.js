@@ -23,4 +23,17 @@ function check_passwd_reuse(jevent) {
     chrome.extension.sendMessage("", message, is_passwd_reused);
 }
 
-$(':password').focusout(check_passwd_reuse);
+function is_status_active(response) {
+    if (response.status == "active") {
+	$(':password').focusout(check_passwd_reuse);
+    }
+    else {
+	console.log("Appu is disabled");
+    }
+}
+
+var message = {};
+message.type = "querystatus";
+chrome.extension.sendMessage("", message, is_status_active);
+
+
