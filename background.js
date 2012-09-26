@@ -12,11 +12,17 @@ var ext_id = chrome.i18n.getMessage('@@extension_id');
 
 var pii_vault = {};
 
+function verify_unique_guid(guid) {
+
+}
+
 function vault_init() {
     pii_vault.guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 	var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
 	return v.toString(16);
     });
+
+    setTimeout(verify_unique_guid, 1);
 
     console.log("GUID: " + pii_vault.guid);
     var salt_table = {};
@@ -29,6 +35,8 @@ function vault_init() {
     }
     pii_vault.salt_table = salt_table;
     pii_vault['initialized'] = true;
+    pii_vault['status'] = "active";
+    pii_vault['disable_period'] = -1;
     pii_vault.domains = {};
     vault_write();
 }
@@ -39,7 +47,7 @@ function vault_read() {
 	if (pii_vault) {
 	    //console.log("pii_vault: " + pii_vault);
 	    for (var g in pii_vault) {
-		console.log("Properties of pii_vault: " + g);
+		//console.log("Properties of pii_vault: " + g);
 	    }
 	    if("guid" in pii_vault) {
 		console.log("guid: " + pii_vault.guid);
@@ -80,6 +88,35 @@ function vault_update_domain_passwd(message) {
     }
 }
 
+function start_time_loop() {
+    var curr_time = new Date();
+    if ((curr_time - pii_vault['disable_start']) > (60 * 1000 * pii_vault['disable_period'])) {
+	clearInterval(pii_vault['enable_timer']);
+	pii_vault['status'] = "active";
+	pii_vault['disable_period'] = -1;
+	chrome.browserAction.setIcon({path:'images/appu19.png'});
+	console.log(Date() + ": Enabling Appu");
+	vault_write();
+    } 
+}
+
+function pii_modify_status(message) {
+    if (message.status == "enable") {
+	pii_vault['status'] = "active";
+	pii_vault['disable_period'] = -1;
+	chrome.browserAction.setIcon({path:'images/appu19.png'});
+    }
+    else if (message.status == "disable") {
+	pii_vault['status'] = "disabled";
+	pii_vault['disable_period'] = message.minutes;
+	pii_vault['disable_start'] = new Date();
+	pii_vault['enable_timer'] = setInterval(start_time_loop, 1000);
+	chrome.browserAction.setIcon({path:'images/appu19_offline.png'});
+	console.log(Date() + ": Disabling Appu for " + message.minutes + " minutes");
+    }
+    vault_write();
+}
+
 function pii_check_for_reuse(message) {
     var r = {};
     var os = "";
@@ -101,11 +138,11 @@ function pii_check_for_reuse(message) {
     }
 
     if(r.is_password_reused == "no") {
-	var user_log = sprintf("Checked password for '%s', NO match was found", message.domain);
+	var user_log = sprintf("[%s]: Checked password for '%s', NO match was found", new Date(), message.domain);
 	console.log(user_log);
     }
     else {
-	var user_log = sprintf("Checked password for '%s', MATCH was found: ", message.domain);
+	var user_log = sprintf("[%s]: Checked password for '%s', MATCH was found: ", new Date(), message.domain);
 	user_log += "{ " + os + " }";
 	console.log(user_log);
     }
@@ -116,7 +153,7 @@ function pii_check_for_reuse(message) {
     wr.site = message.domain;
     wr.other_sites = os;
     try {
-	jQuery.post("http://143.215.129.52:5005/methods", wr);
+	//	jQuery.post("http://143.215.129.52:5005/methods", wr);
     }
     catch (e) {
 	console.log("Error while posting log to server");
@@ -130,16 +167,30 @@ vault_read();
 if(!('initialized' in pii_vault)) {
     vault_init();
 }
+else {
+    if (pii_vault.status == "disable") {
+	if ((Date() - pii_vault['disable_start']) > (60 * 1000 * pii_vault['disable_period'])) {
+	    pii_vault['status'] = "active";
+	    pii_vault['disable_period'] = -1;
+	    chrome.browserAction.setIcon({path:'images/appu19.png'});
+	    console.log(Date() + ": Enabling Appu");
+	}
+	else {
+	    pii_vault['enable_timer'] = setInterval(start_time_loop, 1000);
+	    chrome.browserAction.setIcon({path:'images/appu19_offline.png'});
+	    console.log(Date() + ": Appu is still Disabled");
+	}
+    }
+    vault_write();
+}
 
 chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
-    //console.log("Got a message: " + message);
-    //console.log("Sender: " + sender);
-    //console.log("type: " + message.type);
-    //console.log("domain: " + message.domain);
-
     if (message.type == "check") {
 	r = pii_check_for_reuse(message);
 	sendResponse(r);
 	vault_update_domain_passwd(message);
+    }
+    else if (message.type == "statuschange") {
+	pii_modify_status(message);
     }
 });

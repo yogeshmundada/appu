@@ -23,14 +23,4 @@ function check_passwd_reuse(jevent) {
     chrome.extension.sendMessage("", message, is_passwd_reused);
 }
 
-var ips_elements = document.getElementsByTagName("input");
-var passwd_elements = [];
-for (var i = 0; i < ips_elements.length; i++) { 
-    if( ips_elements[i].type == "password") { 
-	passwd_elements.push(ips_elements[i]);
-    } 
-}
-
-if (passwd_elements.length) {
-    $(passwd_elements).focusout(check_passwd_reuse);
-}
+$(':password').focusout(check_passwd_reuse);

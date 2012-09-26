@@ -11,8 +11,8 @@
   },
   "browser_action": {
     "default_icon": "images/appu19.png", 
-    "default_title": "Appu: Password Protector"
-    //    "default_popup": "popup.html"        // optional
+    "default_title": "Appu: Password Protector",
+    "default_popup": "popup.html"
   },
   "background": {
     "page": "background.html"
