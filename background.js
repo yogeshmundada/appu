@@ -37,6 +37,8 @@ function vault_init() {
     pii_vault['initialized'] = true;
     pii_vault['status'] = "active";
     pii_vault['disable_period'] = -1;
+    pii_vault['report'] = [];
+    pii_vault['blacklist'] = [];
     pii_vault.domains = {};
     vault_write();
 }
@@ -67,19 +69,16 @@ function vault_read() {
 }
 
 function vault_write() {
-    //console.log("Result of stringify: " + JSON.stringify(pii_vault));
     localStorage[ext_id] = JSON.stringify(pii_vault);
 }
 
 function vault_update_domain_passwd(message) {
     try {
 	var r = Math.floor((Math.random() * 1000)) % 1000;
-	//console.log("Storing passwd, random: " + r);
 	var rand_salt = pii_vault.salt_table[r];
 	var salted_pwd = rand_salt + ":" + message.passwd;
-	//console.log("Storing passwd, salted_passwd: " + salted_pwd);
 	var pwd_sha1sum = CryptoJS.SHA1(salted_pwd).toString();
-	//console.log("Converted passwd: " + pwd_sha1sum);
+
 	pii_vault.domains[message.domain] = pwd_sha1sum;
 	vault_write();
     }
@@ -134,6 +133,29 @@ function pii_check_blacklisted_sites(message) {
 	if (message.domain == pii_vault.blacklist[i]) {
 	    r.blacklisted = "yes";
 	}
+    }
+    return r;
+}
+
+function pii_send_report(message) {
+    var wr = {};
+    wr.guid = pii_vault.guid;
+    wr.report = message.report;
+    try {
+	$.post("http://143.215.129.52:5005/methods", wr);
+    }
+    catch (e) {
+	console.log("Error while posting log to server");
+    }
+
+    pii_vault.report = [];
+    vault_write();
+}
+
+function pii_get_report(message) {
+    var r = [];
+    for (var i = 0; i < pii_vault.report.length; i++) {
+	r.push(pii_vault.report[i]);
     }
     return r;
 }
@@ -195,18 +217,14 @@ function pii_check_for_reuse(message) {
 	console.log(user_log);
     }
 
-    var wr = {};
-    wr.guid = pii_vault.guid;
-    wr.now = new Date();
-    wr.site = message.domain;
-    wr.other_sites = os;
-    try {
-	//	jQuery.post("http://143.215.129.52:5005/methods", wr);
+    if(r.is_password_reused == "yes") {
+	var wr = {};
+	wr.now = new Date();
+	wr.site = message.domain;
+	wr.other_sites = os;
+	pii_vault.report.push(wr.now + ":" + wr.site + ":" + wr.other_sites);
+	vault_write();
     }
-    catch (e) {
-	console.log("Error while posting log to server");
-    }
-
     return r;
 }
 
@@ -258,5 +276,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "check_blacklist") {
 	r = pii_check_blacklisted_sites(message);
 	sendResponse(r);
+    }
+    else if (message.type == "get_report") {
+	r = pii_get_report(message);
+	sendResponse(r);
+    }
+    else if (message.type == "send_report") {
+	r = pii_send_report(message);
     }
 });
