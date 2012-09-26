@@ -100,6 +100,52 @@ function start_time_loop() {
     } 
 }
 
+function validateURL(textval) {
+    var urlregex = new RegExp(
+        "^([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)*(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-]+))*$");
+    return urlregex.test(textval);
+}
+
+function pii_add_blacklisted_sites(message) {
+    var sites = message.sites;
+    pii_vault.blacklist = [];
+    for(var i = 0; i < sites.length; i++) {
+	var curr_url = sites[i]; 
+	if (/\S/.test(curr_url)) {
+	    curr_url = $.trim(curr_url);
+	    if(validateURL(curr_url)) {
+		console.log("Pushing :" + curr_url);
+		pii_vault.blacklist.push(curr_url);
+	    }
+	    else {
+		console.log("Invalid URL: " + curr_url);
+	    }
+	}
+    }
+    console.log("New blacklist: " + pii_vault.blacklist);
+    vault_write();
+}
+
+function pii_check_blacklisted_sites(message) {
+    var r = {};
+    r.blacklisted = "no";
+    console.log("Checking blacklist for site: " + message.domain);
+    for (var i = 0; i < pii_vault.blacklist.length; i++) {
+	if (message.domain == pii_vault.blacklist[i]) {
+	    r.blacklisted = "yes";
+	}
+    }
+    return r;
+}
+
+function pii_get_blacklisted_sites(message) {
+    var r = [];
+    for (var i = 0; i < pii_vault.blacklist.length; i++) {
+	r.push(pii_vault.blacklist[i]);
+    }
+    return r;
+}
+
 function pii_modify_status(message) {
     if (message.status == "enable") {
 	pii_vault['status'] = "active";
@@ -200,6 +246,17 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "querystatus") {
 	r = {};
 	r.status = pii_vault.status;
+	sendResponse(r);
+    }
+    else if (message.type == "modify_blacklist") {
+	pii_add_blacklisted_sites(message);
+    }
+    else if (message.type == "get_blacklist") {
+	r = pii_get_blacklisted_sites(message);
+	sendResponse(r);
+    }
+    else if (message.type == "check_blacklist") {
+	r = pii_check_blacklisted_sites(message);
 	sendResponse(r);
     }
 });

@@ -23,9 +23,21 @@ function check_passwd_reuse(jevent) {
     chrome.extension.sendMessage("", message, is_passwd_reused);
 }
 
+function is_blacklisted(response) {
+    if(response.blacklisted == "no") {
+	$(':password').focusout(check_passwd_reuse);
+    }
+    else {
+	console.log("Appu is disabled for this blacklisted site");
+    }
+}
+
 function is_status_active(response) {
     if (response.status == "active") {
-	$(':password').focusout(check_passwd_reuse);
+	var message = {};
+	message.type = "check_blacklist";
+	message.domain = document.domain;
+	chrome.extension.sendMessage("", message, is_blacklisted);
     }
     else {
 	console.log("Appu is disabled");
