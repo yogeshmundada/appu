@@ -136,9 +136,6 @@ function start_time_loop() {
 
 function check_report_time() {
     var curr_time = new Date();
-    console.log("Here: check report time");
-    console.log("Here: curr_time: " + curr_time.getTime());
-    console.log("Here: next_reporting_time: " + (new Date(pii_vault.next_reporting_time)).getTime());
     if((pii_vault.report.length > 0) && (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
 	var url = chrome.extension.getURL('report.html');
 	chrome.tabs.create({ url: url });
@@ -246,12 +243,10 @@ function pii_modify_status(message) {
 function pii_check_pending_warning(message, sender) {
     var r = {};
     r.pending = "no";
-    console.log("Here: Checking for pending messages");
     if( pending_warnings[sender.tab.id] != undefined) {
 	r.warnings = pending_warnings[sender.tab.id];
 	pending_warnings[sender.tab.id] = undefined;
 	r.pending = "yes";
-	console.log("Here: Added pending message");
     }
     return r;
 }
@@ -270,7 +265,6 @@ function pii_check_passwd_reuse(message, sender) {
 	    //console.log("salted pwd checksum: " + pwd_sha1sum);
 	    for(var d in pii_vault.domains) {
 		if (d != message.domain && pii_vault.domains[d] == pwd_sha1sum) {
-		    console.log("Here: Password is reused " + message.domain);
 		    r.is_password_reused = "yes";
 		    r.dontbugme = "no";
 		    r.sites.push(d);

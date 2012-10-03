@@ -68,7 +68,6 @@ function is_blacklisted(response) {
 
 function show_pending_warnings(r) {
     if(r.pending == "yes") {
-	console.log("Here: Showing pending warnings");
 	var response = r.warnings; 
 	var alrt_msg = "Password reused in: <br/>";
 	for (var i = 0; i < response.sites.length; i++) {
