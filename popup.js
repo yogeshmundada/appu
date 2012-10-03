@@ -48,8 +48,8 @@ function click_handler_new() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    $("#disable60").bind("click", function() { disable(5);});
-    $("#disable180").bind("click", function() { setTimeout( function() { disable(10);} , 1); });
+    $("#disable60").bind("click", function() { disable(60);});
+    $("#disable180").bind("click", function() { setTimeout( function() { disable(180);} , 1); });
     $("#enable").bind("click", function() { setTimeout( function() { enable();} , 1); });
     $("#report").bind("click", function() { setTimeout( function() { report();} , 1); });
     $("#blacklist").bind("click", function() { setTimeout( function() { options();} , 1); });

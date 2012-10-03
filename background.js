@@ -8,12 +8,26 @@ Object.size = function(obj) {
 };
 
 var ext_id = chrome.i18n.getMessage('@@extension_id');
-//console.log("In the background page: " + ext_id);
 
 var pii_vault = {};
+var pending_warnings = {}; 
 
 function verify_unique_guid(guid) {
+    //Contact the server and ask if anyone else has same GUID.
+    //Worth the effort?
+}
 
+function pii_next_report_time() {
+    var curr_time = new Date();
+    if (curr_time.getHours() > 16) {
+	//Next day advance
+	curr_time.setMinutes( curr_time.getMinutes() + 1440);
+    }
+    curr_time.setSeconds(0);
+    curr_time.setMinutes(0);
+    curr_time.setHours(0);
+    curr_time.setMinutes( curr_time.getMinutes() + pii_vault.reporting_hour);
+    return curr_time.toString();
 }
 
 function vault_init() {
@@ -39,6 +53,27 @@ function vault_init() {
     pii_vault['disable_period'] = -1;
     pii_vault['report'] = [];
     pii_vault['blacklist'] = [];
+    pii_vault['dontbuglist'] = [];
+    pii_vault['reporting_hour'] = 0;
+
+    //Random time between 5 pm to 8 pm.
+    var rand_minutes = 1020 + Math.floor(Math.random() * 1000)%180;
+    pii_vault.reporting_hour = rand_minutes;
+    
+    var curr_time = new Date();
+    //Advance by 24 hours. For the first time, don't want to start bugging immediately.
+    curr_time.setMinutes( curr_time.getMinutes() + 1440);
+    //Next day's 0:0:0 am
+    curr_time.setSeconds(0);
+    curr_time.setMinutes(0);
+    curr_time.setHours(0);
+    curr_time.setMinutes( curr_time.getMinutes() + rand_minutes);
+    //Start reporting next day
+    pii_vault.next_reporting_time = curr_time.toString();
+
+    console.log("Report will be sent everyday at "+ Math.floor(rand_minutes/60) + ":" + (rand_minutes%60));
+    console.log("Next scheduled reporting is: " + curr_time);
+
     pii_vault.domains = {};
     vault_write();
 }
@@ -99,10 +134,30 @@ function start_time_loop() {
     } 
 }
 
+function check_report_time() {
+    var curr_time = new Date();
+    console.log("Here: check report time");
+    console.log("Here: curr_time: " + curr_time.getTime());
+    console.log("Here: next_reporting_time: " + (new Date(pii_vault.next_reporting_time)).getTime());
+    if((pii_vault.report.length > 0) && (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
+	var url = chrome.extension.getURL('report.html');
+	chrome.tabs.create({ url: url });
+    }
+}
+
 function validateURL(textval) {
     var urlregex = new RegExp(
         "^([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)*(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-]+))*$");
     return urlregex.test(textval);
+}
+
+function pii_add_dontbug_list(message) {
+    var domain = message.domain;
+    if(pii_vault.dontbuglist.indexOf(domain) == -1) {
+	pii_vault.dontbuglist.push(domain);
+	console.log("New addition to dontbuglist: " + domain);
+    }
+    vault_write();
 }
 
 function pii_add_blacklisted_sites(message) {
@@ -113,8 +168,8 @@ function pii_add_blacklisted_sites(message) {
 	if (/\S/.test(curr_url)) {
 	    curr_url = $.trim(curr_url);
 	    if(validateURL(curr_url)) {
-		console.log("Pushing :" + curr_url);
-		pii_vault.blacklist.push(curr_url);
+		    console.log("Pushing to blacklist:" + curr_url);
+		    pii_vault.blacklist.push(curr_url);
 	    }
 	    else {
 		console.log("Invalid URL: " + curr_url);
@@ -128,10 +183,11 @@ function pii_add_blacklisted_sites(message) {
 function pii_check_blacklisted_sites(message) {
     var r = {};
     r.blacklisted = "no";
-    console.log("Checking blacklist for site: " + message.domain);
+    //console.log("Checking blacklist for site: " + message.domain);
     for (var i = 0; i < pii_vault.blacklist.length; i++) {
 	if (message.domain == pii_vault.blacklist[i]) {
 	    r.blacklisted = "yes";
+	    console.log("Site is blacklisted: " + message.domain);
 	}
     }
     return r;
@@ -149,6 +205,8 @@ function pii_send_report(message) {
     }
 
     pii_vault.report = [];
+    pii_vault.next_reporting_time = pii_next_report_time();
+    console.log("Report sent. Next scheduled time: " + pii_vault.next_reporting_time);
     vault_write();
 }
 
@@ -185,7 +243,20 @@ function pii_modify_status(message) {
     vault_write();
 }
 
-function pii_check_for_reuse(message) {
+function pii_check_pending_warning(message, sender) {
+    var r = {};
+    r.pending = "no";
+    console.log("Here: Checking for pending messages");
+    if( pending_warnings[sender.tab.id] != undefined) {
+	r.warnings = pending_warnings[sender.tab.id];
+	pending_warnings[sender.tab.id] = undefined;
+	r.pending = "yes";
+	console.log("Here: Added pending message");
+    }
+    return r;
+}
+
+function pii_check_passwd_reuse(message, sender) {
     var r = {};
     var os = "";
     r.is_password_reused = "no";
@@ -199,10 +270,25 @@ function pii_check_for_reuse(message) {
 	    //console.log("salted pwd checksum: " + pwd_sha1sum);
 	    for(var d in pii_vault.domains) {
 		if (d != message.domain && pii_vault.domains[d] == pwd_sha1sum) {
+		    console.log("Here: Password is reused " + message.domain);
 		    r.is_password_reused = "yes";
+		    r.dontbugme = "no";
 		    r.sites.push(d);
 		    os += d + ","; 
+		    break;
 		}
+	    }
+	}
+
+	for(var dbl in pii_vault.dontbuglist) {
+	    console.log("DONTBUGME: Checking: "+ pii_vault.dontbuglist[dbl] +" against: " + message.domain);
+	    if (pii_vault.dontbuglist[dbl] == message.domain) {
+		var pw = {};
+		pw = $.extend(true, {}, r);
+		pending_warnings[sender.tab.id] = pw;
+		console.log("Site in dontbuglist: " + message.domain);
+		r.dontbugme = "yes";
+		break;
 	    }
 	}
     }
@@ -222,13 +308,15 @@ function pii_check_for_reuse(message) {
 	wr.now = new Date();
 	wr.site = message.domain;
 	wr.other_sites = os;
-	pii_vault.report.push(wr.now + ":" + wr.site + ":" + wr.other_sites);
+	pii_vault.report.push(wr.now + "  :  Site - " + wr.site + ": Other sites with same password - " + wr.other_sites);
 	vault_write();
     }
     return r;
 }
 
 vault_read();
+
+setInterval(check_report_time, 1000 * 5 * 60);
 
 if(!('initialized' in pii_vault)) {
     vault_init();
@@ -253,8 +341,13 @@ else {
 }
 
 chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
-    if (message.type == "check") {
-	r = pii_check_for_reuse(message);
+    if (message.type == "check_pending_warning") {
+	r = pii_check_pending_warning(message, sender);
+	r.id = sender.tab.id;
+	sendResponse(r);
+    }
+    else if (message.type == "check_passwd_reuse") {
+	r = pii_check_passwd_reuse(message, sender);
 	sendResponse(r);
 	vault_update_domain_passwd(message);
     }
@@ -283,5 +376,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "send_report") {
 	r = pii_send_report(message);
+    }
+    else if (message.type == "dont_bug") {
+	r = pii_add_dontbug_list(message);
     }
 });
