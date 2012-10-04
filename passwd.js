@@ -110,12 +110,12 @@ function is_status_active(response) {
 	amIactive = "yes";
 	var message = {};
 	message.type = "check_blacklist";
-	message.domain = document.domain;
+	message.domain = document.baseURI;
 	chrome.extension.sendMessage("", message, is_blacklisted);
 	check_pending_warnings();
     }
     else {
-	console.log("Extension Appu is disabled");
+	console.log("Extension Appu is currently disabled");
     }
 }
 

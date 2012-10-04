@@ -142,12 +142,6 @@ function check_report_time() {
     }
 }
 
-function validateURL(textval) {
-    var urlregex = new RegExp(
-        "^([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)*(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-]+))*$");
-    return urlregex.test(textval);
-}
-
 function pii_add_dontbug_list(message) {
     var domain = message.domain;
     if(pii_vault.dontbuglist.indexOf(domain) == -1) {
@@ -164,13 +158,8 @@ function pii_add_blacklisted_sites(message) {
 	var curr_url = sites[i]; 
 	if (/\S/.test(curr_url)) {
 	    curr_url = $.trim(curr_url);
-	    if(validateURL(curr_url)) {
-		    console.log("Pushing to blacklist:" + curr_url);
-		    pii_vault.blacklist.push(curr_url);
-	    }
-	    else {
-		console.log("Invalid URL: " + curr_url);
-	    }
+	    console.log("Pushing to blacklist:" + curr_url);
+	    pii_vault.blacklist.push(curr_url);
 	}
     }
     console.log("New blacklist: " + pii_vault.blacklist);
@@ -182,9 +171,59 @@ function pii_check_blacklisted_sites(message) {
     r.blacklisted = "no";
     //console.log("Checking blacklist for site: " + message.domain);
     for (var i = 0; i < pii_vault.blacklist.length; i++) {
-	if (message.domain == pii_vault.blacklist[i]) {
+	var protocol_matched = "yes";
+	var port_matched = "yes";
+	var bl_url = pii_vault.blacklist[i];
+	//Split URLs, simplifying assumption that protocol is only HTTP.
+	var url_parts = bl_url.split('/');
+	var bl_hostname = "";
+	var bl_protocol = "";
+	var bl_port = "";
+
+	bl_hostname = ((url_parts[0].toLowerCase() == 'http:' || 
+			url_parts[0].toLowerCase() == 'https:')) ? url_parts[2] : url_parts[0];
+	bl_protocol = ((url_parts[0].toLowerCase() == 'http:' || 
+			url_parts[0].toLowerCase() == 'https:')) ? url_parts[0].toLowerCase() : '';
+	bl_port = (bl_hostname.split(':')[1] == undefined) ? '' : bl_hostname.split(':')[1];
+
+	var curr_url_parts = message.domain.split('/');
+	var curr_hostname = "";
+	var curr_protocol = "";
+	var curr_port = "";
+
+	curr_hostname = ((curr_url_parts[0].toLowerCase() == 'http:' || 
+			  curr_url_parts[0].toLowerCase() == 'https:')) ? curr_url_parts[2] : curr_url_parts[0];
+	curr_protocol = ((curr_url_parts[0].toLowerCase() == 'http:' || 
+			  curr_url_parts[0].toLowerCase() == 'https:')) ? curr_url_parts[0].toLowerCase() : '';
+
+	curr_port = (curr_hostname.split(':')[1] == undefined) ? '' : curr_hostname.split(':')[1];
+
+	rev_bl_hostname = bl_hostname.split("").reverse().join("");
+	rev_curr_hostname = curr_hostname.split("").reverse().join("");
+
+	if (bl_protocol && (curr_protocol != bl_protocol)) {
+	    protocol_matched = "no";
+	} 
+
+	if (bl_port && (curr_port != bl_port)) {
+	    port_matched = "no";
+	} 
+
+	// console.log(sprintf("Here: rev_curr_hostname: %s, curr_protocol: %s, curr_port: %s", 
+	// 		    rev_curr_hostname, curr_protocol, curr_port));
+
+	// console.log(sprintf("Here: bl_hostname: %s, bl_protocol: %s, bl_port: %s", 
+	// 		    rev_bl_hostname, bl_protocol, bl_port));
+
+	// console.log(sprintf("Here: protocol_matched: %s, port_matched: %s", protocol_matched, port_matched));
+
+	//First part of IF checks if the current URL under check is a 
+	//subdomain of blacklist domain.
+	if ((rev_curr_hostname.indexOf(rev_bl_hostname) == 0) && 
+	    protocol_matched == "yes" && port_matched == "yes") {
 	    r.blacklisted = "yes";
 	    console.log("Site is blacklisted: " + message.domain);
+	    break;
 	}
     }
     return r;
@@ -275,7 +314,7 @@ function pii_check_passwd_reuse(message, sender) {
 	}
 
 	for(var dbl in pii_vault.dontbuglist) {
-	    console.log("DONTBUGME: Checking: "+ pii_vault.dontbuglist[dbl] +" against: " + message.domain);
+	    //console.log("DONTBUGME: Checking: "+ pii_vault.dontbuglist[dbl] +" against: " + message.domain);
 	    if (pii_vault.dontbuglist[dbl] == message.domain) {
 		var pw = {};
 		pw = $.extend(true, {}, r);
@@ -302,7 +341,7 @@ function pii_check_passwd_reuse(message, sender) {
 	wr.now = new Date();
 	wr.site = message.domain;
 	wr.other_sites = os;
-	pii_vault.report.push(wr.now + "  :  Site - " + wr.site + ": Other sites with same password - " + wr.other_sites);
+	pii_vault.report.push(wr.now + "|Site - " + wr.site + "|Other sites with same password - " + wr.other_sites);
 	vault_write();
     }
     return r;
