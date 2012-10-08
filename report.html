@@ -1,15 +1,25 @@
-<!doctype html>
 <html>
 <head>
-  <center>Appu: Reuse Report</center><br/>
-</head>
-<body>
-  <center>
-    <textarea id="report" cols=150 rows=20></textarea><br/>
-    <button id="send">Send Report</button>
-    <div id="status"></div>
-  </center>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <link rel="stylesheet" type="text/css" href="report.css">
   <script src="thirdparty/jquery-1.8.0.min.js"></script>
   <script src="report.js"></script>
+  <title>Appu: Reuse Report</title>
+</head>
+<body>
+  <div id="report-container">
+    <header>
+      <h1>Appu: Reuse Report</h1>
+    </header>
+    <div id="password-reuse-warnings">
+      <div id="password-reuse-headers">
+	<p id="time">Time</p><p>Login Attempt</p><p>Password Reused In</p>
+      </div>
+      <div class="pwd-warn">
+      </div>
+    </div>
+  </div>  
+    <button id="send">Send Report</button>
+    <div id="status"></div>
 </body>
 </html>

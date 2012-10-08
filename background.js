@@ -53,6 +53,8 @@ function vault_init() {
     pii_vault['disable_period'] = -1;
     pii_vault['report'] = [];
     pii_vault['blacklist'] = [];
+    //List of all sites where user has created a profile.
+    pii_vault['master_profile_list'] = {};
     pii_vault['dontbuglist'] = [];
     pii_vault['reporting_hour'] = 0;
 
@@ -111,6 +113,9 @@ function vault_update_domain_passwd(message) {
     try {
 	var r = Math.floor((Math.random() * 1000)) % 1000;
 	var rand_salt = pii_vault.salt_table[r];
+	// Honestly ":" is not required to separate salt and password.
+	// Just adding it so that it will be easier in case of debugging
+	// and want to print salted_pwd on console.
 	var salted_pwd = rand_salt + ":" + message.passwd;
 	var pwd_sha1sum = CryptoJS.SHA1(salted_pwd).toString();
 
@@ -293,9 +298,12 @@ function pii_check_pending_warning(message, sender) {
 function pii_check_passwd_reuse(message, sender) {
     var r = {};
     var os = "";
+    var vault_dirty = false;
     r.is_password_reused = "no";
     r.sites = [];
 
+    // Doing active check for the case that content script has already
+    // hooked up with password input and then user disables Appu.
     if(pii_vault.status == "active") {
 	for(var i = 0; i < 1000; i++) {
 	    var salted_pwd = pii_vault.salt_table[i] + ":" + message.passwd;
@@ -342,8 +350,19 @@ function pii_check_passwd_reuse(message, sender) {
 	wr.site = message.domain;
 	wr.other_sites = os;
 	pii_vault.report.push(wr.now + "|Site - " + wr.site + "|Other sites with same password - " + wr.other_sites);
+	vault_dirty = true;
+    }
+
+    if (!(message.domain in pii_vault.master_profile_list)) {
+	pii_vault.master_profile_list[message.domain] = true;
+	vault_dirty = true;
+    }
+
+    // Flush
+    if (vault_dirty) {
 	vault_write();
     }
+
     return r;
 }
 
