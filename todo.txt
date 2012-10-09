@@ -1,0 +1,23 @@
+1. Better report page. Currently working on a pretty table+CSS with a delete button for each row.
+2. Better options page to control each option such as blacklist, dontbugme list, report automatically etc.
+3. Better way to input minutes to disable Appu.
+4. Report ready currently opens a new tab after due time. It continues to do so for every 5 minutes after that.
+   Instead, blur the current tab that the user is on and popup with options "Review and Send report", "Send report",
+   "Remind me in 30 minutes". Also on the reports page, add a checkbox for sending reports automatically.
+5. When Appu is enabled from disable state, have a small popup that blinks a few times.
+6. Password bloom filter for checking in cracked-passwords-db (Collected passwords from Elaine).
+7. Categorize websites as per security rings. Change the color of warning popup from dim red to yellow hot depending
+   on the ring.
+8. Make a better application webpage on 'appu.gtnoise.net'
+9. A chrome-store page for Appu to give authenticity.
+10. Auto-updating or One-click updating. Check for updates and warn user to download new version.
+11. New icon for Appu (talking to a graphic designer). 
+12. Add transperency alpha level for Appu icon in browser.
+13. Archive report.
+14. Open source license at the top of each file.
+15. Rearrange git repo. Make js/css/html folders. Rearrange files. Delete extra jquery and jqueryui folders.
+16. Firefox extension.
+17. IE extension.
+18. requirejs for faster loading of js.
+
+

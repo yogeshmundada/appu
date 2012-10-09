@@ -11,13 +11,24 @@ function send_report() {
 }
 
 function populate_report(report) {
-    for(var i = 0; i < report.length; i++) {
-	if (!$("#report").val()) {
-	    $("#report").val($("#report").val() + report[i]);
+    console.log("Here Here");
+    try {
+	for(var i = 0; i < report.length; i++) {
+	    var nr = $('<tr></tr>');
+	    var fields = report[i].split('|');
+	    for(var j = 0; j < fields.length; j++) {
+		var ntd = $('<td></td>');
+		console.log("Attaching vaule: " + fields[j]);
+		$(ntd).text(fields[j]);
+		console.log("New value is::::" + $(ntd).text());
+		$(nr).append(ntd);
+	    }
+	    console.log("Attaching to tree: " + nr);
+	    $("#password-reuse-warning-report-body").append(nr);
 	}
-	else {
-	    $("#report").val($("#report").val() + "\n" + report[i]);
-	}
+    }
+    catch (err) {
+	console.log("Error occurred while creating table: " + err);
     }
     if(!report.length) {
 	$("#send").hide()
