@@ -9,6 +9,7 @@
 7. Categorize websites as per security rings. Change the color of warning popup from dim red to yellow hot depending
    on the ring.
 8. Make a better application webpage on 'appu.gtnoise.net'
+9. Shorten the video or break it in smaller ones like "General Info", "Installation" etc.
 9. A chrome-store page for Appu to give authenticity.
 10. Auto-updating or One-click updating. Check for updates and warn user to download new version.
 11. New icon for Appu (talking to a graphic designer). 
