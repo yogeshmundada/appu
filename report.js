@@ -11,20 +11,40 @@ function send_report() {
 }
 
 function populate_report(report) {
-    console.log("Here Here");
     try {
-	for(var i = 0; i < report.length; i++) {
-	    var nr = $('<tr></tr>');
-	    var fields = report[i].split('|');
-	    for(var j = 0; j < fields.length; j++) {
+	if (report.length) {
+	    for(var i = 0; i < report.length; i++) {
+		var nr = $('<tr></tr>');
+		var incident = report[i];
+		var incident_time = new Date(incident.now);
+		var incident_site = incident.site;
+		var incident_other_sites = incident.other_sites;
+		
 		var ntd = $('<td></td>');
-		console.log("Attaching vaule: " + fields[j]);
-		$(ntd).text(fields[j]);
-		console.log("New value is::::" + $(ntd).text());
+		$(ntd).text(incident_time.toDateString() + "," + incident_time.toLocaleTimeString());
 		$(nr).append(ntd);
+		
+		ntd = $('<td></td>');
+		$(ntd).text(incident_site);
+		$(nr).append(ntd);
+		
+		ntd = $('<td></td>');
+		var npr = $('<p></p>');
+		$(npr).text(incident_other_sites.pop());
+		$(ntd).append(npr);
+		$(nr).append(ntd);
+
+		for(var j = 0; j < incident_other_sites.length; j++) {
+		    npr = $('<p></p>');
+		    $(npr).text(incident_other_sites[j]);
+		    $(ntd).append(npr);
+		}
+		$("#password-reuse-warning-report-body").append(nr);
 	    }
-	    console.log("Attaching to tree: " + nr);
-	    $("#password-reuse-warning-report-body").append(nr);
+	}
+	else {
+	    $("#password-reuse-warning-report").remove();
+	    $("#page-wrap").append($('<p id="no-report">No warnings generated yet</p>'));
 	}
     }
     catch (err) {

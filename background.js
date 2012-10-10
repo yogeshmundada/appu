@@ -239,7 +239,7 @@ function pii_send_report(message) {
     wr.guid = pii_vault.guid;
     wr.report = message.report;
     try {
-	$.post("http://143.215.129.52:5005/methods", wr);
+	$.post("http://143.215.129.52:5005/methods", JSON.stringify(wr));
     }
     catch (e) {
 	console.log("Error while posting log to server");
@@ -254,7 +254,9 @@ function pii_send_report(message) {
 function pii_get_report(message) {
     var r = [];
     for (var i = 0; i < pii_vault.report.length; i++) {
-	r.push(pii_vault.report[i]);
+	// Call to jQuery extend makes a deep copy. So even if reporting page f'ks up with
+	// the objects, original is safe.
+	r.push($.extend(true, {}, pii_vault.report[i]));
     }
     return r;
 }
@@ -297,7 +299,7 @@ function pii_check_pending_warning(message, sender) {
 
 function pii_check_passwd_reuse(message, sender) {
     var r = {};
-    var os = "";
+    var os = [];
     var vault_dirty = false;
     r.is_password_reused = "no";
     r.sites = [];
@@ -315,7 +317,7 @@ function pii_check_passwd_reuse(message, sender) {
 		    r.is_password_reused = "yes";
 		    r.dontbugme = "no";
 		    r.sites.push(d);
-		    os += d + ","; 
+		    os.push(d);
 		    break;
 		}
 	    }
@@ -349,7 +351,7 @@ function pii_check_passwd_reuse(message, sender) {
 	wr.now = new Date();
 	wr.site = message.domain;
 	wr.other_sites = os;
-	pii_vault.report.push(wr.now + "|Site - " + wr.site + "|Other sites with same password - " + wr.other_sites);
+	pii_vault.report.push(wr);
 	vault_dirty = true;
     }
 
