@@ -214,14 +214,6 @@ function pii_check_blacklisted_sites(message) {
 	    port_matched = "no";
 	} 
 
-	// console.log(sprintf("Here: rev_curr_hostname: %s, curr_protocol: %s, curr_port: %s", 
-	// 		    rev_curr_hostname, curr_protocol, curr_port));
-
-	// console.log(sprintf("Here: bl_hostname: %s, bl_protocol: %s, bl_port: %s", 
-	// 		    rev_bl_hostname, bl_protocol, bl_port));
-
-	// console.log(sprintf("Here: protocol_matched: %s, port_matched: %s", protocol_matched, port_matched));
-
 	//First part of IF checks if the current URL under check is a 
 	//subdomain of blacklist domain.
 	if ((rev_curr_hostname.indexOf(rev_bl_hostname) == 0) && 
@@ -249,6 +241,10 @@ function pii_send_report(message) {
     pii_vault.next_reporting_time = pii_next_report_time();
     console.log("Report sent. Next scheduled time: " + pii_vault.next_reporting_time);
     vault_write();
+}
+
+function pii_delete_report_entry(message) {
+    pii_vault.report.splice(message.report_entry, 1);
 }
 
 function pii_get_report(message) {
@@ -372,6 +368,11 @@ vault_read();
 
 setInterval(check_report_time, 1000 * 5 * 60);
 
+//Start DELETE this
+pii_vault['master_profile_list'] = {};
+console.log("Initialized master_profile_list");
+//End DELETE this
+
 if(!('initialized' in pii_vault)) {
     vault_init();
 }
@@ -433,5 +434,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "dont_bug") {
 	r = pii_add_dontbug_list(message);
+    }
+    else if (message.type == "delete_report_entry") {
+	r = pii_delete_report_entry(message);
     }
 });

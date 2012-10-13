@@ -10,11 +10,20 @@ function send_report() {
     return false;
 }
 
+function delete_report_entry() {
+    var report_entry = $(this).parent().parent().index();
+    $(this).parent().parent().remove();
+    var message = {};
+    message.type = "delete_report_entry";
+    message.report_entry = report_entry - 1;
+    chrome.extension.sendMessage("", message);
+}
+
 function populate_report(report) {
     try {
 	if (report.length) {
 	    for(var i = 0; i < report.length; i++) {
-		var nr = $('<tr></tr>');
+		var nr = $('<tr class="report-entry"></tr>');
 		var incident = report[i];
 		var incident_time = new Date(incident.now);
 		var incident_site = incident.site;
@@ -39,6 +48,13 @@ function populate_report(report) {
 		    $(npr).text(incident_other_sites[j]);
 		    $(ntd).append(npr);
 		}
+
+		ntd = $('<td></td>');
+		var nimg_src = '<img id="re-'+ i +'" class="report-entry-delete" src="images/cross-mark.png" height="22">';
+		var nimg = $(nimg_src);
+		$(ntd).append(nimg);
+		$(nr).append(ntd);
+
 		$("#password-reuse-warning-report-body").append(nr);
 	    }
 	}
@@ -56,6 +72,7 @@ function populate_report(report) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    $("#password-reuse-warning-report").on("click", ".report-entry-delete", delete_report_entry);
     var message = {};
     message.type = "get_report";
     chrome.extension.sendMessage("", message, populate_report);

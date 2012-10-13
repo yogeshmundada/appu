@@ -54,12 +54,19 @@ function check_passwd_reuse(jevent) {
     message.type = "check_passwd_reuse";
     message.domain = document.domain;
     message.passwd = jevent.target.value;
+    //console.log("Here here: Checking password on: " + message.domain);
     chrome.extension.sendMessage("", message, is_passwd_reused);
 }
 
 function is_blacklisted(response) {
     if(response.blacklisted == "no") {
-	$(':password').focusout(check_passwd_reuse);
+	//Register for password input type element.
+	var pwd_ip_elements = undefined;
+	pwd_ip_elements = $('input:password');
+	if (pwd_ip_elements) {
+	    //console.log("Here here: Found password elements, registering on them");
+	    pwd_ip_elements.focusout(check_passwd_reuse);
+	}
     }
     else {
 	console.log("Appu is disabled for this blacklisted site");
@@ -111,6 +118,8 @@ function is_status_active(response) {
 	var message = {};
 	message.type = "check_blacklist";
 	message.domain = document.baseURI;
+	//Appu is enabled. Check if the current site is blacklisted.
+	//If not, then register for password input type.
 	chrome.extension.sendMessage("", message, is_blacklisted);
 	check_pending_warnings();
     }
