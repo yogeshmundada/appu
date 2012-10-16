@@ -54,7 +54,7 @@ function check_passwd_reuse(jevent) {
     message.type = "check_passwd_reuse";
     message.domain = document.domain;
     message.passwd = jevent.target.value;
-    //console.log("Here here: Checking password on: " + message.domain);
+    console.log("Here here: Checking password on: " + message.domain);
     chrome.extension.sendMessage("", message, is_passwd_reused);
 }
 
@@ -64,7 +64,7 @@ function is_blacklisted(response) {
 	var pwd_ip_elements = undefined;
 	pwd_ip_elements = $('input:password');
 	if (pwd_ip_elements) {
-	    //console.log("Here here: Found password elements, registering on them");
+	    console.log("Here here: Found password elements, registering on them");
 	    pwd_ip_elements.focusout(check_passwd_reuse);
 	}
     }

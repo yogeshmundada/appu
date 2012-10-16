@@ -2,35 +2,70 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
   <link rel="stylesheet" type="text/css" href="report.css">
-  <script src="thirdparty/jquery-1.8.0.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="thirdparty/jqui/css/appuwarning/jquery-ui-1.8.24.custom.css">
+  <script src="thirdparty/jqui/js/jquery-1.8.2.min.js"></script>
+  <script src="thirdparty/jqui/js/jquery-ui-1.8.24.custom.min.js"></script>
   <script src="report.js"></script>
   <title>Appu: Reuse Report</title>
 </head>
 <body>
+  <!-- <div id="accordion" class="appuwarning"> -->
+  <!--   <h3>Section 1</h3> -->
+  <!--   <div> -->
+  <!--     <p>Mauris mauris ante, blandit et, ultrices a, suscipit eget. -->
+  <!--       Integer ut neque. Vivamus nisi metus, molestie vel, gravida in, -->
+  <!--       condimentum sit amet, nunc. Nam a nibh. Donec suscipit eros. -->
+  <!--       Nam mi. Proin viverra leo ut odio.</p> -->
+  <!--   </div> -->
+  <!--   <h3>Section 2</h3> -->
+  <!--   <div> -->
+  <!--     <p>Sed non urna. Phasellus eu ligula. Vestibulum sit amet purus. -->
+  <!--       Vivamus hendrerit, dolor aliquet laoreet, mauris turpis velit, -->
+  <!--       faucibus interdum tellus libero ac justo.</p> -->
+  <!--   </div> -->
+  <!--   <h3>Section 3</h3> -->
+  <!--   <div> -->
+  <!--     <p>Nam enim risus, molestie et, porta ac, aliquam ac, risus. -->
+  <!--       Quisque lobortis.Phasellus pellentesque purus in massa.</p> -->
+  <!--     <ul> -->
+  <!--       <li>List item one</li> -->
+  <!--       <li>List item two</li> -->
+  <!--       <li>List item three</li> -->
+  <!--     </ul> -->
+  <!--   </div> -->
+  <!-- </div> -->
+
   <header>
     <h1>Appu Report</h1>
   </header>
-  <div id="page-wrap">
-    <table id="password-reuse-warning-report">
-      <colgroup class="time"></colgroup>
-      <colgroup class="offender-site"></colgroup>
-      <colgroup class="reused-sites"></colgroup>
-      <colgroup class="delete-this-entry"></colgroup>
-      <thead>
-        <tr>
-          <th id="header-time"><span>Time</span></th>
-          <th id="header-offender-site"><span>Login Attempt</span></th>
-          <th id="header-reused-sites"><span>Password Reused In</span></th>
-          <th id="header-delete-this-entry"><span></span></th>
-        </tr>
-      </thead>
-      <tbody id="password-reuse-warning-report-body">
-        <tr>
-        </tr>
-      </tbody>
-    </table>
+ <div id="page-wrap">
+    <div id="accordion" class="appuwarning">
+      <h3> List of Sites With User Profile</h3>
+      <div>Testing Content 1</div>
+      <h3> Password Reuse Warning Report</h3>
+      <div id="pwru-report">
+      	<table id="password-reuse-warning-report-table">
+      	  <caption>Password Reuse Warnings </caption>
+      	  <colgroup class="time"></colgroup>
+      	  <colgroup class="offender-site"></colgroup>
+      	  <colgroup class="reused-sites"></colgroup>
+      	  <colgroup class="delete-this-entry"></colgroup>
+      	  <thead>
+            <tr>
+              <th id="header-time"><span>Time</span></th>
+              <th id="header-offender-site"><span>Login Attempt</span></th>
+              <th id="header-reused-sites"><span>Password Reused In</span></th>
+              <th id="header-delete-this-entry"><span></span></th>
+            </tr>
+      	  </thead>
+      	  <tbody id="password-reuse-warning-report-table-body">
+            <tr>
+            </tr>
+      	  </tbody>
+      	</table>
+      </div>
+    </div>
     <button id="send">Send Report</button>
-    <div id="status"></div>
-  </div>
+ </div>
 </body>
 </html>

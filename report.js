@@ -11,6 +11,7 @@ function send_report() {
 }
 
 function delete_report_entry() {
+    console.log("Here here:");
     var report_entry = $(this).parent().parent().index();
     $(this).parent().parent().remove();
     var message = {};
@@ -55,11 +56,11 @@ function populate_report(report) {
 		$(ntd).append(nimg);
 		$(nr).append(ntd);
 
-		$("#password-reuse-warning-report-body").append(nr);
+		$("#password-reuse-warning-report-table-body").append(nr);
 	    }
 	}
 	else {
-	    $("#password-reuse-warning-report").remove();
+	    $("#password-reuse-warning-report-table").remove();
 	    $("#page-wrap").append($('<p id="no-report">No warnings generated yet</p>'));
 	}
     }
@@ -72,9 +73,14 @@ function populate_report(report) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    $("#password-reuse-warning-report").on("click", ".report-entry-delete", delete_report_entry);
     var message = {};
     message.type = "get_report";
     chrome.extension.sendMessage("", message, populate_report);
     $("#send").bind("click", function() { send_report()});
+    $("#accordion").accordion({
+	collapsible: true,
+	active: false,
+	heightStyle: "content"
+    });
+    $("#password-reuse-warning-report").on("click", ".report-entry-delete", delete_report_entry);
 });
