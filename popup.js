@@ -32,7 +32,7 @@ function report() {
 }
 
 function options() {
-    console.log("Blacklisting");
+    console.log("Options");
     openTab(chrome.extension.getURL('options.html'));
     return false;
 }
@@ -52,6 +52,6 @@ document.addEventListener('DOMContentLoaded', function () {
     $("#disable180").bind("click", function() { setTimeout( function() { disable(180);} , 1); });
     $("#enable").bind("click", function() { setTimeout( function() { enable();} , 1); });
     $("#report").bind("click", function() { setTimeout( function() { report();} , 1); });
-    $("#blacklist").bind("click", function() { setTimeout( function() { options();} , 1); });
+    $("#options").bind("click", function() { setTimeout( function() { options();} , 1); });
     $("#about").bind("click", function() { setTimeout( function() { about();} , 1); });
 });

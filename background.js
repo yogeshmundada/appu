@@ -360,7 +360,7 @@ function pii_check_passwd_reuse(message, sender) {
 	vault_dirty = true;
     }
 
-    if (!(message.domain in pii_vault.master_profile_list)) {
+    if ($.inArray(message.domain, pii_vault.master_profile_list) == -1) {
 	pii_vault.master_profile_list.push(message.domain);
 	vault_dirty = true;
     }
