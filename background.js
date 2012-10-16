@@ -54,7 +54,7 @@ function vault_init() {
     pii_vault['report'] = [];
     pii_vault['blacklist'] = [];
     //List of all sites where user has created a profile.
-    pii_vault['master_profile_list'] = {};
+    pii_vault['master_profile_list'] = [];
     pii_vault['dontbuglist'] = [];
     pii_vault['reporting_hour'] = 0;
 
@@ -248,12 +248,21 @@ function pii_delete_report_entry(message) {
 }
 
 function pii_get_report(message) {
-    var r = [];
+    var r = {};
+    r.pwd_reuse_report = [];
+    r.master_profile_list = [];
+
     for (var i = 0; i < pii_vault.report.length; i++) {
 	// Call to jQuery extend makes a deep copy. So even if reporting page f'ks up with
 	// the objects, original is safe.
-	r.push($.extend(true, {}, pii_vault.report[i]));
+	r.pwd_reuse_report.push($.extend(true, {}, pii_vault.report[i]));
     }
+
+    console.log("Here here: master profile list: " + pii_vault.master_profile_list.length);
+    for (var i = 0; i < pii_vault.master_profile_list.length; i++) {
+	r.master_profile_list.push(pii_vault.master_profile_list[i]);
+    }
+
     return r;
 }
 
@@ -352,7 +361,7 @@ function pii_check_passwd_reuse(message, sender) {
     }
 
     if (!(message.domain in pii_vault.master_profile_list)) {
-	pii_vault.master_profile_list[message.domain] = true;
+	pii_vault.master_profile_list.push(message.domain);
 	vault_dirty = true;
     }
 
@@ -367,11 +376,6 @@ function pii_check_passwd_reuse(message, sender) {
 vault_read();
 
 setInterval(check_report_time, 1000 * 5 * 60);
-
-//Start DELETE this
-pii_vault['master_profile_list'] = {};
-console.log("Initialized master_profile_list");
-//End DELETE this
 
 if(!('initialized' in pii_vault)) {
     vault_init();

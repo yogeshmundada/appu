@@ -20,12 +20,15 @@ function delete_report_entry() {
     chrome.extension.sendMessage("", message);
 }
 
-function populate_report(report) {
+function populate_report(r) {
+    var pwd_reuse_report = r.pwd_reuse_report;
+    var master_profile_list = r.master_profile_list;
+
     try {
-	if (report.length) {
-	    for(var i = 0; i < report.length; i++) {
+	if (pwd_reuse_report.length) {
+	    for(var i = 0; i < pwd_reuse_report.length; i++) {
 		var nr = $('<tr class="report-entry"></tr>');
-		var incident = report[i];
+		var incident = pwd_reuse_report[i];
 		var incident_time = new Date(incident.now);
 		var incident_site = incident.site;
 		var incident_other_sites = incident.other_sites;
@@ -61,13 +64,37 @@ function populate_report(report) {
 	}
 	else {
 	    $("#password-reuse-warning-report-table").remove();
-	    $("#page-wrap").append($('<p id="no-report">No warnings generated yet</p>'));
+	    $("#pwru-report").append($('<p id="no-report">No password reuse warnings generated yet.</p>'));
+	}
+
+	debugger;
+	if (master_profile_list.length) {
+	    for(var i = 0; i < master_profile_list.length; i++) {
+		var nr = $('<tr class="site-entry"></tr>');
+
+		var ntd = $('<td></td>');
+		$(ntd).text(master_profile_list[i]);
+		$(nr).append(ntd);
+
+		ntd = $('<td></td>');
+		var nimg_src = '<img id="pro-entry-'+ i +'" class="profile-entry-delete" src="images/cross-mark.png" height="22">';
+		var nimg = $(nimg_src);
+		$(ntd).append(nimg);
+		$(nr).append(ntd);
+
+		$("#master-profile-list-table-body").append(nr);
+	    }
+	}
+	else {
+	    $("#master-profile-list-table").remove();
+	    $("#mpl-report").append($('<p id="no-report">No site with user profile yet.</p>'));
 	}
     }
     catch (err) {
 	console.log("Error occurred while creating table: " + err);
     }
-    if(!report.length) {
+
+    if(!r.pwd_reuse_report.length && !r.master_profile_list.length) {
 	$("#send").hide()
     }
 }
