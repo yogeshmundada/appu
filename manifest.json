@@ -10,7 +10,7 @@
     "64"  : "images/appu_new64.png"
   },
   "browser_action": {
-    "default_icon": "images/appu19.png", 
+    "default_icon": "images/appu_new19.png", 
     "default_title": "Appu: Password Protector",
     "default_popup": "popup.html"
   },

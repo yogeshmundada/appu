@@ -11,7 +11,6 @@ function disable(minutes) {
 
 function enable() {
     console.log("Enabling extension");
-    //chrome.browserAction.setIcon({path:'images/appu19.png'});
     message = {};
     message.type = "statuschange";
     message.status = "enable";
