@@ -1,3 +1,7 @@
+1. Keep expanding sites list to see where appu works.
+   also get a sense of where users are entering the data.
+1. For that capture the input field name.
+1. Fix issues faced on sites where Appu did not work.
 1. Better report page. Currently working on a pretty table+CSS with a delete button for each row.
 2. Better options page to control each option such as blacklist, dontbugme list, report automatically etc.
 2. Visit 50 sites from different categories to see if Appu works on them.

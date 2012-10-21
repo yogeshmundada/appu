@@ -1,7 +1,6 @@
 
 function disable(minutes) {
     console.log("Disabling for: " + minutes);
-    //chrome.browserAction.setIcon({path:'images/appu19_offline.png'});
     message = {};
     message.type = "statuschange";
     message.status = "disable";

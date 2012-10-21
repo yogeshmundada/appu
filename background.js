@@ -133,7 +133,7 @@ function start_time_loop() {
 	clearInterval(pii_vault['enable_timer']);
 	pii_vault['status'] = "active";
 	pii_vault['disable_period'] = -1;
-	chrome.browserAction.setIcon({path:'images/appu19.png'});
+	chrome.browserAction.setIcon({path:'images/appu_new19.png'});
 	console.log((new Date()) + ": Enabling Appu");
 	vault_write();
     } 
@@ -278,14 +278,14 @@ function pii_modify_status(message) {
     if (message.status == "enable") {
 	pii_vault['status'] = "active";
 	pii_vault['disable_period'] = -1;
-	chrome.browserAction.setIcon({path:'images/appu19.png'});
+	chrome.browserAction.setIcon({path:'images/appu_new19.png'});
     }
     else if (message.status == "disable") {
 	pii_vault['status'] = "disabled";
 	pii_vault['disable_period'] = message.minutes;
 	pii_vault['disable_start'] = (new Date()).toString();
 	pii_vault['enable_timer'] = setInterval(start_time_loop, 1000);
-	chrome.browserAction.setIcon({path:'images/appu19_offline.png'});
+	chrome.browserAction.setIcon({path:'images/appu_new19_offline.png'});
 	console.log((new Date()) + ": Disabling Appu for " + message.minutes + " minutes");
     }
     vault_write();
@@ -385,7 +385,7 @@ else {
 	if (((new Date()) - (new Date(pii_vault.disable_start))) > (60 * 1000 * pii_vault['disable_period'])) {
 	    pii_vault['status'] = "active";
 	    pii_vault['disable_period'] = -1;
-	    chrome.browserAction.setIcon({path:'images/appu19.png'});
+	    chrome.browserAction.setIcon({path:'images/appu_new19.png'});
 	    console.log((new Date()) + ": Enabling Appu");
 	}
 	else {
@@ -393,7 +393,7 @@ else {
 			+ pii_vault['disable_period'] + " minutes");
 
 	    pii_vault['enable_timer'] = setInterval(start_time_loop, 1000);
-	    chrome.browserAction.setIcon({path:'images/appu19_offline.png'});
+	    chrome.browserAction.setIcon({path:'images/appu_new19_offline.png'});
 	}
     }
     vault_write();

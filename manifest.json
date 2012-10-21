@@ -3,11 +3,11 @@
   "version": "0.2",
   "description": "Reduce your personal information footprint across the web",
   "icons": {
-    "128" : "images/appu128.png",
-    "16"  : "images/appu16.png",
-    "32"  : "images/appu32.png",	   
-    "48"  : "images/appu48.png",
-    "64"  : "images/appu64.png"
+    "128" : "images/appu_new128.png",
+    "16"  : "images/appu_new16.png",
+    "32"  : "images/appu_new32.png",	   
+    "48"  : "images/appu_new48.png",
+    "64"  : "images/appu_new64.png"
   },
   "browser_action": {
     "default_icon": "images/appu19.png", 
