@@ -1,53 +1,59 @@
+1. Literature review.
+2. Basic IRB draft for Nick.
+3. More users.
 1. Keep expanding sites list to see where appu works.
    also get a sense of where users are entering the data.
-1. For that capture the input field name.
-1. Fix issues faced on sites where Appu did not work.
-1. Better report page. Currently working on a pretty table+CSS with a delete button for each row.
-2. Better options page to control each option such as blacklist, dontbugme list, report automatically etc.
-2. Visit 50 sites from different categories to see if Appu works on them.
-2. If current time is pass next report time and there is no report, then recalculate next report time.
+2. For that capture the input field name.
+3. Fix issues faced on sites where Appu did not work.
+4. Better report page. Currently working on a pretty table+CSS with a delete button for each row.
+5. Better options page to control each option such as blacklist, dontbugme list, report automatically etc.
+6. Visit 50 sites from different categories to see if Appu works on them.
+7. If current time is pass next report time and there is no report, then recalculate next report time.
    Otherwise, as soon as first report is generated, user starts to get annoying warnings.
-2. Due to frequent updates and addition of new variables to local storage vault, lots of exceptions
+8. Due to frequent updates and addition of new variables to local storage vault, lots of exceptions
    are happening. Add a code at the start that will check if current version is different than the last
    one. If so, it will check which new variables are to be added to the vault and how should they
    be initialized.
-3. Better way to input minutes to disable Appu.
-3. On some sites(check testedsites.com), the popup warning is screwed.
-3. If the number of sites in popup warning exceeds, then scrolling is hard (since the dialog is modal).
-   Need to really blurr out background.
-4. Report ready currently opens a new tab after due time. It continues to do so for every 5 minutes after that.
-   Instead, blur the current tab that the user is on and popup with options "Review and Send report", 
-   "Send report", "Remind me in 30 minutes". Also on the reports page, add a checkbox for sending 
-   reports automatically.
-5. When Appu is enabled from disable state, have a small popup that blinks a few times.
-6. Password bloom filter for checking in cracked-passwords-db (Collected passwords from Elaine).
-6. Appu works correctly if user enters the password and then tabs to next "sign in" button. However, if
-   user enters password and using mouse hits "sign in" button, then Appu's warning message is shown really
-   briefly (split second) since user has already left the login page and is entering the website.
-   Solution for this: When password input field gets focus (onfocus), register for event handling
-   for mouse movement. Then if either focusout (from password field) or mouse movement is triggered,
-   call password check function.
-7. Categorize websites as per security rings. Change the color of warning popup from dim red to 
-   yellow hot depending on the ring.
-7. Don't let the CSS on the webpage mess up the Appu's warning dialog boxes.
-   This is currently happening on "Bank of America" site.
-7. Password tokenization. Pair of charracters and quadruples of characters.
-8. Make a better application webpage on 'appu.gtnoise.net'
-9. Shorten the video or break it in smaller ones like "General Info", "Installation" etc.
-9. If user enters a passwords on a site that is on "dontbugme" list and if immediately
-   goes to another site, the pending warning is popped on that site.
-9. A chrome-store page for Appu to give authenticity.
-10. Auto-updating or One-click updating. Check for updates and warn user to download new version.
-10. Replace all ".bind" to ".on". In the latest versions, ".bind", ".live" etc are deprecated in
+9. Better way to input minutes to disable Appu.
+9. Prompt users to visit their profile pages.
+10. On some sites(check testedsites.com), the popup warning is screwed.
+11. If the number of sites in popup warning exceeds, then scrolling is hard (since the dialog is modal).
+    Need to really blurr out background.
+12. Report ready currently opens a new tab after due time. It continues to do so for every 5 minutes after that.
+    Instead, blur the current tab that the user is on and popup with options "Review and Send report", 
+    "Send report", "Remind me in 30 minutes". Also on the reports page, add a checkbox for sending 
+    reports automatically.
+13. When Appu is enabled from disable state, have a small popup that blinks a few times.
+14. Password bloom filter for checking in cracked-passwords-db (Collected passwords from Elaine).
+15. Appu works correctly if user enters the password and then tabs to next "sign in" button. However, if
+    user enters password and using mouse hits "sign in" button, then Appu's warning message is shown really
+    briefly (split second) since user has already left the login page and is entering the website.
+    Solution for this: When password input field gets focus (onfocus), register for event handling
+    for mouse movement. Then if either focusout (from password field) or mouse movement is triggered,
+    call password check function.
+16. Categorize websites as per security rings. Change the color of warning popup from dim red to 
+    yellow hot depending on the ring.
+17. Don't let the CSS on the webpage mess up the Appu's warning dialog boxes.
+    This is currently happening on "Bank of America" site.
+18. Password tokenization. Pair of charracters and quadruples of characters.
+19. Make a better application webpage on 'appu.gtnoise.net'
+20. Shorten the video or break it in smaller ones like "General Info", "Installation" etc.
+21. If user enters a passwords on a site that is on "dontbugme" list and if immediately
+    goes to another site, the pending warning is popped on that site.
+22. A chrome-store page for Appu to give authenticity.
+23. Auto-updating or One-click updating. Check for updates and warn user to download new version.
+24. Replace all ".bind" to ".on". In the latest versions, ".bind", ".live" etc are deprecated in
     jQuery. Preferred method is to use ".on". See API reference.
-10. Visit browser history to check how frequently a particular site has been visited.
-11. New icon for Appu (talking to a graphic designer). 
-12. Add transperency alpha level for Appu icon in browser.
-13. Archive reports for 30 days.
-14. Open source license at the top of each file.
-15. Rearrange git repo. Make js/css/html folders. Rearrange files. Delete extra jquery and jqueryui folders.
-16. Firefox extension.
-17. IE extension.
-18. requirejs for faster loading of js.
+25. Visit browser history to check how frequently a particular site has been visited.
+26. Archive reports for 30 days.
+27. Open source license at the top of each file.
+28. Rearrange git repo. Make js/css/html folders. Rearrange files. Delete extra jquery and jqueryui folders.
+29. Firefox extension.
+30. IE extension.
+31. requirejs for faster loading of js.
 
 
+::DONE::
+
+* New icon for Appu. 
+* Add transperency alpha level for Appu icon in browser.
