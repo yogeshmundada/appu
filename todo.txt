@@ -41,7 +41,6 @@
 21. If user enters a passwords on a site that is on "dontbugme" list and if immediately
     goes to another site, the pending warning is popped on that site.
 22. A chrome-store page for Appu to give authenticity.
-23. Auto-updating or One-click updating. Check for updates and warn user to download new version.
 24. Replace all ".bind" to ".on". In the latest versions, ".bind", ".live" etc are deprecated in
     jQuery. Preferred method is to use ".on". See API reference.
 25. Visit browser history to check how frequently a particular site has been visited.
@@ -57,3 +56,5 @@
 
 * New icon for Appu. 
 * Add transperency alpha level for Appu icon in browser.
+* Added auto-update url in manifest. Tested that it works.
+  (Point to note: development mode extension-id and crx extension-id are different)
