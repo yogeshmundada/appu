@@ -145,6 +145,11 @@ function check_report_time() {
 	var url = chrome.extension.getURL('report.html');
 	chrome.tabs.create({ url: url });
     }
+    else if ((pii_vault.report.length == 0) && (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
+	pii_vault.next_reporting_time = pii_next_report_time();
+	console.log("Report is empty. No report sent. Next scheduled report check time: " + pii_vault.next_reporting_time);
+	vault_write();
+    }
 }
 
 function pii_add_dontbug_list(message) {
