@@ -30,54 +30,122 @@ function pii_next_report_time() {
     return curr_time.toString();
 }
 
+//Initializing each property. 
+//TODO: Perhaps a better way is to write a generic function
+//that accepts property_name and property initializer for that property.
+//It will test if property exists. If not, then call the initializer function on that property.
+//It will shorten the code and make it decent.
 function vault_init() {
-    pii_vault.guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-	var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-	return v.toString(16);
-    });
+    var vault_modified = false;
 
-    setTimeout(verify_unique_guid, 1);
+    console.log("vault_init(): Initializing missing properties from last release");
+    if(!pii_vault.guid) {
+	pii_vault.guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+	    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+	    return v.toString(16);
+	});
 
-    console.log("GUID: " + pii_vault.guid);
-    var salt_table = {};
-    var current_ip = pii_vault.guid;
-    for(var i = 0; i < 1000; i++) {
-	salt_table[i] = CryptoJS.SHA1(current_ip).toString();
-	current_ip = salt_table[i];
-	//console.log("i: " + i);
-	//console.log("salt: " + current_ip);
+	setTimeout(verify_unique_guid, 1);
+	
+	console.log("vault_init(): Updated GUID in vault: " + pii_vault.guid);
+	vault_modified = true;
     }
-    pii_vault.salt_table = salt_table;
-    pii_vault['initialized'] = true;
-    pii_vault['status'] = "active";
-    pii_vault['disable_period'] = -1;
-    pii_vault['report'] = [];
-    pii_vault['blacklist'] = [];
-    //List of all sites where user has created a profile.
-    pii_vault['master_profile_list'] = [];
-    pii_vault['dontbuglist'] = [];
-    pii_vault['reporting_hour'] = 0;
 
-    //Random time between 5 pm to 8 pm.
-    var rand_minutes = 1020 + Math.floor(Math.random() * 1000)%180;
-    pii_vault.reporting_hour = rand_minutes;
+    if(!pii_vault.salt_table) {
+	var salt_table = {};
+	var current_ip = pii_vault.guid;
+	for(var i = 0; i < 1000; i++) {
+	    salt_table[i] = CryptoJS.SHA1(current_ip).toString();
+	    current_ip = salt_table[i];
+	    //console.log("i: " + i);
+	    //console.log("salt: " + current_ip);
+	}
+	pii_vault.salt_table = salt_table;
+	
+	console.log("vault_init(): Updated SALT TABLE in vault");
+	vault_modified = true;
+    }
+
+    if(!pii_vault.initialized) {
+	pii_vault['initialized'] = true;
+	console.log("vault_init(): Updated INITIALIZED in vault");
+	vault_modified = true;
+    }
+
+    if(!pii_vault.status) {
+	pii_vault['status'] = "active";
+	console.log("vault_init(): Updated STATUS in vault");
+	vault_modified = true;
+    }
+
+    if(!pii_vault.disable_period) {
+	pii_vault['disable_period'] = -1;
+	console.log("vault_init(): Updated DISABLE_PERIOD in vault");
+	vault_modified = true;
+    }
+
+    if(!pii_vault.report) {
+	pii_vault['report'] = [];
+	console.log("vault_init(): Updated REPORT in vault");
+	vault_modified = true;
+    }
     
-    var curr_time = new Date();
-    //Advance by 24 hours. For the first time, don't want to start bugging immediately.
-    curr_time.setMinutes( curr_time.getMinutes() + 1440);
-    //Next day's 0:0:0 am
-    curr_time.setSeconds(0);
-    curr_time.setMinutes(0);
-    curr_time.setHours(0);
-    curr_time.setMinutes( curr_time.getMinutes() + rand_minutes);
-    //Start reporting next day
-    pii_vault.next_reporting_time = curr_time.toString();
+    if(!pii_vault.blacklist) {
+	pii_vault['blacklist'] = [];
+	console.log("vault_init(): Updated BLACKLIST in vault");
+	vault_modified = true;
+    }
 
-    console.log("Report will be sent everyday at "+ Math.floor(rand_minutes/60) + ":" + (rand_minutes%60));
-    console.log("Next scheduled reporting is: " + curr_time);
+    if (!pii_vault.master_profile_list) {
+    //List of all sites where user has created a profile.
+	pii_vault['master_profile_list'] = [];
+	console.log("vault_init(): Updated MASTER_PROFILE_LIST in vault");
+	vault_modified = true;
+    }
 
-    pii_vault.domains = {};
-    vault_write();
+    if(!pii_vault.dontbuglist) {
+	pii_vault['dontbuglist'] = [];
+	console.log("vault_init(): Updated DONTBUGLIST in vault");
+	vault_modified = true;
+    }
+
+    if(!pii_vault.reporting_hour) {
+	pii_vault['reporting_hour'] = 0;
+    //Random time between 5 pm to 8 pm.
+	var rand_minutes = 1020 + Math.floor(Math.random() * 1000)%180;
+	pii_vault.reporting_hour = rand_minutes;
+	console.log("vault_init(): Updated REPORTING_HOUR in vault");
+	vault_modified = true;
+    }    
+
+    if(!pii_vault.next_reporting_time) {
+	var curr_time = new Date();
+	//Advance by 24 hours. For the first time, don't want to start bugging immediately.
+	curr_time.setMinutes( curr_time.getMinutes() + 1440);
+	//Next day's 0:0:0 am
+	curr_time.setSeconds(0);
+	curr_time.setMinutes(0);
+	curr_time.setHours(0);
+	curr_time.setMinutes( curr_time.getMinutes() + pii_vault.reporting_hour);
+	//Start reporting next day
+	pii_vault.next_reporting_time = curr_time.toString();
+	
+	console.log("Report will be sent everyday at "+ Math.floor(rand_minutes/60) + ":" + (rand_minutes%60));
+	console.log("Next scheduled reporting is: " + curr_time);
+	console.log("vault_init(): Updated NEXT_REPORTING_TIME in vault");
+	vault_modified = true;
+    }
+
+    if(!pii_vault.domains) {
+	pii_vault.domains = {};
+	console.log("vault_init(): Updated DOMAINS in vault");
+	vault_modified = true;
+    }
+
+    if(vault_modified) {
+	console.log("vault_init(): vault modified, writing to disk");
+	vault_write();
+    }
 }
 
 function vault_read() {
@@ -88,11 +156,11 @@ function vault_read() {
 	    for (var g in pii_vault) {
 		//console.log("Properties of pii_vault: " + g);
 	    }
-	    if("guid" in pii_vault) {
-		console.log("guid: " + pii_vault.guid);
+	    if(pii_vault.guid) {
+		console.log("Globally Unique User Id: " + pii_vault.guid);
 	    }
 	    if("salt_table" in pii_vault) {
-		console.log("salt_table length: " + Object.size(pii_vault.salt_table));
+		//console.log("salt_table length: " + Object.size(pii_vault.salt_table));
 	    }
 	}
 	else {
@@ -382,28 +450,32 @@ vault_read();
 
 setInterval(check_report_time, 1000 * 5 * 60);
 
-if(!('initialized' in pii_vault)) {
-    vault_init();
-}
-else {
-    if (pii_vault.status == "disabled") {
-	if (((new Date()) - (new Date(pii_vault.disable_start))) > (60 * 1000 * pii_vault['disable_period'])) {
-	    pii_vault['status'] = "active";
-	    pii_vault['disable_period'] = -1;
-	    chrome.browserAction.setIcon({path:'images/appu_new19.png'});
-	    console.log((new Date()) + ": Enabling Appu");
-	}
-	else {
-	    console.log("Appu disabled at '" + pii_vault.disable_start + "' for " 
-			+ pii_vault['disable_period'] + " minutes");
+//Call init. This will set properties that are newly added from release to release.
+//Eventually, after the vault properties stabilise, call it only if vault property
+//initialized is not set to true.
+vault_init();
 
-	    pii_vault['enable_timer'] = setInterval(start_time_loop, 1000);
-	    chrome.browserAction.setIcon({path:'images/appu_new19_offline.png'});
-	}
+//Check if appu was disabled in the last run. If yes, then check if disable period is over yet.
+if (pii_vault.status == "disabled") {
+    if (((new Date()) - (new Date(pii_vault.disable_start))) > (60 * 1000 * pii_vault['disable_period'])) {
+	pii_vault['status'] = "active";
+	pii_vault['disable_period'] = -1;
+	chrome.browserAction.setIcon({path:'images/appu_new19.png'});
+	console.log((new Date()) + ": Enabling Appu");
+	vault_write();
     }
-    vault_write();
+    else {
+	console.log("Appu disabled at '" + pii_vault.disable_start + "' for " 
+		    + pii_vault['disable_period'] + " minutes");
+	
+	pii_vault['enable_timer'] = setInterval(start_time_loop, 1000);
+	chrome.browserAction.setIcon({path:'images/appu_new19_offline.png'});
+	vault_write();
+    }
 }
 
+
+//Generic channel listener. Catch messages from contents-scripts in various tabs.
 chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     if (message.type == "check_pending_warning") {
 	r = pii_check_pending_warning(message, sender);
