@@ -1,4 +1,11 @@
 
+//Modify options for:
+// Blacklisted sites.
+// DontBugMe sites.
+// Report automatically checkbox.
+// Appu is enabled or disabled...if disabled for how many more minutes.
+// Reporting time
+
 function blacklist_sites() {
     var sites = $("#sites").val().split(/\n/);
     console.log("Got value: " + $("#sites").val());

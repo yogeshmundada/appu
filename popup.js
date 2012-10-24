@@ -1,4 +1,10 @@
 
+function toggle_color(evt) {
+    if(evt.type == "mouseover") evt.currentTarget.style.backgroundColor = '#eeeeee';
+    if(evt.type == "mouseout") evt.currentTarget.style.backgroundColor = '#FFFFFF';
+    return false;
+}
+
 function disable(minutes) {
     console.log("Disabling for: " + minutes);
     message = {};
@@ -6,6 +12,7 @@ function disable(minutes) {
     message.status = "disable";
     message.minutes = minutes;
     chrome.extension.sendMessage("", message, function() {});
+    self.close();
     return false;
 }
 
@@ -15,6 +22,7 @@ function enable() {
     message.type = "statuschange";
     message.status = "enable";
     chrome.extension.sendMessage("", message, function() {});
+    self.close();
     return false;
 }
 
@@ -26,18 +34,21 @@ function openTab(url) {
 function report() {
     console.log("Reporting");
     openTab(chrome.extension.getURL('report.html'));
+    self.close();
     return false;
 }
 
 function options() {
     console.log("Options");
     openTab(chrome.extension.getURL('options.html'));
+    self.close();
     return false;
 }
 
 function about() {
     console.log("About");
     openTab(chrome.extension.getURL('about.html'));
+    self.close();
     return false;
 }
 

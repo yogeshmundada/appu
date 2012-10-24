@@ -2,7 +2,7 @@
   "name": "Appu",
   "version": "0.2.2",
   "description": "Reduce your personal information footprint across the web",
-  "update_url": "http://www.cc.gatech.edu/~yogeshm3/appu/updates.xml",
+  "update_url": "http://appu.gtnoise.net/downloads/updates.xml",
   "icons": {
     "128" : "images/appu_new128.png",
     "16"  : "images/appu_new16.png",

@@ -31,6 +31,7 @@
     Solution for this: When password input field gets focus (onfocus), register for event handling
     for mouse movement. Then if either focusout (from password field) or mouse movement is triggered,
     call password check function.
+15. Reporting should occur over SSL.
 16. Categorize websites as per security rings. Change the color of warning popup from dim red to 
     yellow hot depending on the ring.
 17. Don't let the CSS on the webpage mess up the Appu's warning dialog boxes.
@@ -58,3 +59,9 @@
 * Add transperency alpha level for Appu icon in browser.
 * Added auto-update url in manifest. Tested that it works.
   (Point to note: development mode extension-id and crx extension-id are different)
+* Modified vault_init() so that new properties added from release to release are 
+  added correctly. This will avoid property-not-defined exceptions.
+* Next reporting time calculation when report length is zero. If current time is greater than
+  scheduled report time and if no report is ready, then advance scheduled report time by 24-hours.
+  This avoids user annoyance when reporting tab opens as soon as first warning is ready.
+* Automatically closing the popup options drop down from browser icon.

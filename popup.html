@@ -1,7 +1,9 @@
 <!doctype html>
 <html>
 <head>
-<link href="popup.css" media="screen" rel="stylesheet" type="text/css">
+  <link href="popup.css" media="screen" rel="stylesheet" type="text/css">
+  <script src="thirdparty/jquery-1.8.0.min.js"></script>
+  <script src="popup.js"></script>
 </head>
 <body>
   <div id="content">
@@ -9,24 +11,22 @@
       <a tabIndex="0" id="disable60" role="button" href="#">
 	1. Disable(60 minutes)<br/>
       </a>
-      <a tabIndex="0" id="disable180" role="button" href="#">
+      <a tabIndex="1" id="disable180" role="button" href="#">
 	2. Disable(3 hours)<br/>
       </a>
-      <a tabIndex="0" id="enable" role="button" href="#">
+      <a tabIndex="2" id="enable" role="button" href="#">
 	3. Enable<br/>
       </a>
-      <a tabIndex="0" id="report" role="button" href="#">
+      <a tabIndex="3" id="report" role="button" href="#">
 	4. Check report<br/>
       </a>
-      <a tabIndex="0" id="options" role="button" href="#">
+      <a tabIndex="4" id="options" role="button" href="#">
 	5. Options<br/>
       </a>
-      <a tabIndex="0" id="about" role="button" href="#">
+      <a tabIndex="5" id="about" role="button" href="#">
 	6. About
       </a>
     </div>
   </div>
-  <script src="thirdparty/jquery-1.8.0.min.js"></script>
-  <script src="popup.js"></script>
 </body>
 </html>
