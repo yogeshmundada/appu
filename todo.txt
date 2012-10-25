@@ -1,5 +1,9 @@
 1. Literature review.
 2. Basic IRB draft for Nick.
+2. Currently capturing only existing input elements in an HTML doc.
+   What about dynamically generated inputs?
+   May be use bind on "change" event at a body or document level.
+   However, what if the event does not bubble upto that point?
 3. More users.
 1. Keep expanding sites list to see where appu works.
    also get a sense of where users are entering the data.

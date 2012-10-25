@@ -54,8 +54,24 @@ function check_passwd_reuse(jevent) {
     message.type = "check_passwd_reuse";
     message.domain = document.domain;
     message.passwd = jevent.target.value;
-    console.log("Here here: Checking password on: " + message.domain);
+    //console.log("Here here: Checking password on: " + message.domain);
     chrome.extension.sendMessage("", message, is_passwd_reused);
+}
+
+
+function user_modifications(jevent) {
+    console.log("Here here: User modified:");
+    var message = {};
+    message.type = "user_input";
+    message.domain = document.domain;
+    message.attr_list = {};
+
+    var all_attrs = $(jevent.target.attributes);
+    for(var i = 0; i < all_attrs.length; i++) {
+	message.attr_list[all_attrs[i].name] = all_attrs[i].value;
+    }
+
+    chrome.extension.sendMessage("", message);
 }
 
 function is_blacklisted(response) {
@@ -64,9 +80,17 @@ function is_blacklisted(response) {
 	var pwd_ip_elements = undefined;
 	pwd_ip_elements = $('input:password');
 	if (pwd_ip_elements) {
-	    console.log("Here here: Found password elements, registering on them");
+	    //console.log("Here here: Found password elements, registering on them");
 	    pwd_ip_elements.focusout(check_passwd_reuse);
 	}
+	
+	//Register for all input type elements. Capture any changes to them.
+	//Log which input element user actively changes on a site.
+	//DO NOT LOG changes themselves. 
+	//This is an excercise to find out which sites user submits inputs to.
+	all_input_elements = $(":input");
+	all_input_elements.change(user_modifications);
+
     }
     else {
 	console.log("Appu is disabled for this blacklisted site");

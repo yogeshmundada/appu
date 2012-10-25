@@ -142,6 +142,12 @@ function vault_init() {
 	vault_modified = true;
     }
 
+    if(!pii_vault.input_fields) {
+	pii_vault.input_fields = [];
+	console.log("vault_init(): Updated INPUT_FIELDS in vault");
+	vault_modified = true;
+    }
+
     if(vault_modified) {
 	console.log("vault_init(): vault modified, writing to disk");
 	vault_write();
@@ -229,6 +235,21 @@ function pii_add_dontbug_list(message) {
     vault_write();
 }
 
+function pii_log_user_input_type(message) {
+    var triple = [];
+    var domain = message.domain;
+    var attr_list = message.attr_list;
+
+    triple.push(new Date());
+    triple.push(domain);
+    triple.push(attr_list);
+
+    console.log("Appending to input_fileds list: " + JSON.stringify(triple));
+
+    pii_vault.input_fields.push(triple);
+    vault_write();
+}
+
 function pii_add_blacklisted_sites(message) {
     var sites = message.sites;
     pii_vault.blacklist = [];
@@ -299,15 +320,33 @@ function pii_check_blacklisted_sites(message) {
     return r;
 }
 
+function pii_send_input_fields(message) {
+    var wr = {};
+    wr.type = "input_fields";
+    wr.guid = pii_vault.guid;
+    wr.input_fields = pii_vault.input_fields;
+    try {
+	$.post("http://woodland.gtnoise.net:5005/methods", JSON.stringify(wr));
+    }
+    catch (e) {
+	console.log("Error while posting 'input_fields' to server");
+    }
+
+    pii_vault.input_fields = [];
+    console.log("Input fields send");
+    vault_write();
+}
+
 function pii_send_report(message) {
     var wr = {};
+    wr.type = "reuse_warnings";
     wr.guid = pii_vault.guid;
     wr.report = message.report;
     try {
-	$.post("http://143.215.129.52:5005/methods", JSON.stringify(wr));
+	$.post("http://woodland.gtnoise.net:5005/methods", JSON.stringify(wr));
     }
     catch (e) {
-	console.log("Error while posting log to server");
+	console.log("Error while posting 'reuse_warnings' to server");
     }
 
     pii_vault.report = [];
@@ -477,7 +516,11 @@ if (pii_vault.status == "disabled") {
 
 //Generic channel listener. Catch messages from contents-scripts in various tabs.
 chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
-    if (message.type == "check_pending_warning") {
+
+    if (message.type == "user_input") {
+	r = pii_log_user_input_type(message);
+    }
+    else if (message.type == "check_pending_warning") {
 	r = pii_check_pending_warning(message, sender);
 	r.id = sender.tab.id;
 	sendResponse(r);
@@ -512,6 +555,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "send_report") {
 	r = pii_send_report(message);
+	r = pii_send_input_fields(message);
     }
     else if (message.type == "dont_bug") {
 	r = pii_add_dontbug_list(message);
