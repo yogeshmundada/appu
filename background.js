@@ -555,7 +555,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "send_report") {
 	r = pii_send_report(message);
-	r = pii_send_input_fields(message);
+	//r = pii_send_input_fields(message);
     }
     else if (message.type == "dont_bug") {
 	r = pii_add_dontbug_list(message);
