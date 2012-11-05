@@ -8,7 +8,7 @@ function toggle_color(evt) {
 function disable(minutes) {
     console.log("Disabling for: " + minutes);
     message = {};
-    message.type = "statuschange";
+    message.type = "status_change";
     message.status = "disable";
     message.minutes = minutes;
     chrome.extension.sendMessage("", message, function() {});
@@ -19,7 +19,7 @@ function disable(minutes) {
 function enable() {
     console.log("Enabling extension");
     message = {};
-    message.type = "statuschange";
+    message.type = "status_change";
     message.status = "enable";
     chrome.extension.sendMessage("", message, function() {});
     self.close();

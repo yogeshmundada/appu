@@ -12,9 +12,27 @@ var ext_id = chrome.i18n.getMessage('@@extension_id');
 var pii_vault = {};
 var pending_warnings = {}; 
 
+//If user says remind me later
+var report_reminder_interval = 30;
+
+//Report check interval in minutes
+var report_check_interval = 2;
+
+//Is user processing report?
+var is_report_tab_open = 0;
+
 function verify_unique_guid(guid) {
     //Contact the server and ask if anyone else has same GUID.
     //Worth the effort?
+}
+
+function pii_test_yesterdays_report_time() {
+    var curr_time = new Date();
+    curr_time.setMinutes( curr_time.getMinutes() - 1440);
+    curr_time.setSeconds(0);
+    curr_time.setMinutes(0);
+    curr_time.setHours(0);
+    return curr_time.toString();
 }
 
 function pii_next_report_time() {
@@ -148,6 +166,12 @@ function vault_init() {
 	vault_modified = true;
     }
 
+    if(!("report_reminder_time" in pii_vault)) {
+	pii_vault.report_reminder_time = null;
+	console.log("vault_init(): Updated REPORT_REMINDER_TIME in vault");
+	vault_modified = true;
+    }
+
     if(vault_modified) {
 	console.log("vault_init(): vault modified, writing to disk");
 	vault_write();
@@ -213,15 +237,67 @@ function start_time_loop() {
     } 
 }
 
+function open_reports_tab() {
+    console.log("Here Here: Opening a reports tab");    
+    var report_url = chrome.extension.getURL('report.html');
+    chrome.tabs.create({ url: report_url });
+    close_report_reminder_message();
+}
+
+function close_report_reminder_message() {
+    chrome.tabs.query({}, function(all_tabs) {
+	for(var i = 0; i < all_tabs.length; i++) {
+	    chrome.tabs.sendMessage(all_tabs[i].id, {type: "close-report-reminder"});
+	}
+    });
+}
+
+function report_reminder_later(message) {
+    var curr_time = new Date();
+    curr_time.setMinutes(curr_time.getMinutes() + report_reminder_interval);
+    pii_vault.report_reminder_time = curr_time.toString();
+
+    console.log(sprintf("[%s]: Report Reminder time postponed for: %dm", new Date(), report_reminder_interval));
+
+    chrome.tabs.query({}, function(all_tabs) {
+	for(var i = 0; i < all_tabs.length; i++) {
+	    chrome.tabs.sendMessage(all_tabs[i].id, {type: "close-report-reminder"});
+	}
+    });
+    vault_write();
+}
+
 function check_report_time() {
     var curr_time = new Date();
-    if((pii_vault.report.length > 0) && (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
-	var url = chrome.extension.getURL('report.html');
-	chrome.tabs.create({ url: url });
+    
+    console.log("Here here 1");
+    if (pii_vault.report_reminder_time == null) {
+	//Don't want to annoy user with reporting dialog if we are disabled OR
+	//if user already has a review report window open (presumably working on it).
+	if (pii_vault.status == "active" && is_report_tab_open == 0) {
+	    console.log("Here here 2, curr time: " + curr_time + ", next report time: " +  pii_vault.next_reporting_time);
+	    if((pii_vault.report.length > 0) && (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
+		//Send message to all the tabs that report is ready for review and sending
+		console.log("Here here 3");
+		chrome.tabs.query({}, function(all_tabs) {
+		    for(var i = 0; i < all_tabs.length; i++) {
+			chrome.tabs.sendMessage(all_tabs[i].id, {type: "report-reminder"});
+		    }
+		});
+	    }
+	    else if ((pii_vault.report.length == 0) && 
+		     (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
+		console.log("Here here 4");
+		pii_vault.next_reporting_time = pii_next_report_time();
+		console.log("Report is empty. No report sent. Next scheduled report check time: " + pii_vault.next_reporting_time);
+		vault_write();
+	    }
+	}
     }
-    else if ((pii_vault.report.length == 0) && (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
-	pii_vault.next_reporting_time = pii_next_report_time();
-	console.log("Report is empty. No report sent. Next scheduled report check time: " + pii_vault.next_reporting_time);
+    else if (curr_time.getTime() > (new Date(pii_vault.report_reminder_time)).getTime()) {
+	console.log("Here here 5");
+	console.log(sprintf("[%s]: Enabling Report Reminder", new Date()));
+	pii_vault.report_reminder_time = null;
 	vault_write();
     }
 }
@@ -370,7 +446,6 @@ function pii_get_report(message) {
 	r.pwd_reuse_report.push($.extend(true, {}, pii_vault.report[i]));
     }
 
-    console.log("Here here: master profile list: " + pii_vault.master_profile_list.length);
     for (var i = 0; i < pii_vault.master_profile_list.length; i++) {
 	r.master_profile_list.push(pii_vault.master_profile_list[i]);
     }
@@ -442,7 +517,7 @@ function pii_check_passwd_reuse(message, sender) {
 
 	for(var dbl in pii_vault.dontbuglist) {
 	    //console.log("DONTBUGME: Checking: "+ pii_vault.dontbuglist[dbl] +" against: " + message.domain);
-	    if (pii_vault.dontbuglist[dbl] == message.domain) {
+	    if (pii_vault.dontbuglist[dbl] == message.domain || message.warn_later) {
 		var pw = {};
 		pw = $.extend(true, {}, r);
 		pending_warnings[sender.tab.id] = pw;
@@ -487,11 +562,15 @@ function pii_check_passwd_reuse(message, sender) {
 
 vault_read();
 
-setInterval(check_report_time, 1000 * 5 * 60);
+//Testing code.
+//pii_vault.next_reporting_time = pii_test_yesterdays_report_time();
+//console.log("Here here: next reporting time: " + pii_vault.next_reporting_time);
+
+setInterval(check_report_time, 1000 * report_check_interval * 60);
 
 //Call init. This will set properties that are newly added from release to release.
 //Eventually, after the vault properties stabilise, call it only if vault property
-//initialized is not set to true.
+//"initialized" is not set to true.
 vault_init();
 
 //Check if appu was disabled in the last run. If yes, then check if disable period is over yet.
@@ -513,27 +592,26 @@ if (pii_vault.status == "disabled") {
     }
 }
 
-
 //Generic channel listener. Catch messages from contents-scripts in various tabs.
+//Also catch messages from popup.html, report.html and options.html
 chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
-
-    if (message.type == "user_input") {
+    if (message.type == "user_input" && pii_vault.status == "active") {
 	r = pii_log_user_input_type(message);
     }
-    else if (message.type == "check_pending_warning") {
+    else if (message.type == "check_pending_warning"  && pii_vault.status == "active") {
 	r = pii_check_pending_warning(message, sender);
 	r.id = sender.tab.id;
 	sendResponse(r);
     }
-    else if (message.type == "check_passwd_reuse") {
+    else if (message.type == "check_passwd_reuse"  && pii_vault.status == "active") {
 	r = pii_check_passwd_reuse(message, sender);
 	sendResponse(r);
 	vault_update_domain_passwd(message);
     }
-    else if (message.type == "statuschange") {
+    else if (message.type == "status_change") {
 	pii_modify_status(message);
     }
-    else if (message.type == "querystatus") {
+    else if (message.type == "query_status") {
 	r = {};
 	r.status = pii_vault.status;
 	sendResponse(r);
@@ -563,4 +641,20 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "delete_report_entry") {
 	r = pii_delete_report_entry(message);
     }
+    else if (message.type == "remind_report_later") {
+	report_reminder_later(report_reminder_interval);
+    }
+    else if (message.type == "close_report_reminder") {
+	close_report_reminder_message();
+    }
+    else if (message.type == "review_and_send_report") {
+	open_reports_tab();
+    }
+    else if (message.type == "report_tab_closed") {
+	is_report_tab_open -= 1;
+    }
+    else if (message.type == "report_tab_opened") {
+	is_report_tab_open += 1;
+    }
 });
+

@@ -1,5 +1,6 @@
-1. Literature review.
-2. Basic IRB draft for Nick.
+1. More literature review.
+1. Get first 10 users.
+2. Basic IRB draft for Nick. Answer questions that he has sent.
 2. Currently capturing only existing input elements in an HTML doc.
    What about dynamically generated inputs?
    May be use bind on "change" event at a body or document level.

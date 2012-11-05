@@ -67,7 +67,6 @@ function populate_report(r) {
 	    $("#pwru-report").append($('<p id="no-report">No password reuse warnings generated yet.</p>'));
 	}
 
-	debugger;
 	if (master_profile_list.length) {
 	    for(var i = 0; i < master_profile_list.length; i++) {
 		var nr = $('<tr class="site-entry"></tr>');
@@ -101,6 +100,10 @@ function populate_report(r) {
 
 document.addEventListener('DOMContentLoaded', function () {
     var message = {};
+    message.type = "report_tab_opened";
+    chrome.extension.sendMessage("", message, populate_report);
+
+    var message = {};
     message.type = "get_report";
     chrome.extension.sendMessage("", message, populate_report);
     $("#send").bind("click", function() { send_report()});
@@ -110,4 +113,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	heightStyle: "content"
     });
     $("#password-reuse-warning-report").on("click", ".report-entry-delete", delete_report_entry);
+});
+
+$(window).on("unload", function() {
+    var message = {};
+    message.type = "report_tab_closed";
+    chrome.extension.sendMessage("", message, populate_report);
 });

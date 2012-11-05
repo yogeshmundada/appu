@@ -1,0 +1,12 @@
+
+
+.appuwarning {
+    text-align: left;
+    top: 2px;
+}
+
+.appuwarning, .appuwarning .ui-widget .ui-dialog-buttonpane .ui-button {
+    font-size: 14px;
+    font-weight: normal;
+    font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif;
+}
