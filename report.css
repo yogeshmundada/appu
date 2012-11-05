@@ -1,0 +1,71 @@
+
+html, body { min-height: 100%; }
+body { font: 13px "Lucida Grande", Helvetica, Arial, sans-serif;   background-image: -moz-linear-gradient(top, #eeeeee, #cccccc); background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #eeeeee),color-stop(1, #cccccc)); }
+
+article, aside, figure, footer, header, hgroup,
+menu, nav, section { display: block; }
+
+#page-wrap     { margin: 80px auto; width: 900px; padding: 10px; background: white;  }
+
+
+#master-profile-list-table { width: 100%; height: 100px; overflow:auto; margin: 0 auto; border-collapse: collapse; border-width: 1px; }
+
+#mpl-report { margin: 80px auto; width: 800px; height: 200px; overflow: auto; padding: 10px; background: white;  }
+
+#master-profile-list-table th { height: 120px; padding-bottom: 14px !important; vertical-align: bottom; } 
+
+
+#master-profile-list-table tr:nth-child(even) { background: #CCC; } 
+#master-profile-list-table tr:nth-child(odd) { background: #FFF; } 
+
+#master-profile-list-table td,
+#master-profile-list-table th { width: 150px; padding: 8px 5px; text-align: center; border-left: 1px solid white; border-right: 1px solid white; }
+
+#master-profile-list-table .final-row td { padding: 24px 5px; }
+
+#password-reuse-warning-report-table { width: 100%; height: 100px; overflow:auto; margin: 0 auto; border-collapse: collapse; border-width: 1px; }
+
+#pwru-report { margin: 80px auto; width: 800px; height: 200px; overflow: auto; padding: 10px; background: white;  }
+
+#password-reuse-warning-report-table th { height: 120px; padding-bottom: 14px !important; vertical-align: bottom; } 
+
+
+#password-reuse-warning-report-table tr:nth-child(even) { background: #CCC; } 
+#password-reuse-warning-report-table tr:nth-child(odd) { background: #FFF; } 
+
+#password-reuse-warning-report-table td,
+#password-reuse-warning-report-table th { width: 150px; padding: 8px 5px; text-align: center; border-left: 1px solid white; border-right: 1px solid white; }
+
+#password-reuse-warning-report-table .final-row td { padding: 24px 5px; }
+
+/* From http://css-tricks.com/examples/ButtonMaker/ */
+.button {
+   border-top: 1px solid #a695b3;
+   background: #64548f;
+   background: -webkit-gradient(linear, left top, left bottom, from(#836c94), to(#64548f));
+   background: -moz-linear-gradient(top, #836c94, #64548f);
+   padding: 5px 10px;
+   -webkit-border-radius: 8px;
+   -moz-border-radius: 8px;
+   border-radius: 8px;
+   -webkit-box-shadow: rgba(0,0,0,1) 0 1px 0;
+   -moz-box-shadow: rgba(0,0,0,1) 0 1px 0;
+   box-shadow: rgba(0,0,0,1) 0 1px 0;
+   text-shadow: rgba(0,0,0,.4) 0 1px 0;
+   color: white;
+   font-size: 14px;
+   font-family: 'Lucida Grande', Helvetica, Arial, Sans-Serif;
+   text-decoration: none;
+   vertical-align: middle;
+}
+.button:hover {
+   border-top-color: #755a99;
+   background: #755a99;
+   color: #ffffff;
+}
+.button:active {
+   border-top-color: #4f3463;
+   background: #4f3463;
+   position: relative;
+   top: 1px;
+}

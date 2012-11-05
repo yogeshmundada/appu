@@ -1,0 +1,72 @@
+Email/Blogging/Microblogging:
+
+1. Gmail, blogger, youtube
+2. Yahoo mail, flickr
+3. Twitter
+4. Facebook
+5. Apple (appleid)
+6. Amazon
+7. Linked In
+8. last.fm
+9. goodreads
+10. reddit.com
+11. delicious (works but screwed up in title, perhaps because of CSS).
+12. friendfeed
+13. technorati.
+14. live.com
+15. yelp.com
+16. vimeo.
+17. foursquare.
+18. tumblr (works only if you choose email, need to capture "enter").
+19. photobucket.com (signing in process has a popup still works).
+20. qik.com
+21. aol.com
+
+Dating:
+
+1. OkCupid
+2. Plenty of fish
+3. match.com (worked, but due to their wierd login popup, gets hidden)
+4. eHarmony. (worked, but did not work so well the first time).
+5. datehookup (works but screwed from page's default CSS).
+6. mate1
+
+Gaming:
+
+1. xbox.com (works but warning screwed due to page's CSS)
+2. steampowered.com
+3. gamespot (works but screws background page)
+
+Finance:
+
+1. Bank of America
+2. Wells Fargo
+3. JP Morgan chase (Personal)
+4. Goldman sachs (Private wealth management)
+5. Etrade
+6. Fidelity
+7. Santander
+8. The street.
+9. smartmoney
+10. Charles schwab.
+11. CNN Money. (works, but its login screen is a popup, so gets hidden..even after adjusting zIndex)
+12. This is money.
+13. Seeking alpha. (works, but its login screen is a popup, so gets hidden..even after adjusting zIndex)
+
+Specific sites:
+1. Gatech buzzport
+2. Reliance global call
+3. bitly.com (signing in process has a popup still works, perhaps hidden?).
+4. hulu (works, but its login screen is a popup, so gets hidden..even after adjusting zIndex)
+5. forbes (works, but its login screen is a popup, so gets hidden..even after adjusting zIndex)
+
+==================
+
+Did not work on:
+
+6. bloomberg
+8. chatroulette.com
+9. baidu.com (Did not understand chinese, but still tried by guessing)
+10. ign.com
+
+==================
