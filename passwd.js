@@ -228,9 +228,9 @@ function is_blacklisted(response) {
 	//Log which input element user actively changes on a site.
 	//DO NOT LOG changes themselves. 
 	//This is an excercise to find out on which sites user submits inputs.
-	all_input_elements = $(":input");
-	all_input_elements.change(user_modifications);
-
+	//As always, delegate to "body" to capture dynamically added input elements
+	//and also for better performance.
+	$('body').on('change', ':input', user_modifications);
     }
     else {
 	console.log("Appu: Disabled for this blacklisted site");

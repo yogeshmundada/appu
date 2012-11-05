@@ -2,20 +2,30 @@
 function send_report() {
     message = {};
     message.type = "send_report";
-    message.report = $("#report").val();
-    chrome.extension.sendMessage("", message, function() {});
-    $("#report").val("");    
-    $("#send").hide();
-    $("#status").append("<p>Report Sent</p>");
-    return false;
+    chrome.extension.sendMessage("", message);
+
+    //Re-populate with new entries
+    var message = {};
+    message.type = "get_report";
+    chrome.extension.sendMessage("", message, populate_report);
 }
 
-function delete_report_entry() {
+function master_profile_list_delete_entry() {
     console.log("Here here:");
     var report_entry = $(this).parent().parent().index();
     $(this).parent().parent().remove();
     var message = {};
-    message.type = "delete_report_entry";
+    message.type = "delete_master_profile_list_entry";
+    message.report_entry = report_entry - 1;
+    chrome.extension.sendMessage("", message);
+}
+
+function password_reuse_report_delete_entry() {
+    console.log("Here here:");
+    var report_entry = $(this).parent().parent().index();
+    $(this).parent().parent().remove();
+    var message = {};
+    message.type = "delete_password_reuse_report_entry";
     message.report_entry = report_entry - 1;
     chrome.extension.sendMessage("", message);
 }
@@ -25,6 +35,9 @@ function populate_report(r) {
     var master_profile_list = r.master_profile_list;
 
     try {
+	console.log("Displaying scheduled report time: " + r.scheduled_report_time);
+	$("#scheduled-report-time").text(r.scheduled_report_time);
+
 	if (pwd_reuse_report.length) {
 	    for(var i = 0; i < pwd_reuse_report.length; i++) {
 		var nr = $('<tr class="report-entry"></tr>');
@@ -54,7 +67,7 @@ function populate_report(r) {
 		}
 
 		ntd = $('<td></td>');
-		var nimg_src = '<img id="re-'+ i +'" class="report-entry-delete" src="images/cross-mark.png" height="22">';
+		var nimg_src = '<img id="re-'+ i +'" class="password-reuse-report-entry-delete" src="images/cross-mark.png" height="22">';
 		var nimg = $(nimg_src);
 		$(ntd).append(nimg);
 		$(nr).append(ntd);
@@ -98,25 +111,53 @@ function populate_report(r) {
     }
 }
 
+function toggle_reports_expand() {
+    console.log("Here here: I am here here: " + $("#expand-reports-checkbox").is(':checked'));
+
+    if($("#expand-reports-checkbox").is(':checked')) {
+	$("#accordion-master-profile-list").accordion("option", "active", 0);
+	$("#accordion-password-reuse-report").accordion("option", "active", 0);
+    }
+    else {
+	$("#accordion-master-profile-list").accordion("option", "active", false);
+	$("#accordion-password-reuse-report").accordion("option", "active", false);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     var message = {};
     message.type = "report_tab_opened";
-    chrome.extension.sendMessage("", message, populate_report);
+    chrome.extension.sendMessage("", message);
 
     var message = {};
     message.type = "get_report";
     chrome.extension.sendMessage("", message, populate_report);
-    $("#send").bind("click", function() { send_report()});
-    $("#accordion").accordion({
+
+    $(".send-report-button").on("click", send_report);
+
+    $("#expand-reports-checkbox").prop("checked", false);
+    $("#expand-reports-checkbox").on("change", toggle_reports_expand);
+
+    $("#accordion-master-profile-list").accordion({
 	collapsible: true,
 	active: false,
 	heightStyle: "content"
     });
-    $("#password-reuse-warning-report").on("click", ".report-entry-delete", delete_report_entry);
+
+    $("#accordion-password-reuse-report").accordion({
+	collapsible: true,
+	active: false,
+	heightStyle: "content"
+    });
+
+    $("#password-reuse-warning-report-table").on("click", ".password-reuse-report-entry-delete", 
+						 password_reuse_report_delete_entry);
+    $("#master-profile-list-table").on("click", ".profile-entry-delete", 
+				       master_profile_list_delete_entry);
 });
 
 $(window).on("unload", function() {
     var message = {};
     message.type = "report_tab_closed";
-    chrome.extension.sendMessage("", message, populate_report);
+    chrome.extension.sendMessage("", message);
 });

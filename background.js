@@ -136,6 +136,20 @@ function vault_init() {
 	vault_modified = true;
     }    
 
+    //Three different types of reporting.
+    //Manual: If reporting time of the day and if report ready, interrupt user and ask 
+    //        him to review, modify and then send report.
+    //Auto: Send report automatically when ready.
+    //Warn_On_Different: Interrupt user to manually review report only if current report
+    //                   entries are different from what he reviewed in the past.
+    //                   (How many past reports should be stored? lets settle on 10 for now?).
+    //                   Highlight the different entries with different color background.
+    if(!pii_vault.reporting_type) {
+	pii_vault['reporting_type'] = "manual";
+	console.log("vault_init(): Updated REPORTING_TYPE in vault");
+	vault_modified = true;
+    }    
+
     if(!pii_vault.next_reporting_time) {
 	var curr_time = new Date();
 	//Advance by 24 hours. For the first time, don't want to start bugging immediately.
@@ -203,6 +217,12 @@ function vault_read() {
     }
 }
 
+//Since this function is getting called async from many different points,
+//ideally it should have a lock to avoid race conditions (and possibly corruption).
+//However, apparently JS is threadless and JS engine takes care of this issue
+//under the hood. So we are safe.
+//Currently just writing everything .. in future, only write values that
+//are modified.
 function vault_write() {
     localStorage[ext_id] = JSON.stringify(pii_vault);
 }
@@ -213,7 +233,7 @@ function vault_update_domain_passwd(message) {
 	var rand_salt = pii_vault.salt_table[r];
 	// Honestly ":" is not required to separate salt and password.
 	// Just adding it so that it will be easier in case of debugging
-	// and want to print salted_pwd on console.
+	// and want to print salted_pwd on console for debugging.
 	var salted_pwd = rand_salt + ":" + message.passwd;
 	var pwd_sha1sum = CryptoJS.SHA1(salted_pwd).toString();
 
@@ -238,7 +258,6 @@ function start_time_loop() {
 }
 
 function open_reports_tab() {
-    console.log("Here Here: Opening a reports tab");    
     var report_url = chrome.extension.getURL('report.html');
     chrome.tabs.create({ url: report_url });
     close_report_reminder_message();
@@ -269,36 +288,38 @@ function report_reminder_later(message) {
 
 function check_report_time() {
     var curr_time = new Date();
-    
-    console.log("Here here 1");
-    if (pii_vault.report_reminder_time == null) {
-	//Don't want to annoy user with reporting dialog if we are disabled OR
-	//if user already has a review report window open (presumably working on it).
-	if (pii_vault.status == "active" && is_report_tab_open == 0) {
-	    console.log("Here here 2, curr time: " + curr_time + ", next report time: " +  pii_vault.next_reporting_time);
-	    if((pii_vault.report.length > 0) && (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
-		//Send message to all the tabs that report is ready for review and sending
-		console.log("Here here 3");
-		chrome.tabs.query({}, function(all_tabs) {
-		    for(var i = 0; i < all_tabs.length; i++) {
-			chrome.tabs.sendMessage(all_tabs[i].id, {type: "report-reminder"});
-		    }
-		});
-	    }
-	    else if ((pii_vault.report.length == 0) && 
-		     (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
-		console.log("Here here 4");
-		pii_vault.next_reporting_time = pii_next_report_time();
-		console.log("Report is empty. No report sent. Next scheduled report check time: " + pii_vault.next_reporting_time);
-		vault_write();
+
+    //Make all the following checks only if reporting type is "manual"
+    if (pii_vault.reporting_type == "manual") {
+	if (pii_vault.report_reminder_time == null) {
+	    //Don't want to annoy user with reporting dialog if we are disabled OR
+	    //if user already has a review report window open (presumably working on it).
+	    if (pii_vault.status == "active" && is_report_tab_open == 0) {
+		if((pii_vault.report.length > 0) && 
+		   (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
+		    //Send message to all the tabs that report is ready for review and sending
+		    chrome.tabs.query({}, function(all_tabs) {
+			for(var i = 0; i < all_tabs.length; i++) {
+			    chrome.tabs.sendMessage(all_tabs[i].id, {type: "report-reminder"});
+			}
+		    });
+		}
+		else if ((pii_vault.report.length == 0) && 
+			 (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
+		    pii_vault.next_reporting_time = pii_next_report_time();
+		    console.log("Report is empty. No report sent. Next scheduled report check time: " + pii_vault.next_reporting_time);
+		    vault_write();
+		}
 	    }
 	}
+	else if (curr_time.getTime() > (new Date(pii_vault.report_reminder_time)).getTime()) {
+	    console.log(sprintf("[%s]: Enabling Report Reminder", new Date()));
+	    pii_vault.report_reminder_time = null;
+	    vault_write();
+	}
     }
-    else if (curr_time.getTime() > (new Date(pii_vault.report_reminder_time)).getTime()) {
-	console.log("Here here 5");
-	console.log(sprintf("[%s]: Enabling Report Reminder", new Date()));
-	pii_vault.report_reminder_time = null;
-	vault_write();
+    else if (pii_vault.reporting_type == "auto") {
+	pii_send_report();
     }
 }
 
@@ -396,7 +417,7 @@ function pii_check_blacklisted_sites(message) {
     return r;
 }
 
-function pii_send_input_fields(message) {
+function pii_send_input_fields() {
     var wr = {};
     wr.type = "input_fields";
     wr.guid = pii_vault.guid;
@@ -413,11 +434,11 @@ function pii_send_input_fields(message) {
     vault_write();
 }
 
-function pii_send_report(message) {
+function pii_send_report() {
     var wr = {};
     wr.type = "reuse_warnings";
     wr.guid = pii_vault.guid;
-    wr.report = message.report;
+    wr.report = pii_vault.report;
     try {
 	$.post("http://woodland.gtnoise.net:5005/methods", JSON.stringify(wr));
     }
@@ -433,12 +454,19 @@ function pii_send_report(message) {
 
 function pii_delete_report_entry(message) {
     pii_vault.report.splice(message.report_entry, 1);
+    vault_write();
+}
+
+function pii_delete_master_profile_list_entry(message) {
+    pii_vault.master_profile_list.splice(message.report_entry, 1);
+    vault_write();
 }
 
 function pii_get_report(message) {
     var r = {};
     r.pwd_reuse_report = [];
     r.master_profile_list = [];
+    r.scheduled_report_time = pii_vault.next_reporting_time;
 
     for (var i = 0; i < pii_vault.report.length; i++) {
 	// Call to jQuery extend makes a deep copy. So even if reporting page f'ks up with
@@ -632,14 +660,17 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	sendResponse(r);
     }
     else if (message.type == "send_report") {
-	r = pii_send_report(message);
-	//r = pii_send_input_fields(message);
+	r = pii_send_report();
+	//r = pii_send_input_fields();
     }
     else if (message.type == "dont_bug") {
 	r = pii_add_dontbug_list(message);
     }
-    else if (message.type == "delete_report_entry") {
+    else if (message.type == "delete_password_reuse_report_entry") {
 	r = pii_delete_report_entry(message);
+    }
+    else if (message.type == "delete_master_profile_list_entry") {
+	r = pii_delete_master_profile_list_entry(message);
     }
     else if (message.type == "remind_report_later") {
 	report_reminder_later(report_reminder_interval);

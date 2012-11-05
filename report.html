@@ -13,7 +13,14 @@
     <h1>Appu Report</h1>
   </header>
   <div id="page-wrap">
-    <div id="accordion" class="appuwarning">
+    <div id="report-time">Scheduled Reporting Time: <span id="scheduled-report-time"></span>
+      <span id="expand-reports">
+	<input type="checkbox" id="expand-reports-checkbox">
+	<label id="label-expand-reports-checkbox" for="expand-reports-checkbox">Expand All Report Panels</label>
+      </span>
+    </div>
+    <button id="send-button1" class="send-report-button">Send Report</button>
+    <div id="accordion-master-profile-list" class="appuwarning">
       <h3> List of Sites With User Profile</h3>
       <div id="mpl-report">
       	<table id="master-profile-list-table">
@@ -32,6 +39,8 @@
       	  </tbody>
       	</table>
       </div>
+    </div>
+    <div id="accordion-password-reuse-report" class="appuwarning">
       <h3> Password Reuse Warning Report</h3>
       <div id="pwru-report">
       	<table id="password-reuse-warning-report-table">
@@ -55,7 +64,7 @@
       	</table>
       </div>
     </div>
-    <button id="send">Send Report</button>
+    <button id="send-button2" class="send-report-button">Send Report</button>
  </div>
 </body>
 </html>

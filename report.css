@@ -5,8 +5,32 @@ body { font: 13px "Lucida Grande", Helvetica, Arial, sans-serif;   background-im
 article, aside, figure, footer, header, hgroup,
 menu, nav, section { display: block; }
 
-#page-wrap     { margin: 80px auto; width: 900px; padding: 10px; background: white;  }
+#page-wrap { 
+    margin: 80px auto; 
+    width: 900px; 
+    padding: 10px; 
+    background: white;  
+    border-radius: 5px;
+}
 
+#report-time {
+    font-size : 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+#report-time #scheduled-report-time {
+    font-size : 16px;
+    font-weight: normal;
+}
+
+#report-time #expand-reports {
+    font-size : 14px;
+    font-weight: normal;
+    position: absolute;
+    right: 0px;
+}
 
 #master-profile-list-table { width: 100%; height: 100px; overflow:auto; margin: 0 auto; border-collapse: collapse; border-width: 1px; }
 
