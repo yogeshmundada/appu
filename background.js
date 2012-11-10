@@ -140,7 +140,7 @@ function vault_init() {
     //Manual: If reporting time of the day and if report ready, interrupt user and ask 
     //        him to review, modify and then send report.
     //Auto: Send report automatically when ready.
-    //Warn_On_Different: Interrupt user to manually review report only if current report
+    //Differential: Interrupt user to manually review report only if current report
     //                   entries are different from what he reviewed in the past.
     //                   (How many past reports should be stored? lets settle on 10 for now?).
     //                   Highlight the different entries with different color background.
@@ -290,7 +290,7 @@ function check_report_time() {
     var curr_time = new Date();
 
     //Make all the following checks only if reporting type is "manual"
-    if (pii_vault.reporting_type == "manual") {
+    if (pii_vault.reporting_type == "manual" || pii_vault.reporting_type == "differential") {
 	if (pii_vault.report_reminder_time == null) {
 	    //Don't want to annoy user with reporting dialog if we are disabled OR
 	    //if user already has a review report window open (presumably working on it).
@@ -323,15 +323,6 @@ function check_report_time() {
     }
 }
 
-function pii_add_dontbug_list(message) {
-    var domain = message.domain;
-    if(pii_vault.dontbuglist.indexOf(domain) == -1) {
-	pii_vault.dontbuglist.push(domain);
-	console.log("New addition to dontbuglist: " + domain);
-    }
-    vault_write();
-}
-
 function pii_log_user_input_type(message) {
     var triple = [];
     var domain = message.domain;
@@ -347,19 +338,35 @@ function pii_log_user_input_type(message) {
     vault_write();
 }
 
+function pii_add_dontbug_list(message) {
+    var domain = message.domain;
+    var r = {};
+    if(pii_vault.dontbuglist.indexOf(domain) == -1) {
+	pii_vault.dontbuglist.push(domain);
+	r.new_entry = domain;
+    }
+    else {
+	r.new_entry = null;
+    }
+
+    console.log("New dontbugme list: " + pii_vault.dontbuglist);
+    vault_write();
+    return r;
+}
+
 function pii_add_blacklisted_sites(message) {
-    var sites = message.sites;
-    pii_vault.blacklist = [];
-    for(var i = 0; i < sites.length; i++) {
-	var curr_url = sites[i]; 
-	if (/\S/.test(curr_url)) {
-	    curr_url = $.trim(curr_url);
-	    console.log("Pushing to blacklist:" + curr_url);
-	    pii_vault.blacklist.push(curr_url);
-	}
+    var dnt_site = message.dnt_site;
+    var r = {};
+    if (pii_vault.blacklist.indexOf(dnt_site) == -1) {
+	pii_vault.blacklist.push(dnt_site);
+	r.new_entry = dnt_site;
+    }
+    else {
+	r.new_entry = null;
     }
     console.log("New blacklist: " + pii_vault.blacklist);
     vault_write();
+    return r;
 }
 
 function pii_check_blacklisted_sites(message) {
@@ -457,6 +464,16 @@ function pii_delete_report_entry(message) {
     vault_write();
 }
 
+function pii_delete_dnt_list_entry(message) {
+    pii_vault.blacklist.splice(message.dnt_entry, 1);
+    vault_write();
+}
+
+function pii_delete_dontbugme_list_entry(message) {
+    pii_vault.dontbuglist.splice(message.dnt_entry, 1);
+    vault_write();
+}
+
 function pii_delete_master_profile_list_entry(message) {
     pii_vault.master_profile_list.splice(message.report_entry, 1);
     vault_write();
@@ -485,6 +502,14 @@ function pii_get_blacklisted_sites(message) {
     var r = [];
     for (var i = 0; i < pii_vault.blacklist.length; i++) {
 	r.push(pii_vault.blacklist[i]);
+    }
+    return r;
+}
+
+function pii_get_dontbugme_list(message) {
+    var r = [];
+    for (var i = 0; i < pii_vault.dontbuglist.length; i++) {
+	r.push(pii_vault.dontbuglist[i]);
     }
     return r;
 }
@@ -644,11 +669,18 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	r.status = pii_vault.status;
 	sendResponse(r);
     }
-    else if (message.type == "modify_blacklist") {
-	pii_add_blacklisted_sites(message);
+    else if (message.type == "add_to_blacklist") {
+	r = pii_add_blacklisted_sites(message);
+	sendResponse(r);
     }
     else if (message.type == "get_blacklist") {
-	r = pii_get_blacklisted_sites(message);
+	var r = {};
+	r.blacklist = pii_get_blacklisted_sites(message);
+	sendResponse(r);
+    }
+    else if (message.type == "get_dontbugme_list") {
+	var r = {};
+	r.dontbugmelist = pii_get_dontbugme_list(message);
 	sendResponse(r);
     }
     else if (message.type == "check_blacklist") {
@@ -663,14 +695,21 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	r = pii_send_report();
 	//r = pii_send_input_fields();
     }
-    else if (message.type == "dont_bug") {
+    else if (message.type == "add_to_dontbug_list") {
 	r = pii_add_dontbug_list(message);
+	sendResponse(r);
     }
     else if (message.type == "delete_password_reuse_report_entry") {
 	r = pii_delete_report_entry(message);
     }
     else if (message.type == "delete_master_profile_list_entry") {
 	r = pii_delete_master_profile_list_entry(message);
+    }
+    else if (message.type == "delete_dnt_site_entry") {
+	r = pii_delete_dnt_list_entry(message);
+    }
+    else if (message.type == "delete_dontbugme_site_entry") {
+	r = pii_delete_dontbugme_list_entry(message);
     }
     else if (message.type == "remind_report_later") {
 	report_reminder_later(report_reminder_interval);
@@ -686,6 +725,14 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "report_tab_opened") {
 	is_report_tab_open += 1;
+    }
+    else if (message.type == "get_report_setting") {
+	r = {};
+	r.report_setting = pii_vault.reporting_type;
+	sendResponse(r);
+    }
+    else if (message.type == "set_report_setting") {
+	pii_vault.reporting_type = message.report_setting;
     }
 });
 

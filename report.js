@@ -10,8 +10,12 @@ function send_report() {
     chrome.extension.sendMessage("", message, populate_report);
 }
 
+function popualte_report() {
+    populate_text_report();
+    populate_graphical_report();
+}
+
 function master_profile_list_delete_entry() {
-    console.log("Here here:");
     var report_entry = $(this).parent().parent().index();
     $(this).parent().parent().remove();
     var message = {};
@@ -21,7 +25,6 @@ function master_profile_list_delete_entry() {
 }
 
 function password_reuse_report_delete_entry() {
-    console.log("Here here:");
     var report_entry = $(this).parent().parent().index();
     $(this).parent().parent().remove();
     var message = {};
@@ -30,13 +33,13 @@ function password_reuse_report_delete_entry() {
     chrome.extension.sendMessage("", message);
 }
 
-function populate_report(r) {
+function populate_graphical_report(r) {
     var pwd_reuse_report = r.pwd_reuse_report;
     var master_profile_list = r.master_profile_list;
 
     try {
-	console.log("Displaying scheduled report time: " + r.scheduled_report_time);
-	$("#scheduled-report-time").text(r.scheduled_report_time);
+	var next_report_time = new Date(r.scheduled_report_time);
+	$("#scheduled-report-time").text(next_report_time.toDateString() + ", " + next_report_time.toLocaleTimeString());
 
 	if (pwd_reuse_report.length) {
 	    for(var i = 0; i < pwd_reuse_report.length; i++) {
@@ -107,13 +110,11 @@ function populate_report(r) {
     }
 
     if(!r.pwd_reuse_report.length && !r.master_profile_list.length) {
-	$("#send").hide()
+	$(".send-report-button").hide()
     }
 }
 
 function toggle_reports_expand() {
-    console.log("Here here: I am here here: " + $("#expand-reports-checkbox").is(':checked'));
-
     if($("#expand-reports-checkbox").is(':checked')) {
 	$("#accordion-master-profile-list").accordion("option", "active", 0);
 	$("#accordion-password-reuse-report").accordion("option", "active", 0);
@@ -124,6 +125,75 @@ function toggle_reports_expand() {
     }
 }
 
+function populate_text_report(r) {
+    var pwd_reuse_report = r.pwd_reuse_report;
+    var master_profile_list = r.master_profile_list;
+    $('#appu-text-report-area').val('');
+    var text_report = '';
+
+    try {
+	if (master_profile_list.length) {
+	    text_report += 'User Profile in:\n\n';
+	    for(var i = 0; i < master_profile_list.length; i++) {
+		text_report += (master_profile_list[i] + '\n');
+	    }
+	}
+	else {
+	    text_report += 'No site with user profile yet\n';
+	}
+
+	text_report += '\n\n';
+	if (pwd_reuse_report.length) {
+	    for(var i = 0; i < pwd_reuse_report.length; i++) {
+		var incident = pwd_reuse_report[i];
+		var incident_time = new Date(incident.now);
+		var incident_site = incident.site;
+		var incident_other_sites = incident.other_sites;
+
+		text_report += (incident_time.toDateString() + " " + incident_time.toLocaleTimeString() + " | ");
+		text_report += ("Login Attempt: " + incident_site + " | ");
+		text_report += ("Reused In: " + incident_other_sites.pop() + ",");
+	
+		for(var j = 0; j < incident_other_sites.length; j++) {
+		    text_report += (incident_other_sites.pop() + ",");
+		}
+		text_report += '\n';
+	    }
+	}
+	else {
+	    text_report += 'No password reuse warnings\n';
+	}
+    }
+    catch (err) {
+	console.log("Error occurred while creating table: " + err);
+    }
+
+    $('#appu-text-report-area').val(text_report);
+
+    if(!r.pwd_reuse_report.length && !r.master_profile_list.length) {
+	$(".send-report-button").hide()
+    }
+}
+
+function report_tab_loading(event, ui) {
+    console.log("report_tab_loading called");
+    if (ui.newTab.text() == "Text Report") {
+	var message = {};
+	message.type = "get_report";
+	chrome.extension.sendMessage("", message, populate_text_report);
+    }
+    else if (ui.newTab.text() == "Graphical Report") {
+	var message = {};
+	message.type = "get_report";
+	chrome.extension.sendMessage("", message, populate_graphical_report);
+    }
+}
+
+function show_report_settings(r) {
+    var report_opts = $('input:radio[name=grp-reporting-options]');
+    report_opts.filter('[value='+ r.report_setting +']').attr('checked', true);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     var message = {};
     message.type = "report_tab_opened";
@@ -131,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var message = {};
     message.type = "get_report";
-    chrome.extension.sendMessage("", message, populate_report);
+    chrome.extension.sendMessage("", message, populate_graphical_report);
 
     $(".send-report-button").on("click", send_report);
 
@@ -154,6 +224,21 @@ document.addEventListener('DOMContentLoaded', function () {
 						 password_reuse_report_delete_entry);
     $("#master-profile-list-table").on("click", ".profile-entry-delete", 
 				       master_profile_list_delete_entry);
+
+    $("#appu-tabs").tabs({
+	beforeActivate: report_tab_loading
+    });
+
+    var message = {};
+    message.type = "get_report_setting";
+    chrome.extension.sendMessage("", message, show_report_settings);
+
+    $("input[name=grp-reporting-options]").change(function() {
+	var message = {};
+	message.type = "set_report_setting";
+	message.report_setting = this.value;
+	chrome.extension.sendMessage("", message);
+    });
 });
 
 $(window).on("unload", function() {

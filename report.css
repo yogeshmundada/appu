@@ -16,7 +16,31 @@ menu, nav, section { display: block; }
 #report-time {
     font-size : 18px;
     font-weight: bold;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+#report-time #fieldset-reporting-options legend {
+    font-size: 16px;
+    font-weight : bold;
+}
+
+#report-time p {
+    float: left;
+}
+
+#send-button1 {
+    clear: both;
+}
+
+#report-time #fieldset-reporting-options {
+    font-size : 14px;
+    font-weight: normal;
+    width: 350px;
+    float: right;
+}
+
+#appu-tabs {
     position: relative;
 }
 
@@ -25,11 +49,8 @@ menu, nav, section { display: block; }
     font-weight: normal;
 }
 
-#report-time #expand-reports {
-    font-size : 14px;
-    font-weight: normal;
-    position: absolute;
-    right: 0px;
+#appu-text-report-area {
+    resize: none;
 }
 
 #master-profile-list-table { width: 100%; height: 100px; overflow:auto; margin: 0 auto; border-collapse: collapse; border-width: 1px; }

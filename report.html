@@ -2,9 +2,9 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
   <link rel="stylesheet" type="text/css" href="report.css">
-  <link rel="stylesheet" type="text/css" href="thirdparty/jqui/css/appuwarning/jquery-ui-1.8.24.custom.css">
-  <script src="thirdparty/jqui/js/jquery-1.8.2.min.js"></script>
-  <script src="thirdparty/jqui/js/jquery-ui-1.8.24.custom.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/jquery-ui-1.9.1.custom.css">
+  <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-1.8.2.js"></script>
+  <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-ui-1.9.1.custom.js"></script>
   <script src="report.js"></script>
   <title>Appu: Reuse Report</title>
 </head>
@@ -13,58 +13,86 @@
     <h1>Appu Report</h1>
   </header>
   <div id="page-wrap">
-    <div id="report-time">Scheduled Reporting Time: <span id="scheduled-report-time"></span>
-      <span id="expand-reports">
-	<input type="checkbox" id="expand-reports-checkbox">
-	<label id="label-expand-reports-checkbox" for="expand-reports-checkbox">Expand All Report Panels</label>
-      </span>
+
+    <div id="report-time">
+      <p>Scheduled Reporting Time: <span id="scheduled-report-time"></span></p>
+      <fieldset id="fieldset-reporting-options">
+	<legend>Reporting Options</legend>
+	<input id="report-auto" type="radio" name="grp-reporting-options" value="auto">
+	<label id="label-report-auto" for="report-auto">Send report automatically</label><br/>
+	<input id="report-manual" type="radio" name="grp-reporting-options" value="manual">
+	<label id="label-report-manual" for="report-manual">Review report before sending</label><br/>
+	<input id="report-differential" type="radio" name="grp-reporting-options" value="differential">
+	<label id="label-report-differential" for="report-differential">Review report only if different from past reports</label><br/>
+      </fieldset>
     </div>
-    <button id="send-button1" class="send-report-button">Send Report</button>
-    <div id="accordion-master-profile-list" class="appuwarning">
-      <h3> List of Sites With User Profile</h3>
-      <div id="mpl-report">
-      	<table id="master-profile-list-table">
-      	  <caption>Sites with User Profie</caption>
-      	  <colgroup class="profile-sites"></colgroup>
-      	  <colgroup class="delete-this-entry"></colgroup>
-      	  <thead>
-            <tr>
-              <th id="header-profile-sites"><span>Site</span></th>
-              <th id="header-delete-this-entry"><span></span></th>
-            </tr>
-      	  </thead>
-      	  <tbody id="master-profile-list-table-body">
-            <tr>
-            </tr>
-      	  </tbody>
-      	</table>
+
+    <button id="send-button1" class="send-report-button">Send Report</button>    
+    <div id="appu-tabs" class="appuwarning">
+      <ul class="appuwarning">
+        <li class="appuwarning"><a href="#fragment-1" class="appuwarning"><span>Graphical Report</span></a></li>
+        <li class="appuwarning"><a href="#fragment-2" class="appuwarning"><span>Text Report</span></a></li>
+      </ul>
+
+      <div id="fragment-1" class="appuwarning">
+	<div id="expand-gui-report">
+	  <span id="expand-reports">
+	    <input type="checkbox" id="expand-reports-checkbox">
+	    <label id="label-expand-reports-checkbox" for="expand-reports-checkbox">Expand All Report Panels</label>
+	  </span>
+	</div>
+
+	<div id="accordion-master-profile-list" class="appuwarning">
+	  <h3> List of Sites With User Profile</h3>
+	  <div id="mpl-report">
+      	    <table id="master-profile-list-table">
+      	      <caption>Sites with User Profie</caption>
+      	      <colgroup class="profile-sites"></colgroup>
+      	      <colgroup class="delete-this-entry"></colgroup>
+      	      <thead>
+		<tr>
+		  <th id="header-profile-sites"><span>Site</span></th>
+		  <th id="header-delete-this-entry"><span></span></th>
+		</tr>
+      	      </thead>
+      	      <tbody id="master-profile-list-table-body">
+		<tr>
+		</tr>
+      	      </tbody>
+      	    </table>
+	  </div>
+	</div>
+	<div id="accordion-password-reuse-report" class="appuwarning">
+	  <h3> Password Reuse Warning Report</h3>
+	  <div id="pwru-report">
+      	    <table id="password-reuse-warning-report-table">
+      	      <caption>Password Reuse Warnings </caption>
+      	      <colgroup class="time"></colgroup>
+      	      <colgroup class="offender-site"></colgroup>
+      	      <colgroup class="reused-sites"></colgroup>
+      	      <colgroup class="delete-this-entry"></colgroup>
+      	      <thead>
+		<tr>
+		  <th id="header-time"><span>Time</span></th>
+		  <th id="header-offender-site"><span>Login Attempt</span></th>
+		  <th id="header-reused-sites"><span>Password Reused In</span></th>
+		  <th id="header-delete-this-entry"><span></span></th>
+		</tr>
+      	      </thead>
+      	      <tbody id="password-reuse-warning-report-table-body">
+		<tr>
+		</tr>
+      	      </tbody>
+      	    </table>
+	  </div>
+	</div>
       </div>
-    </div>
-    <div id="accordion-password-reuse-report" class="appuwarning">
-      <h3> Password Reuse Warning Report</h3>
-      <div id="pwru-report">
-      	<table id="password-reuse-warning-report-table">
-      	  <caption>Password Reuse Warnings </caption>
-      	  <colgroup class="time"></colgroup>
-      	  <colgroup class="offender-site"></colgroup>
-      	  <colgroup class="reused-sites"></colgroup>
-      	  <colgroup class="delete-this-entry"></colgroup>
-      	  <thead>
-            <tr>
-              <th id="header-time"><span>Time</span></th>
-              <th id="header-offender-site"><span>Login Attempt</span></th>
-              <th id="header-reused-sites"><span>Password Reused In</span></th>
-              <th id="header-delete-this-entry"><span></span></th>
-            </tr>
-      	  </thead>
-      	  <tbody id="password-reuse-warning-report-table-body">
-            <tr>
-            </tr>
-      	  </tbody>
-      	</table>
+
+      <div id="fragment-2" class="appuwarning">
+	<textarea id="appu-text-report-area" cols="105" maxcols="105" readonly="yes" maxrows="30" rows="30"></textarea>
       </div>
     </div>
     <button id="send-button2" class="send-report-button">Send Report</button>
- </div>
+
 </body>
 </html>

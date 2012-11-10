@@ -1,6 +1,6 @@
 {
   "name": "Appu",
-  "version": "0.2.7",
+  "version": "0.2.9",
   "description": "Reduce your personal information footprint across the web",
   "update_url": "http://appu.gtnoise.net/downloads/updates.xml",
   "icons": {
@@ -21,12 +21,12 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "css" : ["thirdparty/jqui/css/appuwarning/jquery-ui-1.8.24.custom.css",
+      "css" : ["thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/jquery-ui-1.9.1.custom.css",
 	       "passwd.css"],
       "js" : ["thirdparty/sha1.js", 
       	      "thirdparty/sprintf-0.7-beta1.js",
-	      "thirdparty/jqui/js/jquery-1.8.2.min.js",
-	      "thirdparty/jqui/js/jquery-ui-1.8.24.custom.min.js",
+	      "thirdparty/jquery-ui-1.9.1.custom/js/jquery-1.8.2.js",
+	      "thirdparty/jquery-ui-1.9.1.custom/js/jquery-ui-1.9.1.custom.js",
 	      "passwd.js"]
     }
   ],
@@ -35,20 +35,20 @@
      "http://143.215.129.52:5005/methods"	 	 
   ],
   "web_accessible_resources": [
-     "thirdparty/jqui/css/appuwarning/images/ui-icons_ffffff_256x240.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-icons_ef8c08_256x240.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-icons_222222_256x240.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-bg_highlight-soft_75_ffe45c_1x100.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-bg_highlight-soft_100_eeeeee_1x100.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-bg_gloss-wave_35_f6a828_500x100.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-bg_glass_65_ffffff_1x400.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-bg_glass_100_fdf5ce_1x400.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-bg_glass_100_f6f6f6_1x400.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-bg_diagonals-thick_18_b81900_40x40.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-icons_228ef1_256x240.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-icons_ffd27a_256x240.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-bg_diagonals-thick_20_666666_40x40.png",
-     "thirdparty/jqui/css/appuwarning/images/ui-bg_flat_10_000000_40x100.png"
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-icons_ffffff_256x240.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-icons_ef8c08_256x240.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-icons_222222_256x240.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-bg_highlight-soft_75_ffe45c_1x100.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-bg_highlight-soft_100_eeeeee_1x100.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-bg_gloss-wave_35_f6a828_500x100.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-bg_glass_65_ffffff_1x400.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-bg_glass_100_fdf5ce_1x400.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-bg_glass_100_f6f6f6_1x400.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-bg_diagonals-thick_18_b81900_40x40.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-icons_228ef1_256x240.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-icons_ffd27a_256x240.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-bg_diagonals-thick_20_666666_40x40.png",
+     "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-bg_flat_10_000000_40x100.png"
   ],
 
   "manifest_version": 2

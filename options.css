@@ -1,0 +1,55 @@
+
+html, body { 
+    min-height: 100%; 
+}
+
+body { 
+    font: 13px "Lucida Grande", Helvetica, Arial, sans-serif;   
+    background-image: -moz-linear-gradient(top, #eeeeee, #cccccc); 
+    background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #eeeeee),color-stop(1, #cccccc)); 
+}
+
+article, aside, figure, footer, header, hgroup,
+menu, nav, section { 
+    display: block; 
+}
+
+#appu-options {
+    margin-left: 100px;
+    margin-right: 300px;
+}
+
+
+/* DNT table CSS */
+#dnt-site-list-table { width: 100%; height: 100px; overflow:auto; margin: 0 auto; border-collapse: collapse; border-width: 1px; }
+
+#dnt-site-div { margin: 80px auto; width: 800px; height: 200px; overflow: auto; padding: 10px; background: white;  }
+
+#dnt-site-list-table th { height: 120px; padding-bottom: 14px !important; vertical-align: bottom; } 
+
+
+#dnt-site-list-table tr:nth-child(even) { background: #CCC; } 
+#dnt-site-list-table tr:nth-child(odd) { background: #FFF; } 
+
+#dnt-site-list-table td,
+#dnt-site-list-table th { width: 150px; padding: 8px 5px; text-align: center; border-left: 1px solid white; border-right: 1px solid white; }
+
+#dnt-site-list-table .final-row td { padding: 24px 5px; }
+
+
+/* DONTBUGME table CSS */
+#dontbugme-site-list-table { width: 100%; height: 100px; overflow:auto; margin: 0 auto; border-collapse: collapse; border-width: 1px; }
+
+#dontbugme-site-div { margin: 80px auto; width: 800px; height: 200px; overflow: auto; padding: 10px; background: white;  }
+
+#dontbugme-site-list-table th { height: 120px; padding-bottom: 14px !important; vertical-align: bottom; } 
+
+
+#dontbugme-site-list-table tr:nth-child(even) { background: #CCC; } 
+#dontbugme-site-list-table tr:nth-child(odd) { background: #FFF; } 
+
+#dontbugme-site-list-table td,
+#dontbugme-site-list-table th { width: 150px; padding: 8px 5px; text-align: center; border-left: 1px solid white; border-right: 1px solid white; }
+
+#dontbugme-site-list-table .final-row td { padding: 24px 5px; }
+

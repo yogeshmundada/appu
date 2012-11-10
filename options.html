@@ -1,15 +1,91 @@
 <!doctype html>
 <html>
+<html>
 <head>
-  <center>Blacklisted URLs</center><br/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <link rel="stylesheet" type="text/css" href="options.css">
+  <link rel="stylesheet" type="text/css" href="thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/jquery-ui-1.9.1.custom.css">
+  <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-1.8.2.js"></script>
+  <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-ui-1.9.1.custom.js"></script>
+  <script src="options.js"></script>
+  <title>Appu: Options</title>
 </head>
 <body>
-  <center>
-  Add or Delete websites to disable Appu selectively:<br/>
-  <textarea id="sites" cols=80 rows=10></textarea><br/>
-  <button id="submit">Submit</button>
-  </center>
-  <script src="thirdparty/jquery-1.8.0.min.js"></script>
-  <script src="options.js"></script>
+  <header>
+    <h1>Appu Options</h1>
+  </header>
+  <div id="page-wrap">
+    <div id="appu-options">
+
+      <div id="accordion-dnt-site-list" class="appuwarning">
+	  <h3> Disable Appu On These Sites</h3>
+	<fieldset id="fieldset-dnt-options">
+	  <legend>Do Not Track sites</legend>
+	  <p>Appu functionality will be disabled on following sites</p>
+	  <div id="dnt-site-div">
+      	    <table id="dnt-site-list-table">
+      	      <colgroup class="dnt-sites"></colgroup>
+      	      <colgroup class="delete-this-entry"></colgroup>
+      	      <thead>
+		<tr>
+		  <th id="header-dnt-sites"><span>Do Not Track Site</span></th>
+		  <th id="header-dnt-delete-this-entry"><span></span></th>
+		</tr>
+      	      </thead>
+      	      <tbody id="dnt-site-list-table-body">
+		<tr>
+		</tr>
+      	      </tbody>
+      	    </table>
+	  </div>
+	  
+	  <input id="new-dnt-site" size=60><br/>
+	  <button id="dnt-submit">Submit</button>
+	</fieldset>
+      </div>
+
+
+      <div id="accordion-dontbugme-site-list" class="appuwarning">
+	  <h3> Do Not Bug Me Sites</h3>
+	<fieldset id="fieldset-dontbugme-options">
+	  <legend>Do Not Bug Me Sites</legend>
+	  <p>Appu will not generate any obstructive warnings on these sites.</p>
+	  <div id="dontbugme-site-div">
+      	    <table id="dontbugme-site-list-table">
+      	      <colgroup class="dontbugme-sites"></colgroup>
+      	      <colgroup class="delete-this-entry"></colgroup>
+      	      <thead>
+		<tr>
+		  <th id="header-dontbugme-sites"><span>Dont Bug Me Sites</span></th>
+		  <th id="header-dontbugme-delete-this-entry"><span></span></th>
+		</tr>
+      	      </thead>
+      	      <tbody id="dontbugme-site-list-table-body">
+		<tr>
+		</tr>
+      	      </tbody>
+      	    </table>
+	  </div>
+	  
+	  <input id="new-dontbugme-site" size=60><br/>
+	  <button id="dontbugme-submit">Submit</button>
+	</fieldset>
+      </div>
+
+      <div id="accordion-report-settings" class="appuwarning">
+	  <h3> Reporting Settings</h3>
+	  <fieldset id="fieldset-reporting-options">
+	    <legend>Reporting Options</legend>
+	    <input id="report-auto" type="radio" name="grp-reporting-options" value="auto">
+	    <label id="label-report-auto" for="report-auto">Send report automatically</label><br/>
+	    <input id="report-manual" type="radio" name="grp-reporting-options" value="manual">
+	    <label id="label-report-manual" for="report-manual">Review report before sending</label><br/>
+	    <input id="report-differential" type="radio" name="grp-reporting-options" value="differential">
+	    <label id="label-report-differential" for="report-differential">Review report only if different from past reports</label><br/>
+	  </fieldset>
+      </div>
+
+    </div>
+  </div>
 </body>
 </html>
