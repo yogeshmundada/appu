@@ -138,7 +138,7 @@ function is_passwd_reused(response) {
 			click: function(event) { 
 			    event.stopPropagation();
 			    var message = {};
-			    message.type = "dont_bug";
+			    message.type = "add_to_dontbug_list";
 			    message.domain = document.domain;
 			    chrome.extension.sendMessage("", message, function() {});
 			    
@@ -233,7 +233,7 @@ function is_blacklisted(response) {
 	$('body').on('change', ':input', user_modifications);
     }
     else {
-	console.log("Appu: Disabled for this blacklisted site");
+	console.log("Appu: Disabled for this site");
     }
 }
 

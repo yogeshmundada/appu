@@ -10,26 +10,34 @@ function send_report() {
     chrome.extension.sendMessage("", message, populate_report);
 }
 
-function popualte_report() {
-    populate_text_report();
-    populate_graphical_report();
+function populate_report(r) {
+    var r_copy = $.extend(true, {}, r);
+    populate_text_report(r);
+    populate_graphical_report(r_copy);
 }
 
 function master_profile_list_delete_entry() {
-    var report_entry = $(this).parent().parent().index();
+    var mpl_re = /pro-entry-([0-9]+)/;
+    var report_entry = mpl_re.exec(this.id)[1];
+    console.log("Delete pressed, my id: " + report_entry);
+
     $(this).parent().parent().remove();
+
     var message = {};
     message.type = "delete_master_profile_list_entry";
-    message.report_entry = report_entry - 1;
+    message.report_entry = report_entry;
     chrome.extension.sendMessage("", message);
 }
 
 function password_reuse_report_delete_entry() {
-    var report_entry = $(this).parent().parent().index();
+    var prrd_re = /re-([0-9]+)/;
+    var report_entry = prrd_re.exec(this.id)[1];
+    console.log("Delete pressed, my id: " + report_entry);
+
     $(this).parent().parent().remove();
     var message = {};
     message.type = "delete_password_reuse_report_entry";
-    message.report_entry = report_entry - 1;
+    message.report_entry = report_entry;
     chrome.extension.sendMessage("", message);
 }
 
@@ -37,9 +45,14 @@ function populate_graphical_report(r) {
     var pwd_reuse_report = r.pwd_reuse_report;
     var master_profile_list = r.master_profile_list;
 
+    console.log("Here here: In GRAPHICAL report");
+
     try {
 	var next_report_time = new Date(r.scheduled_report_time);
 	$("#scheduled-report-time").text(next_report_time.toDateString() + ", " + next_report_time.toLocaleTimeString());
+
+	$("#password-reuse-warning-report-table > tbody > tr").remove();
+	$("#master-profile-list-table > tbody > tr").remove(); 
 
 	if (pwd_reuse_report.length) {
 	    for(var i = 0; i < pwd_reuse_report.length; i++) {
@@ -70,7 +83,7 @@ function populate_graphical_report(r) {
 		}
 
 		ntd = $('<td></td>');
-		var nimg_src = '<img id="re-'+ i +'" class="password-reuse-report-entry-delete" src="images/cross-mark.png" height="22">';
+		var nimg_src = '<img id="re-'+ incident.index +'" class="password-reuse-report-entry-delete" src="images/cross-mark.png" height="22">';
 		var nimg = $(nimg_src);
 		$(ntd).append(nimg);
 		$(nr).append(ntd);
@@ -88,11 +101,11 @@ function populate_graphical_report(r) {
 		var nr = $('<tr class="site-entry"></tr>');
 
 		var ntd = $('<td></td>');
-		$(ntd).text(master_profile_list[i]);
+		$(ntd).text(master_profile_list[i].site_name);
 		$(nr).append(ntd);
 
 		ntd = $('<td></td>');
-		var nimg_src = '<img id="pro-entry-'+ i +'" class="profile-entry-delete" src="images/cross-mark.png" height="22">';
+		var nimg_src = '<img id="pro-entry-'+ master_profile_list[i].index +'" class="profile-entry-delete" src="images/cross-mark.png" height="22">';
 		var nimg = $(nimg_src);
 		$(ntd).append(nimg);
 		$(nr).append(ntd);
@@ -131,11 +144,13 @@ function populate_text_report(r) {
     $('#appu-text-report-area').val('');
     var text_report = '';
 
+    console.log("Here here: In TEXT report");
+
     try {
 	if (master_profile_list.length) {
 	    text_report += 'User Profile in:\n\n';
 	    for(var i = 0; i < master_profile_list.length; i++) {
-		text_report += (master_profile_list[i] + '\n');
+		text_report += (master_profile_list[i].site_name + '\n');
 	    }
 	}
 	else {
@@ -177,21 +192,50 @@ function populate_text_report(r) {
 
 function report_tab_loading(event, ui) {
     console.log("report_tab_loading called");
-    if (ui.newTab.text() == "Text Report") {
-	var message = {};
-	message.type = "get_report";
-	chrome.extension.sendMessage("", message, populate_text_report);
-    }
-    else if (ui.newTab.text() == "Graphical Report") {
-	var message = {};
-	message.type = "get_report";
-	chrome.extension.sendMessage("", message, populate_graphical_report);
-    }
+    // if (ui.newTab.text() == "Text Report") {
+    // 	var message = {};
+    // 	message.type = "get_report";
+    // 	chrome.extension.sendMessage("", message, populate_text_report);
+    // }
+    // else if (ui.newTab.text() == "Graphical Report") {
+    // 	var message = {};
+    // 	message.type = "get_report";
+    // 	chrome.extension.sendMessage("", message, populate_graphical_report);
+    // }
 }
 
 function show_report_settings(r) {
     var report_opts = $('input:radio[name=grp-reporting-options]');
     report_opts.filter('[value='+ r.report_setting +']').attr('checked', true);
+}
+
+function search_report() {
+    var search_text = $.trim($('#search-report-text').val());
+    if (search_text != "") {
+	$('#ready-to-search').toggle();
+	$('#go-back-to-main-report').toggle();
+	$('#search-report-text').val("");
+	$("#search-phrase-span").text(search_text);
+
+	var message = {};
+	message.type = "get_report";
+	message.search_phrase = search_text;
+	chrome.extension.sendMessage("", message, populate_report);
+
+	$("#accordion-master-profile-list").accordion("option", "active", 0);
+	$("#accordion-password-reuse-report").accordion("option", "active", 0);
+	$("#expand-reports-checkbox").attr('checked', true);
+    }
+}
+
+function show_main_report() {
+    $('#ready-to-search').toggle();
+    $('#go-back-to-main-report').toggle();
+    $("#search-phrase-span").text("");
+
+    var message = {};
+    message.type = "get_report";
+    chrome.extension.sendMessage("", message, populate_report);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -201,9 +245,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var message = {};
     message.type = "get_report";
-    chrome.extension.sendMessage("", message, populate_graphical_report);
+    chrome.extension.sendMessage("", message, populate_report);
 
     $(".send-report-button").on("click", send_report);
+    $("#search-report-button").on("click", search_report);
+    $("#show-main-report-button").on("click", show_main_report);
+
+    $('#ready-to-search').show();
+    $('#go-back-to-main-report').hide();
 
     $("#expand-reports-checkbox").prop("checked", false);
     $("#expand-reports-checkbox").on("change", toggle_reports_expand);

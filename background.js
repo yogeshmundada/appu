@@ -107,6 +107,12 @@ function vault_init() {
 	console.log("vault_init(): Updated REPORT in vault");
 	vault_modified = true;
     }
+
+    if(!pii_vault.past_reports) {
+	pii_vault['past_reports'] = [];
+	console.log("vault_init(): Updated PAST_REPORTS in vault");
+	vault_modified = true;
+    }
     
     if(!pii_vault.blacklist) {
 	pii_vault['blacklist'] = [];
@@ -288,9 +294,21 @@ function report_reminder_later(message) {
 
 function check_report_time() {
     var curr_time = new Date();
+    var is_report_different = false;
+
+    //Find out if any entries from current report differ from past reports
+    if (pii_vault.reporting_type == "differential") {
+	for (var i = 0; i < pii_vault.report.length; i++) {
+	    var rc = pii_check_if_entry_exists_in_past_reports(pii_vault.report[i]);
+	    if (rc == false) {
+		is_report_different = true;
+		break;
+	    }
+	}
+    }
 
     //Make all the following checks only if reporting type is "manual"
-    if (pii_vault.reporting_type == "manual" || pii_vault.reporting_type == "differential") {
+    if (pii_vault.reporting_type == "manual") {
 	if (pii_vault.report_reminder_time == null) {
 	    //Don't want to annoy user with reporting dialog if we are disabled OR
 	    //if user already has a review report window open (presumably working on it).
@@ -453,6 +471,11 @@ function pii_send_report() {
 	console.log("Error while posting 'reuse_warnings' to server");
     }
 
+    pii_vault.past_reports.unshift(pii_vault.report);
+    if (pii_vault.past_reports.length > 10) {
+	pii_vault.past_reports.pop();
+    }
+
     pii_vault.report = [];
     pii_vault.next_reporting_time = pii_next_report_time();
     console.log("Report sent. Next scheduled time: " + pii_vault.next_reporting_time);
@@ -481,6 +504,7 @@ function pii_delete_master_profile_list_entry(message) {
 
 function pii_get_report(message) {
     var r = {};
+    var search_phrase = message.search_phrase;
     r.pwd_reuse_report = [];
     r.master_profile_list = [];
     r.scheduled_report_time = pii_vault.next_reporting_time;
@@ -488,11 +512,36 @@ function pii_get_report(message) {
     for (var i = 0; i < pii_vault.report.length; i++) {
 	// Call to jQuery extend makes a deep copy. So even if reporting page f'ks up with
 	// the objects, original is safe.
-	r.pwd_reuse_report.push($.extend(true, {}, pii_vault.report[i]));
+	var copied_entry = $.extend(true, {}, pii_vault.report[i]);
+
+	if (typeof search_phrase === 'undefined' || search_phrase == null) {
+	    copied_entry.index = i;
+	    r.pwd_reuse_report.push(copied_entry);
+	}
+	else {
+	    var record = JSON.stringify(copied_entry);
+	    if (record.indexOf(search_phrase) != -1) {
+		copied_entry.index = i;
+		r.pwd_reuse_report.push(copied_entry);
+	    }
+	}
     }
 
     for (var i = 0; i < pii_vault.master_profile_list.length; i++) {
-	r.master_profile_list.push(pii_vault.master_profile_list[i]);
+	var copied_entry = {};
+	copied_entry.site_name = pii_vault.master_profile_list[i];
+
+	if (typeof search_phrase === 'undefined' || search_phrase == null) {
+	    copied_entry.index = i;
+	    r.master_profile_list.push(copied_entry);
+	}
+	else {
+	    var record = JSON.stringify(copied_entry);
+	    if (record.indexOf(search_phrase) != -1) {
+		copied_entry.index = i;
+		r.master_profile_list.push(copied_entry);
+	    }
+	}
     }
 
     return r;
@@ -540,6 +589,32 @@ function pii_check_pending_warning(message, sender) {
 	r.pending = "yes";
     }
     return r;
+}
+
+function pii_check_if_entry_exists_in_past_reports(curr_entry) {
+    var ce = {};
+    var ce_str = "";
+    ce.site = curr_entry.site;
+    ce.other_sites = curr_entry.other_sites;
+
+    ce.other_sites.sort();
+    ce_str = JSON.stringify(ce);
+
+    for(var i=0; i < pii_vault.past_reports.length; i++) {
+	var past_report = pii_vault.past_reports[i];
+	for(var j = 0; j < past_report.length; j++) {
+	    var past_report_entry = {};
+	    var pre_str = "";
+	    past_report_entry.site = past_report[j].site;
+	    past_report_entry.other_sites = past_report.other_sites;
+	    past_report_entry.other_sites.sort();
+	    pre_str = JSON.stringify(past_report_entry);
+	    if (pre_str == ce_str) {
+		return true;
+	    }
+	}
+    }
+    return false;
 }
 
 function pii_check_passwd_reuse(message, sender) {
