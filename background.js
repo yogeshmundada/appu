@@ -299,16 +299,26 @@ function check_report_time() {
     //Find out if any entries from current report differ from past reports
     if (pii_vault.reporting_type == "differential") {
 	for (var i = 0; i < pii_vault.report.length; i++) {
-	    var rc = pii_check_if_entry_exists_in_past_reports(pii_vault.report[i]);
+	    var rc = pii_check_if_entry_exists_in_past_pwd_reports(pii_vault.report[i]);
 	    if (rc == false) {
 		is_report_different = true;
 		break;
 	    }
 	}
+
+	if (!is_report_different) {
+	    for (var i = 0; i < pii_vault.master_profile_list.length; i++) {
+		var rc = pii_check_if_entry_exists_in_past_profile_list(pii_vault.master_profile_list[i]);
+		if (rc == false) {
+		    is_report_different = true;
+		    break;
+		}
+	    }
+	}
     }
 
     //Make all the following checks only if reporting type is "manual"
-    if (pii_vault.reporting_type == "manual") {
+    if (pii_vault.reporting_type == "manual" || (pii_vault.reporting_type == "differential" && is_report_different)) {
 	if (pii_vault.report_reminder_time == null) {
 	    //Don't want to annoy user with reporting dialog if we are disabled OR
 	    //if user already has a review report window open (presumably working on it).
@@ -336,7 +346,7 @@ function check_report_time() {
 	    vault_write();
 	}
     }
-    else if (pii_vault.reporting_type == "auto") {
+    else if (pii_vault.reporting_type == "auto" || (pii_vault.reporting_type == "differential" && !is_report_different)) {
 	pii_send_report();
     }
 }
@@ -471,7 +481,11 @@ function pii_send_report() {
 	console.log("Error while posting 'reuse_warnings' to server");
     }
 
-    pii_vault.past_reports.unshift(pii_vault.report);
+    var current_report = {};
+    current_report.pwd_reuse_report = pii_vault.report;
+    current_report.master_profile_list = $.extend(true, {}, pii_vault.master_profile_list);
+
+    pii_vault.past_reports.unshift(current_report);
     if (pii_vault.past_reports.length > 10) {
 	pii_vault.past_reports.pop();
     }
@@ -500,6 +514,36 @@ function pii_delete_dontbugme_list_entry(message) {
 function pii_delete_master_profile_list_entry(message) {
     pii_vault.master_profile_list.splice(message.report_entry, 1);
     vault_write();
+}
+
+function pii_get_differential_report(message) {
+    var r = {};
+    r.pwd_reuse_report = [];
+    r.master_profile_list = [];
+    r.scheduled_report_time = pii_vault.next_reporting_time;
+
+    for (var i = 0; i < pii_vault.report.length; i++) {
+	// Call to jQuery extend makes a deep copy. So even if reporting page f'ks up with
+	// the objects, original is safe.
+	var copied_entry = $.extend(true, {}, pii_vault.report[i]);
+
+	if(!pii_check_if_entry_exists_in_past_pwd_reports(copied_entry)) {
+	    copied_entry.index = i;
+	    r.pwd_reuse_report.push(copied_entry);
+	}
+    }
+
+    for (var i = 0; i < pii_vault.master_profile_list.length; i++) {
+	var copied_entry = {};
+	copied_entry.site_name = pii_vault.master_profile_list[i];
+
+	if (!pii_check_if_entry_exists_in_past_profile_list(pii_vault.master_profile_list[i])) {
+	    copied_entry.index = i;
+	    r.master_profile_list.push(copied_entry);
+	}
+    }
+
+    return r;
 }
 
 function pii_get_report(message) {
@@ -591,7 +635,19 @@ function pii_check_pending_warning(message, sender) {
     return r;
 }
 
-function pii_check_if_entry_exists_in_past_reports(curr_entry) {
+function pii_check_if_entry_exists_in_past_profile_list(curr_entry) {
+    for(var i=0; i < pii_vault.past_reports.length; i++) {
+	var past_master_profile_list = pii_vault.past_reports[i].master_profile_list;
+	for(var j = 0; j < past_master_profile_list.length; j++) {
+	    if (past_master_profile_list[j] == curr_entry) {
+		return true;
+	    }
+	}
+    }
+    return false;
+}
+
+function pii_check_if_entry_exists_in_past_pwd_reports(curr_entry) {
     var ce = {};
     var ce_str = "";
     ce.site = curr_entry.site;
@@ -601,7 +657,7 @@ function pii_check_if_entry_exists_in_past_reports(curr_entry) {
     ce_str = JSON.stringify(ce);
 
     for(var i=0; i < pii_vault.past_reports.length; i++) {
-	var past_report = pii_vault.past_reports[i];
+	var past_report = pii_vault.past_reports[i].pwd_reuse_report;
 	for(var j = 0; j < past_report.length; j++) {
 	    var past_report_entry = {};
 	    var pre_str = "";
@@ -764,6 +820,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "get_report") {
 	r = pii_get_report(message);
+	sendResponse(r);
+    }
+    else if (message.type == "get_differential_report") {
+	r = pii_get_differential_report(message);
 	sendResponse(r);
     }
     else if (message.type == "send_report") {

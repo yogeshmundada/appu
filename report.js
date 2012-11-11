@@ -12,6 +12,7 @@ function send_report() {
 
 function populate_report(r) {
     var r_copy = $.extend(true, {}, r);
+    clear_all_reports();
     populate_text_report(r);
     populate_graphical_report(r_copy);
 }
@@ -41,18 +42,22 @@ function password_reuse_report_delete_entry() {
     chrome.extension.sendMessage("", message);
 }
 
+function clear_all_reports() {
+    $("#password-reuse-warning-report-table > tbody > tr").remove();
+    $("#master-profile-list-table > tbody > tr").remove(); 
+    $("#pwru-report > #no-report").remove(); 
+    $("#mpl-report > #no-profile-report").remove(); 
+
+    $('#appu-text-report-area').val('');
+}
+
 function populate_graphical_report(r) {
     var pwd_reuse_report = r.pwd_reuse_report;
     var master_profile_list = r.master_profile_list;
 
-    console.log("Here here: In GRAPHICAL report");
-
     try {
 	var next_report_time = new Date(r.scheduled_report_time);
 	$("#scheduled-report-time").text(next_report_time.toDateString() + ", " + next_report_time.toLocaleTimeString());
-
-	$("#password-reuse-warning-report-table > tbody > tr").remove();
-	$("#master-profile-list-table > tbody > tr").remove(); 
 
 	if (pwd_reuse_report.length) {
 	    for(var i = 0; i < pwd_reuse_report.length; i++) {
@@ -92,7 +97,7 @@ function populate_graphical_report(r) {
 	    }
 	}
 	else {
-	    $("#password-reuse-warning-report-table").remove();
+	    //$("#password-reuse-warning-report-table").remove();
 	    $("#pwru-report").append($('<p id="no-report">No password reuse warnings generated yet.</p>'));
 	}
 
@@ -114,8 +119,8 @@ function populate_graphical_report(r) {
 	    }
 	}
 	else {
-	    $("#master-profile-list-table").remove();
-	    $("#mpl-report").append($('<p id="no-report">No site with user profile yet.</p>'));
+	    //$("#master-profile-list-table").remove();
+	    $("#mpl-report").append($('<p id="no-profile-report">No site with user profile yet.</p>'));
 	}
     }
     catch (err) {
@@ -123,7 +128,10 @@ function populate_graphical_report(r) {
     }
 
     if(!r.pwd_reuse_report.length && !r.master_profile_list.length) {
-	$(".send-report-button").hide()
+	$(".send-report-button").hide();
+    }
+    else {
+	$(".send-report-button").show();
     }
 }
 
@@ -141,10 +149,7 @@ function toggle_reports_expand() {
 function populate_text_report(r) {
     var pwd_reuse_report = r.pwd_reuse_report;
     var master_profile_list = r.master_profile_list;
-    $('#appu-text-report-area').val('');
     var text_report = '';
-
-    console.log("Here here: In TEXT report");
 
     try {
 	if (master_profile_list.length) {
@@ -186,7 +191,10 @@ function populate_text_report(r) {
     $('#appu-text-report-area').val(text_report);
 
     if(!r.pwd_reuse_report.length && !r.master_profile_list.length) {
-	$(".send-report-button").hide()
+	$(".send-report-button").hide();
+    }
+    else {
+	$(".send-report-button").show();
     }
 }
 
@@ -238,6 +246,24 @@ function show_main_report() {
     chrome.extension.sendMessage("", message, populate_report);
 }
 
+function search_differential_report() {
+    $('#main-report-div').toggle();
+    $('#diff-report-div').toggle();
+
+    var message = {};
+    message.type = "get_differential_report";
+    chrome.extension.sendMessage("", message, populate_report);
+}
+
+function go_back_to_main_report() {
+    $('#main-report-div').toggle();
+    $('#diff-report-div').toggle();
+
+    var message = {};
+    message.type = "get_report";
+    chrome.extension.sendMessage("", message, populate_report);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     var message = {};
     message.type = "report_tab_opened";
@@ -253,6 +279,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     $('#ready-to-search').show();
     $('#go-back-to-main-report').hide();
+
+    $("#differential-report-button").on("click", search_differential_report);
+    $("#go-back-to-main-report-button").on("click", go_back_to_main_report);
+
+    $('#main-report-div').show();
+    $('#diff-report-div').hide();
+
 
     $("#expand-reports-checkbox").prop("checked", false);
     $("#expand-reports-checkbox").on("change", toggle_reports_expand);

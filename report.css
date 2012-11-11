@@ -29,7 +29,16 @@ menu, nav, section { display: block; }
     float: left;
 }
 
+#displaying-differential {
+    font-weight: bold;
+    font-size: 18px;
+}
+
 #send-button1 {
+    clear: both;
+}
+
+#accordion-master-profile-list {
     clear: both;
 }
 
@@ -42,6 +51,11 @@ menu, nav, section { display: block; }
 
 #appu-tabs {
     position: relative;
+    clear: both;
+}
+
+#differential-report-button, #go-back-to-main-report-button {
+    float: right;
 }
 
 #report-time #scheduled-report-time {
