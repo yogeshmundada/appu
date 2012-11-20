@@ -45,6 +45,13 @@ function options() {
     return false;
 }
 
+function footprint() {
+    console.log("Footprint");
+    openTab(chrome.extension.getURL('myfootprint.html'));
+    self.close();
+    return false;
+}
+
 function about() {
     console.log("About");
     openTab(chrome.extension.getURL('about.html'));
@@ -62,5 +69,6 @@ document.addEventListener('DOMContentLoaded', function () {
     $("#enable").bind("click", function() { setTimeout( function() { enable();} , 1); });
     $("#report").bind("click", function() { setTimeout( function() { report();} , 1); });
     $("#options").bind("click", function() { setTimeout( function() { options();} , 1); });
+    $("#footprint").bind("click", function() { setTimeout( function() { footprint();} , 1); });
     $("#about").bind("click", function() { setTimeout( function() { about();} , 1); });
 });

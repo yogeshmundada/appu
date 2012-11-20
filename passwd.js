@@ -167,6 +167,14 @@ function check_passwd_reuse(jevent) {
     }
 }
 
+//From StackOverFlow...
+function check_associative_array_size(aa) {
+    var size = 0, key;
+    for (key in aa) {
+        if (aa.hasOwnProperty(key)) size++;
+    }
+    return size;
+}
 
 function user_modifications(jevent) {
     var message = {};
@@ -174,12 +182,20 @@ function user_modifications(jevent) {
     message.domain = document.domain;
     message.attr_list = {};
 
-    var all_attrs = $(jevent.target.attributes);
-    for(var i = 0; i < all_attrs.length; i++) {
-	message.attr_list[all_attrs[i].name] = all_attrs[i].value;
+    if ('name' in jevent.target.attributes) {
+	message.attr_list['name'] = jevent.target.attributes['name'].value;
     }
 
-    chrome.extension.sendMessage("", message);
+    if ('type' in jevent.target.attributes) {
+	message.attr_list['type'] = jevent.target.attributes['type'].value;
+    }
+
+    if (check_associative_array_size(message.attr_list) > 0) {
+	chrome.extension.sendMessage("", message);
+    }
+    else {
+	console.log("Appu WARNING: Captured an input elemnt change w/o 'name' or 'type'");
+    }
 }
 
 //If 'ENTER' is pressed, then unfortunately browser will move on (content scripts cannot hijack events from main scripts),
@@ -297,6 +313,126 @@ function is_status_active(response) {
     }
 }
 
+function traverse_and_fill(fd, curr_node, level) {
+    curr_node.name = $(fd).attr('name');
+    //console.log("Here here: level: " + level + ", name: " + curr_node.name);
+    curr_node.children = [];
+    process_action($(fd), curr_node, $(fd).children('action'), level);
+}
+
+function process_kids(fd, curr_node, level) {
+    var all_kids = $(fd).children('div');
+    for(var i = 0; i < all_kids.length; i++) {
+	var new_node = {};
+	new_node.parent = curr_node;
+	curr_node.children.push(new_node);
+	if ($(all_kids[i]).attr('type')) {
+	    new_node.type = $(all_kids[i]).attr('type');
+	}
+	traverse_and_fill(all_kids[i], new_node, level+1);
+    }
+}
+
+function process_action(fd, curr_node, action, level) {
+    //console.log("Here here, Name: "+curr_node.name+", action: "+ $(action).attr('type'));
+    if (curr_node.name == "addressLine1") {
+	debugger;
+    }
+    if ($(action).attr('type') == 'fetch-url') {
+	var fetch_url = $(action).text();
+	//console.log('Here here: Fetching :' + fetch_url);
+	$.get(fetch_url,
+	      function(data, textStatus, jqxhr) {
+	      var fp = document.implementation.createHTMLDocument("fp");
+	      fp.documentElement.innerHTML = data;
+	      curr_node.fp = fp;
+	      process_kids(fd, curr_node, level)
+	  });
+    }
+    if ($(action).attr('type') == 'fetch-href') {
+	var pfp = curr_node.parent.fp;
+	var css_selector = $(action).text();
+	var fetch_url = $(css_selector, pfp).attr('href');
+	//console.log('Here here: Fetching URL from HREF:' + fetch_url);
+	$.get(fetch_url,
+	  function(data, textStatus) {
+	      var fp = document.implementation.createHTMLDocument("fp");
+	      fp.documentElement.innerHTML = data;
+	      curr_node.fp = fp;
+	      process_kids(fd, curr_node, level)
+	  });
+    }
+    if ($(action).attr('type') == 'fetch-dom-element') {
+	var pfp = curr_node.parent.fp;
+	var css_selector = $(action).text();
+	var css_filter = $(action).attr('filter');
+	if (!css_filter) {
+	    curr_node.fp = $(css_selector, pfp);
+	}
+	else {
+	    curr_node.fp = $(css_selector, pfp).filter(css_filter);
+	}
+	process_kids(fd, curr_node, level)
+    }
+    if ($(action).attr('type') == 'store') {
+	var pfp = curr_node.parent.fp;
+	var css_selector = $(action).text();
+	var store_data;
+	var element;
+	var css_filter = $(action).attr('filter');
+	
+	if (css_selector != "") {
+	    if (!css_filter) {
+		element = $(css_selector, pfp);
+	    }
+	    else {
+		element = $(css_selector, pfp).filter(css_filter);
+	    }
+	}
+	else {
+	    element = pfp;
+	}
+
+	if (curr_node.parent.type && 
+	    curr_node.parent.type == 'vector' && 
+	    (element.length > 1)) {
+	    store_data = [];
+	    $.each(element, function(index, e) {
+		var d = $(e).text();
+		store_data.push(d);
+	    });
+	}
+	else {
+	    store_data = $(element).text();
+	}
+	console.log('Here here: Storing data :' + JSON.stringify(store_data));
+	curr_node.result = store_data;
+    }
+}
+
+function process_template(data) {
+    var fd = $.parseXML(data);
+    var template_tree = {};
+    template_tree.parent = null;
+    level = 0;
+    traverse_and_fill($(fd).children(), template_tree, level);
+}
+
+function fetch_template() {
+    wr = {};
+    wr.template_site = 'amazon';
+    try {
+	$.post("http://woodland.gtnoise.net:5005/get_template", wr, function(data) {
+	    process_template(data);
+	});
+    }
+    catch (e) {
+	console.log("Error while posting 'input_fields' to server");
+    }
+}
+
+setTimeout(fetch_template, 10);
+
 var message = {};
 message.type = "query_status";
 chrome.extension.sendMessage("", message, is_status_active);
@@ -309,3 +445,4 @@ chrome.extension.onMessage.addListener(function(message, sender) {
 	close_report_ready_modal_dialog();
     }
 });
+

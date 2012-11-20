@@ -1,6 +1,6 @@
 {
   "name": "Appu",
-  "version": "0.3.15",
+  "version": "0.3.16",
   "description": "Reduce your personal information footprint across the web",
   "update_url": "http://appu.gtnoise.net/downloads/updates.xml",
   "icons": {
@@ -32,7 +32,8 @@
   ],
   "permissions": [
      "tabs",		 
-     "http://143.215.129.52:5005/methods"	 	 
+     "http://woodland.gtnoise.net:5005/post_daily_report",	 	 
+     "http://woodland.gtnoise.net:5005/post_user_input_elements"
   ],
   "web_accessible_resources": [
      "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-icons_ffffff_256x240.png",

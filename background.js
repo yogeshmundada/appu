@@ -192,6 +192,18 @@ function vault_init() {
 	vault_modified = true;
     }
 
+    if(!("reportid" in pii_vault)) {
+	pii_vault.reportid = 1;
+	console.log("vault_init(): Updated REPORTID in vault");
+	vault_modified = true;
+    }
+
+    if(!("report_modified" in pii_vault)) {
+	pii_vault.report_modified = "no";
+	console.log("vault_init(): Updated REPORT_MODIFIED in vault");
+	vault_modified = true;
+    }
+
     if(vault_modified) {
 	console.log("vault_init(): vault modified, writing to disk");
 	vault_write();
@@ -298,27 +310,31 @@ function check_report_time() {
 
     //Find out if any entries from current report differ from past reports
     if (pii_vault.reporting_type == "differential") {
-	for (var i = 0; i < pii_vault.report.length; i++) {
-	    var rc = pii_check_if_entry_exists_in_past_pwd_reports(pii_vault.report[i]);
-	    if (rc == false) {
-		is_report_different = true;
-		break;
-	    }
-	}
+	if(curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime()) {
 
-	if (!is_report_different) {
-	    for (var i = 0; i < pii_vault.master_profile_list.length; i++) {
-		var rc = pii_check_if_entry_exists_in_past_profile_list(pii_vault.master_profile_list[i]);
+	    for (var i = 0; i < pii_vault.report.length; i++) {
+		var rc = pii_check_if_entry_exists_in_past_pwd_reports(pii_vault.report[i]);
 		if (rc == false) {
 		    is_report_different = true;
 		    break;
+		}
+	    }
+
+	    if (!is_report_different) {
+		for (var i = 0; i < pii_vault.master_profile_list.length; i++) {
+		    var rc = pii_check_if_entry_exists_in_past_profile_list(pii_vault.master_profile_list[i]);
+		    if (rc == false) {
+			is_report_different = true;
+			break;
+		    }
 		}
 	    }
 	}
     }
 
     //Make all the following checks only if reporting type is "manual"
-    if (pii_vault.reporting_type == "manual" || (pii_vault.reporting_type == "differential" && is_report_different)) {
+    if (pii_vault.reporting_type == "manual" || 
+	(pii_vault.reporting_type == "differential" && is_report_different)) {
 	if (pii_vault.report_reminder_time == null) {
 	    //Don't want to annoy user with reporting dialog if we are disabled OR
 	    //if user already has a review report window open (presumably working on it).
@@ -346,23 +362,19 @@ function check_report_time() {
 	    vault_write();
 	}
     }
-    else if (pii_vault.reporting_type == "auto" || (pii_vault.reporting_type == "differential" && !is_report_different)) {
-	pii_send_report();
+    else if (pii_vault.reporting_type == "auto" || 
+	     (pii_vault.reporting_type == "differential" && !is_report_different)) {
+	if((pii_vault.report.length > 0) && 
+	   (curr_time.getTime() > (new Date(pii_vault.next_reporting_time)).getTime())) {
+	    pii_send_report();
+	}
     }
 }
 
 function pii_log_user_input_type(message) {
-    var triple = [];
-    var domain = message.domain;
-    var attr_list = message.attr_list;
-
-    triple.push(new Date());
-    triple.push(domain);
-    triple.push(attr_list);
-
-    console.log("Appending to input_fileds list: " + JSON.stringify(triple));
-
-    pii_vault.input_fields.push(triple);
+    var domain_input_elements = [new Date(), message.domain, message.attr_list];
+    console.log("Appending to input_fields list: " + JSON.stringify(domain_input_elements));
+    pii_vault.input_fields.push(domain_input_elements);
     vault_write();
 }
 
@@ -454,11 +466,10 @@ function pii_check_blacklisted_sites(message) {
 
 function pii_send_input_fields() {
     var wr = {};
-    wr.type = "input_fields";
     wr.guid = pii_vault.guid;
     wr.input_fields = pii_vault.input_fields;
     try {
-	$.post("http://woodland.gtnoise.net:5005/methods", JSON.stringify(wr));
+	$.post("http://woodland.gtnoise.net:5005/post_user_input_elements", JSON.stringify(wr));
     }
     catch (e) {
 	console.log("Error while posting 'input_fields' to server");
@@ -473,9 +484,15 @@ function pii_send_report() {
     var wr = {};
     wr.type = "reuse_warnings";
     wr.guid = pii_vault.guid;
+    wr.reportid = pii_vault.reportid;
     wr.report = pii_vault.report;
+    wr.master_profile_list = pii_vault.master_profile_list;
+    wr.report_modified = pii_vault.report_modified;
+    wr.report_setting = pii_vault.reporting_type;
+    pii_vault.reportid += 1;
+
     try {
-	$.post("http://woodland.gtnoise.net:5005/methods", JSON.stringify(wr));
+	$.post("http://woodland.gtnoise.net:5005/post_daily_report", JSON.stringify(wr));
     }
     catch (e) {
 	console.log("Error while posting 'reuse_warnings' to server");
@@ -484,12 +501,17 @@ function pii_send_report() {
     var current_report = {};
     current_report.pwd_reuse_report = pii_vault.report;
     current_report.master_profile_list = $.extend(true, {}, pii_vault.master_profile_list);
+    current_report.guid = wr.guid;
+    current_report.reportid = wr.reportid;
+    current_report.report_modified = wr.report_modified;
+    current_report.report_setting = wr.report_setting;
 
     pii_vault.past_reports.unshift(current_report);
     if (pii_vault.past_reports.length > 10) {
 	pii_vault.past_reports.pop();
     }
 
+    pii_vault.report_modified = "no";
     pii_vault.report = [];
     pii_vault.next_reporting_time = pii_next_report_time();
     console.log("Report sent. Next scheduled time: " + pii_vault.next_reporting_time);
@@ -498,6 +520,7 @@ function pii_send_report() {
 
 function pii_delete_report_entry(message) {
     pii_vault.report.splice(message.report_entry, 1);
+    pii_vault.report_modified = "yes";
     vault_write();
 }
 
@@ -513,6 +536,7 @@ function pii_delete_dontbugme_list_entry(message) {
 
 function pii_delete_master_profile_list_entry(message) {
     pii_vault.master_profile_list.splice(message.report_entry, 1);
+    pii_vault.report_modified = "yes";
     vault_write();
 }
 
@@ -662,7 +686,7 @@ function pii_check_if_entry_exists_in_past_pwd_reports(curr_entry) {
 	    var past_report_entry = {};
 	    var pre_str = "";
 	    past_report_entry.site = past_report[j].site;
-	    past_report_entry.other_sites = past_report.other_sites;
+	    past_report_entry.other_sites = past_report[j].other_sites;
 	    past_report_entry.other_sites.sort();
 	    pre_str = JSON.stringify(past_report_entry);
 	    if (pre_str == ce_str) {
@@ -757,6 +781,43 @@ setInterval(check_report_time, 1000 * report_check_interval * 60);
 //"initialized" is not set to true.
 vault_init();
 
+// //DELETE THIS Here here
+// pii_test_send_report();
+// pii_test_send_input_fields();
+
+// function pii_test_send_input_fields() {
+//     var wr = {};
+//     wr.guid = pii_vault.guid;
+//     wr.input_fields = pii_vault.input_fields;
+//     try {
+// 	$.post("http://woodland.gtnoise.net:5005/post_user_input_elements", JSON.stringify(wr));
+//     }
+//     catch (e) {
+// 	console.log("Error while posting 'input_fields' to server");
+//     }
+//     console.log("Here here: sent the input elements");
+// }
+
+// function pii_test_send_report() {
+//     var wr = {};
+//     wr.type = "reuse_warnings";
+//     wr.guid = pii_vault.guid;
+//     wr.reportid = pii_vault.reportid;
+//     wr.report = pii_vault.report;
+//     wr.master_profile_list = pii_vault.master_profile_list;
+//     wr.report_modified = pii_vault.report_modified;
+//     wr.report_setting = pii_vault.reporting_type;
+//     pii_vault.reportid += 1;
+
+//     try {
+// 	$.post("http://woodland.gtnoise.net:5005/post_daily_report", JSON.stringify(wr));
+//     }
+//     catch (e) {
+// 	console.log("Error while posting 'reuse_warnings' to server");
+//     }
+//     console.log("Here here: sent the TEST report");
+// }
+
 //Check if appu was disabled in the last run. If yes, then check if disable period is over yet.
 if (pii_vault.status == "disabled") {
     if (((new Date()) - (new Date(pii_vault.disable_start))) > (60 * 1000 * pii_vault['disable_period'])) {
@@ -828,7 +889,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "send_report") {
 	r = pii_send_report();
-	//r = pii_send_input_fields();
+	r = pii_send_input_fields();
     }
     else if (message.type == "add_to_dontbug_list") {
 	r = pii_add_dontbug_list(message);
