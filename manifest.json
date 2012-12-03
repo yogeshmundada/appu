@@ -33,7 +33,10 @@
   "permissions": [
      "tabs",		 
      "http://woodland.gtnoise.net:5005/post_daily_report",	 	 
-     "http://woodland.gtnoise.net:5005/post_user_input_elements"
+     "http://woodland.gtnoise.net:5005/post_user_input_elements",
+     "webRequest",
+     "webRequestBlocking",
+     "*://*/"
   ],
   "web_accessible_resources": [
      "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-icons_ffffff_256x240.png",

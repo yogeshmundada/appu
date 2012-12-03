@@ -46,8 +46,13 @@ function show_report_ready_modal_dialog() {
 
     if (!show_report_ready_modal_dialog.body_wrapped) {
 	show_report_ready_modal_dialog.body_wrapped = true;
+	var report_message = "Appu would like to send anonymous report to its server. \
+This report will indicate personal information reusage across sites. \
+It will *not* send the actual information. <br/><br/> \
+This step is IMPORTANT to find out how can you improve your online behavior<br/> \
+You can delete entries from the report by reviewing it before sending it out";
 
-	var report_dialog_msg = sprintf('<div id="appu-report-ready" class="appuwarning" title="Appu: Notification"> Personal Information Reuse Report is ready</div>');
+	var report_dialog_msg = sprintf('<div id="appu-report-ready" class="appuwarning" title="Appu: Notification"> %s </div>', report_message);
 	var report_dialog_element = $(report_dialog_msg);
 	$('body').append(report_dialog_element);
 
@@ -127,14 +132,14 @@ function is_passwd_reused(response) {
 		resizable : false,
 		buttons : [
 		    {
-			text: "OK",
+			text: "Close",
 			click: function(event) { 
 			    event.stopPropagation();
 			    $(this).dialog("close"); 
 			}
 		    },
 		    {
-			text: "Understood, don't bug me",
+			text: "Don't bother me about this page further",
 			click: function(event) { 
 			    event.stopPropagation();
 			    var message = {};
@@ -308,141 +313,92 @@ function is_status_active(response) {
 	chrome.extension.sendMessage("", message, is_blacklisted);
 	check_pending_warnings();
     }
+    else if(response.status == "process_template") {
+	// I am created with the sole purpose of downloading PI information
+	// Once that is done, I would be closed.
+	console.log("Appu: Ready to process template");
+    }
     else {
 	console.log("Appu: Extension is currently disabled");
     }
 }
 
-function traverse_and_fill(fd, curr_node, level) {
-    curr_node.name = $(fd).attr('name');
-    //console.log("Here here: level: " + level + ", name: " + curr_node.name);
-    curr_node.children = [];
-    process_action($(fd), curr_node, $(fd).children('action'), level);
+
+function apply_css_filter(elements, css_filter) {
+    if (css_filter && css_filter != "") {
+	return $(elements).filter(css_filter);
+    }
+    return elements;
 }
 
-function process_kids(fd, curr_node, level) {
-    var all_kids = $(fd).children('div');
-    for(var i = 0; i < all_kids.length; i++) {
-	var new_node = {};
-	new_node.parent = curr_node;
-	curr_node.children.push(new_node);
-	if ($(all_kids[i]).attr('type')) {
-	    new_node.type = $(all_kids[i]).attr('type');
-	}
-	traverse_and_fill(all_kids[i], new_node, level+1);
+function apply_css_selector(elements, css_selector) {
+    if (css_selector && css_selector != "") {
+	return $(css_selector, elements);
     }
+    return elements;
 }
 
-function process_action(fd, curr_node, action, level) {
-    //console.log("Here here, Name: "+curr_node.name+", action: "+ $(action).attr('type'));
-    if (curr_node.name == "addressLine1") {
-	debugger;
-    }
-    if ($(action).attr('type') == 'fetch-url') {
-	var fetch_url = $(action).text();
-	//console.log('Here here: Fetching :' + fetch_url);
-	$.get(fetch_url,
-	      function(data, textStatus, jqxhr) {
-	      var fp = document.implementation.createHTMLDocument("fp");
-	      fp.documentElement.innerHTML = data;
-	      curr_node.fp = fp;
-	      process_kids(fd, curr_node, level)
-	  });
-    }
-    if ($(action).attr('type') == 'fetch-href') {
-	var pfp = curr_node.parent.fp;
-	var css_selector = $(action).text();
-	var fetch_url = $(css_selector, pfp).attr('href');
-	//console.log('Here here: Fetching URL from HREF:' + fetch_url);
-	$.get(fetch_url,
-	  function(data, textStatus) {
-	      var fp = document.implementation.createHTMLDocument("fp");
-	      fp.documentElement.innerHTML = data;
-	      curr_node.fp = fp;
-	      process_kids(fd, curr_node, level)
-	  });
-    }
-    if ($(action).attr('type') == 'fetch-dom-element') {
-	var pfp = curr_node.parent.fp;
-	var css_selector = $(action).text();
-	var css_filter = $(action).attr('filter');
-	if (!css_filter) {
-	    curr_node.fp = $(css_selector, pfp);
-	}
-	else {
-	    curr_node.fp = $(css_selector, pfp).filter(css_filter);
-	}
-	process_kids(fd, curr_node, level)
-    }
-    if ($(action).attr('type') == 'store') {
-	var pfp = curr_node.parent.fp;
-	var css_selector = $(action).text();
-	var store_data;
-	var element;
-	var css_filter = $(action).attr('filter');
-	
-	if (css_selector != "") {
-	    if (!css_filter) {
-		element = $(css_selector, pfp);
-	    }
-	    else {
-		element = $(css_selector, pfp).filter(css_filter);
-	    }
-	}
-	else {
-	    element = pfp;
-	}
+$(document).ready(function() {
+    var message = {};
+    message.type = "query_status";
+    message.url = window.location;
+    chrome.extension.sendMessage("", message, is_status_active);
+});
 
-	if (curr_node.parent.type && 
-	    curr_node.parent.type == 'vector' && 
-	    (element.length > 1)) {
-	    store_data = [];
-	    $.each(element, function(index, e) {
-		var d = $(e).text();
-		store_data.push(d);
-	    });
-	}
-	else {
-	    store_data = $(element).text();
-	}
-	console.log('Here here: Storing data :' + JSON.stringify(store_data));
-	curr_node.result = store_data;
+function simulate_click_worked(mutations, observer, simulate_done_timer, css_selector) {
+    if ($(css_selector).length > 0) {
+	console.log("Here here: Simulate click was successful");
+	observer.disconnect();
+	window.clearTimeout(simulate_done_timer);
+	var message = {};
+	message.type = "simulate_click_done";
+	chrome.extension.sendMessage("", message, is_status_active);
     }
 }
 
-function process_template(data) {
-    var fd = $.parseXML(data);
-    var template_tree = {};
-    template_tree.parent = null;
-    level = 0;
-    traverse_and_fill($(fd).children(), template_tree, level);
-}
-
-function fetch_template() {
-    wr = {};
-    wr.template_site = 'amazon';
-    try {
-	$.post("http://woodland.gtnoise.net:5005/get_template", wr, function(data) {
-	    process_template(data);
-	});
-    }
-    catch (e) {
-	console.log("Error while posting 'input_fields' to server");
-    }
-}
-
-setTimeout(fetch_template, 10);
-
-var message = {};
-message.type = "query_status";
-chrome.extension.sendMessage("", message, is_status_active);
-
-chrome.extension.onMessage.addListener(function(message, sender) {
+chrome.extension.onMessage.addListener(function(message, sender, send_response) {
     if (message.type == "report-reminder") {
 	show_report_ready_modal_dialog();
     }
     if (message.type == "close-report-reminder") {
 	close_report_ready_modal_dialog();
     }
-});
+    if (message.type == "goto-url") {
+	window.location = message.url;
+    }
+    if (message.type == "simulate-click") {
+	var element_to_click = apply_css_filter(apply_css_selector($(document), message.css_selector), 
+						message.css_filter);
 
+	var detect_change_css = message.detect_change_css;  
+
+
+	//Hard timeout
+	//Wait for 60 seconds before sending event that click cannot be 
+	//completed.
+	var simulate_done_timer = window.setTimeout(function() {
+	    var message = {};
+	    message.type = "simulate_click_done";
+	    chrome.extension.sendMessage("", message, is_status_active);
+	}, 60 * 1000);
+
+
+	MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+
+	var observer = new MutationObserver(function(mutations, observer) {
+	    console.log("Here here: It actually worked...mutations are observed");
+	    simulate_click_worked(mutations, observer, simulate_done_timer, detect_change_css);
+	});
+
+	//var config = { attributes: true, childList: true, characterData: true }
+	var config = { subtree: true, characterData: true, childList: true, attributes: true }
+	observer.observe(document, config);
+
+	//Now do the actual click
+	$(element_to_click).trigger("click");
+    }
+    if (message.type == "get-html") {
+	var html_data = $("html").html();
+	send_response(html_data);
+    }
+});

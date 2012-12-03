@@ -7,6 +7,7 @@
   <link rel="stylesheet" type="text/css" href="thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/jquery-ui-1.9.1.custom.css">
   <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-1.8.2.js"></script>
   <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-ui-1.9.1.custom.js"></script>
+  <script src="thirdparty/sprintf-0.7-beta1.js"></script>
   <script src="myfootprint.js"></script>
   <title>Appu: My Footprint</title>
 </head>
@@ -17,13 +18,14 @@
   <div id="page-wrap">
     <div id="appu-myfootprint">
 
-      <div id="accordion-site-list-with-name" class="appuwarning">
-	  <h3>Sites containing your name</h3>
-	  <p>Name: XYZ</p>
-	  <div id="name-site-list-div">
-	  </div>
-      </div>
+	<div id="expand-fpi-fields">
+	  <span id="expand-fpi">
+	    <input type="checkbox" id="expand-fpi-checkbox">
+	    <label id="label-expand-fpi-checkbox" for="expand-fpi-checkbox">Expand All Privacy Info Panels</label>
+	  </span>
+	</div>
 
+  
     </div>
   </div>
 </body>
