@@ -1,0 +1,22 @@
+
+
+.input-form {
+    margin-top: 60px;
+}
+
+.status-message {
+    font-size: 24px;
+    margin-top: 100px;
+}
+
+#top-status {
+
+}
+
+input[type=text] {
+    height: 30px;
+}
+
+input[type=password] {
+    height: 30px;
+}

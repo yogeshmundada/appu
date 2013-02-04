@@ -1,0 +1,117 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    
+    <link href="thirdparty/bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css" />
+    <link href="thirdparty/bootstrap/css/bootstrap-responsive.css" rel="stylesheet" type="text/css" />
+    <link href="thirdparty/bootstrap/css/docs.css" rel="stylesheet" type="text/css" />
+    <link href="thirdparty/DataTables-1.9.4/media/css/demo_page.css" rel="stylesheet" type="text/css" />
+    <link href="thirdparty/DataTables-1.9.4/media/css/demo_table.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="sign_in.css">
+
+    <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-1.8.2.js"></script>
+    <script src="thirdparty/bootstrap/js/bootstrap.min.js"></script>
+    <script src="thirdparty/DataTables-1.9.4/media/js/jquery.dataTables.js"></script>
+    <script src="thirdparty/DataTables-1.9.4/media/js/paging.js"></script>
+    <script src="sign_in.js"></script>
+    <title>Appu: Manage Account</title>
+  </head>
+  
+  <body>
+    
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+	<div class="container">
+
+	  <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+	  </a>
+
+	  <div id="name-and-version">
+	    <!-- <a class="brand" href="#"><h1>Appu</h1><p id="version-info">0.0.0</p></a> -->
+	    <a class="brand" href="#" style="font-size: 24px">Appu (<span id="version-info">0.0.0</span>)</a>
+	  </div>
+
+	  <div class="nav-collapse collapse">
+            <ul class="nav">
+            <li class="manage-account">
+              <a href="#" style="font-size: 22px; font-weight:bold;">Log-in</a>
+            </li>
+	    </ul>
+	  </div>
+	</div>
+      </div>
+    </div>
+    
+    <!-- <div id="account-login-div" class="container"> -->
+
+    <!--   <div class="row"> -->
+
+    <!--   </div> -->
+    <!-- </div>     -->
+
+    <div class="container">
+      <div class="content">
+
+	<div class="row">
+
+	  <div class="span12" style="text-align: center;">
+	    <p id="top-status" class="status-message"></p>
+	  </div>
+	  
+	  <div class="span6">
+	  <div class="login-form offset1 input-form">
+	    <h2>Login</h2>
+	      <fieldset>
+		<div class="clearfix">
+		  <input id="login-username" class="input-xlarge" type="text" placeholder="Username">
+		  </div>
+		<div class="clearfix">
+		  <input id="login-password" class="input-xlarge" type="password" placeholder="Password">
+		  </div>
+		<button id="login-submit" class="btn primary">Sign in</button>
+		<p id="sign-in-status" class="status-message"></p>
+	      </fieldset>
+	  </div>
+	  </div>
+
+	  <div class="span6">
+	    <div class="create-account-form offset1 input-form">
+	      <h2>Create Account</h2>
+	      <fieldset>
+		<div class="clearfix">
+		  <input id="ca-username" class="input-xlarge" type="text" placeholder="Username">
+		</div>
+		<div class="clearfix">
+		  <input id="ca-password" class="input-xlarge" type="password" placeholder="Password">
+		</div>
+		<div class="clearfix">
+		  <input id="ca-confirm-password" class="input-xlarge" type="password" placeholder="Confirm Password">
+		</div>
+		<button id="create-account-submit"  class="btn primary" type="submit">Create Account</button>
+		<p id="create-account-status" class="status-message"></p>
+	      </fieldset>
+	    </div>
+	    <h5 id="username-info">If you are creating a new account, please note that we 
+	      do not send the actual username back
+	      to our server. We send <a href="http://en.wikipedia.org/wiki/Cryptographic_hash_function">
+		sha1sum</a> of the username and hence no matter what username you use, we would not know your 
+	      identity.<br/>
+	      A downside of this is, if you forget your username, we cannot help you to recover 
+	      that account.</h5>
+	  </div>
+
+	</div>
+      </div>
+    </div> <!-- /container -->
+
+
+    <footer class="footer navbar-fixed-bottom">
+      <!-- <div class="container"> -->
+      <!-- </div> -->
+    </footer>
+    
+  </body>
+</html>
