@@ -1,130 +1,120 @@
 
-html, body { min-height: 100%; }
-body { font: 13px "Lucida Grande", Helvetica, Arial, sans-serif;   background-image: -moz-linear-gradient(top, #eeeeee, #cccccc); background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #eeeeee),color-stop(1, #cccccc)); }
+/* #section-nav {padding-top: 70px;} */
+/* #appu-report {padding-top: 30px;} */
+#version-info {font-size: 20px; margin-top: -8px; text-align: right;}
+#name-and-version {text-align: center;}
+body {padding-top: 90px;}
+.daily-report {text-align: center}
+#report-date-range {margin-top: -14px;}
 
-article, aside, figure, footer, header, hgroup,
-menu, nav, section { display: block; }
-
-#page-wrap { 
-    margin: 80px auto; 
-    width: 900px; 
-    padding: 10px; 
-    background: white;  
-    border-radius: 5px;
+table.table thead .sorting,
+table.table thead .sorting_asc,
+table.table thead .sorting_desc,
+table.table thead .sorting_asc_disabled,
+table.table thead .sorting_desc_disabled {
+    cursor: pointer;
+    *cursor: hand;
+}
+ 
+table.table thead .sorting { background: url('images/sort_both.png') no-repeat center right; }
+table.table thead .sorting_asc { background: url('images/sort_asc.png') no-repeat center right; }
+table.table thead .sorting_desc { background: url('images/sort_desc.png') no-repeat center right; }
+ 
+table.table thead .sorting_asc_disabled { background: url('images/sort_asc_disabled.png') no-repeat center right; }
+table.table thead .sorting_desc_disabled { 
+    background: url('images/sort_desc_disabled.png') no-repeat center right; 
 }
 
-#report-time {
-    font-size : 18px;
-    font-weight: bold;
-    margin-bottom: 30px;
-    position: relative;
+table tbody tr td {
+    text-align: center;
 }
 
-#report-time #fieldset-reporting-options legend {
-    font-size: 16px;
-    font-weight : bold;
+
+#per-site-account-data-table td:nth-child(1) {
+    text-align: left;
 }
 
-#report-time p {
+#password-stats-table td:nth-child(2) {
+    text-align: left;
+}
+
+#pi-metadata td:nth-child(1) {
+    text-align: left;
+}
+
+#pi-metadata td:nth-child(3) {
+    text-align: left;
+}
+
+div.dataTables_length label {
+    width: 460px;
     float: left;
+    text-align: left;
 }
-
-#displaying-differential {
-    font-weight: bold;
-    font-size: 18px;
+ 
+div.dataTables_length select {
+    width: 75px;
 }
-
-#send-button1 {
-    clear: both;
-}
-
-#accordion-master-profile-list {
-    clear: both;
-}
-
-#report-time #fieldset-reporting-options {
-    font-size : 14px;
-    font-weight: normal;
-    width: 350px;
+ 
+div.dataTables_filter label {
     float: right;
+    width: 460px;
 }
-
-#appu-tabs {
-    position: relative;
+ 
+div.dataTables_info {
+    padding-top: 8px;
+}
+ 
+div.dataTables_paginate {
+    float: right;
+    margin: 0;
+}
+ 
+table {
+    margin: 1em 0;
     clear: both;
 }
 
-#differential-report-button, #go-back-to-main-report-button {
-    float: right;
+#per-site-account-data-table-modal {
+    width: 100%;
+    max-height: 100%;
+    margin: 0 0 0 -50%;
 }
 
-#report-time #scheduled-report-time {
-    font-size : 16px;
-    font-weight: normal;
+#per-site-account-data-table-modal-body {
+    max-height: 90%;
 }
 
-#appu-text-report-area {
-    resize: none;
+.report-time, .report-time-add-info {
+    font-size: 12px;
 }
 
-#master-profile-list-table { width: 100%; height: 100px; overflow:auto; margin: 0 auto; border-collapse: collapse; border-width: 1px; }
 
-#mpl-report { margin: 80px auto; width: 800px; height: 200px; overflow: auto; padding: 10px; background: white;  }
-
-#master-profile-list-table th { height: 120px; padding-bottom: 14px !important; vertical-align: bottom; } 
-
-
-#master-profile-list-table tr:nth-child(even) { background: #CCC; } 
-#master-profile-list-table tr:nth-child(odd) { background: #FFF; } 
-
-#master-profile-list-table td,
-#master-profile-list-table th { width: 150px; padding: 8px 5px; text-align: center; border-left: 1px solid white; border-right: 1px solid white; }
-
-#master-profile-list-table .final-row td { padding: 24px 5px; }
-
-#password-reuse-warning-report-table { width: 100%; height: 100px; overflow:auto; margin: 0 auto; border-collapse: collapse; border-width: 1px; }
-
-#pwru-report { margin: 80px auto; width: 800px; height: 200px; overflow: auto; padding: 10px; background: white;  }
-
-#password-reuse-warning-report-table th { height: 120px; padding-bottom: 14px !important; vertical-align: bottom; } 
-
-
-#password-reuse-warning-report-table tr:nth-child(even) { background: #CCC; } 
-#password-reuse-warning-report-table tr:nth-child(odd) { background: #FFF; } 
-
-#password-reuse-warning-report-table td,
-#password-reuse-warning-report-table th { width: 150px; padding: 8px 5px; text-align: center; border-left: 1px solid white; border-right: 1px solid white; }
-
-#password-reuse-warning-report-table .final-row td { padding: 24px 5px; }
-
-/* From http://css-tricks.com/examples/ButtonMaker/ */
-.button {
-   border-top: 1px solid #a695b3;
-   background: #64548f;
-   background: -webkit-gradient(linear, left top, left bottom, from(#836c94), to(#64548f));
-   background: -moz-linear-gradient(top, #836c94, #64548f);
-   padding: 5px 10px;
-   -webkit-border-radius: 8px;
-   -moz-border-radius: 8px;
-   border-radius: 8px;
-   -webkit-box-shadow: rgba(0,0,0,1) 0 1px 0;
-   -moz-box-shadow: rgba(0,0,0,1) 0 1px 0;
-   box-shadow: rgba(0,0,0,1) 0 1px 0;
-   text-shadow: rgba(0,0,0,.4) 0 1px 0;
-   color: white;
-   font-size: 14px;
-   font-family: 'Lucida Grande', Helvetica, Arial, Sans-Serif;
-   text-decoration: none;
-   vertical-align: middle;
+body section {
+    font-size: 16px;
 }
-.button:hover {
-   border-top-color: #755a99;
-   background: #755a99;
-   color: #ffffff;
+
+.loose-info-box {
+    background-color: lightgrey;
+    border-radius: 10px;
+    padding: 0px 0px 10px 30px;
+    border-width: 2px;
+    border-style: solid;
+    margin-top: 20px;   
 }
-.button:active {
-   border-top-color: #4f3463;
-   background: #4f3463;
-   position: relative;
-   top: 1px;
+
+.icon-question-sign {
+    margin-left: 2px;
+}
+
+.loose-info-box .loose-info-value {
+    margin-left: 10px;
+}
+
+.loose-info-box h3{
+    text-decoration: underline;
+}
+
+.loose-info {
+    margin-top: 10px;
 }

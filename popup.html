@@ -2,33 +2,74 @@
 <html>
 <head>
   <link href="popup.css" media="screen" rel="stylesheet" type="text/css">
+  <link href="thirdparty/bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css" />
   <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-1.8.2.js"></script>
+  <script src="thirdparty/bootstrap/js/bootstrap.min.js"></script>
   <script src="popup.js"></script>
 </head>
+<!-- <body style='background-color: transparent; min-width: 50px; max-width: 173px'> -->
 <body>
-  <div id="content">
-    <div id="menu-div" class="border-top-gray">
-      <a tabIndex="0" id="disable60" role="button" href="#">
-	1. Disable(60 minutes)<br/>
-      </a>
-      <a tabIndex="1" id="disable180" role="button" href="#">
-	2. Disable(3 hours)<br/>
-      </a>
-      <a tabIndex="2" id="enable" role="button" href="#">
-	3. Enable<br/>
-      </a>
-      <a tabIndex="3" id="report" role="button" href="#">
-	4. Check Report<br/>
-      </a>
-      <a tabIndex="4" id="options" role="button" href="#">
-	5. Options<br/>
-      </a>
-      <a tabIndex="5" id="footprint" role="button" href="#">
-	6. My Footprint<br/>
-      </a>
-      <a tabIndex="6" id="about" role="button" href="#">
-	7. About
-      </a>
+  <div class="row">
+    <div class="span4"> 
+      <div class="dropdown">
+	<!-- Link or button to toggle dropdown -->
+	<a id="sign-in-menu" class="dropdown-toggle" data-toggle="dropdown" data-target="#" href=""></a>
+	<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel"  style="min-height: 100px">
+	  <div class="span1">
+	    <img class="appu-popup-icon" src="images/appu_new19_offline.png">
+	  </div>
+	  <div class="span2">
+	    <div class="login-in-anon-div">
+	      Welcome<br/><span id="anonymous-name">Anonymous</span>
+	    </div>
+	  </div>
+	  <li id="real-divider1"  class="divider"></li>
+	  <li><a id="sign-in" tabindex="-1" href="#">Appu Log-In</a></li>
+	</ul>
+      </div>
+
+      <div class="dropdown">
+	<!-- Link or button to toggle dropdown -->
+	<a id="sign-out-menu" class="dropdown-toggle" data-toggle="dropdown" data-target="#" href=""></a>
+	<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+	  <div class="span1">
+	    <img id="appu-signedin-menu-icon" class="appu-popup-icon" src="images/appu_new128.png">
+	  </div>
+	  <div class="span2">
+	    <div class="login-in-div">
+	      Welcome<br/>
+	      <span id="login-name"></span>
+	    </div>
+	  </div>
+
+	  <li id="real-divider2" class="divider"></li>
+	  <li><a id="disable" tabindex="-1" href="#">Disable Appu</a></li>
+	  <li><a id="enable" tabindex="-1" href="#">Enable Appu</a></li>
+	  <li class="divider"></li>
+	  <li><a id="report" tabindex="-1" href="#">Check Report</a></li>
+	  <li><a id="footprint" tabindex="-1" href="#">My Footprint</a></li>
+	  <li><a id="options" tabindex="-1" href="#">Options</a></li>
+	  <li class="divider"></li>
+	  <li><a id="about" tabindex="-1" href="#">About</a></li>
+	  <li><a id="feedback" tabindex="-1" href="#">Send Feedback</a></li>
+	  <li class="divider"></li>
+	  <li><a id="sign-out" tabindex="-1" href="#">Sign Out</a></li>
+	</ul>
+      </div>
+      
+      <div id="enter-minutes" class="well" style="margin-bottom: 0px;">
+	<div id="accept-minutes" class="input-append control-group">
+	  <form>
+	    <fieldset>
+	      <label>Disable Appu for:</label>
+	      <input id="input-minutes" class="input-mini" type="text" placeholder="minutes">
+	      <button id="disable-submit" type="submit" class="btn">Go!</button>
+	    </fieldset>
+	  </form>
+	</div>
+	<p id="error-message"></p>
+      </div>
+      
     </div>
   </div>
 </body>

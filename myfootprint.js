@@ -82,6 +82,37 @@ function populate_footprint(fp) {
     }
 }
 
+var start_focus_time = undefined;
+
+function window_focused(eo) {
+    last_user_interaction = new Date();
+    if (start_focus_time == undefined) {
+	start_focus_time = new Date();
+    }
+}
+
+function window_unfocused(eo) {
+    if (start_focus_time != undefined) {
+	var stop_focus_time = new Date();
+	var total_focus_time = stop_focus_time.getTime() - start_focus_time.getTime();
+	start_focus_time = undefined;
+	var message = {};
+	message.type = "myfootprint_time_spent";
+	message.time_spent = total_focus_time;
+	chrome.extension.sendMessage("", message);
+    }
+}
+
+$(window).on("focus", window_focused);
+$(window).on("blur", window_unfocused);
+
+$(window).on("unload", function() {
+    window_unfocused();
+    var message = {};
+    message.type = "myfootprint_tab_closed";
+    chrome.extension.sendMessage("", message);
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     
     var message = {};
@@ -90,5 +121,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     $("#expand-fpi-checkbox").prop("checked", false);
     $("#expand-fpi-checkbox").on("change", toggle_fpi_expand);
+
+
+    var message = {};
+    message.type = "myfootprint_tab_opened";
+    chrome.extension.sendMessage("", message);
 
 });

@@ -44,6 +44,11 @@ function add_one_more_dontbugme_entry(r) {
 	var nimg = $(nimg_src);
 	$(ntd).append(nimg);
 	$(nr).append(ntd);
+
+	if ($("#dontbugme-site-list-table").css('display') == 'none') {
+	    $("#no-dontbugme").remove();
+	    $("#dontbugme-site-list-table").show();
+	}
 	
 	$("#dontbugme-site-list-table-body").append(nr);
 	$("#dontbugme-site-div").scrollTop($("#dontbugme-site-div")[0].scrollHeight);
@@ -54,7 +59,7 @@ function add_one_more_dontbugme_entry(r) {
 	var dialog_element = $(dialog_msg);
 	$('body').append(dialog_element);
 	
-	//This wrapping has to be done *ONLY* for dialog boxes. 
+	//This wrapping(at the end) has to be done *ONLY* for dialog boxes. 
 	//This is according to comment from their developer blog: 
 	//http://filamentgroup.com/lab/using_multiple_jquery_ui_themes_on_a_single_page/#commentNumber4
 	$('#appu-dontbugme-warning').dialog({ 
@@ -88,6 +93,11 @@ function add_one_more_dnt_entry(r) {
 	var nimg = $(nimg_src);
 	$(ntd).append(nimg);
 	$(nr).append(ntd);
+
+	if ($("#dnt-site-list-table").css('display') == 'none') {
+	    $("#no-dnt").remove();
+	    $("#dnt-site-list-table").show();
+	}
 	
 	$("#dnt-site-list-table-body").append(nr);
 	$("#dnt-site-div").scrollTop($("#dnt-site-div")[0].scrollHeight);
@@ -140,7 +150,10 @@ function populate_dnt_list(r) {
 	    }
 	}
 	else {
-	    $("#dnt-site-list-table").remove();
+	    //$("#dnt-site-list-table").remove();
+	    $("#dnt-site-list-table").hide();
+	    console.log("Here here: Setting the display property of #dnt-site-list-table to: " 
+			+ $("#dnt-site-list-table").css('display'));
 	    $("#dnt-site-div").append($('<p id="no-dnt">Do Not Track list is empty</p>'));
 	}
     }
@@ -192,8 +205,11 @@ function populate_dontbugme_list(r) {
 	    }
 	}
 	else {
-	    $("#dontbugme-site-list-table").remove();
-	    $("#dontbugme-site-div").append($('<p id="no-dnt">Don\'t bug me list is empty</p>'));
+	    //$("#dontbugme-site-list-table").remove();
+	    $("#dontbugme-site-list-table").hide();
+	    console.log("Here here: Setting the display property of #dontbugme-site-list-table to: " 
+			+ $("#dontbugme-site-list-table").css('display'));
+	    $("#dontbugme-site-div").append($('<p id="no-dontbugme">Don\'t bug me list is empty</p>'));
 	}
     }
     catch (err) {

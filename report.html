@@ -1,117 +1,726 @@
 <html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <link rel="stylesheet" type="text/css" href="report.css">
-  <link rel="stylesheet" type="text/css" href="thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/jquery-ui-1.9.1.custom.css">
-  <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-1.8.2.js"></script>
-  <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-ui-1.9.1.custom.js"></script>
-  <script src="report.js"></script>
-  <title>Appu: Reuse Report</title>
-</head>
-<body>
-  <header>
-    <h1>Appu Report</h1>
-  </header>
-  <div id="page-wrap">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    
+    <link href="thirdparty/bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css" />
+    <link href="thirdparty/bootstrap/css/bootstrap-responsive.css" rel="stylesheet" type="text/css" />
+    <link href="thirdparty/bootstrap/css/docs.css" rel="stylesheet" type="text/css" />
+    <link href="thirdparty/DataTables-1.9.4/media/css/demo_page.css" rel="stylesheet" type="text/css" />
+    <link href="thirdparty/DataTables-1.9.4/media/css/demo_table.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="report.css">
 
-    <div id="report-time">
-      <p>Scheduled Reporting Time: <span id="scheduled-report-time"></span></p>
-      <fieldset id="fieldset-reporting-options">
-	<legend>Reporting Options</legend>
-	<input id="report-auto" type="radio" name="grp-reporting-options" value="auto">
-	<label id="label-report-auto" for="report-auto">Send report automatically</label><br/>
-	<input id="report-manual" type="radio" name="grp-reporting-options" value="manual">
-	<label id="label-report-manual" for="report-manual">Review report before sending</label><br/>
-	<input id="report-differential" type="radio" name="grp-reporting-options" value="differential">
-	<label id="label-report-differential" for="report-differential">Review report only if different from past reports</label><br/>
-      </fieldset>
-    </div>
+    <script src="thirdparty/jquery-ui-1.9.1.custom/js/jquery-1.8.2.js"></script>
+    <script src="thirdparty/bootstrap/js/bootstrap.min.js"></script>
+    <script src="thirdparty/DataTables-1.9.4/media/js/jquery.dataTables.js"></script>
+    <script src="thirdparty/DataTables-1.9.4/media/js/paging.js"></script>
+    <script src="report_utility.js"></script>
+    <script src="report.js"></script>
+    <title>Appu: Report</title>
+  </head>
+  
+  <body>
+    
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+	<div class="container">
 
-    <button id="send-button1" class="send-report-button">Send Report</button>    
-    <div id="appu-tabs" class="appuwarning">
-      <ul class="appuwarning">
-        <li class="appuwarning"><a href="#fragment-1" class="appuwarning"><span>Graphical Report</span></a></li>
-        <li class="appuwarning"><a href="#fragment-2" class="appuwarning"><span>Text Report</span></a></li>
-      </ul>
+	  <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+	  </a>
 
-      <div id="fragment-1" class="appuwarning">
-	<div id="expand-gui-report">
-	  <span id="expand-reports">
-	    <input type="checkbox" id="expand-reports-checkbox">
-	    <label id="label-expand-reports-checkbox" for="expand-reports-checkbox">Expand All Report Panels</label>
-	  </span>
-	  <div id="main-report-div">
-	    <button id="differential-report-button">Show Past Reports Differences</button>
+	  <div id="name-and-version">
+	    <!-- <a class="brand" href="#"><h1>Appu</h1><p id="version-info">0.0.0</p></a> -->
+	    <a class="brand" href="#" style="font-size: 24px">Appu (<span id="version-info">0.0.0</span>)</a>
 	  </div>
-	  <div id="diff-report-div">
-	    <p id="displaying-differential">Showing Differences From Past Reports</p>
-	    <button id="go-back-to-main-report-button">Show Main Report</button>
-	  </div>
-	</div>
 
-	<div id="accordion-master-profile-list" class="appuwarning">
-	  <h3> List of Sites With User Profile</h3>
-	  <div id="mpl-report">
-      	    <table id="master-profile-list-table">
-      	      <caption>Sites with User Profie</caption>
-      	      <colgroup class="profile-sites"></colgroup>
-      	      <colgroup class="delete-this-entry"></colgroup>
-      	      <thead>
-		<tr>
-		  <th id="header-profile-sites"><span>Site</span></th>
-		  <th id="header-delete-this-entry"><span></span></th>
-		</tr>
-      	      </thead>
-      	      <tbody id="master-profile-list-table-body">
-		<tr>
-		</tr>
-      	      </tbody>
-      	    </table>
+	  <div class="nav-collapse collapse">
+            <ul class="nav">
+            <li class="daily-report">
+              <!-- <a href="#"><h3>Report</h3> -->
+	      <!-- 	<h4 id="report-date-range">(<span id="report-start-date">0/0/0</span> -  -->
+	      <!-- 	  <span id="report-end-date">0/0/0</span>)</h4> -->
+	      <!-- </a> -->
+              <a href="#" style="font-size: 22px; font-weight:bold;"> 
+		Report (<span id="report-start-date">0/0/0</span> - <span id="report-end-date">0/0/0</span>)
+	      </a>
+            </li>
+	    </ul>
 	  </div>
 	</div>
-       	<div id="accordion-password-reuse-report" class="appuwarning">
-	  <h3> Password Reuse Warning Report</h3>
-	  <div id="pwru-report">
-      	    <table id="password-reuse-warning-report-table">
-      	      <caption>Password Reuse Warnings </caption>
-      	      <colgroup class="time"></colgroup>
-      	      <colgroup class="offender-site"></colgroup>
-      	      <colgroup class="reused-sites"></colgroup>
-      	      <colgroup class="delete-this-entry"></colgroup>
-      	      <thead>
-		<tr>
-		  <th id="header-time"><span>Time</span></th>
-		  <th id="header-offender-site"><span>Login Attempt</span></th>
-		  <th id="header-reused-sites"><span>Password Reused In</span></th>
-		  <th id="header-delete-this-entry"><span></span></th>
-		</tr>
-      	      </thead>
-      	      <tbody id="password-reuse-warning-report-table-body">
-		<tr>
-		</tr>
-      	      </tbody>
-      	    </table>
-	  </div>
-       	</div>
-	
-	<div id="search-functionality">
-	  <div id="ready-to-search">
-	    <input id="search-report-text" placeholder="Search Phrase" type="text" size=50>
-	    <button id="search-report-button">Search Report</button>
-	  </div>
-	  <div id="go-back-to-main-report">
-	    <p id="search-results">Showing Search Results For: <span id="search-phrase-span"></span></p>
-	    <button id="show-main-report-button">Show Main Report</button>
-	  </div>
-	</div>
-
-      </div>
-
-      <div id="fragment-2" class="appuwarning">
-	<textarea id="appu-text-report-area" cols="105" maxcols="105" readonly="yes" maxrows="30" rows="30"></textarea>
       </div>
     </div>
-    <button id="send-button2" class="send-report-button">Send Report</button>
+    
+    <div id="appu-report" class="container">
 
-</body>
+      <div class="row">
+
+	<div class="span3">
+
+	  <div class="bs-docs-sidebar">
+	    <ul id="section-nav" class="nav nav-list bs-docs-sidenav affix">
+              <li><a href="#overall-stats"><i class="icon-chevron-right"></i> Overall Statistics</a></li>
+              <li><a href="#per-site-account-data"><i class="icon-chevron-right"></i> User Account Info</a></li>
+              <li><a href="#password-stats"><i class="icon-chevron-right"></i> Password Statistics</a></li>
+              <li><a href="#pi-metadata"><i class="icon-chevron-right"></i> Personal Information Metadata</a></li>
+              <li><a href="#per-site-user-interaction-metadata"><i class="icon-chevron-right"></i> 
+		  User Interaction Metadata</a></li>
+              <li><a href="#appu-metadata"><i class="icon-chevron-right"></i> Appu Metadata</a></li>
+	    </ul>
+	  </div>
+
+	  <div id="other-reports" data-spy="affix" class="pagination well well-small"
+	       data-offset-top="0" style="text-align: center; margin-top: 230px;">
+	    <p>Past Reports</p>
+	    <ul id="past-report-list">
+	      <li><a href="#">Prev</a></li>
+	      <li><a class="report-number" href="#">1</a></li>
+	      <li><a href="#">Next</a></li>
+	    </ul>
+	  </div>
+	  
+	  <div class="" data-spy="affix" style="text-align: center; margin-top: 340px;">
+	    <button id="send-report-button" type="button" data-loading-text="Sending..." 
+		    class="btn btn-large btn-warning btn-primary">
+	      <h4>Send Report</h4>
+	    </button>
+	    <!-- Modal -->
+	  </div>
+
+	</div>
+	    
+	<!-- Actual Reports Contents 
+	  -->
+
+	<div class="span9">
+
+	  <div class="row">
+	    <div id="user-review-warning" class="span9" style="font-size: 16px">
+	      <em><p>Please review following data carefully as it gets sent to server. In particular, 
+		  check "User Account Info", "PI Metadata", and "Interaction Metadata". </p>
+		<p>If you see any unwanted site, delete the record before sending it to
+		  the server.</p></em>
+	    </div>
+	  </div>
+
+	  <div class="span9">
+	    <div class="row">
+	      <button id="print-text-report" type="button" class="btn btn-primary" style="text-align: center;">
+		Print Report <span style="font-size: 10px">(Text version)</span>
+	      </button>
+	    </div>
+	  </div>
+
+
+	  <div class="span9">
+	    <div class="row">
+	      <div id="send-report-modal" class="modal hide fade"
+	    	   tabindex="-1" role="dialog" aria-labelledby="send-report-modal-label"
+	    	   aria-hidden="true">
+		<div id="send-report-modal-header" class="modal-header">
+	    	  <button type="button" class="close send-report-modal-dismiss"
+	    		  data-dismiss="modal" aria-hidden="true">×</button>
+	    	  <h3 id="send-report-modal-label">Report is scheduled to be sent to the server</h3>
+		</div>
+		<div id="report-send-modal-body" class="modal-body">
+	    	  Report Number: <span id="report-number-send-modal"></span><br/>
+		  Report Duration: <span id="report-duration-send-modal"></span><br/>
+		  <br/>
+		  When report is successfully delivered, "Report Delivered"(Section: Appu Metadata) will have acknowledgement time from server.
+		</div>
+		<div class="modal-footer">
+	    	  <button class="btn btn-action report-send-modal-dismiss"
+	    		  data-dismiss="modal" aria-hidden="true">Close</button>
+		</div>
+	      </div>
+	    </div>
+	  </div>
+
+
+	  <div class="row" style="margin-left: 0px; margin-top: -80px">
+
+	    <!-- Overall Section
+	      -->
+	    
+	    <section id="overall-stats">
+	    <div class="page-header">
+	      <h1>Overall Statistics</h1>
+	    </div>
+
+
+	    <div class="bookkeeping loose-info-box">
+	      <h3>Bookkeeping</h3>
+	      <div id="appu-version-div"  class="loose-info">
+		Appu version: <span class="loose-info-value"><b></b></span>
+	      </div>
+
+	      <div id="guid-div" class="loose-info">
+		<i id="help-user-id" class="icon-question-sign"></i>User-ID: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+	      
+	      <div id="report-id-div" class="loose-info">Report-ID: 
+		<span class="loose-info-value"><b></b></span>
+	      </div>
+
+	      <div id="report-duration-div" class="loose-info">
+		<i id="help-report-duration" class="icon-question-sign"></i>Report Duration: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+	    </div>
+
+	    <div class="site-stats loose-info-box">
+	      <h3>Site Stats</h3>
+
+	      <div id="total-sites-div" class="loose-info">
+		<span class="loose-info-question">
+		  <i id="help-total-sites" class="icon-question-sign"></i>Total Sites: </span>
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="total-sites-with-ac-div" class="loose-info">
+		<i id="help-sites-with-ac" class="icon-question-sign"></i>Sites with Your Account: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="total-sites-wo-ac-div" class="loose-info">
+		<i id="help-sites-wo-ac" class="icon-question-sign"></i>Sites w/o Your Account: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+	    </div>
+
+	    <div class="site-stats loose-info-box">
+	      <h3>Time Stats</h3>
+
+	      <div id="total-time-spent-div" class="loose-info">
+		<i id="help-total-time" class="icon-question-sign"></i>Total Time Spent: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="total-time-spent-loggedin-div" class="loose-info">
+		<i id="help-total-time-logged-in" class="icon-question-sign">
+		</i>Time Spent(logged-in): 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+	      
+	      <div id="total-time-spent-wo-loggedin-div" class="loose-info">
+		<i id="help-total-time-logged-out" class="icon-question-sign"></i>Time Spent(logged-out): 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+	    </div>
+
+	    <div class="login-stats loose-info-box">
+	      <h3>Login Stats</h3>
+
+	      <div id="login-freq-div" class="loose-info">
+		<i id="help-login-frequency" class="icon-question-sign"></i>Login Frequency: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="logout-freq-div" class="loose-info">
+		<i id="help-logout-frequency" class="icon-question-sign"></i>Logout Frequency: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="total-passwords-div"  class="loose-info">
+		<i id="help-total-passwords" class="icon-question-sign"></i>Total Passwords: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+	    </div>
+
+	  </section>
+
+	<!-- <\!-- Template Section -->
+	<!--   -\-> -->
+
+	<!--   <section id="user-accounts"> -->
+	<!--     <div class="page-header"> -->
+	<!--       <h1>User Accounts</h1> -->
+	<!--     </div> -->
+
+	<!--     <div>Appu version: </div> -->
+	<!--     <div>Current Report Duration: </div> -->
+	<!--     <div>Number of times you signed-in accounts: </div> -->
+	<!--     <div>Number of different passwords used: </div> -->
+	<!--     <div>Total time spent browsing: </div> -->
+	<!--     <div>Total time spent browsing while logged-in: </div> -->
+	<!--   </section> -->
+
+	<!-- Per Site User Account Information Table
+	  -->
+
+	  <section id="per-site-account-data">
+	    <div class="page-header">
+	      <h1>User Account Data</h1>
+	    </div>
+
+
+	    <!-- <a href="#myModal" role="button" class="btn" data-toggle="modal">Launch demo modal</a> -->
+	    <button id="expand-per-site-account-data-table" data-target="#per-site-account-data-table-modal" 
+		    data-toggle="modal" type="button" class="btn btn-success btn-primary">
+	      Expand Table
+	    </button>
+	    
+	    <!-- Modal -->
+	    <div id="per-site-account-data-table-modal" class="modal hide fade" 
+		 tabindex="-1" role="dialog" aria-labelledby="per-site-account-data-table-modal-label" 
+		 aria-hidden="true">
+	      <div id="per-site-account-data-table-modal-header" class="modal-header">
+		<button type="button" class="close per-site-account-data-table-modal-dismiss" 
+			data-dismiss="modal" aria-hidden="true">×</button>
+		<h3 id="per-site-account-data-table-modal-label">Per-site User Account Statistics</h3>
+	      </div>
+	      <div id="per-site-account-data-table-modal-body" class="modal-body">
+	      </div>
+	      <div class="modal-footer">
+		<button class="btn btn-action per-site-account-data-table-modal-dismiss" 
+			data-dismiss="modal" aria-hidden="true">Close</button>
+	      </div>
+	    </div>
+
+	    <div id="per-site-account-data-table-div">
+	    <table id="per-site-account-data-table" class="display all-data-tables" cellpadding="0" cellspacing="0" border="0" width="100%">
+		<thead>
+                  <tr>
+                        <th>Site</th>
+                        <th>Password<br/>Group</th>
+                        <th>Login<br/>Frequency</th>
+                        <th>Time Spent</th>
+                        <th>Latest Login</th>
+
+                        <th>Time Spent<br/>(Logged-in)</th>
+                        <th>Time Spent<br/>(Logged-out)</th>
+                        <th>Explicit<br/> Logouts</th>
+
+                        <th>Category</th>
+                        <th>Delete</th>
+                  </tr>
+		</thead>
+		<tbody>
+		</tbody>
+		<tfoot>
+                  <tr>
+                        <th>Site</th>
+                        <th>Password<br/>Group</th>
+                        <th>Login<br/>Frequency</th>
+                        <th>Time Spent</th>
+                        <th>Latest Login</th>
+
+                        <th>Time Spent<br/>(Logged-in)</th>
+                        <th>Time Spent<br/>(Logged-out)</th>
+                        <th>Explicit<br/> Logouts</th>
+
+                        <th>Category</th>
+                        <th>Delete</th>
+                  </tr>
+		</tfoot>
+	    </table>
+	    </div>
+
+	  </section>
+
+	  <!-- All the password statistics in one place 
+	    -->
+
+	  <section id="password-stats">
+	    <div class="page-header">
+	      <h1>Password Statistics</h1>
+	    </div>
+
+	    <div id="password-reuse-warnings">
+	      <p><h3>Password Reuse Warnings</h3></p>
+	      <table id="password-reuse-warnings-table" class="display all-data-tables" cellpadding="0" 
+		     cellspacing="0" border="0" width="100%">
+		<thead>
+                  <tr>
+                    <th>Number</th>
+                    <th>Warning Time</th>
+                    <th>Warned On</th>
+                    <th>Warned About</th>
+                    <th>Delete</th>
+                  </tr>
+		</thead>
+		<tbody>
+		</tbody>
+		<tfoot>
+                  <tr>
+                    <th>Number</th>
+                    <th>Warning Time</th>
+                    <th>Warned On</th>
+                    <th>Warned About</th>
+                    <th>Delete</th>
+                  </tr>
+		</tfoot>
+	      </table>
+	    </div>
+
+	    <hr>
+
+	    <div id="password-reuse">
+	      <p><h3>Password sharing and strength</h3></p>
+	      <table id="password-stats-table" class="display all-data-tables" cellpadding="0" 
+		     cellspacing="0" border="0" width="100%">
+		<thead>
+                  <tr>
+                    <th>Password</th>
+                    <th>Sites Sharing Password</th>
+                    <th><a href="https://tech.dropbox.com/2012/04/zxcvbn-realistic-password-strength-estimation/">Password Strength</a></th>
+                    <th><a href="https://tech.dropbox.com/2012/04/zxcvbn-realistic-password-strength-estimation/">Estimated Cracking Time</a></th>
+                  </tr>
+		</thead>
+		<tbody>
+		</tbody>
+		<tfoot>
+                  <tr>
+                    <th>Password</th>
+                    <th>Sites Sharing Password</th>
+                    <th><a href="https://tech.dropbox.com/2012/04/zxcvbn-realistic-password-strength-estimation/">Password Strength</a></th>
+                    <th><a href="https://tech.dropbox.com/2012/04/zxcvbn-realistic-password-strength-estimation/">Estimated Cracking Time</a></th>
+                  </tr>
+		</tfoot>
+	      </table>
+	    </div>
+
+	    <hr>
+
+	    <div class="accordion" id="password-similarity-accordion">
+	      <div class="accordion-group">
+		<div class="accordion-heading">
+		  <a class="accordion-toggle" data-toggle="collapse" data-parent="#password-similarity-accordion" 
+		     href="#password-similarity-collapse">
+		    <p><span style="font-size: 25px; font-weight: bold;">Password Similarity</span> (click to exapnd)</p>
+		  </a>
+		</div>
+		<div id="password-similarity-collapse" class="accordion-body collapse">
+		  <div class="accordion-inner">
+
+		    <div id="password-edit-distance-div">
+		      <table id="password-edit-distance-table" class="display all-data-tables" cellpadding="0" 
+			     cellspacing="0" border="0" width="100%">
+			<thead>
+			  <tr>
+			    <th>Password Group</th>
+			    <th>Group 1</th>
+			    <th>Group 2</th>
+			    <th>Group 3</th>
+			    <th>Group 4</th>
+			    <th>Group 5</th>
+			  </tr>
+			</thead>
+			<tbody>
+			</tbody>
+			<tfoot>
+			  <tr>
+			    <th>Password Group</th>
+			    <th>Group 1</th>
+			    <th>Group 2</th>
+			    <th>Group 3</th>
+			    <th>Group 4</th>
+			    <th>Group 5</th>
+			  </tr>
+			</tfoot>
+		      </table>
+		    </div>
+
+		  </div>
+		</div>
+	      </div>
+	    </div>
+
+
+	  </section>  
+
+	  <!-- Personal Information Metadata Section 
+	    -->
+	  <section id="pi-metadata">
+	    <div class="page-header">
+	      <h1>Personal Information Metadata</h1>
+	    </div>
+	    <div id="pi-metadata-table-div">
+	      <p><h3>Fetched Personal Information Fields</h3></p>
+	      
+	      <table id="pi-metadata-table" class="display all-data-tables" cellpadding="0" 
+		     cellspacing="0" border="0" width="100%">
+		<thead>
+                  <tr>
+                    <th>Site</th>
+                    <th>Fetch Time</th>
+                    <th>Fetched Fields</th>
+                    <th>Delete</th>
+                  </tr>
+		</thead>
+		<tbody>
+		</tbody>
+		<tfoot>
+                  <tr>
+                    <th>Site</th>
+                    <th>Fetch Time</th>
+                    <th>Fetched Fields</th>
+                    <th>Delete</th>
+                  </tr>
+		</tfoot>
+	      </table>
+	    </div>
+	    <hr>
+
+	    <p><h3>Personal Information Fields with Common Data</h3></p>
+
+	      <table id="pi-reuse-table" class="display all-data-tables" cellpadding="0" 
+		     cellspacing="0" border="0" width="100%">
+		<thead>
+                  <tr>
+                    <th>Field Name</th>
+		    <th>Total Sites Sharing</th>
+                    <th>Sites Sharing Same Value</th>
+                    <th>Delete</th>
+                  </tr>
+		</thead>
+		<tbody>
+		</tbody>
+		<tfoot>
+                  <tr>
+                    <th>Field Name</th>
+		    <th>Total Sites Sharing</th>
+                    <th>Sites Sharing Same Value</th>
+                    <th>Delete</th>
+                  </tr>
+		</tfoot>
+	      </table>
+
+	  </section>
+
+	<!-- User Interaction Stats
+	  -->
+
+	  <section id="per-site-user-interaction-metadata">
+	    <div class="page-header">
+	      <h1>User Interaction Metadata</h1>
+	    </div>
+
+	    <div class="accordion" id="user-interaction-accordion">
+	      <div class="accordion-group">
+		<div class="accordion-heading">
+		  <a class="accordion-toggle" data-toggle="collapse" data-parent="#user-interaction-accordion" 
+		     href="#user-interaction-collapse">
+		    <p><span style="font-size: 25px; font-weight: bold;">Metadata About User Inputs</span> 
+		      (click to exapnd)</p>
+		  </a>
+		</div>
+		<div id="user-interaction-collapse" class="accordion-body collapse">
+		  <div class="accordion-inner">
+
+	    <table id="user-interaction-metadata-table" class="display all-data-tables" cellpadding="0" 
+		     cellspacing="0" border="0" width="100%">
+	      <thead>
+                  <tr>
+                    <th>Number</th>
+                    <th>Time</th>
+		    <th>Site</th>
+                    <th>Input<br/> Field Name</th>
+                    <th>Input<br/> Field Type</th>
+                    <th>Input<br/> Field Length</th>
+                    <th>Delete</th>
+                  </tr>
+	      </thead>
+		<tbody>
+		</tbody>
+		<tfoot>
+                  <tr>
+                    <th>Number</th>
+                    <th>Time</th>
+		    <th>Site</th>
+                    <th>Input<br/> Field Name</th>
+                    <th>Input<br/> Field Type</th>
+                    <th>Input<br/> Field Length</th>
+                    <th>Delete</th>
+                  </tr>
+		</tfoot>
+	      </table>
+
+		  </div>
+		</div>
+	      </div>
+	    </div>
+
+	  </section>
+
+
+
+	<!-- Appu Metadata
+	  -->
+
+	  <section id="appu-metadata">
+	    <div class="page-header">
+	      <h1>Appu Metadata</h1>
+	    </div>
+
+	    <div class="report-stats loose-info-box">
+	      <h3>Report Metadata</h3>
+
+	      <div id="report-modified-div" class="loose-info">
+		<i id="help-report-modified" class="icon-question-sign"></i>Report Modified: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="report-visited-div" class="loose-info">
+		<i id="help-report-visited" class="icon-question-sign"></i>Report Visited: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="report-review-time-div" class="loose-info">
+		<i id="help-report-review" class="icon-question-sign"></i>Report Review Time: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="user-approved-div" class="loose-info">
+		<i id="help-user-approved" class="icon-question-sign"></i>User Approved: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="report-delivered-div" class="loose-info">
+		<i id="help-report-delivered" class="icon-question-sign"></i>Report Delivered: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="sched-upload-time-div" class="loose-info">
+		<i id="help-scheduled-report" class="icon-question-sign"></i>Scheduled Report Upload Time: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="actual-report-upload-time-div" class="loose-info">
+		<i id="help-actual-report-time" class="icon-question-sign"></i>Actual Report Upload Time: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="number-of-send-attempts-div" class="loose-info">
+		<i id="help-report-send-attempts" class="icon-question-sign"></i>Number of Report Send Attempts: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="reporting-type-div" class="loose-info">
+		<i id="help-reporting-type" class="icon-question-sign"></i>Reporting Type: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="report-postponing-div" class="loose-info">
+		<i id="help-user-report-postpone" class="icon-question-sign"></i>User Report Postponing: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+	    </div>
+
+
+	    <div class="report-stats loose-info-box">
+	      <h3>"My Footprint" Stats</h3>
+
+	      <div id="my-footprint-visits-div" class="loose-info">
+		<i id="help-myfootprint-visits" class="icon-question-sign"></i>"My Footprint" visited: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="my-footprint-time-spent-div" class="loose-info">
+		<i id="help-myfootprint-time-spent" class="icon-question-sign"></i>"My Footprint" Time Spent: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+	    </div>
+
+
+	    <div class="report-stats loose-info-box">
+	      <h3>Appu Stats</h3>
+
+	      <div id="appu-disabled-div" class="loose-info">
+		<i id="help-appu-disabled" class="icon-question-sign"></i>Appu Disabled: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="appu-disabled-durations-div" class="loose-info">
+		<i id="help-disabled-durations" class="icon-question-sign"></i>Appu Disabled Durations(minutes): 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="donotbugmelist-div" class="loose-info">
+		<i id="help-donotbugme-list" class="icon-question-sign"></i>DO-NOT-BUG-ME Entries: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="extension-updated-div" class="loose-info">
+		<i id="help-extension-updated" class="icon-question-sign"></i>Extension Updated: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	    </div>
+
+	    <div id="appu-errors-div" class="report-stats loose-info-box">
+	      <h3>Appu Errors</h3>
+	      <!-- <div>Appu Error: Could not download PI records for facebook </div> -->
+	      <!-- <div>Appu Error: Could not download PI records for google </div> -->
+	    </div>
+
+	  </section>
+
+	  </div>
+	</div>
+      </div>
+    </div>    
+
+    <footer class="footer">
+      <!-- <div class="container"> -->
+      <!-- </div> -->
+    </footer>
+    
+  </body>
 </html>
