@@ -899,8 +899,13 @@ chrome.extension.onMessage.addListener(function(message, sender, send_response) 
 	$(element_to_click).trigger("click");
     }
     else if (message.type == "get-html") {
-	var html_data = $("html").html();
-	send_response(html_data);
+	//Adding 2 seconds delay because some sites like Google+ have data populated asynchronously.
+	//So the page loads but actual data is populated later.
+	window.setTimeout(function() {
+		var html_data = $("html").html();
+		send_response(html_data);
+	    }, 2000);
+	return true;
     }
     else if (message.type == "get-permission-to-fetch-pi") {
 	get_permission_to_fetch_pi(message.site, send_response);
