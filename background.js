@@ -18,7 +18,11 @@ var pending_pi_fetch = {};
 var report_reminder_interval = 30;
 
 //Report check interval in minutes
-var report_check_interval = 2;
+var report_check_interval = 5;
+
+//Do background tasks like send undelivered reports,
+//feedbacks etc
+var bg_tasks_interval = 10;
 
 //Is user processing report?
 var is_report_tab_open = 0;
@@ -33,6 +37,12 @@ var text_report_tab_ids = {};
 var myfootprint_tab_ids = [];
 
 var template_processing_tabs = {};
+
+//Was an undelivered report attempted to be sent in last-24 hours?
+var delivery_attempts = {};
+
+//Keep server updated about my alive status
+var last_server_contact = undefined;
 
 var tld = undefined;
 var focused_tabs = 0;
@@ -55,19 +65,6 @@ function print_appu_error(err_str) {
     flush_selective_entries("current_report", ["appu_errors"]);
 }
 
-function verify_unique_guid(guid) {
-    //Contact the server and ask if anyone else has same GUID.
-    //Worth the effort?
-    var wr = {};
-    wr.guid = guid;
-    try {
-	$.post("http://woodland.gtnoise.net:5005/register_new_user", JSON.stringify(wr));
-    }
-    catch (e) {
-	console.log("Error while registering user");
-    }
-}
-
 function pii_next_report_time() {
     var curr_time = new Date();
 
@@ -77,7 +74,7 @@ function pii_next_report_time() {
     curr_time.setMinutes(0);
     curr_time.setHours(0);
     curr_time.setMinutes( curr_time.getMinutes() + pii_vault.config.reporting_hour);
-    return curr_time.toString();
+    return new Date(curr_time.toString());
 }
 
 //Only useful for reading extension specific files
@@ -97,15 +94,54 @@ function update_specific_changes(last_version) {
 	delete localStorage[ext_id];
 	pii_vault = { "options" : {}, "config": {}};
     }
-    else if (last_version == '0.3.80') {
-	console.log("Here here: Update specific changes(0.3.80). Deleting all per_site_pi");
-	pii_vault.aggregate_data.per_site_pi = {};
-	flush_aggregate_data();
+    else if (last_version == '0.3.84') {
+	console.log("Here here: Update specific changes(0.3.84). Adding new field 'pi_field_value_identifiers' " + 
+		    "to aggregate_data");
+	//The new field added to aggregate data.
+	pii_vault.aggregate_data.pi_field_value_identifiers = {};
+	flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
+	calculate_common_fields();
     }
-    else if (last_version == '0.3.82') {
-	console.log("Here here: Update specific changes(0.3.82). Removing existing password hashes");
-	pii_vault.password_hashes = {};
-	vault_write("password_hashes", pii_vault.password_hashes);
+    else if (last_version == '0.3.86') {
+	console.log("Here here: Update specific changes(0.3.86). Adding browser, os and layout info " + 
+		    "to current_report");
+	//The browser, layout and os to current report
+	var environ = voodoo.ua();
+	//General info about user's environment
+	pii_vault.current_report.browser = environ.browser.name;
+	pii_vault.current_report.browser_version = environ.browser.version;
+	pii_vault.current_report.os = environ.platform.name;                      
+	pii_vault.current_report.os_version = environ.platform.version;                                    
+	pii_vault.current_report.layout_engine = environ.browser.engine;           
+	pii_vault.current_report.layout_engine_version = environ.browser.engineVersion;
+	flush_selective_entries("current_report", ["browser", "browser_version", 
+						   "os", "os_version", 
+						   "layout_engine", "layout_engine_version"]);
+
+	console.log("Here here: Update specific changes(0.3.86). Adding deviceid");
+	pii_vault.config.deviceid = generate_guid();
+	flush_selective_entries("config", ["deviceid"]);
+	pii_vault.current_report.deviceid = pii_vault.config.deviceid;	
+	flush_selective_entries("current_report", ["deviceid"]);
+
+	console.log("Here here: Update specific changes(0.3.86). Adding pwd_unchanged_duration to all UAS");
+	for (site in pii_vault.current_report.user_account_sites) {
+	    if (!('pwd_unchanged_duration' in pii_vault.current_report.user_account_sites[site])) {
+		pii_vault.current_report.user_account_sites[site].pwd_unchanged_duration = 0;
+	    }
+	}
+	flush_selective_entries("current_report", ["user_account_sites"]);
+
+	console.log("Here here: Update specific changes(0.3.86). Adding pwd_unchanged_duration to all past UAS");
+	for (var i = 0; i < pii_vault.past_reports.length; i++) {
+	    var report = pii_vault.past_reports[i];
+	    for (site in report.user_account_sites) {
+		if (!('pwd_unchanged_duration' in report.user_account_sites[site])) {
+		    report.user_account_sites[site].pwd_unchanged_duration = 0;
+		}
+	    }
+	}
+	vault_write("past_reports", pii_vault.past_reports);
     }
 }
 
@@ -136,6 +172,7 @@ function make_version_check() {
 function init_user_account_sites_entry() {
     var uas_entry = {};
     uas_entry.num_logins = 0;
+    uas_entry.pwd_unchanged_duration = 0;
     uas_entry.num_logouts = 0;
     uas_entry.latest_login = 0;
     //Specifically naming it with prefix "my_" because it was
@@ -164,6 +201,10 @@ function initialize_report() {
 
     //Current report: Id
     current_report.reportid = pii_vault.config.reportid;
+
+    //Current report: Device Id
+    current_report.device_id = pii_vault.config.deviceid;
+
     //Current report: is it modified?
     current_report.report_modified = "no";
     //Current report: GUID
@@ -302,6 +343,15 @@ function initialize_report() {
     // Fourth is list of sites for which user was warned
     current_report.pwd_reuse_warnings = [];
 
+    var environ = voodoo.ua();
+    //General info about user's environment
+    current_report.browser = environ.browser.name;
+    current_report.browser_version = environ.browser.version;
+    current_report.os = environ.platform.name;                      
+    current_report.os_version = environ.platform.version;                                    
+    current_report.layout_engine = environ.browser.engine;
+    current_report.layout_engine_version = environ.browser.engineVersion;
+
     return current_report
 }
 
@@ -364,6 +414,17 @@ function initialize_aggregate_data() {
     // field_name --> field value
     aggregate_data.per_site_pi = {};
     
+    //This is used to assign a unique identifier to
+    //each possible value of PI.
+    //For eg. an address like "122, 5th ST SE, ATLANTA 30318, GA, USA" will
+    //get an identifier like "address1"
+    //Or a name like "Appu Singh" will get an identifier like "name3"
+    //This is useful to show in reports page (so that the real values are
+    // shown in the tooltip). Also it helps to always assign a unique 
+    //identifier even if that thing is downloaded multiple times over the
+    //time.
+    aggregate_data.pi_field_value_identifiers = {};
+
     return aggregate_data;
 }
 
@@ -393,10 +454,11 @@ function create_account(sender_tab_id, username, password) {
     var wr = { 
 	'guid': new_guid, 
 	'username': CryptoJS.SHA1(username).toString(), 
-	'password' : CryptoJS.SHA1(password).toString() 
+	'password' : CryptoJS.SHA1(password).toString(),
+	'version' : pii_vault.config.current_version 
     }
 
-    $.post("http://woodland.gtnoise.net:5005/create_new_account", 
+    $.post("http://192.168.56.101:59000/create_new_account", 
 	   JSON.stringify(wr),
 	   function(data) {
 	       if (data == 'Success') {
@@ -440,7 +502,18 @@ function create_account(sender_tab_id, username, password) {
 		   }); 
 		   console.log("Here here: Account creation was failure: Unknown Reason");
 	       }
-	   });
+	   })	
+	.error(function(sender_tab_id) {
+		return function(data, status) {
+		    print_appu_error("Appu Error: Account creation failed at the server: " 
+				     + status.toString() + " @ " + (new Date()));
+		    chrome.tabs.sendMessage(sender_tab_id, { 
+			    type: "account-failure", 
+				desc: "Account creation failed, service possibly down"
+				}); 
+		    console.log("Here here: Account creation was failure: Unknown Reason");
+		}
+	    } (sender_tab_id));
 }
 
 function sign_in(sender_tab_id, username, password) {
@@ -448,10 +521,11 @@ function sign_in(sender_tab_id, username, password) {
     var wr = { 
 	'guid': pii_vault.guid, 
 	'username': CryptoJS.SHA1(username).toString(), 
-	'password' : CryptoJS.SHA1(password).toString() 
+	'password' : CryptoJS.SHA1(password).toString(),
+	'version' : pii_vault.config.current_version
     }
 
-    $.post("http://woodland.gtnoise.net:5005/sign_in_account", 
+    $.post("http://192.168.56.101:59000/sign_in_account", 
 	   JSON.stringify(wr),
 	   function(data) {
 	       if (data.split(' ')[0] == 'Success') {
@@ -503,7 +577,18 @@ function sign_in(sender_tab_id, username, password) {
 		   }); 
 		   console.log("Here here: Account sign-in was failure, Unknown reason");
 	       }
-	   });
+	   })
+	.error(function(sender_tab_id) {
+		return function(data, status) {
+		    print_appu_error("Appu Error: Account sign-in failed at the server: " 
+				     + status.toString() + " @ " + (new Date()));
+		    chrome.tabs.sendMessage(sender_tab_id, {
+			    type: "login-failure", 
+				desc: "Account sign-in failed, possibly service is down"
+				}); 
+		   console.log("Here here: Account creation was failure: Unknown Reason");
+		}
+	    } (sender_tab_id));
 }
 
 function sign_out() {
@@ -543,8 +628,11 @@ function vault_init() {
     console.log("vault_init(): Initializing missing properties from last release");
     // All top level values
     if (!pii_vault.guid) {
+	//Verifying that no such user-id exists is taken care by
+	//Create Account or Sign-in.
+	//However, if there is a duplicate GUID then we are in trouble.
+	//Need to take care of that somehow.
 	pii_vault.guid = generate_guid();
-	//setTimeout(verify_unique_guid, 1);
 	
 	console.log("vault_init(): Updated GUID in vault: " + pii_vault.guid);
 	vault_write("guid", pii_vault.guid);
@@ -602,12 +690,20 @@ function vault_init() {
     }
 
     // All config values
+    if (!pii_vault.config.deviceid) {
+	//A device id is only used to identify all reports originating from a 
+	//specific Appu install point. It serves no other purpose.
+	pii_vault.config.deviceid = generate_guid();
+	
+	console.log("vault_init(): Updated DEVICEID in vault: " + pii_vault.config.deviceid);
+	flush_selective_entries("config", ["deviceid"]);
+    }
+
     if (!pii_vault.config.current_version) {
 	response_text = read_file('manifest.json');
 	var manifest = JSON.parse(response_text);
 	pii_vault.config.current_version = manifest.version;
 	console.log("vault_init(): Updated CURRENT_VERSION in vault: " + pii_vault.config.current_version);
-	vault_write("config:current_version", pii_vault.config.current_version);
 	flush_selective_entries("config", ["current_version"]);
     }
 
@@ -717,6 +813,7 @@ var on_disk_values = {
 	"past_reports",
     ],
     "config" : [
+	"deviceid",
 	"current_version",
 	"status",
 	"disable_period",
@@ -735,6 +832,7 @@ var on_disk_values = {
     "current_report" : [
 	"initialize_time",
 	"reportid",
+	"deviceid",
 	"report_modified",
 	"guid",
 	"num_report_visits",
@@ -767,6 +865,12 @@ var on_disk_values = {
 	"downloaded_pi",
 	"common_fields",
 	"pwd_reuse_warnings",
+	"browser",
+	"browser_version",
+	"os",
+	"os_version",
+	"layout_engine",
+	"layout_engine_version",
     ],
     "aggregate_data" : [
 	"initialized_time",
@@ -783,6 +887,7 @@ var on_disk_values = {
 	"pwd_groups",
 	"pwd_similarity",
 	"per_site_pi",
+	"pi_field_value_identifiers",
     ],
 }
 
@@ -866,8 +971,8 @@ function vault_write(key, value) {
     }
 }
 
-function vault_update_domain_passwd(message) {
-    var domain = tld.getDomain(message.domain);
+function vault_update_domain_passwd(message, already_exists) {
+    var domain = message.domain;
     try {
 	var r = Math.floor((Math.random() * 1000)) % 1000;
 	var rand_salt = pii_vault.salt_table[r];
@@ -876,15 +981,17 @@ function vault_update_domain_passwd(message) {
 
 	var hk = '' + ':' + domain;
 
-	if (hk in pii_vault.password_hashes) {
-	    if (pii_vault.password_hashes[hk].pwd_hash != pwd_sha1sum) {
-		pii_vault.password_hashes[hk] = {'pwd_hash': pwd_sha1sum, 'initialized': new Date()};
-	    }
+	if (already_exists == 'no') {
+	    pii_vault.password_hashes[hk] = {};
+	    pii_vault.password_hashes[hk].initialized = new Date();
 	}
-	else {
-	    pii_vault.password_hashes[hk] = {'pwd_hash': pwd_sha1sum, 'initialized': new Date()};
-	}
+	pii_vault.password_hashes[hk].pwd_hash = pwd_sha1sum;
+
 	vault_write("password_hashes", pii_vault.password_hashes);
+
+	pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration =
+	    new Date() - new Date(pii_vault.password_hashes[hk].initialized);
+	flush_selective_entries("current_report", ["user_account_sites"]);
     }
     catch (e) {
 	print_appu_error("Appu Error: Got an exception: " + e.message);
@@ -1533,8 +1640,9 @@ function check_if_pi_fetch_required(domain, sender_tab_id) {
     wr = {};
     wr.command = 'get_template';
     wr.domain = domain;
+
     try {
-	$.post("http://woodland.gtnoise.net:5005/get_template", JSON.stringify(wr), function(data) {
+	$.post("http://appu.gtnoise.net:5005/get_template", JSON.stringify(wr), function(data) {
 	    pii_vault.aggregate_data.per_site_pi[domain].attempted_download_time = new Date();
 	    flush_selective_entries("aggregate_data", ["per_site_pi"]);
 	    
@@ -1581,7 +1689,14 @@ function check_if_pi_fetch_required(domain, sender_tab_id) {
 		print_appu_error("Appu Error: FPI Template for domain(" + domain 
 				 + ") is not present on the server");
 	    }
-	});
+	})
+	.error(function(domain) {
+		return function(data, status) {
+		    print_appu_error("Appu Error: Service down, attempted to fetch template: " 
+				     + domain + ", " + status.toString() + " @ " + (new Date()));
+		   console.log("Here here: Service down, attempted to fetch:" + domain);
+		}
+	    } (domain));
     }
     catch (e) {
 	console.log("Error: while fetching template(" + domain + ") from server");
@@ -1647,7 +1762,6 @@ function store_per_site_pi_data(domain, site_pi_fields) {
 
     for (var field in site_pi_fields) {
 	if (site_pi_fields[field].value.length > 0) {
-	    downloaded_fields.push(field);
 	    add_field_to_per_site_pi(domain, field, site_pi_fields[field].value);
 	    if (field in old_pi_values) {
 		if (curr_site_pi[field].values.sort().join(", ") == 
@@ -1678,13 +1792,35 @@ function store_per_site_pi_data(domain, site_pi_fields) {
     console.log("Here here: Current site pi: " + JSON.stringify(pii_vault.aggregate_data.per_site_pi[domain]));
     flush_selective_entries("aggregate_data", ["per_site_pi"]);
 
+    for (field in curr_site_pi) {
+	if (field == 'download_time' ||
+	    field == 'attempted_download_time' ||
+	    field == 'user_approved') {
+	    continue;
+	}
+
+	var t = { 
+	    'field': field, 
+	    'change_type': curr_site_pi[field].change_type
+	}
+	if (curr_site_pi[field].values == undefined) {
+	    t.num_values = 0;
+	}
+	else {
+	    t.num_values = curr_site_pi[field].values.length;
+	}
+	downloaded_fields.push(t);
+    }
+
     //Update current report
     pii_vault.current_report.downloaded_pi[domain] = {
 	'download_time' : curr_site_pi.download_time,
 	'downloaded_fields' : downloaded_fields,
     };
-    pii_vault.current_report.common_fields = calculate_common_fields();
-    flush_selective_entries("current_report", ["downloaded_pi", "common_fields"]);
+    
+    //Aggregate by values on sites
+    calculate_common_fields();
+    flush_selective_entries("current_report", ["downloaded_pi"]);
 
     for (var i = 0; i < report_tab_ids.length; i++) {
 	chrome.tabs.sendMessage(report_tab_ids[i], {
@@ -1709,13 +1845,30 @@ function calculate_common_fields() {
     var r = get_all_pi_data();
     var common_fields = {};
     for (f in r) {
-	var j = 1;
 	for (v in r[f]) {
-	    common_fields[f + j] = r[f][v].substring(0, r[f][v].length - 2 ).split(",");
-	    j++;
+	    var value_identifier = undefined;
+	    if (v in pii_vault.aggregate_data.pi_field_value_identifiers) {
+		value_identifier = pii_vault.aggregate_data.pi_field_value_identifiers[v];
+	    }
+	    else {
+		var j = 1;
+		//Just to check that this identifier does not already exist.
+		while(1) {
+		    value_identifier = f + j;
+		    if (!(value_identifier in pii_vault.aggregate_data.pi_field_value_identifiers)) {
+			break;
+		    }
+		    j++;
+		}
+		pii_vault.aggregate_data.pi_field_value_identifiers[value_identifier] = v;
+	    }
+	    common_fields[value_identifier] = r[f][v].substring(0, r[f][v].length - 2 ).split(",");
 	}
     }
-    return common_fields;
+ 
+    pii_vault.current_report.common_fields = common_fields;
+    flush_selective_entries("current_report", ["common_fields"]);
+    flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
 }
 
 function sanitize_phone(phones) {
@@ -1985,21 +2138,33 @@ function pii_check_blacklisted_sites(message) {
     return r;
 }
 
+//Function to see if Appu server is up
+//Also tells the server that this appu installation is still running
 function pii_check_if_stats_server_up() {
-    var stats_server_url = "http://woodland.gtnoise.net:5005/"
+    var stats_server_url = "http://192.168.56.101:59000/"
     try {
-	$.get(stats_server_url,
-	      function(data, textStatus, jqxhr) {
-		  var is_up = false;
-		  stats_message = /Hey ((?:[0-9]{1,3}\.){3}[0-9]{1,3}), Appu Stats Server is UP!/;
-		  is_up = (stats_message.exec(data) != null);
-		  console.log("Appu stats server, is_up? : "+ is_up);
-	      })
-	    .error(function () {console.log("Appu: Could not check if server is up: " + stats_server_url);} );
+	var wr = {};
+	wr.guid = (sign_in_status == 'signed-in') ? pii_vault.guid : '';
+	wr.version = pii_vault.config.current_version;
+	$.post(stats_server_url, JSON.stringify(wr),
+	       function(data, textStatus, jqxhr) {
+		   var is_up = false;
+		   stats_message = /Hey ((?:[0-9]{1,3}\.){3}[0-9]{1,3}), Appu Stats Server is UP!/;
+		   is_up = (stats_message.exec(data) != null);
+		   console.log("Appu stats server, is_up? : "+ is_up);
+	       })
+	.error(function (data, status) {
+		console.log("Appu: Could not check if server is up: " + stats_server_url
+			    + ", status: " + status.toString());
+		print_appu_error("Appu Error: Seems like server was down. " +
+				 "Status: " + status.toString() + " " 
+				 + (new Date()));
+	    });
     }
     catch (e) {
 	console.log("Error while checking if stats server is up");
     }
+    last_server_contact = new Date();
 }
 
 function schedule_report_for_sending(report_number) {
@@ -2020,24 +2185,41 @@ function pii_send_report(report_number) {
     }
     var wr = {};
     wr.type = "periodic_report";
+
+    //This is a temporary bug fix
+    report.scheduled_report_time = new Date(report.scheduled_report_time);
+
     wr.current_report = report;
 
     try {
-	$.post("http://woodland.gtnoise.net:5005/post_daily_report", JSON.stringify(wr), 
+	$.post("http://192.168.56.101:59000/post_report", JSON.stringify(wr), 
 	       function(report, report_number) {
-		   // So the report was successfully sent
-		   // Report successfully sent. Update the actual send time.
-		   report.actual_report_send_time = new Date();
-		   console.log("Appu Info: Report '" + report_number 
-			       + "'  is successfully sent to the server at: " + report.actual_report_send_time);
-		   vault_write("past_reports", pii_vault.past_reports);
- 	       })
+		   return function(data, status) {
+		       var is_processed = false;
+		       stats_message = /Report processed successfully/;
+		       is_processed = (stats_message.exec(data) != null);
+
+		       if (is_processed) {
+			   // Report successfully sent. Update the actual send time.
+			   report.actual_report_send_time = new Date();
+			   console.log("Appu Info: Report '" + report_number 
+				       + "'  is successfully sent to the server at: " 
+				       + report.actual_report_send_time);
+			   vault_write("past_reports", pii_vault.past_reports);
+			   if (report_number in delivery_attempts) {
+			       delete delivery_attempts[report_number];
+			   }
+		       }
+		   };
+	       }(report, report_number))
 	    .error(function(report, report_number) {
-		print_appu_error("Appu Error: Error while posting 'periodic report' to the server: " 
-				 + (new Date()));
-		report.send_attempts(push(new Date()));
-		vault_write("past_reports", pii_vault.past_reports);
-	    });
+		       return function(data, status) {
+			   print_appu_error("Appu Error: Error while posting 'periodic report' to the server: " 
+					    + (new Date()));
+			   report.send_attempts.push(new Date());
+			   vault_write("past_reports", pii_vault.past_reports);
+		       }
+		   }(report, report_number));
     }
     catch (e) {
 	print_appu_error("Appu Error: Error while posting 'periodic report' to the server: " + (new Date()));
@@ -2130,17 +2312,6 @@ function pii_get_differential_report(message) {
     r.pwd_reuse_report = [];
     r.master_profile_list = [];
     r.scheduled_report_time = pii_vault.config.next_reporting_time;
-
-    // for (var i = 0; i < pii_vault.report.length; i++) {
-    // 	// Call to jQuery extend makes a deep copy. So even if reporting page f'ks up with
-    // 	// the objects, original is safe.
-    // 	var copied_entry = $.extend(true, {}, pii_vault.report[i]);
-
-    // 	if(!pii_check_if_entry_exists_in_past_pwd_reports(copied_entry)) {
-    // 	    copied_entry.index = i;
-    // 	    r.pwd_reuse_report.push(copied_entry);
-    // 	}
-    // }
 
     for (var i = 0; i < pii_vault.master_profile_list.length; i++) {
 	var copied_entry = {};
@@ -2373,8 +2544,12 @@ function get_pwd_group(domain, other_domains, password_strength) {
 	    //anything.
 	    current_group = previous_group;
 	    if (password_strength.join(", ") != pwd_groups[previous_group].strength.join(", ")) {
-		print_appu_error("Appu Error: Strength mismatch from what was calculated earlier: " + 
-				 domain, other_domains, password_strength, pwd_groups[previous_group].strength);
+		// Commenting this as last strength might have been calculated on incorrect password.
+// 		print_appu_error("Appu Error: Strength mismatch from what was calculated earlier: " + 
+// 				 domain, other_domains, password_strength, pwd_groups[previous_group].strength);
+		pwd_groups[previous_group].strength = password_strength;
+		send_pwd_group_row_to_reports('replace', current_group, pwd_groups[current_group].sites, 
+					      pwd_groups[current_group].strength);
 	    }
 	}
 	else {
@@ -2436,6 +2611,7 @@ function send_user_account_site_row_to_reports(site_name) {
 	    mod_type: "replace",
 	    changed_row: [
 		site_name,
+		uas_entry.pwd_unchanged_duration,
 		uas_entry.my_pwd_group,
 		uas_entry.num_logins,
 		uas_entry.tts,
@@ -2443,7 +2619,7 @@ function send_user_account_site_row_to_reports(site_name) {
 		uas_entry.tts_login,
 		uas_entry.tts_logout,
 		uas_entry.num_logouts,
-		uas_entry.site_category,
+		uas_entry.site_category
 	    ],
 	});
     }
@@ -2453,7 +2629,7 @@ function pii_check_passwd_reuse(message, sender) {
     var r = {};
     var os = [];
     r.is_password_reused = "no";
-    message.domain = tld.getDomain(message.domain);
+    r.already_exists = "no";
     r.sites = [];
     var curr_username = '';
 
@@ -2475,6 +2651,9 @@ function pii_check_passwd_reuse(message, sender) {
 		    r.sites.push(hk.split(":")[1]);
 		    os.push(hk.split(":")[1]);
 		    break;
+		}
+		if (hk.split(":")[1] == message.domain && hk.split(":")[0] == curr_username) {
+		    r.already_exists = "yes";
 		}
 	    }
 	}
@@ -2588,6 +2767,41 @@ function does_user_have_account(domain) {
     return false;
 }
 
+function background_tasks() {
+    //report = pii_vault.past_reports[report_number - 2];
+    for (var i = 0; i < pii_vault.past_reports.length; i++) {
+	var cr = pii_vault.past_reports[i];
+	if (cr.actual_report_send_time == 'Not delivered yet') {
+	    //To adjust for current_report(=1) and start index (0 instead of 1)
+	    var report_number = i + 2;
+	    console.log("Here here: Report " + report_number + " is undelivered");
+	    if (report_number in delivery_attempts) {
+		var dat = delivery_attempts[report_number];
+		var curr_time = new Date();
+		var td = curr_time.getTime() - dat.getTime();	    
+		if (td < (60 * 60 * 24 * 1000)) {
+		    //Less than 24-hours, Skip
+		    // 		    console.log("Here here: Report " + report_number + 
+		    // " was already attempted to " +
+		    // 				"be delivered, so skipping");
+		    continue;
+		}
+	    }
+	    delivery_attempts[report_number] = new Date();
+	    //	    console.log("Here here: Attempting to send report " + report_number);
+	    pii_send_report(report_number);   
+	}
+    }
+    
+    //If its been 24 hours, since we talked to server, just send a quick "I am alive" 
+    //message
+    var curr_time = new Date();
+    var td = curr_time.getTime() - last_server_contact.getTime();	    
+    if (td > (60 * 60 * 24 * 1000)) {
+	pii_check_if_stats_server_up();
+    }
+}
+
 // BIG EXECUTION START
 
 vault_read();
@@ -2618,6 +2832,7 @@ else {
 }
 
 setInterval(check_report_time, 1000 * report_check_interval * 60);
+setInterval(background_tasks, 1000 * bg_tasks_interval * 60);
 
 //Check if appu was disabled in the last run. If yes, then check if disable period is over yet.
 if (pii_vault.config.status == "disabled") {
@@ -2640,6 +2855,8 @@ if (pii_vault.config.status == "disabled") {
 	chrome.browserAction.setIcon({path:'images/appu_new19_offline.png'});
     }
 }
+
+pii_check_if_stats_server_up();
 
 chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
     if (change_info.status == "complete" && tab.active) {
@@ -2817,10 +3034,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	sendResponse(r);
     }
     else if (message.type == "check_passwd_reuse"  && pii_vault.config.status == "active") {
+	message.domain = tld.getDomain(message.domain);
 	r = pii_check_passwd_reuse(message, sender);
-	vault_update_domain_passwd(message);
+	vault_update_domain_passwd(message, r.already_exists);
 
-	var domain = tld.getDomain(message.domain);
+	var domain = message.domain;
 	var hk = '' + ':' + domain;
 	r.initialized = pii_vault.password_hashes[hk].initialized;
 
@@ -2988,6 +3206,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	original_report = resp[1];
 	response_report.report_number = message.report_number;
 	response_report.num_total_report = pii_vault.past_reports.length + 1;
+	response_report.pi_field_value_identifiers = pii_vault.aggregate_data.pi_field_value_identifiers;
 	sendResponse(response_report);
 
 	original_report.report_updated = false;
@@ -3106,112 +3325,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 
 //// GENERAL TESTING code
-
-//DELETE FOLLOWING
-//Testing code.
-
-function pii_test_yesterdays_report_time() {
-    var curr_time = new Date();
-    curr_time.setMinutes(curr_time.getMinutes() - 1440);
-    curr_time.setSeconds(0);
-    curr_time.setMinutes(0);
-    curr_time.setHours(0);
-    return curr_time.toString();
-}
-
-//pii_vault.config.next_reporting_time = pii_test_yesterdays_report_time();
-//console.log("Here here: next reporting time: " + pii_vault.config.next_reporting_time);
-//DELETE FOLLOWING END
-
-//DELETE FOLLOWING
-pii_check_if_stats_server_up();
-//test_check_if_pi_fetch_required("accounts.google.com");
-//test_check_if_pi_fetch_required("www.amazon.com");
-//test_check_if_pi_fetch_required("www.facebook.com");
-
-//delete pii_vault.aggregate_data.per_site_pi['www.facebook.com'];
-//delete pii_vault.aggregate_data.per_site_pi['accounts.google.com'];
-//delete pii_vault.aggregate_data.per_site_pi['www.amazon.com'];
-//vault_write();
-
-function test_check_if_pi_fetch_required(domain) {
-    wr = {};
-    wr.command = 'get_template';
-    wr.domain = domain;
-    try {
-	$.post("http://woodland.gtnoise.net:5005/get_template", JSON.stringify(wr), function(data) {
-	    if (data.toString() != 'No template present') {
-		console.log("Here here: Got the template");
-		
-		var process_template_tabid = undefined;
-		//Just some link so that appu content script runs on it.
-		var default_url = 'http://google.com';
-		
-		//Create a new tab. Once its ready, send message to process the template.
-		chrome.tabs.create({ url: default_url, active: false }, function(tab) {
-		    process_template_tabid = tab.id;
-		    var my_slave_tab = { tabid: process_template_tabid, 'in_use': true}
-		    template_processing_tabs[process_template_tabid] = default_url;
-		    console.log("Here here: XXX tabid: " + tab.id + ", value: " + 
-				template_processing_tabs[tab.id]);
-		    //Dummy element to wait for HTML fetch
-		    var dummy_tab_id = sprintf('tab-%s', process_template_tabid);
-		    var dummy_div_str = sprintf('<div id="%s"></div>', dummy_tab_id);
-		    var dummy_div = $(dummy_div_str);
-		    $('body').append(dummy_div);
-
-		    //Dummy element to wait for SLAVE tab to become free.
-		    var wait_dummy_tab_id = sprintf('wait-queue-tab-%s', process_template_tabid);
-		    var wait_dummy_div_str = sprintf('<div id="%s"></div>', wait_dummy_tab_id);
-		    var wait_dummy_div = $(wait_dummy_div_str);
-		    $('body').append(wait_dummy_div);
-		    
-		    $('#' + dummy_tab_id).on("page-is-loaded", function() {
-			my_slave_tab.in_use = false;
-			$('#' + dummy_tab_id).off("page-is-loaded");
-			process_template(domain, data, my_slave_tab);    
-		    });
-
-		});
-	    }
-	    else {
-		print_appu_error("Appu Error: FPI Template for domain(" + domain + ") not present on the server");
-	    }
-	});
-    }
-    catch (e) {
-	console.log("Error: while fetching template(" + domain + ") from server");
-    }
-    return;
-}
-
-
-//DELETE FOLLOWING END
-
-// //DELETE FOLLOWING
-// pii_test_send_report();
-
-// function pii_test_send_report() {
-//     var wr = {};
-//     wr.type = "reuse_warnings";
-//     wr.guid = pii_vault.guid;
-//     wr.reportid = pii_vault.config.reportid;
-//     wr.report = pii_vault.report;
-//     wr.master_profile_list = pii_vault.master_profile_list;
-//     wr.report_modified = pii_vault.report_modified;
-//     wr.report_setting = pii_vault.config.report_setting;
-//     pii_vault.config.reportid += 1;
-
-//     try {
-// 	$.post("http://woodland.gtnoise.net:5005/post_daily_report", JSON.stringify(wr));
-//     }
-//     catch (e) {
-// 	console.log("Error while posting 'reuse_warnings' to server");
-//     }
-//     console.log("Here here: sent the TEST report");
-// }
-// //DELETE FOLLOWING END
-
 
 ////////////////////////////////// TEST DATA .. DELETE After wards or move to another JS
 

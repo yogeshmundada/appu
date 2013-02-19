@@ -28,10 +28,28 @@ var disk_to_html_tables = {
     "input_fields"         :      '#user-interaction-metadata-table',
 };
 
+var pi_field_color_code = {
+    "ccn" : "code-red",
+    "address" : "code-orange",
+    "phone" : "code-orange",
+    "ccn-address" : "code-orange",
+    "name" : "code-yellow",
+    "birthdate" : "code-yellow",
+}
+
+var pi_field_value = {
+    "ccn" : 10,
+    "address" : 5,
+    "phone" : 5,
+    "ccn-address" : 5,
+    "name" : 4,
+    "birthdate" : 4,
+}
 
 var all_help_descriptions = {
     "help-user-id" : "This is your globally unique user-id. Appu keeps all your reports stored against this ANONYMOUS id",
     "help-report-duration" : "Statistics covered in this report is related only to the sites accessed during report duration. For aggregate statistics, check 'My Footprint' page",
+    "help-device-id" : "This is a randomly generated number to distinguish between reports sent from multiple devices (if you have installed Appu at multiple places). It has no other purpose than to differentiate reports.",
     "help-total-sites" : "Total number of sites that you visited during report duration",
     "help-sites-with-ac" : "Total number of sites where you actually logged in during report duration",
     "help-sites-wo-ac" : "Total number of sites that you accessed w/o logging in during report duration. This could mean 1. sites do not require user login, 2. you do not have an account on the site or 3. you have an account but you did not login",
@@ -41,6 +59,12 @@ var all_help_descriptions = {
     "help-login-frequency" : "Number of times you entered username and password during report duration",
     "help-logout-frequency" : "Number of times you explicitly logged out during report duration",
     "help-total-passwords" : "Total number of DIFFERENT passwords entered by you during report duration",
+    "help-browser" : "To estimate number of Appu users using a particular browser",
+    "help-browser-version" : "To code browser version specific features",
+    "help-os" : "To estimate number of Appu users using a particular operating system",
+    "help-os-version" : "To code OS version specific features",
+    "help-layout-engine" : "To estimate number of Appu users using a particular layout-engine",
+    "help-layout-engine-version" : "To code layout-engine version specific features",
     "help-report-modified" : "If you have modified this report by deleting some entries",
     "help-report-visited" : "Number of times you accessed this report during report duration",
     "help-report-review" : "Total amount of time spent by you reviewing this report",
@@ -87,7 +111,7 @@ function expand_persite_account_table() {
     var dtTable = $("#per-site-account-data-table").dataTable();
 
     $("#per-site-account-data-table_wrapper").appendTo("#per-site-account-data-table-modal-body");
-    $.each([4, 5, 6, 7, 8], function(index, value) {
+    $.each([5, 6, 7, 8, 9], function(index, value) {
     	dtTable.fnSetColumnVis( value, true);
     });
 }
@@ -97,7 +121,7 @@ function contract_persite_account_table() {
     var dtTable = $("#per-site-account-data-table").dataTable();
     $("#per-site-account-data-table_wrapper").appendTo("#per-site-account-data-table-div");
 
-    $.each([4, 5, 6, 7, 8], function(index, value) {
+    $.each([5, 6, 7, 8, 9], function(index, value) {
     	dtTable.fnSetColumnVis( value, false);
     });
 
@@ -202,9 +226,7 @@ function populate_common_fields_table(common_fields) {
     dtTable = $('#pi-reuse-table').dataTable();
     dtTable.fnAddData(prt_records);
     $("#pi-reuse-table_length select").val('5').trigger('change');
-    if (!current_report_delete_enabled) {
-	dtTable.fnSetColumnVis(3, false);
-    }
+    dtTable.fnSetColumnVis(3, current_report_delete_enabled);
 }
 
 function populate_password_similarity_table(pwd_similarity, pwd_groups) {
@@ -262,7 +284,7 @@ function populate_password_similarity_table(pwd_similarity, pwd_groups) {
 
 function report_received(report_number, report, do_render) {
     var dtTable = null;
-    var last_report_number = current_report_number;
+    var last_displayed_report_number = current_report_number;
     if (report_number == current_report_number && (!report.report_updated)) {
 	// Its the same report that we are showing without any changes. No point in updating.
 	return;
@@ -275,180 +297,25 @@ function report_received(report_number, report, do_render) {
 
     if ((current_report_number != 1) && current_report.actual_report_send_time != 'Not delivered yet') {
 	current_report_delete_enabled = false;
+	$('body').addClass('report-delivered')
     }
     else {
 	current_report_delete_enabled = true;
+	$('body').removeClass('report-delivered')
+    }
+
+    if(current_report.user_approved != false) {
+	$('#send-report-button').hide();
+    }
+    else {
+	$('#send-report-button').show();
     }
 
     if (!current_report_delete_enabled) {
-	$("#user-review-warning").text('');
+	//$("#display-warning").hide();
     }
-
-    if (!do_render) {
-	//This means the query was just to update this structure.
-	return;
-    }
-
-    ////////// Populate Overall Stats
-    $("#appu-version-div span b").text(report.extension_version);
-    $("#guid-div span b").text(report.guid);
-    $("#report-id-div span b").text(report.reportid);
-    $("#report-duration-div span b").text(get_report_duration(report));
-
-    $("#total-sites-div span b").text(report.num_total_sites);
-    $("#total-sites-with-ac-div span b").text(report.num_user_account_sites);
-    $("#total-sites-wo-ac-div span b").text(report.num_non_user_account_sites);
-
-    $("#total-time-spent-div span b").text(format_display_time(report.total_time_spent));
-    $("#total-time-spent-loggedin-div span b").text(format_display_time(report.total_time_spent_logged_in));
-    $("#total-time-spent-wo-loggedin-div span b").text(format_display_time(report.total_time_spent_wo_logged_in));
-
-    $("#login-freq-div span b").text(cumulative_value(report.user_account_sites, "num_logins"));
-    $("#logout-freq-div span b").text(cumulative_value(report.user_account_sites, "num_logouts"));
-    $("#total-passwords-div span b").text(report.num_pwds);
-
-    ////////// Populate Appu Metadata
-    $("#report-modified-div span b").text(report.report_modified);
-    $("#report-visited-div span b").text(report.num_report_visits);
-    $("#report-review-time-div span b").text(format_display_time(report.report_time_spent));
-
-    var has_user_approved = (report.user_approved == false) ? "no" : 
-	format_display_date((new Date(report.user_approved)).getTime(), false);
-
-    has_user_approved = has_user_approved.replace("<br/>", "");
-    has_user_approved = has_user_approved.replace("<span class='report-time'>", " (");
-    has_user_approved = has_user_approved.replace('</span>', ")");
-    has_user_approved = '<span>' + has_user_approved + '</span>';
-    
-    $("#user-approved-div span b").html(has_user_approved);
-    
-    var is_report_delivered = (report.actual_report_send_time == 'Not delivered yet') ? 
-	'Not delivered yet' : 'Yes';
-    $("#report-delivered-div span b").html(is_report_delivered);
-
-    var sched_send_time = format_display_date((new Date(report.scheduled_report_time)).getTime(), true);
-    
-    sched_send_time = sched_send_time.replace("<br/>", "");
-    sched_send_time = sched_send_time.replace("<span class='report-time-add-info'>", " ");
-    sched_send_time = sched_send_time.replace("<span class='report-time'>", " ");
-    sched_send_time = sched_send_time.replace('</span>', " ");
-    sched_send_time = '<span>' + sched_send_time + '</span>';
-
-    $("#sched-upload-time-div span b").html(sched_send_time);
-
-    var report_send_time = (report.actual_report_send_time == 'Not delivered yet') ? 'Not delivered yet' : 
-	format_display_date((new Date(report.actual_report_send_time)).getTime(), false);
-    
-    report_send_time = report_send_time.replace("<br/>", "");
-    report_send_time = report_send_time.replace("<span class='report-time'>", " (");
-    report_send_time = report_send_time.replace('</span>', ")");
-    report_send_time = '<span>' + report_send_time + '</span>';
-
-    $("#actual-report-upload-time-div span b").html(report_send_time);
-
-    $("#number-of-send-attempts-div span b").text(report.send_attempts.length);
-    $("#reporting-type-div span b").text(report.report_setting);
-    $("#report-postponing-div span b").text(report.send_report_postponed);
-
-    $("#my-footprint-visits-div span b").text(report.num_myfootprint_visits);
-    $("#my-footprint-time-spent-div span b").text(format_display_time(report.myfootprint_time_spent));
-
-    $("#appu-disabled-div span b").text(report.appu_disabled.length);
-    $("#appu-disabled-durations-div span b").text(report.appu_disabled.join(", "));
-    $("#donotbugmelist-div span b").text(report.dontbuglist.join(", "));
-    $("#extension-updated-div span b").text(report.extension_updated);
-
-    for (var i = 0; i < report.appu_errors.length; i++) {
-	var error = $("<p>" + report.appu_errors[i] + "</p>");
-	$("#appu-errors-div").append(error);
-    }
-
-    if (last_report_number && (last_report_number == current_report_number)) {
-	//This means that the report was already showing this report_number
-	//Since tables are dynamically updated, no need to update them again
-	return;
-    }
-
-    ////////// Populate Per Site User Account Table
-
-    clear_table('#per-site-account-data-table');
-    var psadt_records = create_datatable_consumable_records(report, "user_account_sites", 
-							    [
-								'my_pwd_group',
-								'num_logins',
-								'tts',
-								'latest_login',
-								'tts_login',
-								'tts_logout',
-								'num_logouts',
-								'site_category'
-							    ]);
-    dtTable = $('#per-site-account-data-table').dataTable();
-    dtTable.fnAddData(psadt_records);
-    if (!current_report_delete_enabled) {
-	dtTable.fnSetColumnVis(9, false);
-    }
-    ////////// Populate Password Stats Table
-
-    clear_table('#password-stats-table');
-    var pst_records = create_datatable_consumable_records(report, "pwd_groups", 
-							    [
-								'sites',
-								'strength',
-								'strength',
-							    ]);
-    dtTable = $('#password-stats-table').dataTable();
-    dtTable.fnAddData(pst_records);
-    $("#password-stats-table_length select").val('5').trigger('change');
-
-    ////////// Populate Password Edit Distance Table
-    
-    populate_password_similarity_table(report.pwd_similarity, report.pwd_groups);
-
-    ////////// Populate Password Reuse Warnings Table
-
-    clear_table('#password-reuse-warnings-table');
-    dtTable = $('#password-reuse-warnings-table').dataTable();
-    dtTable.fnAddData(report.pwd_reuse_warnings);
-    $("#password-reuse-warnings-table_length select").val('5').trigger('change');
-    if (!current_report_delete_enabled) {
-	dtTable.fnSetColumnVis(4, false);
-    }
-
-    ////////// Populate PI Metadata Table
-
-    clear_table('#pi-metadata-table');
-    var pmt_records = create_datatable_consumable_records(report, "downloaded_pi", 
-							    [
-								'download_time',
-								'downloaded_fields'
-							    ]);
-    dtTable = $('#pi-metadata-table').dataTable();
-    dtTable.fnAddData(pmt_records);
-    $("#pi-metadata-table_length select").val('5').trigger('change');
-    if (!current_report_delete_enabled) {
-	dtTable.fnSetColumnVis(3, false);
-    }
-
-    ////////// Populate PI Reuse Table
-
-    clear_table('#pi-reuse-table');
-    var prt_records = create_datatable_consumable_records(report, "common_fields", []);
-    dtTable = $('#pi-reuse-table').dataTable();
-    dtTable.fnAddData(prt_records);
-    $("#pi-reuse-table_length select").val('5').trigger('change');
-    if (!current_report_delete_enabled) {
-	dtTable.fnSetColumnVis(3, false);
-    }
-
-    ////////// Populate User Interaction Metadata Table
-
-    clear_table('#user-interaction-metadata-table');
-    dtTable = $('#user-interaction-metadata-table').dataTable();
-    dtTable.fnAddData(report.input_fields);
-    $("#user-interaction-metadata-table_length select").val('5').trigger('change');
-    if (!current_report_delete_enabled) {
-	dtTable.fnSetColumnVis(6, false);
+    else {
+	$("#display-warning").show();
     }
 
     ///////// Populate Extension Version and Report Dates
@@ -521,6 +388,227 @@ function report_received(report_number, report, do_render) {
     }
 
     add_hooks();
+
+//     if (!do_render) {
+// 	//This means the query was just to update this structure.
+// 	return;
+//     }
+
+    ////////// Populate Overall Stats
+    $("#appu-version-div span b").text(report.extension_version);
+    $("#guid-div span b").text(report.guid);
+    $("#report-id-div span b").text(report.reportid);
+
+    if ('deviceid' in report) {
+	$("#device-id-div span b").text(report.deviceid);
+    }
+    else {
+	$("#device-id-div span b").text('');
+    }
+
+    $("#report-duration-div span b").text(get_report_duration(report));
+
+    $("#total-sites-div span b").text(report.num_total_sites);
+    $("#total-sites-with-ac-div span b").text(report.num_user_account_sites);
+    $("#total-sites-wo-ac-div span b").text(report.num_non_user_account_sites);
+
+    $("#total-time-spent-div span b").text(format_display_time(report.total_time_spent));
+    $("#total-time-spent-loggedin-div span b").text(format_display_time(report.total_time_spent_logged_in));
+    $("#total-time-spent-wo-loggedin-div span b").text(format_display_time(report.total_time_spent_wo_logged_in));
+
+    $("#login-freq-div span b").text(cumulative_value(report.user_account_sites, "num_logins"));
+    $("#logout-freq-div span b").text(cumulative_value(report.user_account_sites, "num_logouts"));
+    $("#total-passwords-div span b").text(report.num_pwds);
+
+    if ('browser' in report) {
+	$("#browser-div span b").text(report.browser);
+	$("#browser-version-div span b").text(report.browser_version);
+    }
+
+    if ('os' in report) {
+	$("#os-div span b").text(report.os);
+	$("#os-version-div span b").text(report.os_version);
+    }
+
+    if ('layout_engine' in report) {
+	$("#layout-engine-div span b").text(report.layout_engine);
+	$("#layout-engine-version-div span b").text(report.layout_engine_version);
+    }
+
+    ////////// Populate Appu Metadata
+    $("#report-modified-div span b").text(report.report_modified);
+    $("#report-visited-div span b").text(report.num_report_visits);
+    $("#report-review-time-div span b").text(format_display_time(report.report_time_spent));
+
+    var has_user_approved = (report.user_approved == false) ? "no" : 
+	format_display_date((new Date(report.user_approved)).getTime(), false);
+
+    has_user_approved = has_user_approved.replace("<br/>", "");
+    has_user_approved = has_user_approved.replace("<span class='report-time'>", " (");
+    has_user_approved = has_user_approved.replace('</span>', ")");
+    has_user_approved = '<span>' + has_user_approved + '</span>';
+    
+    $("#user-approved-div span b").html(has_user_approved);
+    
+    var is_report_delivered = (report.actual_report_send_time == 'Not delivered yet') ? 
+	'Not delivered yet' : 'Yes';
+    $("#report-delivered-div span b").html(is_report_delivered);
+
+    var sched_send_time = format_display_date((new Date(report.scheduled_report_time)).getTime(), true);
+    
+    sched_send_time = sched_send_time.replace("<br/>", "");
+    sched_send_time = sched_send_time.replace("<span class='report-time-add-info'>", " ");
+    sched_send_time = sched_send_time.replace("<span class='report-time'>", " ");
+    sched_send_time = sched_send_time.replace('</span>', " ");
+    sched_send_time = '<span>' + sched_send_time + '</span>';
+
+    $("#sched-upload-time-div span b").html(sched_send_time);
+
+    var report_send_time = (report.actual_report_send_time == 'Not delivered yet') ? 'Not delivered yet' : 
+	format_display_date((new Date(report.actual_report_send_time)).getTime(), false);
+    
+    report_send_time = report_send_time.replace("<br/>", "");
+    report_send_time = report_send_time.replace("<span class='report-time'>", " (");
+    report_send_time = report_send_time.replace('</span>', ")");
+    report_send_time = '<span>' + report_send_time + '</span>';
+
+    $("#actual-report-upload-time-div span b").html(report_send_time);
+
+    $("#number-of-send-attempts-div span b").text(report.send_attempts.length);
+    $("#reporting-type-div span b").text(report.report_setting);
+    $("#report-postponing-div span b").text(report.send_report_postponed);
+
+    $("#my-footprint-visits-div span b").text(report.num_myfootprint_visits);
+    $("#my-footprint-time-spent-div span b").text(format_display_time(report.myfootprint_time_spent));
+
+    $("#appu-disabled-div span b").text(report.appu_disabled.length);
+    $("#appu-disabled-durations-div span b").text(report.appu_disabled.join(", "));
+    $("#donotbugmelist-div span b").text(report.dontbuglist.join(", "));
+    $("#extension-updated-div span b").text(report.extension_updated);
+
+    for (var i = 0; i < report.appu_errors.length; i++) {
+	var error = $("<p>" + report.appu_errors[i] + "</p>");
+	$("#appu-errors-div").append(error);
+    }
+
+    if (last_displayed_report_number && (last_displayed_report_number == current_report_number)) {
+	//This means that the report was already showing this report_number
+	//Since tables are dynamically updated, no need to update them again
+	return;
+    }
+
+    ////////// Populate Per Site User Account Table
+
+    clear_table('#per-site-account-data-table');
+    var psadt_records = create_datatable_consumable_records(report, "user_account_sites", 
+							    [
+							     'pwd_unchanged_duration',
+							     'my_pwd_group',
+							     'num_logins',
+							     'tts',
+							     'latest_login',
+							     'tts_login',
+							     'tts_logout',
+							     'num_logouts',
+							     'site_category'
+							    ]);
+    dtTable = $('#per-site-account-data-table').dataTable();
+    dtTable.fnAddData(psadt_records);
+    dtTable.fnSetColumnVis(9, current_report_delete_enabled);
+    ////////// Populate Password Stats Table
+
+    clear_table('#password-stats-table');
+    var pst_records = create_datatable_consumable_records(report, "pwd_groups", 
+							    [
+								'sites',
+								'strength',
+								'strength',
+							    ]);
+    dtTable = $('#password-stats-table').dataTable();
+    dtTable.fnAddData(pst_records);
+    $("#password-stats-table_length select").val('5').trigger('change');
+
+    ////////// Populate Password Edit Distance Table
+    
+    populate_password_similarity_table(report.pwd_similarity, report.pwd_groups);
+
+    ////////// Populate Password Reuse Warnings Table
+
+    clear_table('#password-reuse-warnings-table');
+    dtTable = $('#password-reuse-warnings-table').dataTable();
+    dtTable.fnAddData(report.pwd_reuse_warnings);
+    $("#password-reuse-warnings-table_length select").val('5').trigger('change');
+    dtTable.fnSetColumnVis(4, current_report_delete_enabled);
+    ////////// Populate PI Metadata Table
+
+    clear_table('#pi-metadata-table');
+
+    //This func_val is for backward compatibility.
+    //I changed the format of downloaded_fields array in downloaded_pi
+    //Earlier it contained only strings like "email", "name"
+    //Now it contains objects of format {"email", "no-change", "3"}
+    //First: field name, Second: If there was change since last download, Third: Number of values on that site.
+    //I am passing this function so that any past reports will still show proper information.
+    var func_val = undefined;
+    if (Object.keys(report.downloaded_pi).length > 0) {
+	var site = Object.keys(report.downloaded_pi)[0];
+	if (Object.prototype.toString.call(report.downloaded_pi[site].downloaded_fields[0]) 
+	    == "[object Object]") {
+	    func_val = function(o) { return o.field };
+	}
+    }
+
+    var pmt_records = create_datatable_consumable_records(report, "downloaded_pi", 
+							    [
+								'download_time',
+								'downloaded_fields',
+							     ], func_val);
+    for (var i = 0; i < pmt_records.length; i++) {
+	for (var field in pi_field_color_code) {
+	    var re = new RegExp(field+"(,|$)");
+	    pmt_records[i][2] = pmt_records[i][2].replace(re, "<span class='"+ pi_field_color_code[field] +"'>"+ field +"</span>$1");	    
+	}
+    }
+    dtTable = $('#pi-metadata-table').dataTable();
+    dtTable.fnAddData(pmt_records);
+    $("#pi-metadata-table_length select").val('5').trigger('change');
+    dtTable.fnSetColumnVis(3, current_report_delete_enabled);
+    ////////// Populate PI Reuse Table
+
+    clear_table('#pi-reuse-table');
+    var prt_records = create_datatable_consumable_records(report, "common_fields", []);
+
+    for (var i = 0; i < prt_records.length; i++) {
+	var orig_value = prt_records[i][0];
+	prt_records[i][0] = "<a id='pi-field-value-" + orig_value + "' href=''>" + orig_value + "</a>";
+    }
+
+    dtTable = $('#pi-reuse-table').dataTable();
+    dtTable.fnAddData(prt_records);
+    $("#pi-reuse-table_length select").val('5').trigger('change');
+    dtTable.fnSetColumnVis(3, current_report_delete_enabled);
+
+    var all_nodes = dtTable.fnGetNodes();
+    for (var i = 0; i < all_nodes.length; i++) {
+	var n = $("a[id^='pi-field-value-']", all_nodes[i]);
+	var n_id = $(n).attr('id');
+	var orig_value = /pi-field-value-(.*)/g.exec(n_id)[1];
+	$('td:eq(0) a', all_nodes[i]).tooltip({
+		'title': "This value is NOT sent to the server. Only displayed for your convenience<br/><br/>" + 
+		    "<span class='pi-value'>" + report.pi_field_value_identifiers[orig_value] + "</span>", 
+		    'html' : true,
+		    'placement' : 'right',
+		    //'delay': { 'show': 1000, 'hide': 0 },
+		    });
+    }
+
+    ////////// Populate User Interaction Metadata Table
+
+    clear_table('#user-interaction-metadata-table');
+    dtTable = $('#user-interaction-metadata-table').dataTable();
+    dtTable.fnAddData(report.input_fields);
+    $("#user-interaction-metadata-table_length select").val('5').trigger('change');
+    dtTable.fnSetColumnVis(6, current_report_delete_enabled);
 }
 
 function send_report() {
@@ -581,7 +669,7 @@ function add_hooks() {
     $('.icon-trash').tooltip({
 	'title': 'Delete this record from the report', 
 	'placement' : 'left',
-	'delay': { 'show': 1000, 'hide': 0 },
+	    //'delay': { 'show': 300, 'hide': 0 },
     });
 
     /////// Add delete entry hooks
@@ -750,7 +838,16 @@ document.addEventListener('DOMContentLoaded', function () {
 	"aaSorting" : [ [1, 'desc'], [2, 'desc'], [3, 'desc'] ],
 	"aoColumnDefs" : [
 	    { 
-		"aTargets" : [3], 
+		"aTargets" : [1], 
+		"mRender": function(data, type, full) {
+		    if (type === "display") {
+			return get_duration(data);
+		    }
+		    return data;
+		}
+	    },
+	    { 
+		"aTargets" : [4], 
 		"mRender": function(data, type, full) {
 		    if (type === "display") {
 			return format_display_time(data);
@@ -760,7 +857,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	    },
 	    { 
 		"bVisible" : false, 
-		"aTargets" : [4], 
+		"aTargets" : [5], 
 		"mRender": function(data, type, full) {
 		    if (type === "display") {
 			return format_display_date(data, true);
@@ -769,7 +866,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	    },
 	    { "bVisible" : false, 
-	      "aTargets" : [5],
+	      "aTargets" : [6],
 	      "mRender": function(data, type, full) {
 		  if (type === "display") {
 		      return format_display_time(data);
@@ -779,7 +876,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	    },
 	    { 
 		"bVisible" : false, 
-		"aTargets" : [6],
+		"aTargets" : [7],
 		"mRender": function(data, type, full) {
 		    if (type === "display") {
 			return format_display_time(data);
@@ -789,13 +886,16 @@ document.addEventListener('DOMContentLoaded', function () {
 	    },
 	    { 
 		"bVisible" : false, 
-		"aTargets" : [7],
+		"aTargets" : [8],
 		"sWidth" : "5px"
 	    },
-	    { "bVisible" : false, "aTargets" : [8]},
+	    { 
+		"bVisible" : false, 
+		"aTargets" : [9]
+	    },
 	    { 
 		"bSortable" : false, 
-		"aTargets" : [9], 
+		"aTargets" : [10], 
 		"sWidth" : "10px",
 		"mData": null, 
 		"sDefaultContent": '<i class="icon-trash delete-per-site-account-data-entry"></i>'
@@ -901,9 +1001,24 @@ document.addEventListener('DOMContentLoaded', function () {
     $("#pi-reuse-table").dataTable({
 	"sDom": "<'row'<'span6'><'span6'>r>lft<'row'<'span6'i><'span6'p>>",
 	"sPaginationType": "bootstrap",
-	"aaSorting" : [ [1, 'desc'] ],
+	"aaSorting" : [ [0, 'desc'] ],
 	"aLengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
 	"aoColumnDefs" : [
+	    { 
+		"sType" : "numeric",
+		"aTargets" : [0], 
+		"mRender": function(data, type, full) {
+		    if (type == "sort") {
+			var pi_field = /\<a( .*)?\>(.*)\<\/a\>/g.exec(data)[2];
+			pi_field = /(.*)[0-9]+/g.exec(pi_field)[1];		
+			if (pi_field in pi_field_value) {
+			    return pi_field_value[pi_field];
+			}
+			return 1;
+		    }
+		    return data;
+		}
+	    },
 	    { 
 		"aTargets" : [3], 
 		"mData": null, 

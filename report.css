@@ -118,3 +118,24 @@ body section {
 .loose-info {
     margin-top: 10px;
 }
+
+.code-red {
+    background-color: red;	  
+}
+
+.code-orange {
+    background-color: orange;	  
+}
+
+.code-yellow {
+    background-color: yellow;	  
+}
+
+.pi-value {
+    color: blue;
+    font-size: 18px;
+}
+
+.report-delivered {
+    background-color: azure;
+}

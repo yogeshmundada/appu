@@ -95,7 +95,7 @@
 
 	<div class="span9">
 
-	  <div class="row">
+	  <div id="display-warning" class="row">
 	    <div id="user-review-warning" class="span9" style="font-size: 16px">
 	      <em><p>Please review following data carefully as it gets sent to server. In particular, 
 		  check "User Account Info", "PI Metadata", and "Interaction Metadata". </p>
@@ -111,7 +111,6 @@
 	      </button>
 	    </div>
 	  </div>
-
 
 	  <div class="span9">
 	    <div class="row">
@@ -164,6 +163,13 @@
 	      
 	      <div id="report-id-div" class="loose-info">Report-ID: 
 		<span class="loose-info-value"><b></b></span>
+	      </div>
+
+	      <div id="device-id-div" class="loose-info">
+		<i id="help-device-id" class="icon-question-sign"></i>Device ID: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
 	      </div>
 
 	      <div id="report-duration-div" class="loose-info">
@@ -251,6 +257,53 @@
 	      </div>
 	    </div>
 
+	    <div class="environ-stats loose-info-box">
+	      <h3>Environment Stats</h3>
+
+	      <div id="browser-div" class="loose-info">
+		<i id="help-browser" class="icon-question-sign"></i>Browser: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="browser-version-div" class="loose-info">
+		<i id="help-browser-version" class="icon-question-sign"></i>Browser Version: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="os-div" class="loose-info">
+		<i id="help-os" class="icon-question-sign"></i>Operating System: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="os-version-div" class="loose-info">
+		<i id="help-os-version" class="icon-question-sign"></i>Operating System Version: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="layout-engine-div" class="loose-info">
+		<i id="help-layout-engine" class="icon-question-sign"></i>Layout Engine: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	      <div id="layout-engine-version-div" class="loose-info">
+		<i id="help-layout-engine-version" class="icon-question-sign"></i>Layout Engine Version: 
+		<span class="loose-info-value">
+		  <b></b>
+		</span>
+	      </div>
+
+	    </div>
+
 	  </section>
 
 	<!-- <\!-- Template Section -->
@@ -306,6 +359,7 @@
 		<thead>
                   <tr>
                         <th>Site</th>
+                        <th>Password<br/>Unchanged</th>
                         <th>Password<br/>Group</th>
                         <th>Login<br/>Frequency</th>
                         <th>Time Spent</th>
@@ -324,6 +378,7 @@
 		<tfoot>
                   <tr>
                         <th>Site</th>
+                        <th>Password<br/>Unchanged</th>
                         <th>Password<br/>Group</th>
                         <th>Login<br/>Frequency</th>
                         <th>Time Spent</th>

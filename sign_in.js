@@ -90,6 +90,7 @@ chrome.extension.onMessage.addListener(function(message, sender, send_response) 
     else if (message.type == "account-success") {
 	$(".login-form").hide();
 	$(".create-account-form").hide();
+	$("#username-info").hide();
 	$("#top-status").removeClass("text-error");
 	$("#top-status").addClass("text-success");
 	$("#top-status").text(message.desc);

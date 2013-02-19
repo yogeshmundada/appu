@@ -1,8 +1,26 @@
 
+//Following function is from: http://stackoverflow.com/questions/6491463/accessing-nested-javascript-objects-with-string-key
+//Usage: Object.byString(someObj, 'part3[0].name');
+
+Object.byString = function(o, s) {
+    s = s.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
+    s = s.replace(/^\./, '');           // strip a leading dot
+    var a = s.split('.');
+    while (a.length) {
+        var n = a.shift();
+        if (n in o) {
+            o = o[n];
+        } else {
+            return;
+        }
+    }
+    return o;
+}
+
 // Online disk storage data structures and the presentation data structures (Data Table rows)
 // are different. This function converts one into another.
 // This function essentially flattens associative arrays, nested structure into a flat row.
-function create_datatable_consumable_records(report, vo, keys) {
+function create_datatable_consumable_records(report, vo, keys, arr_function) {
     var records = [];
     for (var k in report[vo]) {
 	if (report[vo].hasOwnProperty(k)) {
@@ -11,9 +29,16 @@ function create_datatable_consumable_records(report, vo, keys) {
 	    rec_entry.push(k);
 	    if (keys.length > 0) {
 		for (var i = 0; i < keys.length; i++) {
-		    var value = rec_object[keys[i]];
+		    var value = Object.byString(rec_object, keys[i]);
+		    //var value = rec_object[keys[i]];
 		    if (value instanceof Array) {
-			rec_entry.push(value.join(", "));
+			if (arr_function == undefined) {
+			    rec_entry.push(value.join(", "));
+			}
+			else {
+			    all_vals = value.map(arr_function);
+			    rec_entry.push(all_vals.join(", "));
+			}
 		    }
 		    else {
 			rec_entry.push(value);
@@ -51,8 +76,11 @@ function get_report_duration(report) {
 	end_date = new Date();
     }
     var diff = end_date - start_date;
+    return get_duration(diff);
+}
 
-    var total_seconds = Math.floor(diff / 1000);
+function get_duration(total_time_diff_ms) {
+    var total_seconds = Math.floor(total_time_diff_ms / 1000);
     var days = Math.floor(total_seconds / 86400);
     var hours = Math.floor((total_seconds % 86400)/ 3600);
     var minutes = Math.floor(((total_seconds % 86400) % 3600) / 60);
@@ -66,7 +94,6 @@ function get_report_duration(report) {
 	return days + " days, " + hours + " hr, " + minutes + " min";
     }
 }
-
 
 function format_display_time(milliseconds) {
     var total_seconds = Math.floor(milliseconds / 1000);

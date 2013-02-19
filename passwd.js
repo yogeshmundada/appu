@@ -388,7 +388,7 @@ Do you want Appu to download your personal information from this site?";
 		    text: "Only this time",
 		    click: function(event) { 
 			send_response({
-			    'fetch_pi_permission' : 'seek-permission',
+			    'fetch_pi_permission' : 'just-this-time',
 			});
 			$(this).dialog("close"); 
 			event.stopPropagation();
