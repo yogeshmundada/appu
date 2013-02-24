@@ -48,6 +48,8 @@ var tld = undefined;
 var focused_tabs = 0;
 
 var current_user = "default";
+var default_user_guid = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
 var sign_in_status = "not-signed-in";
 
 function print_appu_error(err_str) {
@@ -102,7 +104,7 @@ function update_specific_changes(last_version) {
 	flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
 	calculate_common_fields();
     }
-    else if (last_version == '0.3.86') {
+    else if (last_version == '0.3.86' || last_version == '0.3.84') {
 	console.log("Here here: Update specific changes(0.3.86). Adding browser, os and layout info " + 
 		    "to current_report");
 	//The browser, layout and os to current report
@@ -119,7 +121,7 @@ function update_specific_changes(last_version) {
 						   "layout_engine", "layout_engine_version"]);
 
 	console.log("Here here: Update specific changes(0.3.86). Adding deviceid");
-	pii_vault.config.deviceid = generate_guid();
+	pii_vault.config.deviceid = generate_random_id();
 	flush_selective_entries("config", ["deviceid"]);
 	pii_vault.current_report.deviceid = pii_vault.config.deviceid;	
 	flush_selective_entries("current_report", ["deviceid"]);
@@ -203,7 +205,7 @@ function initialize_report() {
     current_report.reportid = pii_vault.config.reportid;
 
     //Current report: Device Id
-    current_report.device_id = pii_vault.config.deviceid;
+    current_report.deviceid = pii_vault.config.deviceid;
 
     //Current report: is it modified?
     current_report.report_modified = "no";
@@ -450,7 +452,7 @@ function flush_selective_entries(struct_name, entry_list) {
 }
 
 function create_account(sender_tab_id, username, password) {
-    var new_guid = generate_guid();
+    var new_guid = generate_random_id();
     var wr = { 
 	'guid': new_guid, 
 	'username': CryptoJS.SHA1(username).toString(), 
@@ -458,7 +460,7 @@ function create_account(sender_tab_id, username, password) {
 	'version' : pii_vault.config.current_version 
     }
 
-    $.post("http://192.168.56.101:59000/create_new_account", 
+    $.post("http://woodland.gtnoise.net:5005/create_new_account", 
 	   JSON.stringify(wr),
 	   function(data) {
 	       if (data == 'Success') {
@@ -484,6 +486,8 @@ function create_account(sender_tab_id, username, password) {
 		   //will not do anything.
 		   vault_init();
 		   console.log("Here here: Account creation was success");
+		   //Just to report our status
+		   pii_check_if_stats_server_up();
 	       }
 	       else if (data.split(' ')[0] == 'Failed') {
 		   var temp = data.split(' ');
@@ -525,7 +529,7 @@ function sign_in(sender_tab_id, username, password) {
 	'version' : pii_vault.config.current_version
     }
 
-    $.post("http://192.168.56.101:59000/sign_in_account", 
+    $.post("http://woodland.gtnoise.net:5005/sign_in_account", 
 	   JSON.stringify(wr),
 	   function(data) {
 	       if (data.split(' ')[0] == 'Success') {
@@ -562,6 +566,8 @@ function sign_in(sender_tab_id, username, password) {
 		   vault_read();
 		   vault_init();
 		   console.log("Here here: Account sign-in was success, new_guid: " + new_guid);
+		   //Just to report our status
+		   pii_check_if_stats_server_up();
 	       }
 	       else if (data.split(' ')[0] == 'Failed') {
 		   chrome.tabs.sendMessage(sender_tab_id, {
@@ -603,13 +609,27 @@ function sign_out() {
     //Reset pii_vault.
     pii_vault = { "options" : {}, "config": {}};
     current_user = "default";
+    pii_vault.guid = default_user_guid;
     sign_in_status = 'not-signed-in';
-    //This is a new default user, create a new vault for him
+
+    console.log("sign_out(): Updated GUID in vault: " + pii_vault.guid);
+    vault_write("guid", pii_vault.guid);
+
+    pii_vault.current_user = current_user;
+    console.log("sign_out(): Updated CURRENT_USER in vault: " + pii_vault.current_user);
+    vault_write("current_user", pii_vault.current_user);
+
+    pii_vault.sign_in_status =  sign_in_status;
+    console.log("sign_out(): Updated SIGN_IN_STATUS in vault: " + pii_vault.sign_in_status);
+    vault_write("sign_in_status", pii_vault.sign_in_status);
+
+    //This is a default user, read default values and initialize those that dont exist
+    vault_read();
     vault_init();
 }
 
 
-function generate_guid() {
+function generate_random_id() {
     var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 	var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
 	return v.toString(16);
@@ -632,7 +652,7 @@ function vault_init() {
 	//Create Account or Sign-in.
 	//However, if there is a duplicate GUID then we are in trouble.
 	//Need to take care of that somehow.
-	pii_vault.guid = generate_guid();
+	pii_vault.guid = generate_random_id();
 	
 	console.log("vault_init(): Updated GUID in vault: " + pii_vault.guid);
 	vault_write("guid", pii_vault.guid);
@@ -693,7 +713,7 @@ function vault_init() {
     if (!pii_vault.config.deviceid) {
 	//A device id is only used to identify all reports originating from a 
 	//specific Appu install point. It serves no other purpose.
-	pii_vault.config.deviceid = generate_guid();
+	pii_vault.config.deviceid = generate_random_id();
 	
 	console.log("vault_init(): Updated DEVICEID in vault: " + pii_vault.config.deviceid);
 	flush_selective_entries("config", ["deviceid"]);
@@ -969,6 +989,20 @@ function vault_write(key, value) {
     else {
 	print_appu_error("Appu Error: vault_write(), Value is empty for key: " + key);
     }
+}
+
+function get_pwd_unchanged_duration(domain) {
+    try {
+	var hk = '' + ':' + domain;
+	if (hk in pii_vault.password_hashes) {
+	    return (new Date() - new Date(pii_vault.password_hashes[hk].initialized));
+	}
+	return 0;
+    }
+    catch (e) {
+	print_appu_error("Appu Error: Got an exception: " + e.message);
+    }
+    return 0;
 }
 
 function vault_update_domain_passwd(message, already_exists) {
@@ -1830,7 +1864,7 @@ function store_per_site_pi_data(domain, site_pi_fields) {
 	    changed_row: [
 		domain,
 		curr_site_pi.download_time,
-		downloaded_fields.join(", "),
+		downloaded_fields.map(function(o) { return o.field; }).join(", "),
 	    ],
 	});
     }
@@ -2141,11 +2175,13 @@ function pii_check_blacklisted_sites(message) {
 //Function to see if Appu server is up
 //Also tells the server that this appu installation is still running
 function pii_check_if_stats_server_up() {
-    var stats_server_url = "http://192.168.56.101:59000/"
+    var stats_server_url = "http://woodland.gtnoise.net:5005/"
     try {
 	var wr = {};
 	wr.guid = (sign_in_status == 'signed-in') ? pii_vault.guid : '';
 	wr.version = pii_vault.config.current_version;
+	wr.deviceid = (sign_in_status == 'signed-in') ? pii_vault.config.deviceid : 'Not-reported';
+
 	$.post(stats_server_url, JSON.stringify(wr),
 	       function(data, textStatus, jqxhr) {
 		   var is_up = false;
@@ -2192,7 +2228,7 @@ function pii_send_report(report_number) {
     wr.current_report = report;
 
     try {
-	$.post("http://192.168.56.101:59000/post_report", JSON.stringify(wr), 
+	$.post("http://woodland.gtnoise.net:5005/post_report", JSON.stringify(wr), 
 	       function(report, report_number) {
 		   return function(data, status) {
 		       var is_processed = false;
@@ -3096,6 +3132,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		}
 		send_user_account_site_row_to_reports(domain);
 	    }
+
+	    pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration = 
+		get_pwd_unchanged_duration(domain);
+	    flush_selective_entries("current_report", ["user_account_sites"]);
+
 	    if (sender.tab.id in pending_pi_fetch) { 
 		if (pending_pi_fetch[sender.tab.id] == domain) {
 		    console.log("Here here: domain: " + domain + ", tab-id: " + sender.tab.id);
@@ -3134,6 +3175,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		flush_selective_entries("current_report", ["num_non_user_account_sites"]);
 	    }
 	}
+
+	pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration = 
+	    get_pwd_unchanged_duration(domain);
 	pii_vault.current_report.user_account_sites[domain].num_logouts += 1;
 	flush_selective_entries("current_report", ["user_account_sites"]);
 	send_user_account_site_row_to_reports(domain);

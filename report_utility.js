@@ -76,43 +76,60 @@ function get_report_duration(report) {
 	end_date = new Date();
     }
     var diff = end_date - start_date;
-    return get_duration(diff);
+    return get_duration(diff, "no");
 }
 
-function get_duration(total_time_diff_ms) {
+function get_duration(total_time_diff_ms, tag_it) {
     var total_seconds = Math.floor(total_time_diff_ms / 1000);
     var days = Math.floor(total_seconds / 86400);
     var hours = Math.floor((total_seconds % 86400)/ 3600);
     var minutes = Math.floor(((total_seconds % 86400) % 3600) / 60);
+    var ret_val = "";
+
     if (days == 0 && hours == 0) {
-	return minutes + " min";
+	ret_val = minutes + " min";
     }
     else if (days == 0) {
-	return hours + " hours, " + minutes + " min";
+	ret_val = hours + " hours, " + minutes + " min";
     }
     else {
-	return days + " days, " + hours + " hr, " + minutes + " min";
+	ret_val = days + " days, " + hours + " hr";
     }
+    
+    if (tag_it != undefined) {
+	return ret_val;
+    }
+
+    ret_val = "<span class='report-time-1'>" + ret_val + "</span>";
+    return ret_val;
 }
 
-function format_display_time(milliseconds) {
+function format_display_time(milliseconds, tag_it) {
     var total_seconds = Math.floor(milliseconds / 1000);
     var hours = Math.floor(total_seconds / 3600);
     var minutes = Math.floor((total_seconds % 3600) / 60);
     var seconds = Math.floor((total_seconds % 3600) % 60);
+    var ret_val = "";
+
     if (milliseconds == 0) {
-	return "0";
+	ret_val = "0 sec";
     }
     if (hours == 0 && minutes == 0) {
-	return seconds + " sec";
+	ret_val = seconds + " sec";
     }
     else if (hours == 0) {
-	return minutes + " min, " + seconds + " sec";
+	ret_val = minutes + " min, " + seconds + " sec";
     }
     else {
-	return hours + " hr, " + minutes + " min";
+	ret_val = hours + " hr, " + minutes + " min";
     }
-    return milliseconds;
+
+    if (tag_it != undefined) {
+	return ret_val;
+    }
+
+    ret_val = "<span class='report-time-1'>" + ret_val + "</span>";
+    return ret_val;
 }
 
 function pad(d) {

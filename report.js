@@ -154,7 +154,9 @@ function modify_tables(disk_table_name, mod_type, changed_row) {
 
     if (mod_type === "replace") {
 	var ori_tr = $(html_table_name + " tr:contains('" + changed_row[0] + "')")[0];
-	dtTable.fnDeleteRow(ori_tr);
+	if (ori_tr != undefined) {
+	    dtTable.fnDeleteRow(ori_tr);
+	}
     }
     dtTable.fnAddData(changed_row);
 }
@@ -412,9 +414,9 @@ function report_received(report_number, report, do_render) {
     $("#total-sites-with-ac-div span b").text(report.num_user_account_sites);
     $("#total-sites-wo-ac-div span b").text(report.num_non_user_account_sites);
 
-    $("#total-time-spent-div span b").text(format_display_time(report.total_time_spent));
-    $("#total-time-spent-loggedin-div span b").text(format_display_time(report.total_time_spent_logged_in));
-    $("#total-time-spent-wo-loggedin-div span b").text(format_display_time(report.total_time_spent_wo_logged_in));
+    $("#total-time-spent-div span b").text(format_display_time(report.total_time_spent, "no"));
+    $("#total-time-spent-loggedin-div span b").text(format_display_time(report.total_time_spent_logged_in, "no"));
+    $("#total-time-spent-wo-loggedin-div span b").text(format_display_time(report.total_time_spent_wo_logged_in, "no"));
 
     $("#login-freq-div span b").text(cumulative_value(report.user_account_sites, "num_logins"));
     $("#logout-freq-div span b").text(cumulative_value(report.user_account_sites, "num_logouts"));
@@ -438,7 +440,7 @@ function report_received(report_number, report, do_render) {
     ////////// Populate Appu Metadata
     $("#report-modified-div span b").text(report.report_modified);
     $("#report-visited-div span b").text(report.num_report_visits);
-    $("#report-review-time-div span b").text(format_display_time(report.report_time_spent));
+    $("#report-review-time-div span b").text(format_display_time(report.report_time_spent, "no"));
 
     var has_user_approved = (report.user_approved == false) ? "no" : 
 	format_display_date((new Date(report.user_approved)).getTime(), false);
@@ -479,7 +481,7 @@ function report_received(report_number, report, do_render) {
     $("#report-postponing-div span b").text(report.send_report_postponed);
 
     $("#my-footprint-visits-div span b").text(report.num_myfootprint_visits);
-    $("#my-footprint-time-spent-div span b").text(format_display_time(report.myfootprint_time_spent));
+    $("#my-footprint-time-spent-div span b").text(format_display_time(report.myfootprint_time_spent, "no"));
 
     $("#appu-disabled-div span b").text(report.appu_disabled.length);
     $("#appu-disabled-durations-div span b").text(report.appu_disabled.join(", "));

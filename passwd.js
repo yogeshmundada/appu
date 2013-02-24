@@ -639,8 +639,19 @@ function detect_login_links() {
     console.log("Here here: Detecting 'log in's");
 
     signin_patterns.forEach(function(value, index, array) {
-	signin_elements = signin_elements.add($(":Contains('" + value + "')"));
-    });
+	    signin_elements = signin_elements.add($(":Contains('" + value + "')").filter(function() { 
+		    if (this.tagName == "SCRIPT") {
+			return false;
+		    }
+		    if (this.tagName == "STYLE") {
+			return false;
+		    }
+		    if (this.tagName == "NOSCRIPT") {
+			return false;
+		    }
+		    return ($(this).children().length < 1); 
+		}));
+	});
     return signin_elements;
 }
 
@@ -655,6 +666,9 @@ function detect_logout_links() {
     signout_patterns.forEach(function(value, index, array) {
 	signout_elements = signout_elements.add($(":Contains('" + value + "')").filter(function() { 
 	    if (this.tagName == "SCRIPT") {
+		return false;
+	    }
+	    if (this.tagName == "STYLE") {
 		return false;
 	    }
 	    if (this.tagName == "NOSCRIPT") {
@@ -680,10 +694,17 @@ function detect_logout_links() {
     }
 
     //Special case for sites like Dropbox....need to generalize it later
-    if (signout_elements.length == 0 && document.domain == "www.dropbox.com") {
+    if (signout_elements.length == 0 && (document.domain.match(/dropbox.com$/) != null)) {
 	signout_elements = signout_elements.add($(":contains('Sign out')")
 						.filter(function() { return (this.tagName == 'A'); }));
     }
+
+    //Special case for sites like Github....need to generalize it later
+    if (signout_elements.length == 0 && (document.domain.match(/github.com$/) != null)) {
+	signout_elements = signout_elements.add($("#logout")
+						.filter(function() { return (this.tagName == 'A'); }));
+    }
+
     return signout_elements;
 }
 
@@ -700,15 +721,8 @@ function monitor_explicit_logouts(eo) {
 }
 
 function detect_if_user_logged_in() {
-    var signin_elements = [];
     var signout_elements = detect_logout_links();
-    if (signout_elements.length == 0) {
-	signin_elements = detect_login_links();
-    }
-    else {
-	$(signout_elements).on('click.monitor_explicit_logouts', monitor_explicit_logouts);
-	$(signout_elements).on('keypress.monitor_explicit_logouts', monitor_explicit_logouts);
-    }
+    var signin_elements = detect_login_links();
 
     if (signout_elements.length > 0 && signin_elements.length == 0) {
 	var message = {};
@@ -718,6 +732,9 @@ function detect_if_user_logged_in() {
 	chrome.extension.sendMessage("", message);
 	console.log("Here here: Sending message that I am signed in");
 	am_i_logged_in = true;
+
+	$(signout_elements).on('click.monitor_explicit_logouts', monitor_explicit_logouts);
+	$(signout_elements).on('keypress.monitor_explicit_logouts', monitor_explicit_logouts);
     }
     else if (signin_elements.length > 0 && signout_elements.length == 0) {
 	var message = {};
@@ -808,108 +825,110 @@ function show_appu_monitor_icon() {
     }
 }
 
-$(window).on('unload', window_unfocused);
-$(window).on("focus", window_focused);
-$(window).on("blur", window_unfocused);
 
-$(document).ready(function() {
-    var message = {};
-    message.type = "query_status";
-    message.url = document.domain;
-    chrome.extension.sendMessage("", message, is_status_active);
-});
+if (document.URL.match(/.pdf$/) == null) {
+    $(window).on('unload', window_unfocused);
+    $(window).on("focus", window_focused);
+    $(window).on("blur", window_unfocused);
 
-
-$(window).on("click.do_i_have_focus", function() {
-    $(window).off("click.do_i_have_focus");
-    window_focused(undefined);
-});
-
-$(window).on("keypress.do_i_have_focus", function() {
-    $(window).off("keypress.do_i_have_focus");
-    window_focused(undefined);
-});
-
-//No point in doing following.
-//What if a user is watching video?
-//setInterval(focus_check, 300 * 1000);
-
-$(window).on("load", function() {
-    var message = {};
-    message.type = "am_i_active";
-    chrome.extension.sendMessage("", message, function (r) {
-	if (r.am_i_active) {
-	    window_focused(undefined);
-	}
-    });
-});
-
-chrome.extension.onMessage.addListener(function(message, sender, send_response) {
-    if (message.type == "report-reminder") {
-	show_report_ready_modal_dialog();
-    }
-    else if (message.type == "status-enabled") {
-	console.log("Here here: status-enabled");
-	is_appu_active = true;
-	show_appu_monitor_icon();
-	update_status('Appu is enabled');
-    }
-    else if (message.type == "status-disabled") {
-	console.log("Here here: status-disabled");
-	is_appu_active = false;
-	hide_appu_monitor_icon();
-	update_status('Appu is disabled');
-    }
-    else if (message.type == "you_are_active") {
-	window_focused();
-    }
-    else if (message.type == "close-report-reminder") {
-	close_report_ready_modal_dialog();
-    }
-    else if (message.type == "goto-url") {
-	window.location = message.url;
-    }
-    else if (message.type == "simulate-click") {
-	var element_to_click = apply_css_filter(apply_css_selector($(document), message.css_selector), 
-						message.css_filter);
-
-	var detect_change_css = message.detect_change_css;  
-
-	//Hard timeout
-	//Wait for 60 seconds before sending event that click cannot be 
-	//completed.
-	var simulate_done_timer = window.setTimeout(function() {
+    $(document).ready(function() {
 	    var message = {};
-	    message.type = "simulate_click_done";
-	    chrome.extension.sendMessage("", message);
-	}, 60 * 1000);
-
-
-	MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
-
-	var observer = new MutationObserver(function(mutations, observer) {
-	    simulate_click_worked(mutations, observer, simulate_done_timer, detect_change_css);
+	    message.type = "query_status";
+	    message.url = document.domain;
+	    chrome.extension.sendMessage("", message, is_status_active);
 	});
 
-	//var config = { attributes: true, childList: true, characterData: true }
-	var config = { subtree: true, characterData: true, childList: true, attributes: true }
-	observer.observe(document, config);
 
-	//Now do the actual click
-	$(element_to_click).trigger("click");
-    }
-    else if (message.type == "get-html") {
-	//Adding 2 seconds delay because some sites like Google+ have data populated asynchronously.
-	//So the page loads but actual data is populated later.
-	window.setTimeout(function() {
-		var html_data = $("html").html();
-		send_response(html_data);
-	    }, 2000);
-	return true;
-    }
-    else if (message.type == "get-permission-to-fetch-pi") {
-	get_permission_to_fetch_pi(message.site, send_response);
-	return true;
-    }
-});
+    $(window).on("click.do_i_have_focus", function() {
+	    $(window).off("click.do_i_have_focus");
+	    window_focused(undefined);
+	});
 
+    $(window).on("keypress.do_i_have_focus", function() {
+	    $(window).off("keypress.do_i_have_focus");
+	    window_focused(undefined);
+	});
+
+    //No point in doing following.
+    //What if a user is watching video?
+    //setInterval(focus_check, 300 * 1000);
+
+    $(window).on("load", function() {
+	    var message = {};
+	    message.type = "am_i_active";
+	    chrome.extension.sendMessage("", message, function (r) {
+		    if (r.am_i_active) {
+			window_focused(undefined);
+		    }
+		});
+	});
+    
+    chrome.extension.onMessage.addListener(function(message, sender, send_response) {
+	    if (message.type == "report-reminder") {
+		show_report_ready_modal_dialog();
+	    }
+	    else if (message.type == "status-enabled") {
+		console.log("Here here: status-enabled");
+		is_appu_active = true;
+		show_appu_monitor_icon();
+		update_status('Appu is enabled');
+	    }
+	    else if (message.type == "status-disabled") {
+		console.log("Here here: status-disabled");
+		is_appu_active = false;
+		hide_appu_monitor_icon();
+		update_status('Appu is disabled');
+	    }
+	    else if (message.type == "you_are_active") {
+		window_focused();
+	    }
+	    else if (message.type == "close-report-reminder") {
+		close_report_ready_modal_dialog();
+	    }
+	    else if (message.type == "goto-url") {
+		window.location = message.url;
+	    }
+	    else if (message.type == "simulate-click") {
+		var element_to_click = apply_css_filter(apply_css_selector($(document), message.css_selector), 
+							message.css_filter);
+		
+		var detect_change_css = message.detect_change_css;  
+		
+		//Hard timeout
+		//Wait for 60 seconds before sending event that click cannot be 
+		//completed.
+		var simulate_done_timer = window.setTimeout(function() {
+			var message = {};
+			message.type = "simulate_click_done";
+			chrome.extension.sendMessage("", message);
+		    }, 60 * 1000);
+		
+		
+		MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+		
+		var observer = new MutationObserver(function(mutations, observer) {
+			simulate_click_worked(mutations, observer, simulate_done_timer, detect_change_css);
+		    });
+		
+		//var config = { attributes: true, childList: true, characterData: true }
+		var config = { subtree: true, characterData: true, childList: true, attributes: true }
+		observer.observe(document, config);
+		
+		//Now do the actual click
+		$(element_to_click).trigger("click");
+	    }
+	    else if (message.type == "get-html") {
+		//Adding 2 seconds delay because some sites like Google+ have data populated asynchronously.
+		//So the page loads but actual data is populated later.
+		window.setTimeout(function() {
+			var html_data = $("html").html();
+			send_response(html_data);
+		    }, 2000);
+		return true;
+	    }
+	    else if (message.type == "get-permission-to-fetch-pi") {
+		get_permission_to_fetch_pi(message.site, send_response);
+		return true;
+	    }
+	});
+}
