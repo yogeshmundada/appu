@@ -84,7 +84,7 @@ var all_help_descriptions = {
 };
 
 function simulate_hover() {
-    console.log("Here here: in simulate hover");
+    console.log("APPU DEBUG: in simulate hover");
     $(".brand").trigger("mouseover").delay(2 * 1000).trigger("mouseout");
 }
 
@@ -92,7 +92,7 @@ function openTab(url) {
 }
 
 function print_text_report() {
-    console.log("Here here: In print_text_report():" + new Date());
+    console.log("APPU DEBUG: In print_text_report():" + new Date());
     chrome.tabs.create({ url: 'text_report.html' }, function (tab) {
 	// Send which report to show to background.js
 	chrome.extension.sendMessage("", {
@@ -111,7 +111,7 @@ function expand_persite_account_table() {
     var dtTable = $("#per-site-account-data-table").dataTable();
 
     $("#per-site-account-data-table_wrapper").appendTo("#per-site-account-data-table-modal-body");
-    $.each([5, 6, 7, 8, 9], function(index, value) {
+    $.each([6, 7, 8, 9, 10], function(index, value) {
     	dtTable.fnSetColumnVis( value, true);
     });
 }
@@ -121,7 +121,7 @@ function contract_persite_account_table() {
     var dtTable = $("#per-site-account-data-table").dataTable();
     $("#per-site-account-data-table_wrapper").appendTo("#per-site-account-data-table-div");
 
-    $.each([5, 6, 7, 8, 9], function(index, value) {
+    $.each([6, 7, 8, 9, 10], function(index, value) {
     	dtTable.fnSetColumnVis( value, false);
     });
 
@@ -295,7 +295,7 @@ function report_received(report_number, report, do_render) {
     current_report = report;
     current_report_number = report_number;
 
-    console.log("Here here: Got the report: " + report_number);
+    console.log("APPU DEBUG: Got the report: " + report_number);
 
     if ((current_report_number != 1) && current_report.actual_report_send_time != 'Not delivered yet') {
 	current_report_delete_enabled = false;
@@ -505,6 +505,7 @@ function report_received(report_number, report, do_render) {
     var psadt_records = create_datatable_consumable_records(report, "user_account_sites", 
 							    [
 							     'pwd_unchanged_duration',
+							     'pwd_stored_in_browser',
 							     'my_pwd_group',
 							     'num_logins',
 							     'tts',
@@ -640,7 +641,7 @@ function send_report() {
     $("#report-duration-send-modal").text(duration);
     
     $("#send-report-modal").modal({});
-    console.log("Here here: Pressed send report");
+    console.log("APPU DEBUG: Pressed send report");
     
     //Now report for the latest report
     //Since number 1 is the latest report, get that
@@ -680,7 +681,7 @@ function add_hooks() {
 	var row_pos = dtTable.fnGetPosition( $(this).closest('tr')[0] );
 	var row_data = dtTable.fnGetData(row_pos);
 	var entry_key = row_data[0]; 
-	console.log("Here here: Clicked on delete-per-site-account-data-entry, key: " + entry_key);
+	console.log("APPU DEBUG: Clicked on delete-per-site-account-data-entry, key: " + entry_key);
 	delete_table_entry("user_account_sites", entry_key, dtTable, row_pos);
     });
 
@@ -689,7 +690,7 @@ function add_hooks() {
 	var row_pos = dtTable.fnGetPosition( $(this).closest('tr')[0]);
 	var row_data = dtTable.fnGetData(row_pos);
 	var entry_key = row_data[0]; 
-	console.log("Here here: Clicked on delete-password-reuse-warning-entry, key: " + entry_key); 
+	console.log("APPU DEBUG: Clicked on delete-password-reuse-warning-entry, key: " + entry_key); 
 	delete_table_entry("pwd_reuse_warnings", entry_key, dtTable, row_pos);
     });
 
@@ -698,7 +699,7 @@ function add_hooks() {
 	var row_pos = dtTable.fnGetPosition( $(this).closest('tr')[0]);
 	var row_data = dtTable.fnGetData(row_pos);
 	var entry_key = row_data[0]; 
-	console.log("Here here: Clicked on delete-pi-metadata-entry, key: " + entry_key); 
+	console.log("APPU DEBUG: Clicked on delete-pi-metadata-entry, key: " + entry_key); 
 	delete_table_entry("downloaded_pi", entry_key, dtTable, row_pos);
     });
 
@@ -707,7 +708,7 @@ function add_hooks() {
 	var row_pos = dtTable.fnGetPosition( $(this).closest('tr')[0]);
 	var row_data = dtTable.fnGetData(row_pos);
 	var entry_key = row_data[0]; 
-	console.log("Here here: Clicked on delete-pi-reuse-entry, key: " + entry_key); 
+	console.log("APPU DEBUG: Clicked on delete-pi-reuse-entry, key: " + entry_key); 
 	delete_table_entry("common_fields", entry_key, dtTable, row_pos);
     });
 
@@ -716,7 +717,7 @@ function add_hooks() {
 	var row_pos = dtTable.fnGetPosition( $(this).closest('tr')[0]);
 	var row_data = dtTable.fnGetData(row_pos);
 	var entry_key = row_data[0]; 
-	console.log("Here here: Clicked on delete-user-interaction-metadata-entry, key: " + entry_key); 
+	console.log("APPU DEBUG: Clicked on delete-user-interaction-metadata-entry, key: " + entry_key); 
 	delete_table_entry("input_fields", entry_key, dtTable, row_pos);
     });
 }
@@ -849,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	    },
 	    { 
-		"aTargets" : [4], 
+		"aTargets" : [5], 
 		"mRender": function(data, type, full) {
 		    if (type === "display") {
 			return format_display_time(data);
@@ -859,7 +860,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	    },
 	    { 
 		"bVisible" : false, 
-		"aTargets" : [5], 
+		"aTargets" : [6], 
 		"mRender": function(data, type, full) {
 		    if (type === "display") {
 			return format_display_date(data, true);
@@ -868,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	    },
 	    { "bVisible" : false, 
-	      "aTargets" : [6],
+	      "aTargets" : [7],
 	      "mRender": function(data, type, full) {
 		  if (type === "display") {
 		      return format_display_time(data);
@@ -878,7 +879,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	    },
 	    { 
 		"bVisible" : false, 
-		"aTargets" : [7],
+		"aTargets" : [8],
 		"mRender": function(data, type, full) {
 		    if (type === "display") {
 			return format_display_time(data);
@@ -888,16 +889,16 @@ document.addEventListener('DOMContentLoaded', function () {
 	    },
 	    { 
 		"bVisible" : false, 
-		"aTargets" : [8],
+		"aTargets" : [9],
 		"sWidth" : "5px"
 	    },
 	    { 
 		"bVisible" : false, 
-		"aTargets" : [9]
+		"aTargets" : [10]
 	    },
 	    { 
 		"bSortable" : false, 
-		"aTargets" : [10], 
+		"aTargets" : [11], 
 		"sWidth" : "10px",
 		"mData": null, 
 		"sDefaultContent": '<i class="icon-trash delete-per-site-account-data-entry"></i>'

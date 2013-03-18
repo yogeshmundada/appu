@@ -168,7 +168,7 @@ function process_report(report) {
 }
 
 function fetch_report(response) {
-    console.log("Here here: Report number: " + response.reportnumber);
+    console.log("APPU DEBUG: Report number: " + response.reportnumber);
     chrome.extension.sendMessage("", {
 	'type' : "get_report_by_number",
 	'report_number' : response.reportnumber

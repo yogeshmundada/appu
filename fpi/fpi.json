@@ -1,0 +1,42 @@
+{
+  "amazon.com" : {
+     "category" : "ecommerce",
+     "fpi" : "group1/amazon.fpi"
+  },
+  "twitter.com" : {
+     "category" : "microblog",
+     "fpi" : "group1/twitter.fpi"
+  },
+  "facebook.com" : {
+     "category" : "social-networking",
+     "fpi" : "group1/facebook.fpi"
+  },
+  "google.com" : {
+     "category" : "search-engine/social-networking",
+     "fpi" : "group1/google.fpi"
+  },
+  "tripit.com" : {
+     "category" : "travel",
+     "fpi" : "group1/tripit.fpi"
+  },
+  "reddit.com" : {
+     "category" : "social-news",
+     "fpi" : "group1/reddit.fpi"
+  },
+  "stumbleupon.com" : {
+     "category" : "discovery-engine",
+     "fpi" : "group1/stumbleupon.fpi"
+  },
+  "theverge.com" : {
+     "category" : "technology-news",
+     "fpi" : "group1/theverge.fpi"
+  },
+  "polygon.com" : {
+     "category" : "video-gaming",
+     "fpi" : "group1/polygon.fpi"
+  },
+  "iheart.com" : {
+     "category" : "music-streaming",
+     "fpi" : "group1/iheart.fpi"
+  }
+}

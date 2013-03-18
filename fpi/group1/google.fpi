@@ -1,0 +1,70 @@
+<div name="gmail">
+     <action type="fetch-url">https://www.google.com/settings/account</action>
+
+     <div name="email" can_be_a_null="no">
+     	  <action type="store">html body div div div div div div div div div div div div div div span:eq(0)
+	  </action>
+     </div>
+
+     <div name="your account">
+     	  <action type="fetch-href">a:contains('Edit your profile')
+	  </action>
+
+	  <div name="name" can_be_a_null="no">
+	       <action type="store">html body div div#content div div div#contentPane div div div div div div span a span
+	       </action>
+          </div>
+
+
+	  <div name="occupation">
+	       <action type="store">html body div div div.MTa div div div div div div div div div div div:contains('Occupation') div.Ca
+	       </action>
+          </div>
+
+
+
+	  <div name="employments" type="vector">
+	       <action type="fetch-dom-element">html body div div#content div div div#contentPane div div div div div div div div div div ul li.nT
+	       </action>
+	       <div name="employment">	
+	       	    <action type="store">
+		    </action>
+	       </div>
+      	  </div>
+	  
+
+
+	  <div name="phones" type="vector">
+	       <action type="fetch-dom-element">td.tel
+	       </action>
+	       <div name="phone">	
+	       	    <action type="store">
+		    </action>
+	       </div>
+      	  </div>
+
+
+
+	  <div name="relationship">
+	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains('Relationship') div.Ca
+	       </action>
+          </div>
+
+
+
+	  <div name="birthdate">
+	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains('Birthday') div.Ca
+	       </action>
+          </div>
+
+
+
+	  <div name="gender">
+	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains('Gender') div.Ca
+	       </action>
+          </div>
+
+
+
+     </div>
+</div>

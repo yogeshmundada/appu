@@ -1,0 +1,32 @@
+<div name="stumbleupon">
+	<action type="fetch-url">https://www.stumbleupon.com/settings/profile</action>
+
+		<div name="name">
+			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div.input input#name.xlarge</action>
+        </div>
+
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div.input input#email.xlarge</action>
+        </div>
+		
+		<div name="birthdate">
+			<action type="store">html body div div div section form fieldset div div p.inline-reference-text span:eq(1)</action>
+        </div>
+		
+		<div name="gender">
+			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div label input:checked</action>
+		</div>
+		
+		<div name="city">
+			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div input#city</action>
+		</div>
+		
+		<div name="state">
+			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div input#state</action>
+		</div>
+		
+		<div name="country">
+			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div select#country</action>
+		</div>
+		
+</div>

@@ -1,0 +1,28 @@
+<div name="polygon">
+	<action type="fetch-url">http://www.polygon.com/</action>
+	
+	<div name="account settings">
+		<action type="fetch-href">a:contains('Account Settings')</action>
+		
+		<div name="first-name">
+			<action type="store" field_type="editable">html body div#container.top div#main.cont form div#content-pane.content-pane p input#user_first_name.textfield</action>
+		</div>
+		
+		<div name="last-name">
+			<action type="store" field_type="editable">html body div#container.top div#main.cont form div#content-pane.content-pane p input#user_last_name.textfield</action>
+		</div>
+			
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">html body div#container.top div#main.cont form div#content-pane.content-pane p input#user_email.textfield</action>
+		</div>
+		
+		<div name="country">
+			<action type="store" field_type="editable">html body div#container.top div#main.cont form div#content-pane.content-pane p select#user_country</action>
+		</div>
+		
+		<div name="zip-code">
+			<action type="store" field_type="editable">html body div#container.top div#main.cont form div#content-pane.content-pane p#zipcode input#user_zipcode.textfield</action>
+		</div>
+
+	</div>
+</div>

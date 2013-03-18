@@ -1,0 +1,60 @@
+<div name="amazon">
+     <action type="fetch-url">https://www.amazon.com</action>
+     <div name="your account">
+     	  <action type="fetch-href">html body div#page-wrap div#content div div#nav_your_account_flyout ul.nav_pop_ul li.nav_pop_li a.nav_a:contains("Your Account")
+	  </action>
+
+
+
+	  <div name="account setting">
+	       <action type="fetch-href">html body div#cs-acc-contain div.column-holder div.primary div.action-box div.listbar div.listbox ul li a:contains("Change Account Settings")
+	       </action>
+	       <div name="name" can_be_a_null="no">
+	       	    <action type="store">html body div#wrapper div#centerSlots div#cnep-slot div#ap_cnep_pagelet.ap_pagelet div#ap_cnep_form_wrapper.ap_form_wrapper div#ap_cnep_change_name_form.ap_cnep_form_row form#cnep_1a_name_form div#ap_cnep_form_name.ap_cnep_row span.ap_cnep_val
+		    </action>
+	       </div>
+	       <div name="email" can_be_a_null="no">
+	       	    <action type="store"> html body div#wrapper div#centerSlots div#cnep-slot div#ap_cnep_pagelet.ap_pagelet div#ap_cnep_form_wrapper.ap_form_wrapper div#ap_cnep_change_email_form.ap_cnep_form_row form#cnep_1a_email_form div#ap_cnep_form_email.ap_cnep_row span.ap_cnep_val
+		    </action>
+	       </div>
+	       <div name="phone">
+	       	    <action type="store"> html body div div#centerSlots div#cnep-slot div#ap_cnep_pagelet div#ap_cnep_form_wrapper div#ap_cnep_form_mobile_phone form#cnep_1a_mobile_phone_form span.ap_cnep_val
+		    </action>
+	       </div>
+	  </div>
+
+
+
+	  <div name="payment options">
+     	       <action type="fetch-href">html body div#cs-acc-contain div.column-holder div.primary div.action-box div.listbar div.listbox ul li a:contains("Manage Payment Options")
+	       </action>
+
+	       <div name="ccns" type="vector">
+	       	    <action type="fetch-dom-element" filter=":contains('Number')" property="textContent" element="5">html body table tbody tr td table tbody tr td table tbody tr td table tbody tr
+		    </action>
+		    <div name="ccn">	
+	       	    	 <action type="store" property="textContent">td:nth-child(2)
+		    	 </action>
+		    </div>
+	       </div>
+	  </div>
+
+
+
+	  <div name="manage address book">
+     	       <action type="fetch-href">html body div#cs-acc-contain div.column-holder div.primary div.action-box div.listbar div.listbox ul li a:contains("Manage Address Book")
+	       </action>
+
+	       <div name="addresses" type="vector">
+	       	    <action type="fetch-dom-element">html body table tbody tr td div.displayAddressDiv ul.displayAddressUL
+		    </action>
+		    <div name="address">
+	       	    	 <action type="combine-n-store">.displayAddressAddressLine1, .displayAddressAddressLine2, .displayAddressCityStateOrRegionPostalCode, .displayAddressCountryName
+			 </action>
+	       	    </div>
+	       </div>
+	  </div>
+
+
+     </div>
+</div>

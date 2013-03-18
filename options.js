@@ -31,7 +31,7 @@ function dontbugme_site_list_delete_entry() {
 }
 
 function add_one_more_dontbugme_entry(r) {
-    console.log("Here here: In add one more entry: " + r);
+    console.log("APPU DEBUG: In add one more entry: " + r);
     if (r.new_entry != null) {
 	var nr = $('<tr class="dontbugme-site-entry"></tr>');
 	
@@ -80,7 +80,7 @@ function add_one_more_dontbugme_entry(r) {
 }
 
 function add_one_more_dnt_entry(r) {
-    console.log("Here here: In add one more entry: " + r);
+    console.log("APPU DEBUG: In add one more entry: " + r);
     if (r.new_entry != null) {
 	var nr = $('<tr class="dnt-site-entry"></tr>');
 	
@@ -152,7 +152,7 @@ function populate_dnt_list(r) {
 	else {
 	    //$("#dnt-site-list-table").remove();
 	    $("#dnt-site-list-table").hide();
-	    console.log("Here here: Setting the display property of #dnt-site-list-table to: " 
+	    console.log("APPU DEBUG: Setting the display property of #dnt-site-list-table to: " 
 			+ $("#dnt-site-list-table").css('display'));
 	    $("#dnt-site-div").append($('<p id="no-dnt">Do Not Track list is empty</p>'));
 	}
@@ -207,7 +207,7 @@ function populate_dontbugme_list(r) {
 	else {
 	    //$("#dontbugme-site-list-table").remove();
 	    $("#dontbugme-site-list-table").hide();
-	    console.log("Here here: Setting the display property of #dontbugme-site-list-table to: " 
+	    console.log("APPU DEBUG: Setting the display property of #dontbugme-site-list-table to: " 
 			+ $("#dontbugme-site-list-table").css('display'));
 	    $("#dontbugme-site-div").append($('<p id="no-dontbugme">Don\'t bug me list is empty</p>'));
 	}

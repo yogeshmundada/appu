@@ -1,0 +1,195 @@
+<div name="facebook">
+     <action type="fetch-url">http://www.facebook.com</action>
+     
+
+
+     <div name="Your account">
+     	  <action type="fetch-href">html body div._li div#pagelet_bluebar div#blueBarHolder.slim div#blueBar.fixed_elem div#pageHead.clearfix div#headNav.clearfix div.rfloat ul#pageNav.clearfix li.navItem a.navLink
+	  </action>
+
+
+
+	  <div name="About You">
+	       <action type="fetch-href">html body div._li div#globalContainer.uiContextualLayerParent div#content.fb_content div div#mainContainer div#contentCol.clearfix div#contentArea div#pagelet_timeline_main_column div#pagelet_main_column_personal div.fbTimelineTopSectionBase div.fbTimelineSection div#pagelet_timeline_nav.fbTimelineNavigationPagelet div#timelineNavContent.fbTimelineNavigationWrapper div ul li div div a:contains("About")
+	       </action>
+
+
+
+	       <div name="name" can_be_a_null="no">
+	       	    <action type="store">html body div._li div#globalContainer.uiContextualLayerParent div#content.fb_content div div#mainContainer div#contentCol.clearfix div#contentArea div#pagelet_timeline_main_column div#pagelet_main_column_personal div.fbTimelineTopSectionBase div.fbTimelineSection div#fbProfileCover div div div.name span span.uiButtonGroupItem a.nameButton span.uiButtonText
+		    </action>
+	       </div>
+
+
+	       
+	       <div name="phones" type="vector">
+	       	    <action type="fetch-dom-element">html body div._li div#globalContainer.uiContextualLayerParent div#content.fb_content div div#mainContainer div#contentCol.clearfix div#contentArea div#pagelet_timeline_main_column div#pagelet_main_column_personal div#timeline_tab_content div.aboutMePagelet div.clearfix div.mbl div#pagelet_contact div.fbTimelineSection div table.uiInfoTable tbody tr td.data ul.uiList li.uiListItem table.uiGrid tbody tr td.contactInfoPhone span
+		    </action>
+
+		    <div name="phone">
+		    	 <action type="store">
+			 </action>
+		    </div>	 
+	       </div>
+
+
+	       
+	       <div name="Basic Info">
+	       	    <action type="fetch-dom-element">html body div._li div#globalContainer.uiContextualLayerParent div#content.fb_content div div#mainContainer div#contentCol.clearfix div#contentArea div#pagelet_timeline_main_column div#pagelet_main_column_personal div#timeline_tab_content div.aboutMePagelet div.clearfix div.mbl div#pagelet_basic div.fbTimelineSection table.uiInfoTable tbody
+		    </action>
+
+
+
+		    <div name="relationship">
+	       	    	 <action type="store">:contains('Relationship') td
+		    	 </action>
+	            </div>
+
+
+
+		    <div name="religious-view">
+	       	    	 <action type="store">:contains('Religious') td
+		    	 </action>
+	            </div>
+
+
+
+		    <div name="political-view">
+	       	    	 <action type="store">:contains('Political') td
+		    	 </action>
+	            </div>
+	       </div>
+
+
+
+	       <div name="Current City Div">
+	       	    <action  type="fetch-dom-element" filter=":contains('Current City')" >html body div._li div#globalContainer.uiContextualLayerParent div#content.fb_content div div#mainContainer div#contentCol.clearfix div#contentArea div#pagelet_timeline_main_column div#pagelet_main_column_personal div#timeline_tab_content div.aboutMePagelet div.clearfix div.mbl div#pagelet_hometown div.fbTimelineSection table.uiInfoTable tbody tr td.data div table.uiGrid tbody tr td[class='vMid pll']
+		    </action>
+		    <div name="current-city">
+		    	 <action type="store">span a
+			 </action>
+		    </div>
+	       </div>
+
+
+
+	       <div name="HomeTown Div">
+	       	    <action  type="fetch-dom-element" filter=":contains('Hometown')" >html body div._li div#globalContainer.uiContextualLayerParent div#content.fb_content div div#mainContainer div#contentCol.clearfix div#contentArea div#pagelet_timeline_main_column div#pagelet_main_column_personal div#timeline_tab_content div.aboutMePagelet div.clearfix div.mbl div#pagelet_hometown div.fbTimelineSection table.uiInfoTable tbody tr td.data div table.uiGrid tbody tr td[class='vMid pll']
+		    </action>
+		    <div name="hometown">
+		    	 <action type="store">span a
+			 </action>
+		    </div>
+	       </div>
+
+
+
+	       <div name="Employers Tables">
+	       	    <action  type="fetch-dom-element" filter=":contains('Employers')">html body div._li div#globalContainer.uiContextualLayerParent div#content.fb_content div div#mainContainer div#contentCol.clearfix div#contentArea div#pagelet_timeline_main_column div#pagelet_main_column_personal div#timeline_tab_content div.aboutMePagelet div.clearfix div.mbl div#pagelet_eduwork div#eduwork.fbTimelineSection table.uiInfoTable tbody
+		    </action>
+
+		    <div name="employers" type="vector">
+		    	 <action type="fetch-dom-element">tr[class!='spacer'] td div ul li div div div div div.experienceTitle a span
+			 </action>
+		    	 <div name="employer">
+		    	      <action type="store">
+			      </action>
+	    	         </div>
+		    </div>
+
+	       </div>
+
+
+
+
+	       <div name="Grad School Table">
+	       	    <action  type="fetch-dom-element" filter=":contains('Graduate School')" >html body div._li div#globalContainer.uiContextualLayerParent div#content.fb_content div div#mainContainer div#contentCol.clearfix div#contentArea div#pagelet_timeline_main_column div#pagelet_main_column_personal div#timeline_tab_content div.aboutMePagelet div.clearfix div.mbl div#pagelet_eduwork div#eduwork.fbTimelineSection table.uiInfoTable tbody
+		    </action>
+		    <div name="gradute schools" type="vector">
+		    	 <action type="fetch-dom-element">tr[class!='spacer'] td div ul li div div div div div.experienceTitle a span
+			 </action>
+			 <div name="gradute-school">
+			      <action type="store">
+			      </action>
+			 </div>
+		    </div>
+	       </div>
+
+
+
+
+	       <div name="High School Table">
+	       	    <action  type="fetch-dom-element" filter=":contains('High School')" >html body div._li div#globalContainer.uiContextualLayerParent div#content.fb_content div div#mainContainer div#contentCol.clearfix div#contentArea div#pagelet_timeline_main_column div#pagelet_main_column_personal div#timeline_tab_content div.aboutMePagelet div.clearfix div.mbl div#pagelet_eduwork div#eduwork.fbTimelineSection table.uiInfoTable tbody
+		    </action>
+		    <div name="high schools" type="vector">
+		    	 <action type="fetch-dom-element">tr[class!='spacer'] td div ul li div div div div div.experienceTitle a span
+			 </action>
+			 <div name="high-school">
+			      <action type="store">
+			      </action>
+			 </div>
+		    </div>
+	       </div>
+
+
+	       
+	  </div>
+     </div>
+
+
+
+     <div name="Email page">
+          <action type="fetch-url">https://www.facebook.com/settings?ref=mb
+          </action>
+
+          <div name="Email click">
+               <action type="simulate-click" filter=":contains('Email')">.pls
+               </action>
+
+               <div name="emails" type="vector" can_be_a_null="no">
+                    <action type="fetch-dom-element">div[class='fsm fwn fcg'] div label
+                    </action>
+
+                    <div name="email">
+                         <action type="store">
+                         </action>
+                    </div>
+               </div>
+          </div>
+     </div>
+
+
+
+     <div name="Payment methods">
+     	  <action type="fetch-url">https://secure.facebook.com/settings?tab=payments
+	  </action>
+
+	  <div name="CCN/Address click">
+	       <action type="simulate-click" filter=":contains('Payment Methods')">.pls 
+	       </action>
+	       
+	       <div name="ccns" type="vector">
+	       	    <action type="fetch-dom-element">table.fbCreditCardFields:not(:last)
+		    </action>
+		    	
+		    <div name="ccn">
+	       	    	 <action type="store">tr:contains('Credit Card Number') td
+		    	 </action>
+	       	    </div>
+	       </div>
+
+	       <div name="ccn-addresses" type="vector">
+	       	    <action type="fetch-dom-element">table.fbCreditCardFields:not(:last)
+		    </action>
+
+		    <div name="ccn-address">
+	       	    	 <action type="combine-n-store">tr:contains('Billing Address') td:eq(0), tr:contains('City') td:eq(0), tr:contains('State') td:eq(0), tr:contains('Zip') td:eq(0), tr:contains('Country') td:eq(0) .hideInEditMode
+		    	 </action>
+		    </div>
+	       </div>
+
+	  </div>
+     </div>
+
+
+</div>

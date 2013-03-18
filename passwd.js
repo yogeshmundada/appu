@@ -117,7 +117,7 @@ You can delete entries from the report by reviewing it before sending it out";
     }
 
     var is_passwd_dialog_open = $('#appu-password-warning').dialog("isOpen");
-    //console.log(sprintf("Appu: [%s]: Here here: Time for Report Ready Notifiction", new Date()));
+    //console.log(sprintf("Appu: [%s]: APPU DEBUG: Time for Report Ready Notifiction", new Date()));
 
     if (is_passwd_dialog_open != true) {
 	$('#appu-report-ready').dialog("open");
@@ -129,23 +129,45 @@ function get_password_initialized_readable(pwd_init_time) {
     var pwd_init_date = new Date(pwd_init_time);
     var curr_date = new Date();
     var msg = "";
+    var fields = 0;
 
     var diff = curr_date - pwd_init_date;
 
-    if (diff <= (24 * 60 * 60 * 1000)) {
-	return "1 day";
-    }
+//     if (diff <= (24 * 60 * 60 * 1000)) {
+// 	return "1 day";
+//     }
 
     var total_seconds = Math.floor(diff / 1000);
     var years = Math.floor(total_seconds / 31536000);
     var days = Math.floor((total_seconds % 31536000) / 86400);
+    var hours = Math.floor(((total_seconds % 31536000) % 86400) / 3600);
+    var minutes = Math.floor((((total_seconds % 31536000) % 86400) % 3600) / 60);
+    var seconds = Math.floor((((total_seconds % 31536000) % 86400) % 3600) % 60);
+
     if (years != 0) {
 	msg = years + " yr";
 	msg += ((years > 1) ? "s" : "");
+	fields++;
     }
     if (days != 0) {
 	msg += (msg == "" ? (days + " day") : (", " + days + " day")); 
 	msg += ((days > 1) ? "s" : "");
+	fields++;
+    }
+    if (hours != 0 && (fields < 2)) {
+	msg += (msg == "" ? (hours + " hr") : (", " + hours + " hr")); 
+	msg += ((hours > 1) ? "s" : "");
+	fields++;
+    }
+    if (minutes != 0 && (fields < 2)) {
+	msg += (msg == "" ? (minutes + " min") : (", " + minutes + " min")); 
+	msg += ((minutes > 1) ? "s" : "");
+	fields++;
+    }
+    if (seconds != 0 && (fields < 2)) {
+	msg += (msg == "" ? (seconds + " sec") : (", " + seconds + " sec")); 
+	msg += ((seconds > 1) ? "s" : "");
+	fields++;
     }
     return msg;
 }
@@ -154,8 +176,11 @@ function is_passwd_reused(response) {
     if (response.is_password_reused == "yes") {
 	//console.log("Appu: Password is reused");
 	var alrt_msg = "<b style='font-size:16px'>Password Warning</b> <br/>" +
-	    "Estimated Password Cracking Time: <b>" + response.pwd_strength.crack_time_display + "</b><br/>" +
-	    "Password not changed for: <b>" + get_password_initialized_readable(response.initialized) + "</b>";
+	    "Estimated Password Cracking Time: <b>" + response.pwd_strength.crack_time_display + "</b><br/>";
+
+	if (response.initialized != 'Not sure') {
+	    alrt_msg += "Password not changed for: <b>" + get_password_initialized_readable(response.initialized) + "</b>";
+	}
 	
 	alrt_msg += "<br/><br/><b style='font-size:16px'> Reused In:</b><br/>";
 	for (var i = 0; i < response.sites.length; i++) {
@@ -231,11 +256,14 @@ function check_passwd_reuse(jevent) {
     if ( jevent.target.value != "" ) {
 	var message = {};
 	message.type = "check_passwd_reuse";
+	message.caller = "check_passwd_reuse";
 	message.domain = document.domain;
+	message.is_stored = is_password_stored(jevent.target);
 	message.passwd = jevent.target.value;
 	message.warn_later = false;
 	chrome.extension.sendMessage("", message, is_passwd_reused);
 	$(jevent.target).data("is_reuse_checked", true);
+	$(jevent.target).data("pwd_checked_for", message.passwd);
     }
 }
 
@@ -284,53 +312,168 @@ function user_modifications(jevent) {
     }
 }
 
-//If 'ENTER' is pressed, then unfortunately browser will move on (content scripts cannot hijack events from main scripts),
+//If 'ENTER' is pressed, then unfortunately browser will move on 
+//(content scripts cannot hijack events from main scripts),
 //before notification is flashed.
 //In that case, show the warning as pending warning on the next page.
 function check_for_enter(e) {
     if (e.which == 13) {
 	if ( e.target.value != "" ) {
+	    $(e.target).data("is_reuse_checked", true);
+	    $(e.target).data("pwd_checked_for", e.target.value);
+
 	    var message = {};
 	    message.type = "check_passwd_reuse";
+	    message.caller = "check_for_enter";
+	    message.pwd_sentmsg = $(e.target).data("is_reuse_checked");
 	    message.domain = document.domain;
+	    message.is_stored = is_password_stored(e.target);
 	    message.passwd = e.target.value;
 	    message.warn_later = true;
 	    chrome.extension.sendMessage("", message);
-	    $(e.target).data("is_reuse_checked", true);
 	}
     }
+}
+
+function update_current_password(e) {
+    if (e.which != 9) {
+        //This is not a tab key. So that means user is actually modifying the values here.
+	$(e.target).data("pwd_modified", true);
+	$(e.target).data("pwd_current", e.target.value);
+	password_changed(e.target);
+     }
+}
+
+// This functions iterates over all the present
+// password elements. It will store the value
+// filled by browser (if passwords are stored in the browser).
+// This is used to compare if user edited passwords later or
+// if he just used values filled by browser.
+function store_pwd_elements() {
+    var ap = $('input:password');
+    for (var i = 0; i < ap.length; i++) {
+	$(ap[i]).data("pwd_element_id", i);
+	$(ap[i]).data("pwd_orig", ap[i].value);
+        if (ap[i].value.length > 0) {
+	    $(ap[i]).data("pwd_stored", true);
+        }
+        else {
+	    $(ap[i]).data("pwd_stored", false);
+        }
+	$(ap[i]).data("pwd_current", "");
+	$(ap[i]).data("pwd_modified", false);
+	$(ap[i]).data("pwd_checked_for", "");
+    }
+}
+
+//Need to check usernames as well
+function password_changed(pwd_elem) {
+    if($(pwd_elem).data("pwd_modified") == false &&
+       $(pwd_elem).data("pwd_orig") == pwd_elem.value) {
+	//This is the most straightforward case. This means that password was not modified at all.
+	//User is using the same password that was entered by the browser.
+	$(pwd_elem).data("pwd_stored", true);
+	return;
+    }
+    if($(pwd_elem).data("pwd_modified") == false &&
+       $(pwd_elem).data("pwd_orig") != pwd_elem.value &&
+       $(pwd_elem).data("pwd_current") == pwd_elem.value) {
+	//This means that the user has actively modified the password sometime in the past.
+	//So password stored is false.
+	$(pwd_elem).data("pwd_stored", false);
+	return;
+    }
+    if($(pwd_elem).data("pwd_modified") == false &&
+       $(pwd_elem).data("pwd_orig") != pwd_elem.value &&
+       $(pwd_elem).data("pwd_current") != pwd_elem.value) {
+	//In this case, user did edit the password, but then he changed username to some username
+	//that also has the password stored but is not equal to default uesrname that browser enters.
+	//Hence, the password is still stored in the browser.
+	$(pwd_elem).data("pwd_stored", true);
+	$(pwd_elem).data("pwd_orig", pwd_elem.value);
+	return;
+    }
+    if($(pwd_elem).data("pwd_modified") == true) {
+	//In this case, user did edit the password, but then he changed username to some username
+	//that also has the password stored but is not equal to default uesrname that browser enters.
+	//Hence, the password is still stored in the browser.
+	$(pwd_elem).data("pwd_modified", false);
+	$(pwd_elem).data("pwd_stored", false);
+	return;
+    }
+}
+
+function is_password_stored(pwe) {
+    password_changed(pwe);
+    return $(pwe).data("pwd_stored");
 }
 
 function final_password_reuse_check() {
     var all_passwds = $("input:password");
-    for(var i = 0; i < all_passwds.length; i++) {
-	if (all_passwds[i].value != "" && all_passwds[i].data("is_reuse_checked") != "true") {
-	    var message = {};
-	    message.type = "check_passwd_reuse";
-	    message.domain = document.domain;
-	    message.passwd = all_passwds[i].value;
-	    message.warn_later = true;
-	    chrome.extension.sendMessage("", message);
-	    all_passwds[i].data("is_reuse_checked", true);
-	}
+    try {
+	for(var i = 0; i < all_passwds.length; i++) {
+            if (all_passwds[i].value != "" && 
+		$(all_passwds[i]).is(":visible") == true) {
+		
+		if ($(all_passwds[i]).data("is_reuse_checked") == true &&
+		    $(all_passwds[i]).data("pwd_checked_for") == all_passwds[i].value) {
+		    continue;
+		}
+
+                var message = {};
+
+		message.pwd_sentmsg = $(all_passwds[i]).data("is_reuse_checked");
+                message.type = "check_passwd_reuse";
+		message.caller = "final_password_reuse_check";
+                message.domain = document.domain;
+                message.passwd = all_passwds[i].value;
+                message.is_stored = is_password_stored(all_passwds[i]);
+                message.warn_later = true;
+                chrome.extension.sendMessage("", message);
+                $(all_passwds[i]).data("is_reuse_checked", true);
+            }
+        }
     }
+    catch (e) {
+	console.log("Error: In exception");
+    }
+}
+
+function check_for_visible_pwd_elements() {
+    var all_pwds = $("input:password");
+    var rc = false;
+
+    if (all_pwds.length == 0) {
+	return false;
+    }
+
+    all_pwds.each(function() {
+	    if ($(this).is(":visible") == true) {
+		rc = true;
+	    }
+	});    
+
+    return rc;
 }
 
 function is_blacklisted(response) {
     if(response.blacklisted == "no") {
-	if ($("input:password").length == 0) {
+	if (!check_for_visible_pwd_elements()) {
 	    //This means that its a successful login.
 	    //Otherwise, password might be wrong.
 	    check_pending_warnings();
 	}
-	//Register for password input type element.
-	$('body').on('focusout', 'input:password', check_passwd_reuse);
-	$('body').on('keypress', 'input:password', check_for_enter);
+	else {
+            //Register for password input type element. 
+            $('body').on('focusout', 'input:password', check_passwd_reuse);
+            $('body').on('keydown', 'input:password', check_for_enter);
+            $('body').on('keyup', 'input:password', update_current_password);
 
-	//Finally handle the case for someone enters password and then
-	//with mouse clicks on "log in"
-	$('body').on('unload', final_password_reuse_check);
-	
+            //Finally handle the case for someone enters password and then
+            //with mouse clicks on "log in" 
+            $(window).on('unload', final_password_reuse_check);
+        }
+
 	//Register for all input type elements. Capture any changes to them.
 	//Log which input element user actively changes on a site.
 	//DO NOT LOG changes themselves. 
@@ -346,7 +489,9 @@ function is_blacklisted(response) {
 
 function get_permission_to_fetch_pi(domain, send_response) {
 	var pi_permission_message = "Appu would like to download your personal information present on " + 
-	domain + ". If you choose to do so, Appu would open a new tab and download that information. \
+	    domain + ". This information <b>DOES NOT</b> get sent to the server. It'll <b>ALWAYS</b> stays \
+on your local disk. <br/>\
+If you choose to do so, Appu would open a new tab and download that information. \
 <br/><br/>You can view downloaded information at 'Appu-Menu > My Footprint'. <br/> \
 You can change the choice that you make now at any time from 'Appu-Menu > Options'. <br/><br/>\
 Do you want Appu to download your personal information from this site?";
@@ -423,8 +568,11 @@ function show_pending_warnings(r) {
 	msg_type = (response.is_password_reused == "yes") ? "Warning" : "Information";
 	    //console.log("Appu: Password is reused");
 	var alrt_msg = "<b style='font-size:16px'>Password " + msg_type + "</b> <br/>" +
-	    "Estimated Password Cracking Time: <b>" + response.pwd_strength.crack_time_display + "</b><br/>" +
-	    "Password not changed for: <b>" + get_password_initialized_readable(response.initialized) + "</b>";
+	    "Estimated Password Cracking Time: <b>" + response.pwd_strength.crack_time_display + "</b><br/>";
+
+	if (response.initialized != 'Not sure') {
+	    alrt_msg += "Password not changed for: <b>" + get_password_initialized_readable(response.initialized) + "</b>";
+	}
 
 	if (response.is_password_reused == "yes") {	    
 	    alrt_msg += "<br/><br/><b style='font-size:16px'> Reused In:</b><br/>";
@@ -463,7 +611,7 @@ function show_pending_warnings(r) {
 	}).parents('.ui-dialog:eq(0)').wrap('<div class="appuwarning"></div>'); 
 
 	$('#appu-password-pending-warning').dialog("open");
-	console.log("Here here: Opened window at: " + new Date());
+	console.log("APPU DEBUG: Opened window at: " + new Date());
 
 	pwd_pending_warn_timeout = window.setTimeout(function(){
 	    $('#appu-password-pending-warning').dialog('close');
@@ -563,7 +711,7 @@ function apply_css_selector(elements, css_selector) {
 
 function simulate_click_worked(mutations, observer, simulate_done_timer, css_selector) {
     if ($(css_selector).length > 0) {
-	console.log("Here here: Simulate click was successful");
+	console.log("APPU DEBUG: Simulate click was successful");
 	observer.disconnect();
 	window.clearTimeout(simulate_done_timer);
 	var message = {};
@@ -633,64 +781,86 @@ $.expr[":"].Contains = $.expr.createPseudo(function(arg) {
 
 //If we find any log-in links, then the user has certainly not logged in.
 function detect_login_links() {
-    var signin_patterns = ["Sign in", "Log in", "Login"];   
+    var signin_patterns = {
+	"Sign in" : "^Sign in$", 
+	"? Sign in" : "\\? Sign in$", 
+	"Log in"  : "^Log in$" , 
+	"Login"   : "^Login$"  ,
+    };
+
     var signin_elements = $([]);
     
-    console.log("Here here: Detecting 'log in's");
+    //console.log("APPU DEBUG: Detecting 'log in's");
 
-    signin_patterns.forEach(function(value, index, array) {
-	    signin_elements = signin_elements.add($(":Contains('" + value + "')").filter(function() { 
-		    if (this.tagName == "SCRIPT") {
-			return false;
-		    }
-		    if (this.tagName == "STYLE") {
-			return false;
-		    }
-		    if (this.tagName == "NOSCRIPT") {
-			return false;
-		    }
-		    return ($(this).children().length < 1); 
-		}));
-	});
+    var signin_elements = detect_text_pattern(signin_patterns);
+
     return signin_elements;
 }
+
+
+function detect_text_pattern(patterns) {
+    var detected_elements = $([]);
+    Object.keys(patterns).forEach(function(value, index, array) {
+	    detected_elements = detected_elements.add($(":Contains('" + value + "')").filter(function() { 
+			var regex_val = patterns[value].toLowerCase();
+			var text = $.trim($(this).text()).toLowerCase();
+			var tagName = this.tagName;
+			
+			if (text == undefined || text == "") {
+			    return false;
+			}
+			
+			if (tagName == "SCRIPT" || 
+			    tagName == "STYLE" ||
+			    tagName == "NOSCRIPT" ) {
+			    return false;
+			}
+			
+			if (!text.match(regex_val)) {
+			    return false;
+			}
+			
+			return ($(this).children().length < 1); 
+		    }));
+	});
+    return detected_elements;
+}
+
+
+function detect_input_type_pattern(patterns) {
+    var detected_elements = $([]);
+    Object.keys(patterns).forEach(function(value, index, array) {
+	    detected_elements = detected_elements.add($(":input[value='"+ value +"']").filter(function() { 
+			if (this.tagName == "SCRIPT") {
+			    return false;
+			}
+			if (this.tagName == "NOSCRIPT") {
+			    return false;
+			}
+			return ($(this).children().length < 1); 
+		    }));
+	});
+    return detected_elements;
+}
+
 
 //If we can detect log-out links on a page then that means a user has
 //certainly logged in.
 function detect_logout_links() {
-    var signout_patterns = ["Sign out", "Log Out", "Logout"];   
-    var signout_elements = $([]);
-    
-    console.log("Here here: Detecting 'log out's");
+    var signout_patterns = {
+	"Sign out" : "^Sign out$", 
+	"? Sign out" : "\\? Sign out$", 
+	"Log Out"  : "^Log Out$", 
+	"Logout"   : "^Logout$",  
+    };
+   
+    //console.log("APPU DEBUG: Detecting 'log out's");
 
-    signout_patterns.forEach(function(value, index, array) {
-	signout_elements = signout_elements.add($(":Contains('" + value + "')").filter(function() { 
-	    if (this.tagName == "SCRIPT") {
-		return false;
-	    }
-	    if (this.tagName == "STYLE") {
-		return false;
-	    }
-	    if (this.tagName == "NOSCRIPT") {
-		return false;
-	    }
-	    return ($(this).children().length < 1); 
-	}));
-    });
+    var signout_elements = detect_text_pattern(signout_patterns);
 
     //Special case for sites like Facebook
     if (signout_elements.length == 0) {
-	signout_patterns.forEach(function(value, index, array) {
-	    signout_elements = signout_elements.add($(":input[value='"+ value +"']").filter(function() { 
-		if (this.tagName == "SCRIPT") {
-		    return false;
-		}
-		if (this.tagName == "NOSCRIPT") {
-		    return false;
-		}
-		return ($(this).children().length < 1); 
-	    }));
-	});
+	signout_elements = detect_input_type_pattern(signout_patterns);
     }
 
     //Special case for sites like Dropbox....need to generalize it later
@@ -709,14 +879,14 @@ function detect_logout_links() {
 }
 
 function monitor_explicit_logouts(eo) {
-    console.log("Here here");
+    console.log("APPU DEBUG");
     var signout_event = false;
     if ((eo.type == "click") || (eo.type == "keypress" && eo.which == 13)) {
 	var message = {};
 	message.type = "explicit_sign_out";
 	message.domain = document.domain;
 	chrome.extension.sendMessage("", message);
-	console.log("Here here: Sending message that I explicitly signed out");
+	console.log("APPU DEBUG: Sending message that I explicitly signed out");
     }
 }
 
@@ -730,7 +900,7 @@ function detect_if_user_logged_in() {
 	message.value = 'yes';
 	message.domain = document.domain;
 	chrome.extension.sendMessage("", message);
-	console.log("Here here: Sending message that I am signed in");
+	console.log("APPU DEBUG: Sending message that I am signed in");
 	am_i_logged_in = true;
 
 	$(signout_elements).on('click.monitor_explicit_logouts', monitor_explicit_logouts);
@@ -742,7 +912,7 @@ function detect_if_user_logged_in() {
 	message.value = 'no';
 	message.domain = document.domain;
 	chrome.extension.sendMessage("", message);
-	console.log("Here here: Sending message that I am *NOT* signed in");
+	console.log("APPU DEBUG: Sending message that I am *NOT* signed in");
     }
     else {
 	var message = {};
@@ -750,7 +920,7 @@ function detect_if_user_logged_in() {
 	message.value = 'unsure';
 	message.domain = document.domain;
 	chrome.extension.sendMessage("", message);
-	console.log("Here here: Sending message that SignIn status is *UNSURE*");
+	console.log("APPU DEBUG: Sending message that SignIn status is *UNSURE*");
     }
 }
 
@@ -783,10 +953,10 @@ function update_status(new_status) {
 	}).parents('.ui-dialog:eq(0)').wrap('<div class="appuwarning"></div>'); 
 
 	$('#appu-status-update-warning').dialog("open");
-	console.log("Here here: Opened window at: " + new Date());
+	console.log("APPU DEBUG: Opened window at: " + new Date());
 	window.setTimeout(function(){
 	    $('#appu-status-update-warning').dialog('close');
-	    console.log("Here here: Closed window at: " + new Date());
+	    console.log("APPU DEBUG: Closed window at: " + new Date());
 	}, 3000);
 }
 
@@ -825,13 +995,14 @@ function show_appu_monitor_icon() {
     }
 }
 
-
 if (document.URL.match(/.pdf$/) == null) {
     $(window).on('unload', window_unfocused);
     $(window).on("focus", window_focused);
     $(window).on("blur", window_unfocused);
 
     $(document).ready(function() {
+	    store_pwd_elements();
+
 	    var message = {};
 	    message.type = "query_status";
 	    message.url = document.domain;
@@ -849,9 +1020,11 @@ if (document.URL.match(/.pdf$/) == null) {
 	    window_focused(undefined);
 	});
 
-    //No point in doing following.
-    //What if a user is watching video?
-    //setInterval(focus_check, 300 * 1000);
+    //Every 5 minutes, check if user is actually looking at the site actively.
+    //Otherwise, count it as focus not checked.
+    //This could create problems for sites like youtube or video sites.
+    //Need to check somehow if Flash is active on the current site.
+    setInterval(focus_check, 300 * 1000);
 
     $(window).on("load", function() {
 	    var message = {};
@@ -868,13 +1041,13 @@ if (document.URL.match(/.pdf$/) == null) {
 		show_report_ready_modal_dialog();
 	    }
 	    else if (message.type == "status-enabled") {
-		console.log("Here here: status-enabled");
+		console.log("APPU DEBUG: status-enabled");
 		is_appu_active = true;
 		show_appu_monitor_icon();
 		update_status('Appu is enabled');
 	    }
 	    else if (message.type == "status-disabled") {
-		console.log("Here here: status-disabled");
+		console.log("APPU DEBUG: status-disabled");
 		is_appu_active = false;
 		hide_appu_monitor_icon();
 		update_status('Appu is disabled');
@@ -929,6 +1102,9 @@ if (document.URL.match(/.pdf$/) == null) {
 	    else if (message.type == "get-permission-to-fetch-pi") {
 		get_permission_to_fetch_pi(message.site, send_response);
 		return true;
+	    }
+	    else if (message.type == "check_passwd_reuse") {
+		console.log("Here here: Domain: " + message.domain + ", Passwd: " + message.passwd);
 	    }
 	});
 }
