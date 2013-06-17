@@ -565,6 +565,9 @@ Do you want Appu to download your personal information from this site?";
 function show_pending_warnings(r) {
     if(r.pending == "yes") {
 	var response = r.warnings;
+
+	console.log("Here here: PWD INIT TIME: " + response.initialized);
+
 	msg_type = (response.is_password_reused == "yes") ? "Warning" : "Information";
 	    //console.log("Appu: Password is reused");
 	var alrt_msg = "<b style='font-size:16px'>Password " + msg_type + "</b> <br/>" +
@@ -725,7 +728,8 @@ var start_focus_time = undefined;
 function focus_check() {
     if (start_focus_time != undefined) {
 	var curr_time = new Date();
-	if((curr_time.getTime() - last_user_interaction.getTime()) > (300 * 1000)) {
+	//Lets just put it for 4.5 minutes
+	if((curr_time.getTime() - last_user_interaction.getTime()) > (270 * 1000)) {
 	    //No interaction in this tab for last 5 minutes. Probably idle.
 	    window_unfocused();
 	}
@@ -786,6 +790,7 @@ function detect_login_links() {
 	"? Sign in" : "\\? Sign in$", 
 	"Log in"  : "^Log in$" , 
 	"Login"   : "^Login$"  ,
+	"Sign In/Register for Account" : "^Sign In/Register for Account$" ,
     };
 
     var signin_elements = $([]);
@@ -815,6 +820,10 @@ function detect_text_pattern(patterns) {
 			    tagName == "NOSCRIPT" ) {
 			    return false;
 			}
+
+// 			if (!$(this).is(":visible")) {
+// 			    return false;
+// 			}
 			
 			if (!text.match(regex_val)) {
 			    return false;
@@ -1108,3 +1117,5 @@ if (document.URL.match(/.pdf$/) == null) {
 	    }
 	});
 }
+
+

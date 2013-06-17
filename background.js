@@ -291,6 +291,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    "), Value of is_password_stored: " + message.is_stored);
 	r = pii_check_passwd_reuse(message, sender);
 
+	console.log("Here here: PWD INIT IS: " + r.initialized);
 	//Add the current pwd info to pending warnings
 	var pend_warn = {};
 	pend_warn = $.extend(true, {}, r);

@@ -757,6 +757,17 @@ function format_date(data, type, full) {
 
 var start_focus_time = undefined;
 
+function focus_check() {
+    if (start_focus_time != undefined) {
+	var curr_time = new Date();
+	//Lets just put it for 4.5 minutes
+	if((curr_time.getTime() - last_user_interaction.getTime()) > (270 * 1000)) {
+	    //No interaction in this tab for last 5 minutes. Probably idle.
+	    window_unfocused();
+	}
+    }
+}
+
 function window_focused(eo) {
     last_user_interaction = new Date();
     if (start_focus_time == undefined) {
@@ -773,6 +784,7 @@ function window_unfocused(eo) {
 	message.type = "report_time_spent";
 	message.time_spent = total_focus_time;
 	chrome.extension.sendMessage("", message);
+	console.log("Here here: Sending message the report-tab is unfocused");
     }
 }
 
@@ -788,6 +800,8 @@ function request_report_number(report_number, do_render) {
 
 $(window).on("focus", window_focused);
 $(window).on("blur", window_unfocused);
+
+setInterval(focus_check, 300 * 1000);
 
 function get_latest_report() {
     if (current_report_number == 1) {

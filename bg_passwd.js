@@ -391,11 +391,12 @@ function pii_check_passwd_reuse(message, sender) {
 	}
     }
 
-    if (hk in pii_vault.password_hashes) {
-	var curr_entry = pii_vault.password_hashes[hk];
+    var curr_hk = curr_username + ':' + message.domain;
+    if (curr_hk in pii_vault.password_hashes) {
+	var curr_entry = pii_vault.password_hashes[curr_hk];
 	var rc = calculate_short_hash(message.passwd, curr_entry.salt);
-	if (rc.short_hash == pii_vault.password_hashes[hk].pwd_short_hash) {
-	    r.initialized = pii_vault.password_hashes[hk].initialized;
+	if (rc.short_hash == pii_vault.password_hashes[curr_hk].pwd_short_hash) {
+	    r.initialized = pii_vault.password_hashes[curr_hk].initialized;
 	}
     }
 

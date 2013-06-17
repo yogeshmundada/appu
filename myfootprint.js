@@ -103,8 +103,21 @@ function window_unfocused(eo) {
     }
 }
 
+function focus_check() {
+    if (start_focus_time != undefined) {
+	var curr_time = new Date();
+	//Lets just put it for 4.5 minutes
+	if((curr_time.getTime() - last_user_interaction.getTime()) > (270 * 1000)) {
+	    //No interaction in this tab for last 5 minutes. Probably idle.
+	    window_unfocused();
+	}
+    }
+}
+
 $(window).on("focus", window_focused);
 $(window).on("blur", window_unfocused);
+
+setInterval(focus_check, 300 * 1000);
 
 $(window).on("unload", function() {
     window_unfocused();

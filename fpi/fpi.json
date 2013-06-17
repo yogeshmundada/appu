@@ -1,730 +1,1582 @@
 {
-  "amazon.com" : {
-     "category" : "ecommerce/shopping/class-2",
-     "fpi" : "group1/amazon.fpi"
-  },
-  "twitter.com" : {
-     "category" : "microblog/social-networking/class-3",
-     "fpi" : "group1/twitter.fpi"
-  },
-  "facebook.com" : {
-     "category" : "social-networking/class-2",
-     "fpi" : "group1/facebook.fpi"
-  },
-  "google.com" : {
-     "category" : "search-engine/social-networking/email/class-1",
-     "fpi" : "group1/google.fpi"
-  },
-  "tripit.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "group1/tripit.fpi"
-  },
-  "reddit.com" : {
-     "category" : "social-news/class-4",
-     "fpi" : "group1/reddit.fpi"
-  },
-  "stumbleupon.com" : {
-     "category" : "discovery-engine/class-4",
-     "fpi" : "group1/stumbleupon.fpi"
-  },
-  "theverge.com" : {
-     "category" : "technology-news/class-5",
-     "fpi" : "group1/theverge.fpi"
-  },
-  "polygon.com" : {
-     "category" : "video-gaming/class-4",
-     "fpi" : "group1/polygon.fpi"
-  },
-  "iheart.com" : {
-     "category" : "music-streaming/class-5",
-     "fpi" : "group1/iheart.fpi"
-  },
-  "bankofamerica.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "linkedin.com" : {
-     "category" : "jobs/social-networking/job-networking/class-2",
-     "fpi" : "not-present"
-  },
-  "umd.edu" : {
-     "category" : "academia/class-2",
-     "fpi" : "not-present"
-  },
-  "dropbox.com" : {
-     "category" : "online-backup/hosting/software-services/class-2",
-     "fpi" : "not-present"
-  },
-  "github.com" : {
-     "category" : "hosting/class-3",
-     "fpi" : "not-present"
-  },
-  "mint.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "chase.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "americanexpress.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "usenix.org" : {
-     "category" : "academia/class-2",
-     "fpi" : "not-present"
-  },
-  "delta.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "paypal.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "wisc.edu" : {
-     "category" : "academia/class-2",
-     "fpi" : "not-present"
-  },
-  "coursera.org" : {
-     "category" : "academia/class-4",
-     "fpi" : "not-present"
-  },
-  "fidelity.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "microsoft.com" : {
-     "category" : "search-engine/social-networking/email/class-1",
-     "fpi" : "not-present"
-  },
-  "att.com" : {
-     "category" : "utility/hardware/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "vimeo.com" : {
-     "category" : "video-hosting/class-3",
-     "fpi" : "not-present"
-  },
-  "evernote.com" : {
-     "category" : "notetaking/archiving/personal-info/software-services/class-2",
-     "fpi" : "not-present"
-  },
-  "etsy.com" : {
-     "category" : "ecommerce/shopping/class-2",
-     "fpi" : "not-present"
-  },
-  "live.com" : {
-     "category" : "software-services/mail/personal-info/class-2",
-     "fpi" : "not-present"
-  },
-  "piazza.com" : {
-     "category" : "software-services/academia/class-3",
-     "fpi" : "not-present"
-  },
-  "symplicity.com" : {
-     "category" : "ecommerce/shopping/class-2",
-     "fpi" : "not-present"
-  },
-  "yahoo.com" : {
-     "category" : "search-engine/social-networking/email/class-2",
-     "fpi" : "not-present"
-  },
-  "taleo.net" : {
-     "category" : "software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "outtask.com" : {
+ "quora.com" : {
+     "category" : "forums/social-networking/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "adp.com" : {
      "category" : "software-services/class-2",
-     "fpi" : "not-present"
-  },
-  "gogoinflight.com" : {
-     "category" : "software-services/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "skype.com" : {
-     "category" : "software-services/video-chatting/telecommunication/class-2",
-     "fpi" : "not-present"
-  },
-  "pandora.com" : {
-     "category" : "music-streaming/class-5",
-     "fpi" : "not-present"
-  },
-  "projectbismark.net" : {
-     "category" : "academia/software-services/class-4",
-     "fpi" : "not-present"
-  },
-  "berkeley.edu" : {
-     "category" : "academia/class-2",
-     "fpi" : "not-present"
-  },
-  "netflix.com" : {
-     "category" : "video-hosting/class-3",
-     "fpi" : "not-present"
-  },
-  "hulu.com" : {
-     "category" : "video-hosting/class-3",
-     "fpi" : "not-present"
-  },
-  "etrade.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "cardcenter.ch" : {
+     "fpi" : "no-present"
+ },
+ "academicjobsonline.org" : {
+     "category" : "jobs/social-networking/job-networking/networking/class-2",
+     "fpi" : "no-present"
+ },
+ "apple.com" : {
      "category" : "software-services/class-2",
-     "fpi" : "not-present"
-  },
-  "woodruffcentertickets.org" : {
-     "category" : "reservation/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "nespresso.com" : {
-     "category" : "shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "discover.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "paymo.biz" : {
-     "category" : "software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "godaddy.com" : {
-     "category" : "software-services/web-hosting/class-3",
-     "fpi" : "not-present"
-  },
-  "easychair.org" : {
-     "category" : "academia/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "battlecam.com" : {
-     "category" : "video-streaming/class-4",
-     "fpi" : "not-present"
-  },
-  "axvoice.com" : {
-     "category" : "software-services/telecommunication/class-3",
-     "fpi" : "not-present"
-  },
-  "ascenciabank.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "discovercard.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "ripe.net" : {
-     "category" : "software-services/telecommunication/class-3",
-     "fpi" : "not-present"
-  },
-  "crossrider.com" : {
-     "category" : "software-services/class-4",
-     "fpi" : "not-present"
-  },
-  "geant.net" : {
+     "fpi" : "no-present"
+ },
+ "dante.net" : {
+     "category" : "research/telecommunication/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "geant.net" : {
      "category" : "academia/collaboration/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "geico.com" : {
-     "category" : "insurance/finance/class-2",
-     "fpi" : "not-present"
-  },
-  "orange.ch" : {
-     "category" : "software-services/telecommunication/class-3",
-     "fpi" : "not-present"
-  },
-  "rescuetime.com" : {
-     "category" : "software-services/class-4",
-     "fpi" : "not-present"
-  },
-  "rescuetime.com" : {
-     "category" : "software-services/class-4",
-     "fpi" : "not-present"
-  },
-  "recreation.gov" : {
-     "category" : "travel/class-4",
-     "fpi" : "not-present"
-  },
-  "icloud.com" : {
-     "category" : "online-backup/hosting/software-services/class-2",
-     "fpi" : "not-present"
-  },
-  "gogoair.com" : {
-     "category" : "software-services/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "marylandtaxes.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "tvtorrents.com" : {
-     "category" : "entertainment/class-5",
-     "fpi" : "not-present"
-  },
-  "zendough.com" : {
-     "category" : "finance/class-2",
-     "fpi" : "not-present"
-  },
-  "relianceada.com" : {
-     "category" : "software-services/telecommunication/class-3",
-     "fpi" : "not-present"
-  },
-  "planet-lab.org" : {
-     "category" : "academia/collaboration/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "active.com" : {
-     "category" : "health/class-4",
-     "fpi" : "not-present"
-  },
-  "regonline.com" : {
-     "category" : "software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "instructure.com" : {
-     "category" : "academia/collaboration/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "nhl.com" : {
-     "category" : "sports/class-5",
-     "fpi" : "not-present"
-  },
-  "jetblue.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "starticket.ch" : {
-     "category" : "reservation/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "ankiweb.net" : {
-     "category" : "notetaking/archiving/personal-info/software-services/class-4",
-     "fpi" : "not-present"
-  },
-  "redfin.com" : {
-     "category" : "ecommerce/shopping/class-2",
-     "fpi" : "not-present"
-  },
-  "theborgata.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "narrabay.com" : {
-     "category" : "utility/class-3",
-     "fpi" : "not-present"
-  },
-  "umich.edu" : {
-     "category" : "academia/class-2",
-     "fpi" : "not-present"
-  },
-  "premiermiles.co.in" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "brown.edu" : {
-     "category" : "academia/class-2",
-     "fpi" : "not-present"
-  },
-  "wikicfp.com" : {
-     "category" : "academia/class-3",
-     "fpi" : "not-present"
-  },
-  "harvard.edu" : {
-     "category" : "academia/class-2",
-     "fpi" : "not-present"
-  },
-  "graebel.com" : {
-     "category" : "transportation/services/class-3",
-     "fpi" : "not-present"
-  },
-  "asgpark.com" : {
-     "category" : "transportation/services/class-3",
-     "fpi" : "not-present"
-  },
-  "qualcomm.com" : {
-     "category" : "telecommunication/software-services/class-4",
-     "fpi" : "not-present"
-  },
-  "grubhub.com" : {
-     "category" : "restaurant/services/class-3",
-     "fpi" : "not-present"
-  },
-  "vectorstock.com" : {
-     "category" : "software-services/class-5",
-     "fpi" : "not-present"
-  },
-  "warbyparker.com" : {
-     "category" : "shopping/services/health/class-3",
-     "fpi" : "not-present"
-  },
-  "apple.com" : {
-     "category" : "software-services/class-2",
-     "fpi" : "not-present"
-  },
-  "commandlinefu.com" : {
-     "category" : "software-services/class-4",
-     "fpi" : "not-present"
-  },
-  "physicsforums.com" : {
-     "category" : "academia/class-4",
-     "fpi" : "not-present"
-  },
-  "eresources.com" : {
-     "category" : "software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "joerogan.net" : {
-     "category" : "entertainment/class-3",
-     "fpi" : "not-present"
-  },
-  "cups.org" : {
-     "category" : "software-services/class-4",
-     "fpi" : "not-present"
-  },
-  "eventbrite.com" : {
-     "category" : "social-networking/entertainment/class-4",
-     "fpi" : "not-present"
-  },
-  "racemenu.com" : {
-     "category" : "social-networking/entertainment/class-4",
-     "fpi" : "not-present"
-  },
-  "vonage.com" : {
-     "category" : "telecommunication/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "mailstrom.co" : {
-     "category" : "email/software-services/class-1",
-     "fpi" : "not-present"
-  },
-  "bitly.com" : {
-     "category" : "notetaking/archiving/personal-info/software-services/class-2",
-     "fpi" : "not-present"
-  },
-  "silabs.com" : {
-     "category" : "hardware/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "audemat.com" : {
-     "category" : "hardware/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "statcounter.com" : {
-     "category" : "software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "airtran.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "weddingwire.com" : {
-     "category" : "services/class-3",
-     "fpi" : "not-present"
-  },
-  "meinvz.net" : {
-     "category" : "social-networking/class-2",
-     "fpi" : "not-present"
-  },
-  "nokia.com" : {
-     "category" : "hardware/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "ebay.com" : {
+     "fpi" : "no-present"
+ },
+ "zazzle.com" : {
      "category" : "ecommerce/shopping/class-3",
-     "fpi" : "group1/amazon.fpi"
-  },
-  "tamilmatrimony.com" : {
-     "category" : "dating/personal-info/social-networking/services/class-3",
-     "fpi" : "not-present"
-  },
-  "yelp.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "dominos.com" : {
-     "category" : "restaurant/services/class-3",
-     "fpi" : "not-present"
-  },
-  "citibank.co.in" : {
+     "fpi" : "no-present"
+ },
+ "ams-ix.net" : {
+     "category" : "telecommunication/hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "berkeley.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "barclaycardus.com" : {
      "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "orcid.org" : {
-     "category" : "academia/class-3",
-     "fpi" : "not-present"
-  },
-  "tumblr.com" : {
-     "category" : "microblog/social-networking/class-3",
-     "fpi" : "group1/twitter.fpi"
-  },
-  "wordpress.com" : {
-     "category" : "blog/social-networking/class-3",
-     "fpi" : "group1/twitter.fpi"
-  },
-  "schwab.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "harrisbank.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "amazon.de" : {
-     "category" : "ecommerce/shopping/class-2",
-     "fpi" : "group1/amazon.fpi"
-  },
-  "gtnoise.net" : {
-     "category" : "academia/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "maxmind.com" : {
-     "category" : "academia/software-services/class-2",
-     "fpi" : "not-present"
-  },
-  "icicibank.co.in" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "edas.info" : {
-     "category" : "collaboration/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "carefirst.com" : {
-     "category" : "insurance/finance/class-2",
-     "fpi" : "not-present"
-  },
-  "mangahere.com" : {
-     "category" : "social-networking/entertainment/class-4",
-     "fpi" : "not-present"
-  },
-  "twitterfeed.com" : {
-     "category" : "microblog/social-networking/class-3",
-     "fpi" : "group1/twitter.fpi"
-  },
-  "ironport.com" : {
-     "category" : "security/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "ibm.com" : {
-     "category" : "hardware/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "spotify" : {
-     "category" : "music-streaming/class-3",
-     "fpi" : "not-present"
-  },
-  "ebs.in" : {
-     "category" : "payment-gateway/finance/class-2",
-     "fpi" : "not-present"
-  },
-  "jetairways.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "citibank.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "nanog.org" : {
-     "category" : "software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "zifty.com" : {
-     "category" : "restaurant/services/class-3",
-     "fpi" : "not-present"
-  },
-  "extendedstayamerica.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "prudential.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "obitalk.com" : {
-     "category" : "telecommunication/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "norton.com" : {
-     "category" : "security/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "papajohns.com" : {
-     "category" : "restaurant/services/class-3",
-     "fpi" : "not-present"
-  },
-  "trello.com" : {
-     "category" : "collaboration/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "kennedy-center.org" : {
-     "category" : "reservation/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "aa.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "virginamerica.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "buzzfeed.com" : {
-     "category" : "social-news/class-4",
-     "fpi" : "not-present"
-  },
-  "iversity.org" : {
-     "category" : "academia/class-4",
-     "fpi" : "not-present"
-  },
-  "jotform.com" : {
-     "category" : "software-services/class-4",
-     "fpi" : "not-present"
-  },
-  "sprint.com" : {
-     "category" : "utility/hardware/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "capitalone360.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "amtrak.com" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "care.com" : {
-     "category" : "services/class-3",
-     "fpi" : "not-present"
-  },
-  "xing.com" : {
-     "category" : "job-networking/class-3",
-     "fpi" : "not-present"
-  },
-  "switch.ch" : {
-     "category" : "hardware/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "emulab.net" : {
-     "category" : "academia/collaboration/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "expedia.co.in" : {
-     "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "blackboard.com" : {
-     "category" : "academia/collaboration/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "submittable.com" : {
-     "category" : "software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "nsf.gov" : {
-     "category" : "academia/collaboration/research/class-1",
-     "fpi" : "not-present"
-  },
-  "applyweb.com" : {
-     "category" : "services/class-3",
-     "fpi" : "not-present"
-  },
-  "quora.com" : {
-     "category" : "forums/social-networking/class-3",
-     "fpi" : "group1/twitter.fpi"
-  },
-  "jimmyjohns.com" : {
-     "category" : "restaurant/services/class-3",
-     "fpi" : "not-present"
-  },
-  "bodybuilding.com" : {
-     "category" : "shopping/services/health/class-4",
-     "fpi" : "not-present"
-  },
-  "hertz.com" : {
+     "fpi" : "no-present"
+ },
+ "weidner.com" : {
      "category" : "utility/services/class-3",
-     "fpi" : "not-present"
-  },
-  "paygonline.com" : {
-     "category" : "utility/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "capitalone.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "hdfcbank.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "zagat.com" : {
-     "category" : "discovery-engine/restaurant/services/class-3",
-     "fpi" : "not-present"
-  },
-  "adp.com" : {
-     "category" : "software-services/class-2",
-     "fpi" : "not-present"
-  },
-  "bookholders.com" : {
-     "category" : "shopping/services/class-3",
-     "fpi" : "not-present"
-  },
-  "vanguard.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "hellosign.com" : {
-     "category" : "software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "sunrise.ch" : {
-     "category" : "utility/hardware/software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "statefarm.com" : {
-     "category" : "insurance/finance/class-2",
-     "fpi" : "not-present"
-  },
-  "citi.com" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "singlemuslim.com" : {
-     "category" : "dating/personal-info/social-networking/services/class-3",
-     "fpi" : "not-present"
-  },
-  "southwest.com" : {
+     "fpi" : "no-present"
+ },
+ "athenstech.edu" : {
+     "category" : "academia/class-2",
+     "fpi" : "no-present"
+ },
+ "orbitz.com" : {
      "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
-  },
-  "academicjobsonline.org" : {
-     "category" : "jobs/social-networking/job-networking/class-2",
-     "fpi" : "not-present"
-  },
-  "axisbank.co.in" : {
-     "category" : "finance/class-1",
-     "fpi" : "not-present"
-  },
-  "gizmoquip.com" : {
-     "category" : "software-services/class-3",
-     "fpi" : "not-present"
-  },
-  "rei.com" : {
-     "category" : "shopping/sports/health/class-3",
-     "fpi" : "not-present"
-  },
-  "europa.eu" : {
-     "category" : "government/class-3",
-     "fpi" : "not-present"
-  },
-  "costco.com" : {
+     "fpi" : "no-present"
+ },
+ "pandora.com" : {
+     "category" : "music-streaming/entertainment/class-5",
+     "fpi" : "no-present"
+ },
+ "nsf.gov" : {
+     "category" : "academia/collaboration/research/class-1",
+     "fpi" : "no-present"
+ },
+ "virginamerica.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "jackthreads.com" : {
+     "category" : "ecommerce/shopping/class-2",
+     "fpi" : "no-present"
+ },
+ "xing.com" : {
+     "category" : "job-networking/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "opendaylight.org" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "jotform.com" : {
+     "category" : "software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "iversity.org" : {
+     "category" : "academia/class-4",
+     "fpi" : "no-present"
+ },
+ "autogeek.net" : {
      "category" : "shopping/services/class-3",
-     "fpi" : "not-present"
-  },
-  "broadvoice.com" : {
+     "fpi" : "no-present"
+ },
+ "dropbox.com" : {
+     "category" : "online-backup/hosting/software-services/class-2",
+     "fpi" : "no-present"
+ },
+ "points2shop.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "studentambassadorsusa.com" : {
+     "category" : "social-networking/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "rescuetime.com" : {
+     "category" : "software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "prudential.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "cibc.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "indiegogo.com" : {
+     "category" : "services/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "dls.net" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "carefirst.com" : {
+     "category" : "insurance/finance/class-2",
+     "fpi" : "no-present"
+ },
+ "rentpayment.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "macmall.com" : {
+     "category" : "utility/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "freeconference.com" : {
      "category" : "telecommunication/software-services/class-3",
-     "fpi" : "not-present"
-  }
+     "fpi" : "no-present"
+ },
+ "maxmind.com" : {
+     "category" : "academia/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "schwab.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "computershare.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "grubhub.com" : {
+     "category" : "restaurant/food/services/class-3",
+     "fpi" : "no-present"
+ },
+ "fidelity.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "37signals.com" : {
+     "category" : "collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "asee.org" : {
+     "category" : "academia/collaboration/software-services/class-2",
+     "fpi" : "no-present"
+ },
+ "freelancer.com" : {
+     "category" : "utility/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "ycombinator.com" : {
+     "category" : "collaboration/networking/forums/class-3",
+     "fpi" : "no-present"
+ },
+ "ultoo.com" : {
+     "category" : "utility/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "piazza.com" : {
+     "category" : "software-services/academia/class-3",
+     "fpi" : "no-present"
+ },
+ "coverity.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "mybrowsercash.com" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "studiesabroad.com" : {
+     "category" : "travel/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "waltjurekphotography.com" : {
+     "category" : "services/class-3",
+     "fpi" : "no-present"
+ },
+ "amazon.com" : {
+     "category" : "ecommerce/shopping/class-2",
+     "fpi" : "no-present"
+ },
+ "libraryreserve.com" : {
+     "category" : "services/utility/class-3",
+     "fpi" : "no-present"
+ },
+ "coursera.org" : {
+     "category" : "academia/class-4",
+     "fpi" : "no-present"
+ },
+ "bankofamerica.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "artflakes.com" : {
+     "category" : "ecommerce/shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "endomondo.com" : {
+     "category" : "shopping/services/health/class-3",
+     "fpi" : "no-present"
+ },
+ "enterprise.com" : {
+     "category" : "utility/class-3",
+     "fpi" : "no-present"
+ },
+ "silabs.com" : {
+     "category" : "hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "bitly.com" : {
+     "category" : "notetaking/archiving/personal-info/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "onlinesbi.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "racemenu.com" : {
+     "category" : "social-networking/networking/entertainment/class-4",
+     "fpi" : "no-present"
+ },
+ "epcorcentre.org" : {
+     "category" : "reservation/shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "pemc.org" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "cornell.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "egi.eu" : {
+     "category" : "research/academia/class-3",
+     "fpi" : "no-present"
+ },
+ "vimeo.com" : {
+     "category" : "video-hosting/entertainment/class-3",
+     "fpi" : "no-present"
+ },
+ "hulu.com" : {
+     "category" : "video-hosting/entertainment/class-3",
+     "fpi" : "no-present"
+ },
+ "emirates.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "amazon.de" : {
+     "category" : "ecommerce/shopping/class-2",
+     "fpi" : "no-present"
+ },
+ "vectorstock.com" : {
+     "category" : "software-services/class-5",
+     "fpi" : "no-present"
+ },
+ "monster.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "go.co" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "relianceglobalcall.com" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "brown.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "paypal.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "venture-lab.org" : {
+     "category" : "services/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "sparkfun.com" : {
+     "category" : "utility/hardware/class-3",
+     "fpi" : "no-present"
+ },
+ "immunet.com" : {
+     "category" : "software-services/services/class-3",
+     "fpi" : "no-present"
+ },
+ "starticket.ch" : {
+     "category" : "reservation/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "audemat.com" : {
+     "category" : "hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "jetblue.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "nhl.com" : {
+     "category" : "sports/entertainment/class-5",
+     "fpi" : "no-present"
+ },
+ "instructure.com" : {
+     "category" : "academia/collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "active.com" : {
+     "category" : "health/class-4",
+     "fpi" : "no-present"
+ },
+ "linkedin.com" : {
+     "category" : "jobs/social-networking/networking/job-networking/class-2",
+     "fpi" : "no-present"
+ },
+ "europa.eu" : {
+     "category" : "government/class-3",
+     "fpi" : "no-present"
+ },
+ "ezrecharge.in" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "intel.com" : {
+     "category" : "hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "houzz.com" : {
+     "category" : "services/class-3",
+     "fpi" : "no-present"
+ },
+ "discovercard.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "easychair.org" : {
+     "category" : "academia/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "go.com" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "sellsimple.com" : {
+     "category" : "ecommerce/shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "paymo.biz" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "aera.net" : {
+     "category" : "networking/utility/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "shutterfly.com" : {
+     "category" : "utility/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "stanford.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "nokia.com" : {
+     "category" : "hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "gizmoquip.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "wikipedia.org" : {
+     "category" : "academia/collaboration/software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "myfitnesspal.com" : {
+     "category" : "services/health/class-3",
+     "fpi" : "no-present"
+ },
+ "litexpo.lt" : {
+     "category" : "reservation/shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "spotify" : {
+     "category" : "music-streaming/entertainment/class-3",
+     "fpi" : "no-present"
+ },
+ "shtyle.fm" : {
+     "category" : "social-networking/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "basecamp.com" : {
+     "category" : "collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "fido.ca" : {
+     "category" : "ecommerce/shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "cern.ch" : {
+     "category" : "academia/research/class-2",
+     "fpi" : "no-present"
+ },
+ "netflix.com" : {
+     "category" : "video-hosting/entertainment/class-3",
+     "fpi" : "no-present"
+ },
+ "wikicfp.com" : {
+     "category" : "academia/class-3",
+     "fpi" : "no-present"
+ },
+ "polygon.com" : {
+     "category" : "video-gaming/entertainment/class-4",
+     "fpi" : "no-present"
+ },
+ "probux.com" : {
+     "category" : "utility/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "hertz.com" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "systemsx.ch" : {
+     "category" : "research/class-3",
+     "fpi" : "no-present"
+ },
+ "recreation.gov" : {
+     "category" : "travel/class-4",
+     "fpi" : "no-present"
+ },
+ "qlogic.com" : {
+     "category" : "hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "bitbucket.org" : {
+     "category" : "services/software-services/class-2",
+     "fpi" : "no-present"
+ },
+ "kickstarter.com" : {
+     "category" : "services/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "spokaneskynet.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "bcbsga.com" : {
+     "category" : "finance/services/health/class-1",
+     "fpi" : "no-present"
+ },
+ "emulab.net" : {
+     "category" : "research/academia/collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "vmware.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "ibm.com" : {
+     "category" : "hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "care2learn.com" : {
+     "category" : "shopping/services/health/class-3",
+     "fpi" : "no-present"
+ },
+ "globaltestmarket.com" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "hilton.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "datanta.com" : {
+     "category" : "social-networking/networking/services/class-3",
+     "fpi" : "no-present"
+ },
+ "nciia.org" : {
+     "category" : "research/academia/collaboration/class-3",
+     "fpi" : "no-present"
+ },
+ "cups.org" : {
+     "category" : "software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "obitalk.com" : {
+     "category" : "telecommunication/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "formula1.com" : {
+     "category" : "sports/entertainment/class-5",
+     "fpi" : "no-present"
+ },
+ "dreamspark.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "neobux.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "manymoon.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "crucial.com" : {
+     "category" : "shopping/ecommerce/hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "myfedloan.org" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "switch.ch" : {
+     "category" : "hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "mpi-sws.org" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "harrisbank.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "statefarm.com" : {
+     "category" : "insurance/finance/class-2",
+     "fpi" : "no-present"
+ },
+ "weddingwire.com" : {
+     "category" : "services/class-3",
+     "fpi" : "no-present"
+ },
+ "nicta.com.au" : {
+     "category" : "research/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "wordpress.com" : {
+     "category" : "blog/social-networking/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "pinterest.com" : {
+     "category" : "collaboration/social-networking/forums/class-3",
+     "fpi" : "no-present"
+ },
+ "terena.org" : {
+     "category" : "research/academia/collaboration/class-3",
+     "fpi" : "no-present"
+ },
+ "instagram.com" : {
+     "category" : "social-networking/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "hp.com" : {
+     "category" : "hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "americanexpress.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "factsmgt.com" : {
+     "category" : "services/class-3",
+     "fpi" : "no-present"
+ },
+ "orcid.org" : {
+     "category" : "academia/class-3",
+     "fpi" : "no-present"
+ },
+ "dominos.com" : {
+     "category" : "restaurant/food/services/class-3",
+     "fpi" : "no-present"
+ },
+ "disqus.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "godaddy.com" : {
+     "category" : "software-services/web-hosting/class-3",
+     "fpi" : "no-present"
+ },
+ "designshack.net" : {
+     "category" : "ecommerce/shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "campfirenow.com" : {
+     "category" : "collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "premierleague.com" : {
+     "category" : "sports/entertainment/class-5",
+     "fpi" : "no-present"
+ },
+ "monzoon.net" : {
+     "category" : "telecommunication/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "etsy.com" : {
+     "category" : "ecommerce/shopping/class-2",
+     "fpi" : "no-present"
+ },
+ "tripit.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "votable.com" : {
+     "category" : "software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "ptcbank.net" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "icai.org" : {
+     "category" : "academia/collaboration/class-2",
+     "fpi" : "no-present"
+ },
+ "nextmd.com" : {
+     "category" : "services/health/class-1",
+     "fpi" : "no-present"
+ },
+ "imleagues.com" : {
+     "category" : "sports/entertainment/class-5",
+     "fpi" : "no-present"
+ },
+ "joerogan.net" : {
+     "category" : "entertainment/class-3",
+     "fpi" : "no-present"
+ },
+ "commandlinefu.com" : {
+     "category" : "software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "teamtreehouse.com" : {
+     "category" : "software-services/services/class-3",
+     "fpi" : "no-present"
+ },
+ "warbyparker.com" : {
+     "category" : "shopping/services/health/class-3",
+     "fpi" : "no-present"
+ },
+ "mailchimp.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "extendedstayhotels.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "harvard.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "jobego.com" : {
+     "category" : "utility/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "opendns.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "browntennisreservations.com" : {
+     "category" : "reservation/services/class-3",
+     "fpi" : "no-present"
+ },
+ "ankiweb.net" : {
+     "category" : "notetaking/archiving/personal-info/software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "groupon.com" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "bitcoin.cz" : {
+     "category" : "services/software-services/class-2",
+     "fpi" : "no-present"
+ },
+ "united.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "mtb.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "squareup.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "udacity.com" : {
+     "category" : "academia/collaboration/class-3",
+     "fpi" : "no-present"
+ },
+ "crossrider.com" : {
+     "category" : "software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "marylandtaxes.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "gogoair.com" : {
+     "category" : "software-services/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "courseoff.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "icloud.com" : {
+     "category" : "online-backup/hosting/software-services/class-2",
+     "fpi" : "no-present"
+ },
+ "goindigo.in" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "timewarnercable.com" : {
+     "category" : "entertainment/software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "grnet.gr" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "reddit.com" : {
+     "category" : "social-news/news/class-4",
+     "fpi" : "no-present"
+ },
+ "battlecam.com" : {
+     "category" : "video-streaming/entertainment/class-4",
+     "fpi" : "no-present"
+ },
+ "cardcenter.ch" : {
+     "category" : "software-services/class-2",
+     "fpi" : "no-present"
+ },
+ "venmo.com" : {
+     "category" : "finance/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "zipcar.com" : {
+     "category" : "services/transportation/class-3",
+     "fpi" : "no-present"
+ },
+ "ietf.org" : {
+     "category" : "research/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "gtnoise.net" : {
+     "category" : "research/academia/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "etrade.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "broadvoice.com" : {
+     "category" : "telecommunication/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "rei.com" : {
+     "category" : "shopping/sports/health/class-3",
+     "fpi" : "no-present"
+ },
+ "bodybuilding.com" : {
+     "category" : "shopping/services/health/class-4",
+     "fpi" : "no-present"
+ },
+ "naukri.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "research.gov" : {
+     "category" : "research/collaboration/government/class-3",
+     "fpi" : "no-present"
+ },
+ "profitbricks.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "hdfcbank.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "zagat.com" : {
+     "category" : "discovery-engine/restaurant/food/services/class-3",
+     "fpi" : "no-present"
+ },
+ "bsnl.in" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "craigslist.org" : {
+     "category" : "services/forums/class-3",
+     "fpi" : "no-present"
+ },
+ "surfnet.nl" : {
+     "category" : "telecommunication/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "billmatrix.com" : {
+     "category" : "payment-gateway/finance/class-2",
+     "fpi" : "no-present"
+ },
+ "sheetmusicplus.com" : {
+     "category" : "shopping/ecommerce/music-streaming/entertainment/class-3",
+     "fpi" : "no-present"
+ },
+ "submittable.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "blackboard.com" : {
+     "category" : "academia/collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "skype.com" : {
+     "category" : "software-services/video-chatting/telecommunication/class-2",
+     "fpi" : "no-present"
+ },
+ "care.com" : {
+     "category" : "services/class-3",
+     "fpi" : "no-present"
+ },
+ "sprint.com" : {
+     "category" : "utility/hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "newark.com" : {
+     "category" : "hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "gogoinflight.com" : {
+     "category" : "software-services/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "last.fm" : {
+     "category" : "music-streaming/entertainment/class-5",
+     "fpi" : "no-present"
+ },
+ "theborgata.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "garmin.com" : {
+     "category" : "shopping/services/health/class-3",
+     "fpi" : "no-present"
+ },
+ "comcast.net" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "trello.com" : {
+     "category" : "collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "papajohns.com" : {
+     "category" : "restaurant/food/services/class-3",
+     "fpi" : "no-present"
+ },
+ "digitick.com" : {
+     "category" : "reservation/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "jetairways.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "att.net" : {
+     "category" : "utility/hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "ironport.com" : {
+     "category" : "security/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "whitehouse.gov" : {
+     "category" : "government/class-3",
+     "fpi" : "no-present"
+ },
+ "bigbasket.com" : {
+     "category" : "ecommerce/shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "mangahere.com" : {
+     "category" : "entertainment/class-4",
+     "fpi" : "no-present"
+ },
+ "icicibank.co.in" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "500px.com" : {
+     "category" : "software-services/services/class-3",
+     "fpi" : "no-present"
+ },
+ "allrecipes.com" : {
+     "category" : "food/class-3",
+     "fpi" : "no-present"
+ },
+ "shutterstock.com" : {
+     "category" : "ecommerce/shopping/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "yahoo.com" : {
+     "category" : "search-engine/social-networking/networking/email/class-2",
+     "fpi" : "no-present"
+ },
+ "paygonline.com" : {
+     "category" : "utility/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "irctc.co.in" : {
+     "category" : "travel/shopping/government/class-3",
+     "fpi" : "no-present"
+ },
+ "narrabay.com" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "do.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "clemson.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "salary.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "yelp.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "ml.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "hackdesign.org" : {
+     "category" : "software-services/services/class-3",
+     "fpi" : "no-present"
+ },
+ "musicbrainz.org" : {
+     "category" : "utility/class-3",
+     "fpi" : "no-present"
+ },
+ "custhelp.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "billdesk.com" : {
+     "category" : "payment-gateway/finance/class-2",
+     "fpi" : "no-present"
+ },
+ "crashplan.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "labspaces.net" : {
+     "category" : "science/news/class-4",
+     "fpi" : "no-present"
+ },
+ "meinvz.net" : {
+     "category" : "social-networking/networking/class-2",
+     "fpi" : "no-present"
+ },
+ "wisc.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "gap.com" : {
+     "category" : "ecommerce/shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "usg.edu" : {
+     "category" : "academia/collaboration/class-3",
+     "fpi" : "no-present"
+ },
+ "vonage.com" : {
+     "category" : "telecommunication/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "vanguard.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "sourcefire.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "eventbrite.com" : {
+     "category" : "social-networking/networking/entertainment/class-4",
+     "fpi" : "no-present"
+ },
+ "stumbleupon.com" : {
+     "category" : "discovery-engine/news/class-4",
+     "fpi" : "no-present"
+ },
+ "att.com" : {
+     "category" : "utility/hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "wellnessfx.com" : {
+     "category" : "shopping/services/health/class-2",
+     "fpi" : "no-present"
+ },
+ "qualcomm.com" : {
+     "category" : "telecommunication/software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "purephoto.com" : {
+     "category" : "ecommerce/shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "graebel.com" : {
+     "category" : "transportation/services/class-3",
+     "fpi" : "no-present"
+ },
+ "dhs.gov" : {
+     "category" : "government/class-3",
+     "fpi" : "no-present"
+ },
+ "launchrock.co" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "mint.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "zifty.com" : {
+     "category" : "restaurant/food/services/class-3",
+     "fpi" : "no-present"
+ },
+ "managementexchange.com" : {
+     "category" : "software-services/services/class-3",
+     "fpi" : "no-present"
+ },
+ "salvadordoobie.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "cyberverse.net" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "evernote.com" : {
+     "category" : "notetaking/archiving/personal-info/software-services/class-2",
+     "fpi" : "no-present"
+ },
+ "iheart.com" : {
+     "category" : "music-streaming/entertainment/class-5",
+     "fpi" : "no-present"
+ },
+ "planet-lab.org" : {
+     "category" : "research/academia/collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "arcot.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "regonline.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "clixsense.com" : {
+     "category" : "utility/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "myfonts.com" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "openstack.org" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "catchmyparty.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "yammer.com" : {
+     "category" : "jobs/social-networking/networking/job-networking/class-2",
+     "fpi" : "no-present"
+ },
+ "ripe.net" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "ascenciabank.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "axvoice.com" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "zcommunications.org" : {
+     "category" : "media/class-3",
+     "fpi" : "no-present"
+ },
+ "tamilmatrimony.com" : {
+     "category" : "dating/personal-info/social-networking/networking/services/class-3",
+     "fpi" : "no-present"
+ },
+ "evenue.net" : {
+     "category" : "utility/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "sbb.ch" : {
+     "category" : "services/class-3",
+     "fpi" : "no-present"
+ },
+ "gatech.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "google.com" : {
+     "category" : "search-engine/social-networking/networking/email/class-1",
+     "fpi" : "no-present"
+ },
+ "uga.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "woodruffcentertickets.org" : {
+     "category" : "reservation/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "umd.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "glaciertax.com" : {
+     "category" : "utility/services/finance/class-1",
+     "fpi" : "no-present"
+ },
+ "nespresso.com" : {
+     "category" : "shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "costco.com" : {
+     "category" : "shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "verizonwireless.com" : {
+     "category" : "telecommunication/hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "sunrise.ch" : {
+     "category" : "utility/hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "online-tax.net" : {
+     "category" : "utility/services/finance/class-1",
+     "fpi" : "no-present"
+ },
+ "axisbank.co.in" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "southwest.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "singlemuslim.com" : {
+     "category" : "dating/personal-info/social-networking/dating/services/class-3",
+     "fpi" : "no-present"
+ },
+ "citi.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "norton.com" : {
+     "category" : "security/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "hellosign.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "bookholders.com" : {
+     "category" : "shopping/services/class-3",
+     "fpi" : "no-present"
+ },
+ "zipmydeals.com" : {
+     "category" : "ecommerce/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "o2switch.net" : {
+     "category" : "software-services/services/class-3",
+     "fpi" : "no-present"
+ },
+ "capitalone.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "easywdw.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "securedlives.com" : {
+     "category" : "ecommerce/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "github.com" : {
+     "category" : "hosting/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "projectbismark.net" : {
+     "category" : "academia/software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "bitsmartsln.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "iyermatrimony.com" : {
+     "category" : "dating/personal-info/social-networking/networking/services/class-3",
+     "fpi" : "no-present"
+ },
+ "jimmyjohns.com" : {
+     "category" : "restaurant/food/services/class-3",
+     "fpi" : "no-present"
+ },
+ "arrl.org" : {
+     "category" : "telecommunication/hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "manuscriptcentral.com" : {
+     "category" : "software-services/services/class-3",
+     "fpi" : "no-present"
+ },
+ "expedia.co.in" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "microsoft.com" : {
+     "category" : "search-engine/social-networking/networking/email/class-1",
+     "fpi" : "no-present"
+ },
+ "onemonthrails.com" : {
+     "category" : "software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "way2sms.com" : {
+     "category" : "telecommunication/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "amtrak.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "capitalone360.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "icicibank.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "buzzfeed.com" : {
+     "category" : "social-news/news/class-4",
+     "fpi" : "no-present"
+ },
+ "creditkarma.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "t-mobile.com" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "aa.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "kennedy-center.org" : {
+     "category" : "reservation/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "zendough.com" : {
+     "category" : "finance/class-2",
+     "fpi" : "no-present"
+ },
+ "umantis.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "pachez.ca" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "usajobs.gov" : {
+     "category" : "government/class-3",
+     "fpi" : "no-present"
+ },
+ "extendedstayamerica.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "nanog.org" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "taleo.net" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "citibank.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "ethz.ch" : {
+     "category" : "academia/class-2",
+     "fpi" : "no-present"
+ },
+ "ebs.in" : {
+     "category" : "payment-gateway/finance/class-2",
+     "fpi" : "no-present"
+ },
+ "helpfulbox.com" : {
+     "category" : "software-services/class-4",
+     "fpi" : "no-present"
+ },
+ "divshot.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "acm.org" : {
+     "category" : "research/academia/collaboration/class-3",
+     "fpi" : "no-present"
+ },
+ "twitterfeed.com" : {
+     "category" : "microblog/social-networking/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "edas.info" : {
+     "category" : "collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "megatypers.com" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "tiaa-cref.org" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "intuit.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "tumblr.com" : {
+     "category" : "microblog/social-networking/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "citibank.co.in" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "symplicity.com" : {
+     "category" : "ecommerce/shopping/class-2",
+     "fpi" : "no-present"
+ },
+ "ticketingcentral.com" : {
+     "category" : "reservation/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "domain.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "ebay.com" : {
+     "category" : "ecommerce/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "live.com" : {
+     "category" : "software-services/mail/personal-info/class-2",
+     "fpi" : "no-present"
+ },
+ "suntrust.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "mailstrom.co" : {
+     "category" : "email/software-services/class-1",
+     "fpi" : "no-present"
+ },
+ "airtran.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "statcounter.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "twitter.com" : {
+     "category" : "microblog/social-networking/networking/class-3",
+     "fpi" : "no-present"
+ },
+ "citiprogram.org" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "rogers.com" : {
+     "category" : "utility/hardware/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "simple.com" : {
+     "category" : "finance/services/class-1",
+     "fpi" : "no-present"
+ },
+ "tvtorrents.com" : {
+     "category" : "entertainment/class-5",
+     "fpi" : "no-present"
+ },
+ "eresources.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "steampowered.com" : {
+     "category" : "video-gaming/entertainment/class-4",
+     "fpi" : "no-present"
+ },
+ "marriott.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "physicsforums.com" : {
+     "category" : "academia/class-4",
+     "fpi" : "no-present"
+ },
+ "chase.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "liquidplanner.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "longnow.org" : {
+     "category" : "collaboration/research/services/class-3",
+     "fpi" : "no-present"
+ },
+ "premiermiles.co.in" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "umich.edu" : {
+     "category" : "research/academia/class-2",
+     "fpi" : "no-present"
+ },
+ "ally.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "redfin.com" : {
+     "category" : "ecommerce/shopping/class-2",
+     "fpi" : "no-present"
+ },
+ "astrid.com" : {
+     "category" : "software-services/services/class-3",
+     "fpi" : "no-present"
+ },
+ "wellsfargo.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "discover.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "refworks.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "asgpark.com" : {
+     "category" : "transportation/services/class-3",
+     "fpi" : "no-present"
+ },
+ "relianceada.com" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "outtask.com" : {
+     "category" : "software-services/class-2",
+     "fpi" : "no-present"
+ },
+ "wyndhamrewards.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "doodleordie.com" : {
+     "category" : "software-services/entertainment/class-4",
+     "fpi" : "no-present"
+ },
+ "v6sonar.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "delta.com" : {
+     "category" : "travel/shopping/class-3",
+     "fpi" : "no-present"
+ },
+ "1fbusa.com" : {
+     "category" : "finance/class-1",
+     "fpi" : "no-present"
+ },
+ "residentportal.com" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "facebook.com" : {
+     "category" : "social-networking/networking/class-2",
+     "fpi" : "no-present"
+ },
+ "applyweb.com" : {
+     "category" : "services/class-3",
+     "fpi" : "no-present"
+ },
+ "orange.ch" : {
+     "category" : "software-services/telecommunication/class-3",
+     "fpi" : "no-present"
+ },
+ "wydebeam.com" : {
+     "category" : "utility/services/class-3",
+     "fpi" : "no-present"
+ },
+ "geico.com" : {
+     "category" : "insurance/finance/class-2",
+     "fpi" : "no-present"
+ },
+ "theverge.com" : {
+     "category" : "technology-news/news/class-5",
+     "fpi" : "no-present"
+ },
+ "flowdock.com" : {
+     "category" : "collaboration/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "broadcom.com" : {
+     "category" : "telecommunication/software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "trsga.org" : {
+     "category" : "software-services/class-3",
+     "fpi" : "no-present"
+ },
+ "usenix.org" : {
+     "category" : "academia/class-2",
+     "fpi" : "no-present"
+ }
 }

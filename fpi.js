@@ -276,13 +276,20 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	curr_node.fp = apply_css_filter(apply_css_selector(pfp, css_selector), css_filter);
 	process_kids(curr_node, site_pi_fields, my_slave_tab, level)
     }
+    else if ($(action).attr('type') == 'fetch-prev-dom-element') {
+	var pfp = curr_node.parent.fp;
+	var css_selector = $.trim($(action).text());
+	var css_filter = $.trim($(action).attr('filter'));
+
+	curr_node.fp = $(apply_css_filter(apply_css_selector(pfp, css_selector), css_filter)).prev();
+	process_kids(curr_node, site_pi_fields, my_slave_tab, level)
+    }
     else if ($(action).attr('type') == 'store') {
 	var pfp = curr_node.parent.fp;
 	var css_selector = $.trim($(action).text());
 	var store_data = [];
 	var element;
 	var css_filter = $.trim($(action).attr('filter'));
-	
 	var result = [];
 
  	var is_editable = $(action).attr('field_type');
@@ -462,6 +469,8 @@ function fpi_processing_complete(tabid, site_pi_fields, domain, shut_timer) {
     $(wait_queue_tab).remove();
     $(child_processing_tab).remove();
     delete template_processing_tabs[tabid];
+
+    console.log("APPU DEBUG: This should close the FPI downloaded tab");
     chrome.tabs.remove(tabid);
 }
 
