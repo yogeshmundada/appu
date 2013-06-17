@@ -982,3 +982,11 @@ function fpi_metadata_read() {
     var buff = read_file(fname);
     fpi_metadata = JSON.parse(buff);
 }
+
+//Helpful function when testing FPIs again and again
+function delete_fetched_pi(domain) {
+    delete pii_vault.aggregate_data.per_site_pi[domain];
+    pii_vault.aggregate_data.per_site_pi[domain] = {};
+    pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
+    flush_aggregate_data();
+}

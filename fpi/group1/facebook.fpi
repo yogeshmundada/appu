@@ -2,121 +2,111 @@
      <action type="fetch-url">http://www.facebook.com</action>
      
 
-
      <div name="Your account">
-     	  <action type="fetch-href">html body div._li div#pagelet_bluebar div#blueBarHolder.slim div#blueBar.fixed_elem div#pageHead.clearfix div#headNav.clearfix div.rfloat ul#pageNav.clearfix li.navItem:nth-child(1) a.navLink
+     	  <action type="fetch-href">:contains("Edit Profile"):not(:has(*))
 	  </action>
 
-
-
-	  <div name="About You">
-	       <action type="fetch-href">a:contains("About"):nth-child(2)
-	       </action>
-
 	       
-	       <div name="phones" type="vector">
-	       	    <action type="fetch-dom-element">td.contactInfoPhone span
-		    </action>
+	  <div name="phones" type="vector">
+	  	<action type="fetch-dom-element">td.contactInfoPhone span
+	  	</action>
 
-		    <div name="phone">
-		    	 <action type="store">
-			 </action>
-		    </div>	 
-	       </div>
-
-
-
-	       <div name="address" type="vector">
-	       	    <action type="combine-n-store">tr:contains("Address") td span ul li
-		    </action>
-	       </div>
-
-
-	       
-	       <div name="Basic Info">
-	       	    <action type="fetch-dom-element">div#pagelet_basic
-		    </action>
-
-
-		    <div name="relationship">
-	       	    	 <action type="store">tbody th:contains("Relationship Status") + td
-		    	 </action>
-	            </div>
-
-
-
-		    <div name="religious-view">
-	       	    	 <action type="store">tbody th:contains("Religious Views") + td
-		    	 </action>
-	            </div>
-
-
-
-		    <div name="political-view">
-	       	    	 <action type="store">tbody th:contains("Political Views") + td
-		    	 </action>
-	            </div>
-	       </div>
-
-
-
-	       <div name="Current City Div">
-	       	    <action  type="fetch-prev-dom-element">div:contains('Current City'):not(:has(*))
-		    </action>
-		    <div name="current-city">
-		    	 <action type="store">
-			 </action>
-		    </div>
-	       </div>
-
-
-
-	       <div name="HomeTown Div">
-	       	    <action  type="fetch-prev-dom-element">div:contains('Hometown'):not(:has(*))
-		    </action>
-		    <div name="hometown">
-		    	 <action type="store">
-			 </action>
-		    </div>
-	       </div>
-
-
-
-	       <div name="Employers-Table" type="vector">
-	       	    <action  type="fetch-dom-element">tbody:nth-child(1) tr td.data div.mediaRowWrapper ul.uiList li div.clearfix div.clearfix div div.experienceContent div.experienceTitle a
-		    </action>
-		    <div name="employer">
-		    	 <action type="store">
-			 </action>
-		    </div>
-	       </div>
-
-
-
-	       <div name="Grad-School-Table" type="vector">
-	       	    <action  type="fetch-dom-element">tbody:nth-child(2) tr td.data div.mediaRowWrapper ul.uiList li div.clearfix div.clearfix div div.experienceContent div.experienceTitle a
-		    </action>
-		    <div name="gradute-school">
-		    	 <action type="store">
-			 </action>
-		    </div>
-	       </div>
-
-
-
-
-	       <div name="High-School-Table" type="vector">
-	       	    <action  type="fetch-dom-element">tbody:nth-child(3) tr td.data div.mediaRowWrapper ul.uiList li div.clearfix div.clearfix div div.experienceContent div.experienceTitle a
-		    </action>
-		    <div name="high-school">
-		    	 <action type="store">
-			 </action>
-		    </div>
-	       </div>
-
-
-	       
+	  	<div name="phone">
+	  		 <action type="store">
+	  		 </action>
+	  	</div>	 
 	  </div>
+
+
+
+	  <div name="address" type="vector">
+	  	<action type="combine-n-store">tr:contains("Address") td span ul li
+	  	</action>
+	  </div>
+
+
+	  
+	  <div name="Basic Info">
+	  	<action type="fetch-dom-element">div#pagelet_basic
+	  	</action>
+
+
+	  	    <div name="relationship">
+	  	    	 <action type="store">tbody th:contains("Relationship Status") + td
+	  	    	 </action>
+	       </div>
+
+
+
+	  	    <div name="religious-view">
+	  	    	 <action type="store">tbody th:contains("Religious Views") + td
+	  	    	 </action>
+	       </div>
+
+
+
+	  	    <div name="political-view">
+	  	    	 <action type="store">tbody th:contains("Political Views") + td
+	  	    	 </action>
+	       </div>
+	  </div>
+
+
+
+	  <div name="Current City Div">
+	  	    <action  type="fetch-prev-dom-element">div:contains('Current City'):not(:has(*))
+	  	    </action>
+	  	    <div name="current-city">
+	  	    	 <action type="store">
+	  		 </action>
+	  	    </div>
+	  </div>
+
+
+
+	  <div name="HomeTown Div">
+	  	    <action  type="fetch-prev-dom-element">div:contains('Hometown'):not(:has(*))
+	  	    </action>
+	  	    <div name="hometown">
+	  	    	 <action type="store">
+	  		 </action>
+	  	    </div>
+	  </div>
+
+
+
+	  <div name="Employers-Table" type="vector">
+	  	    <action  type="fetch-dom-element">tbody:nth-child(1) tr td.data div.mediaRowWrapper ul.uiList li div.clearfix div.clearfix div div.experienceContent div.experienceTitle a
+	  	    </action>
+	  	    <div name="employer">
+	  	    	 <action type="store">
+	  		 </action>
+	  	    </div>
+	  </div>
+
+
+
+	  <div name="Grad-School-Table" type="vector">
+	  	    <action  type="fetch-dom-element">tbody:nth-child(2) tr td.data div.mediaRowWrapper ul.uiList li div.clearfix div.clearfix div div.experienceContent div.experienceTitle a
+	  	    </action>
+	  	    <div name="gradute-school">
+	  	    	 <action type="store">
+	  		 </action>
+	  	    </div>
+	  </div>
+
+
+
+
+	  <div name="High-School-Table" type="vector">
+	  	    <action  type="fetch-dom-element">tbody:nth-child(3) tr td.data div.mediaRowWrapper ul.uiList li div.clearfix div.clearfix div div.experienceContent div.experienceTitle a
+	  	    </action>
+	  	    <div name="high-school">
+	  	    	 <action type="store">
+	  		 </action>
+	  	    </div>
+	  </div>
+
      </div>
 
 
