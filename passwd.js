@@ -637,6 +637,8 @@ function show_pending_warnings_async(r) {
 function check_pending_warnings() {
     var message = {};
     message.type = "check_pending_warning";
+    message.domain = document.domain;
+    console.log("Here here: Attaching domain name: " + message.domain);
     chrome.extension.sendMessage("", message, show_pending_warnings_async);
 }
 

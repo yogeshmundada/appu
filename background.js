@@ -213,9 +213,15 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	//Hence, its not the case that user did not get to read it due to page redirects
 	if(pending_warnings[sender.tab.id] != undefined) {
 	    var p = pending_warnings[sender.tab.id];
-	    vault_update_domain_passwd(p.domain, p.username, p.passwd, p.pwd_strength, p.is_stored);
+	    if (p.event_type == 'login_attempt') {
+		p.user_is_warned = true;
+		//I should not update the password here because user might have entered
+		//an incorrect password. Must wait for a successful login event detection.
+
+		//vault_update_domain_passwd(p.domain, p.username, p.passwd, p.pwd_strength, p.is_stored);
+		//pending_warnings[sender.tab.id] = undefined;
+	    }
 	}
-	pending_warnings[sender.tab.id] = undefined;
     }
     else if (message.type == "get-signin-status") {
 	var resp = {};
@@ -278,12 +284,26 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	    sendResponse(r);
 	});
+
+	if(pending_warnings[sender.tab.id] != undefined) {
+	    var p = pending_warnings[sender.tab.id];
+	    if (p.event_type == 'logout_attempt') {
+		pending_warnings[sender.tab.id] = undefined;
+		console.log("APPU DEBUG: Explicitly signed out from: " + p.domain);
+		print_all_cookies(p.domain, "INITIATE_LOGOUT");
+	    }
+	}
+
 	return true;
     }
     else if (message.type == "check_pending_warning") {
 	r = pii_check_pending_warning(message, sender);
 	r.id = sender.tab.id;
+	domain = r.domain;
 	sendResponse(r);
+	if (domain) {
+	    print_all_cookies(tld.getDomain(domain), "SUCCESSFUL_LOGIN");
+	}
     }
     else if (message.type == "check_passwd_reuse") {
 	message.domain = tld.getDomain(message.domain);
@@ -296,6 +316,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	pend_warn = $.extend(true, {}, r);
 	pending_warnings[sender.tab.id] = {
 	    'pending_warnings' : pend_warn,
+	    'event_type' : 'login_attempt',
+	    'user_is_warned' : false, 
 	    'passwd' : message.passwd,
 	    'pwd_strength' : r.pwd_strength,
 	    'domain' : message.domain,
@@ -378,7 +400,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	flush_selective_entries("current_report", ["user_account_sites"]);
 	send_user_account_site_row_to_reports(domain);
 
-	console.log("APPU DEBUG: Explicitly signed out from: " + tld.getDomain(domain));
+	pending_warnings[sender.tab.id] = {
+	    'event_type' : 'logout_attempt', 
+	    'domain' : domain,
+	};
     }
     else if (message.type == "simulate_click_done") {
 	console.log("APPU DEBUG: tabid: " + sender.tab.id + ", In simulate click: " 
@@ -607,8 +632,12 @@ function test_read() {
 	console.log("APPU DEBUG: Error to get the file");
     }
 
-
     request.send();
-    
     return;
 }
+
+//Test code.
+window.setTimeout(function(){
+	console.log("Here here: printing cookie name for google.com");
+	print_all_cookies('facebook.com', "APPU_START_CHECK");
+    }, 2 * 1000);

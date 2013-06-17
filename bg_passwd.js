@@ -210,6 +210,7 @@ function calculate_full_hash(domain, username, pwd, pwd_strength) {
 										  my_pwd_strength.crack_time_display
 										  ]);
 		    
+		    pii_vault.password_hashes[hk].my_pwd_group = curr_pwd_group;
 		    if (curr_pwd_group != pii_vault.current_report.user_account_sites[domain].my_pwd_group) {
 			pii_vault.current_report.user_account_sites[domain].my_pwd_group = curr_pwd_group;
 			flush_selective_entries("current_report", ["user_account_sites"]);
@@ -384,8 +385,16 @@ function pii_check_passwd_reuse(message, sender) {
 	    if (hk.split(":")[1] != message.domain || hk.split(":")[0] != curr_username) {
 		r.is_password_reused = "yes";
 		r.dontbugme = "no";
-		r.sites.push(hk.split(":")[1]);
-		os.push(hk.split(":")[1]);
+
+		var pwd_grp = pii_vault.password_hashes[hk].my_pwd_group;
+		var all_sites = pii_vault.aggregate_data.pwd_groups[pwd_grp].sites;
+		for (var i = 0; i < all_sites.length; i++) {
+		    var cs = all_sites[i];
+		    if (cs != message.domain) {
+			r.sites.push(cs);		
+			os.push(cs);
+		    }
+		}
 		break;
 	    }
 	}
@@ -470,10 +479,16 @@ function pii_check_pending_warning(message, sender) {
     console.log("APPU DEBUG: (pii_check_pending_warning) Checking for pending warnings");
     if( pending_warnings[sender.tab.id] != undefined) {
 	var p = pending_warnings[sender.tab.id];
-	r.warnings = p.pending_warnings;
-	vault_update_domain_passwd(p.domain, p.username, p.passwd, p.pwd_strength, p.is_stored);
-	pending_warnings[sender.tab.id] = undefined;
-	r.pending = "yes";
+	if (p.event_type == 'login_attempt') {
+	    r.warnings = p.pending_warnings;
+	    r.domain = p.domain;
+	    vault_update_domain_passwd(p.domain, p.username, p.passwd, p.pwd_strength, p.is_stored);
+	    pending_warnings[sender.tab.id] = undefined;
+	    r.pending = "yes";
+	    if (p.user_is_warned) {
+		r.pending = "no";
+	    }
+	}
     }
     return r;
 }

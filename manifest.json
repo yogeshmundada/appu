@@ -32,6 +32,7 @@
   ],
   "permissions": [
      "tabs",		 
+     "cookies",
      "http://woodland.gtnoise.net:5005/post_report",	 	 
      "webRequest",
      "webRequestBlocking",
