@@ -784,7 +784,6 @@ function window_unfocused(eo) {
 	message.type = "report_time_spent";
 	message.time_spent = total_focus_time;
 	chrome.extension.sendMessage("", message);
-	console.log("Here here: Sending message the report-tab is unfocused");
     }
 }
 

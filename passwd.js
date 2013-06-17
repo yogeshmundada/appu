@@ -566,8 +566,6 @@ function show_pending_warnings(r) {
     if(r.pending == "yes") {
 	var response = r.warnings;
 
-	console.log("Here here: PWD INIT TIME: " + response.initialized);
-
 	msg_type = (response.is_password_reused == "yes") ? "Warning" : "Information";
 	    //console.log("Appu: Password is reused");
 	var alrt_msg = "<b style='font-size:16px'>Password " + msg_type + "</b> <br/>" +
@@ -1113,7 +1111,6 @@ if (document.URL.match(/.pdf$/) == null) {
 		return true;
 	    }
 	    else if (message.type == "check_passwd_reuse") {
-		console.log("Here here: Domain: " + message.domain + ", Passwd: " + message.passwd);
 	    }
 	});
 }
