@@ -8,6 +8,8 @@ var last_user_interaction = undefined;
 var am_i_logged_in = false;
 var pwd_pending_warn_timeout = undefined;
 
+var is_site_loaded = undefined;
+
 function close_report_ready_modal_dialog() {
     $('#appu-report-ready').dialog("close");
 }
@@ -638,7 +640,6 @@ function check_pending_warnings() {
     var message = {};
     message.type = "check_pending_warning";
     message.domain = document.domain;
-    console.log("Here here: Attaching domain name: " + message.domain);
     chrome.extension.sendMessage("", message, show_pending_warnings_async);
 }
 
@@ -656,11 +657,6 @@ function is_status_active(response) {
 	//Appu is enabled. Check if the current site is blacklisted.
 	//If not, then register for password input type.
 	chrome.extension.sendMessage("", message, is_blacklisted);
-
-	// 5 seconds is just some random period to get page ready in case
-	// of Ajax apps. (for e.g. in case of gmail, the .load() is fired
-	// even if the page is absolutely blank).
-	window.setTimeout(detect_if_user_logged_in, 5 * 1000);
     }
     else if(response.status == "process_template") {
 	// I am created with the sole purpose of downloading PI information
@@ -1004,6 +1000,22 @@ function show_appu_monitor_icon() {
     }
 }
 
+function do_document_ready_functions() {
+    if (document.readyState === "complete") {
+	console.log("APPU DEBUG: Document is loaded");
+	clearInterval(is_site_loaded);
+	var message = {};
+	message.type = "am_i_active";
+	chrome.extension.sendMessage("", message, function (r) {
+		if (r.am_i_active) {
+		    window_focused(undefined);
+		}
+	    });
+
+	detect_if_user_logged_in();
+    }
+}
+
 if (document.URL.match(/.pdf$/) == null) {
     $(window).on('unload', window_unfocused);
     $(window).on("focus", window_focused);
@@ -1035,15 +1047,7 @@ if (document.URL.match(/.pdf$/) == null) {
     //Need to check somehow if Flash is active on the current site.
     setInterval(focus_check, 300 * 1000);
 
-    $(window).on("load", function() {
-	    var message = {};
-	    message.type = "am_i_active";
-	    chrome.extension.sendMessage("", message, function (r) {
-		    if (r.am_i_active) {
-			window_focused(undefined);
-		    }
-		});
-	});
+    is_site_loaded = setInterval(do_document_ready_functions, 200);
     
     chrome.extension.onMessage.addListener(function(message, sender, send_response) {
 	    if (message.type == "report-reminder") {

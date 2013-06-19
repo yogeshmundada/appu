@@ -198,6 +198,33 @@ function initialize_report() {
 function initialize_aggregate_data() {
     var aggregate_data = {};
 
+    //This stores which sites are currently in the logged-in status.
+    //Since multiple users cannot sign into the same site without
+    //removing cookies for others, we can have only site-name as key
+    //instead of having username+sitename.
+    //Whenever a successful login event is triggered, we record
+    //what are the session cookies for this site.
+    //The structure will be:
+    // site_name : {
+    //               username : 'john.doe',
+    //               cookies : {
+    //                           cookie_name : 'session_cookie_name_1',
+    //                           cookie_class : 'before', 'during', or 'after', 
+    //                           hashed_cookie_value : sha1sum(actual_cookie_value)
+    //                         }
+    //              }
+    // Here cookie_class is set to 'during' for cookies that are set
+    // explicitly during a successful login process.
+    // If the class is 'during' then certainly that cookie was set because the server
+    // thinks that that cookie is necessary for user-session.
+    // If the class is 'before' then that cookie was created even before a successful
+    // login. That may mean that its not a necessary cookie for detecting 
+    // login-state. However, depending on the server, its still possible for a cookie
+    // to get that value.
+    // If the class is set to 'after', then the cookie was set after successful login
+    // and hence is not related to detecting login-state.
+    aggregate_data.session_cookie_store = {};
+
     //When was this created?
     aggregate_data.initialized_time = new Date();
     //Is user aware? How many times is he reviewing his own data?

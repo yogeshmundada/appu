@@ -30,7 +30,9 @@ function update_specific_changes(last_version) {
 	remove_redundant_pi_identifiers();
     }
     else if (last_version < '0.3.97') {
-	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding pwd_group to pii_vault.password_hashes");
+	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding pwd_group " + 
+		    "to pii_vault.password_hashes");
+
 	var pvapg = pii_vault.aggregate_data.pwd_groups;
 	for (var pwdgrp in pvapg) {
 	    for (var i = 0; i < pvapg[pwdgrp].sites.length; i++) {
@@ -40,6 +42,11 @@ function update_specific_changes(last_version) {
 		}
 	    }
 	}
+
+	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding session_cookie_store " + 
+		    "to pii_vault.aggregate_date");
+	pii_vault.aggregate_data.session_cookie_store = {};
+	flush_aggregate_data();
     }
 }
 

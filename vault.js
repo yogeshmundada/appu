@@ -70,6 +70,7 @@ var on_disk_values = {
 	"layout_engine_version",
     ],
     "aggregate_data" : [
+	"session_cookie_store",		
 	"initialized_time",
 	"num_viewed",
 	"total_time_spent",
@@ -371,6 +372,7 @@ function flush_aggregate_data() {
     }
 }
 
+
 function flush_selective_entries(struct_name, entry_list) {
     for (var j = 0; j < entry_list.length; j++) {
 	var write_key = struct_name + ":" + entry_list[j];
@@ -378,3 +380,12 @@ function flush_selective_entries(struct_name, entry_list) {
     }
 }
 
+
+function flush_session_cookie_store() {
+    flush_selective_entries("aggregate_data", ["session_cookie_store"]);
+}
+
+
+function flush_version() {
+    flush_selective_entries("config", ["current_version"]);
+}

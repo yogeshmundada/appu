@@ -57,7 +57,15 @@ var fpi_metadata = {};
 //hashing workers
 //To keep track of background "Web workers" that are
 //asynchronously hashing passwords for you .. a million times.
-var hashing_workers = {}
+var hashing_workers = {};
+
+
+//Record cookie_names temporarily when user attempts to login
+//to a site. After the login is successful, check which new
+//cookies are added or which cookies have been modified.
+//Then calculate the cookies that indicate logged-in state
+//and empty this buffer.
+var pre_login_cookies = {};
 
 
 // BIG EXECUTION START
@@ -123,6 +131,8 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
     }
 });
 
+
+chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
 // Total messages: 42
@@ -289,8 +299,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    var p = pending_warnings[sender.tab.id];
 	    if (p.event_type == 'logout_attempt') {
 		pending_warnings[sender.tab.id] = undefined;
-		console.log("APPU DEBUG: Explicitly signed out from: " + p.domain);
-		print_all_cookies(p.domain, "INITIATE_LOGOUT");
+		print_all_cookies(p.domain, "LOGOUT_COMPLETE");
+		//cleanup_session_cookie_store(p.domain);
 	    }
 	}
 
@@ -301,12 +311,17 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	r.id = sender.tab.id;
 	domain = r.domain;
 	sendResponse(r);
-	if (domain) {
-	    print_all_cookies(tld.getDomain(domain), "SUCCESSFUL_LOGIN");
+	if (domain && r.event_type == "login_attempt") {
+	    print_all_cookies(tld.getDomain(domain), "LOGIN_COMPLETE");
+	    detect_login_cookies(tld.getDomain(domain));
 	}
     }
     else if (message.type == "check_passwd_reuse") {
 	message.domain = tld.getDomain(message.domain);
+	console.log("APPU DEBUG: User is attempting to LOGIN in: " + message.domain);
+	print_all_cookies(message.domain, "LOGIN_ATTEMPT");
+	record_prelogin_cookies('', message.domain);
+
 	console.log("APPU DEBUG: (" + message.caller + ", " + message.pwd_sentmsg + 
 		    "), Value of is_password_stored: " + message.is_stored);
 	r = pii_check_passwd_reuse(message, sender);
@@ -392,6 +407,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "explicit_sign_out") {
 	var domain = tld.getDomain(message.domain);
+	console.log("APPU DEBUG: User is attempting to *explicitly* LOGOUT from: " + domain);
+	print_all_cookies(domain, "LOGOUT_ATTEMPT");
 	add_domain_to_uas(domain);
 
 	pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration = 
@@ -637,7 +654,7 @@ function test_read() {
 }
 
 //Test code.
-window.setTimeout(function(){
-	console.log("Here here: printing cookie name for google.com");
-	print_all_cookies('facebook.com', "APPU_START_CHECK");
-    }, 2 * 1000);
+// window.setTimeout(function(){
+// 	console.log("Here here: printing cookie name for google.com");
+// 	print_all_cookies('facebook.com', "APPU_START_CHECK");
+//     }, 2 * 1000);

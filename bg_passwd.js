@@ -482,6 +482,7 @@ function pii_check_pending_warning(message, sender) {
 	if (p.event_type == 'login_attempt') {
 	    r.warnings = p.pending_warnings;
 	    r.domain = p.domain;
+	    r.event_type = p.event_type;
 	    vault_update_domain_passwd(p.domain, p.username, p.passwd, p.pwd_strength, p.is_stored);
 	    pending_warnings[sender.tab.id] = undefined;
 	    r.pending = "yes";
