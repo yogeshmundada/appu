@@ -1,0 +1,11 @@
+language: "node_js"
+node_js:
+  - 0.6
+  - 0.8
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+before_script:
+  - npm install -g grunt@"0.3.x" --production
+  - npm run-script build
