@@ -79,7 +79,7 @@ var ret_vals = make_version_check();
 var am_i_updated = ret_vals[0];
 var last_version = ret_vals[1];
 
-if (am_i_updated) {
+if (am_i_updated && last_version != '0.0.0') {
     //Make one time changes for upgrading from older releases.
     update_specific_changes(last_version);
 }
