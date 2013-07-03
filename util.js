@@ -71,3 +71,42 @@ function generate_random_id() {
     });
     return guid;
 }
+
+
+//I took the following function from: http://stackoverflow.com/a/11900218/560383
+//Might come as handy to report how much on-disk space is consumed by Appu extension.
+//By default, at least on chrome, only 5MB is available for an extension.
+//WTF: why is by default so low?
+function roughSizeOfObject( object ) {
+
+    var objectList = [];
+    var stack = [ object ];
+    var bytes = 0;
+
+    while ( stack.length ) {
+        var value = stack.pop();
+
+        if ( typeof value === 'boolean' ) {
+            bytes += 4;
+        }
+        else if ( typeof value === 'string' ) {
+            bytes += value.length * 2;
+        }
+        else if ( typeof value === 'number' ) {
+            bytes += 8;
+        }
+        else if
+	    (
+            typeof value === 'object'
+            && objectList.indexOf( value ) === -1
+	     )
+	    {
+		objectList.push( value );
+
+		for( i in value ) {
+		    stack.push( value[ i ] );
+		}
+	    }
+    }
+    return bytes;
+}

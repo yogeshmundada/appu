@@ -6,6 +6,18 @@ function init_user_account_sites_entry() {
     uas_entry.pwd_stored_in_browser = 'donno';
     uas_entry.num_logouts = 0;
     uas_entry.latest_login = 0;
+
+    //In case of aggrgate_data, this field contains the
+    //actual username used to log into that site.
+    //In case of current_report, this field contains an
+    //alias of actual username. For e.g. "john.smith" would 
+    //get replaced by "username23".
+    //For this, we use pii_vault.aggregate_data.pi_field_value_identifiers
+    //This will take care of anonymizing the fields in current_report
+    uas_entry.username = '';
+
+    //Values could be 'yes', 'no', 'maybe'
+    uas_entry.am_i_logged_in = 'no';
     //Specifically naming it with prefix "my_" because it was
     //creating confusion with current_report.pwd_groups (Notice 's' at the end)
     uas_entry.my_pwd_group = 'no group';
@@ -210,19 +222,33 @@ function initialize_aggregate_data() {
     //               cookies : {
     //                           cookie_name : 'session_cookie_name_1',
     //                           cookie_class : 'before', 'during', or 'after', 
-    //                           hashed_cookie_value : sha1sum(actual_cookie_value)
+    //                           hashed_cookie_value : sha1sum(actual_cookie_value),
+    //                           session_cookie : between 0 and 1.
     //                         }
     //              }
-    // Here cookie_class is set to 'during' for cookies that are set
-    // explicitly during a successful login process.
-    // If the class is 'during' then certainly that cookie was set because the server
-    // thinks that that cookie is necessary for user-session.
-    // If the class is 'before' then that cookie was created even before a successful
-    // login. That may mean that its not a necessary cookie for detecting 
-    // login-state. However, depending on the server, its still possible for a cookie
-    // to get that value.
-    // If the class is set to 'after', then the cookie was set after successful login
-    // and hence is not related to detecting login-state.
+    // 1. Cookie_class: 
+    // 'during': for cookies that are set explicitly during a successful login process.
+    // 'before': then that cookie was created even before a successful login. 
+    //           That may mean that its not a necessary cookie for detecting 
+    //           login-state. However, depending on the server, its still possible for a cookie
+    //           to get that value.
+    // 'after':  cookie was set after successful login and hence is not related to detecting login-state.
+    // Some initial observations: For facebook, all session cookies get class 'during'
+    // For github and amazon, all session cookies get class 'before'. That is they exist even before 
+    // you login.
+    // 2. hashed_cookie_value: 
+    //    Just to see if server changes the value of the cookie and how often. Probably that
+    //    would indicate which cookies are session cookies even if all the cookies have class
+    //    'before'. Hypothesis here is that session cookies would have one constant value.
+    //    Something like a session-id. Indeed in case of Github, I see a cookie named 'logged_in'
+    //    with a value "yes" if user has signed in.
+    //    Although its completely possible that a site changes session cookies with each request
+    //    for extra security.
+    // 3. session_cookie:
+    //    1 indicates that Appu is sure that its a session cookie
+    //    0 indicates that Appu is sure that its not a session cookie.
+    //    Any value in between tells the Appu's belief that the cookie is a session cookie.
+    //    Need to devise some good parameters to calculate posterior beliefs.
     aggregate_data.session_cookie_store = {};
 
     //When was this created?

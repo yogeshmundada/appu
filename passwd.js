@@ -852,6 +852,34 @@ function detect_input_type_pattern(patterns) {
 //If we can detect log-out links on a page then that means a user has
 //certainly logged in.
 function detect_logout_links() {
+    var signout_elements = $([]);
+    var signout_link_patterns = [
+				 "logout",
+				 "signout",
+				 "log_out",
+				 "sign_out",
+    ];
+
+    signout_link_patterns.forEach(function(value, index, array) {
+	    signout_elements = signout_elements.add($("a, form").filter(function() {
+			if (this.tagName == "A") {
+			    if (this.href.toLowerCase().indexOf(value) !== -1) {
+				return true;
+			    }
+			}
+			if (this.tagName == "FORM") {
+			    if (this.action.toLowerCase().indexOf(value) !== -1) {
+				return true;
+			    }
+			}
+		    }));
+	});    
+
+    if (signout_elements.length != 0) {
+	return signout_elements;
+    }
+
+    //We did not find logout elements, so now search as per actual text.
     var signout_patterns = {
 	"Sign out" : "^Sign out$", 
 	"? Sign out" : "\\? Sign out$", 
@@ -861,7 +889,7 @@ function detect_logout_links() {
    
     //console.log("APPU DEBUG: Detecting 'log out's");
 
-    var signout_elements = detect_text_pattern(signout_patterns);
+    signout_elements = detect_text_pattern(signout_patterns);
 
     //Special case for sites like Facebook
     if (signout_elements.length == 0) {

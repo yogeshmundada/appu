@@ -1,32 +1,47 @@
 <div name="gmail">
      <action type="fetch-url">https://www.google.com/settings/account</action>
 
-     <div name="email" can_be_a_null="no">
-     	  <action type="store">html body div div div div div div div div div div div div div div span:eq(0)
+     <div name="email-div">
+     	  <action type="fetch-dom-element" jquery_filter="ancestor-1">:contains("Email"):not(:has(*))
 	  </action>
+	  <div name="email" can_be_a_null="no" type="vector">	
+	       <action type="store">span.sm
+	       </action>
+	  </div>
      </div>
 
      <div name="your account">
-     	  <action type="fetch-href">a:contains('Edit your profile')
+     	  <action type="fetch-href">a:contains("Edit your profile")
 	  </action>
 
 	  <div name="name" can_be_a_null="no">
-	       <action type="store">html body div div#content div div div#contentPane div div div div div div span a span
+	       <action type="store">[data-tooltip="Click to edit your name"]
 	       </action>
           </div>
 
 
-	  <div name="occupation">
-	       <action type="store">html body div div div.MTa div div div div div div div div div div div:contains('Occupation') div.Ca
+	  <div name="Occupation-div">
+	       <action type="fetch-dom-element" jquery_filter="ancestor-0">:contains("Occupation"):not(:has(*))
 	       </action>
+	       <div name="Occupation">	
+	       	    <action type="store">div:nth-child(2)
+	       	    </action>
+	       </div>
           </div>
 
 
 
-	  <div name="employments" type="vector">
-	       <action type="fetch-dom-element">html body div div#content div div div#contentPane div div div div div div div div div div ul li.nT
+	  <div name="employments">
+	       
+	       <action type="fetch-dom-element" jquery_filter="ancestor-0">:contains("Employment"):not(:has(*))
 	       </action>
-	       <div name="employment">	
+
+	       dsfs
+
+	       <div name="employment" type="vector">	
+	       	    <action type="combine-n-store">tr:contains("Address") td span ul li
+	  	    </action>
+
 	       	    <action type="store">
 		    </action>
 	       </div>
@@ -46,21 +61,21 @@
 
 
 	  <div name="relationship">
-	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains('Relationship') div.Ca
+	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains("Relationship") div.Ca
 	       </action>
           </div>
 
 
 
 	  <div name="birthdate">
-	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains('Birthday') div.Ca
+	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains("Birthday") div.Ca
 	       </action>
           </div>
 
 
 
 	  <div name="gender">
-	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains('Gender') div.Ca
+	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains("Gender") div.Ca
 	       </action>
           </div>
 

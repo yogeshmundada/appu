@@ -16,6 +16,7 @@ function remove_redundant_pi_identifiers() {
     flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
 }
 
+
 function update_specific_changes(last_version) {
     if (last_version < '0.3.92') {
 	console.log("APPU DEBUG: Update specific changes(<0.3.92). Deleting existing password hashes." + 
@@ -47,6 +48,33 @@ function update_specific_changes(last_version) {
 		    "to pii_vault.aggregate_date");
 	pii_vault.aggregate_data.session_cookie_store = {};
 	flush_aggregate_data();
+
+	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding new field 'am_i_logged_in' to " + 
+		    " user_account_sites in both current_report and aggregate_data");
+
+	var cr = pii_vault.current_report;
+	var ad = pii_vault.aggregate_data;
+	for (d in cr.user_account_sites) {
+	    cr.user_account_sites[d].am_i_logged_in = 'maybe';
+	}
+	for (d in ad.user_account_sites) {
+	    ad.user_account_sites[d].am_i_logged_in = 'maybe';
+	}
+
+	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding new field 'username' to " + 
+		    " user_account_sites in both current_report and aggregate_data");
+
+	var cr = pii_vault.current_report;
+	var ad = pii_vault.aggregate_data;
+	for (d in cr.user_account_sites) {
+	    cr.user_account_sites[d].username = '';
+	}
+	for (d in ad.user_account_sites) {
+	    ad.user_account_sites[d].username = '';
+	}
+
+	flush_aggregate_data();
+	flush_current_report();
     }
 }
 

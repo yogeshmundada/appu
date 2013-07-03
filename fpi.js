@@ -272,16 +272,19 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var pfp = curr_node.parent.fp;
 	var css_selector = $.trim($(action).text());
 	var css_filter = $.trim($(action).attr('filter'));
+	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 
-	curr_node.fp = apply_css_filter(apply_css_selector(pfp, css_selector), css_filter);
+	curr_node.fp = apply_css_filter(apply_css_selector(pfp, css_selector, jquery_filter), css_filter);
 	process_kids(curr_node, site_pi_fields, my_slave_tab, level)
     }
     else if ($(action).attr('type') == 'fetch-prev-dom-element') {
 	var pfp = curr_node.parent.fp;
 	var css_selector = $.trim($(action).text());
 	var css_filter = $.trim($(action).attr('filter'));
+	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 
-	curr_node.fp = $(apply_css_filter(apply_css_selector(pfp, css_selector), css_filter)).prev();
+	curr_node.fp = $(apply_css_filter(apply_css_selector(pfp, css_selector, jquery_filter), 
+					  css_filter)).prev();
 	process_kids(curr_node, site_pi_fields, my_slave_tab, level)
     }
     else if ($(action).attr('type') == 'store') {
@@ -290,6 +293,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var store_data = [];
 	var element;
 	var css_filter = $.trim($(action).attr('filter'));
+	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 	var result = [];
 
  	var is_editable = $(action).attr('field_type');
@@ -304,12 +308,12 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	if (curr_node.parent.type && 
 	    curr_node.parent.type == 'vector') {
 	    $.each(pfp, function(index, e) {
-		r = apply_css_filter(apply_css_selector(e, css_selector), css_filter);
+		    r = apply_css_filter(apply_css_selector(e, css_selector, jquery_filter), css_filter);
 		result.push(r);
 	    });
 	}
 	else {
-	    r = apply_css_filter(apply_css_selector(pfp, css_selector), css_filter);
+	    r = apply_css_filter(apply_css_selector(pfp, css_selector, jquery_filter), css_filter);
 	    result.push(r);
 	}
 
@@ -344,7 +348,8 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var store_data = [];
 	var element;
 	var css_filter = $.trim($(action).attr('filter'));
-	
+	var jquery_filter = $.trim($(action).attr('jquery_filter'));
+
 	var result = [];
 
  	var is_editable = $(action).attr('field_type');
@@ -357,12 +362,12 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	if (curr_node.parent.type && 
 	    curr_node.parent.type == 'vector') {
 	    $.each(pfp, function(index, e) {
-		r = apply_css_filter(apply_css_selector(e, css_selector), css_filter);
+		    r = apply_css_filter(apply_css_selector(e, css_selector, jquery_filter), css_filter);
 		result.push(r);
 	    });
 	}
 	else {
-	    r = apply_css_filter(apply_css_selector(pfp, css_selector), css_filter);
+	    r = apply_css_filter(apply_css_selector(pfp, css_selector, jquery_filter), css_filter);
 	    result.push(r);
 	}
 
@@ -515,9 +520,27 @@ function apply_css_filter(elements, css_filter) {
     return elements;
 }
 
-function apply_css_selector(elements, css_selector) {
+function apply_jquery_filter(elements, jquery_filter) {
+    var patterns = [
+		    /(ancestor)-([0-9]+)/,
+		    ];
+
+    patterns.forEach(function(value, index, array) {
+	    var r = value.exec(jquery_filter);
+	    if (r[1] == "ancestor") {
+		var rc = $(elements).parents.eq(r[2]);
+		return rc;
+	    }
+	});
+}
+
+function apply_css_selector(elements, css_selector, jquery_filter) {
     if (css_selector && css_selector != "") {
-	return $(css_selector, elements);
+	var result = $(css_selector, elements);
+	if (jquery_filter && jquery_filter != "") {
+	    result = apply_jquery_filter(result, jquery_filter);
+	}
+	return result;
     }
     return elements;
 }
@@ -629,44 +652,7 @@ function check_if_pi_fetch_required(domain, sender_tab_id) {
 
     if ((domain in fpi_metadata) && 
 	(fpi_metadata[domain]["fpi"] != "not-present")) {
-	    var data = read_file("fpi/" + fpi_metadata[domain]["fpi"]);
-	    console.log("APPU DEBUG: Read the template for: " + domain);
-	    // We are here that means template is present.
-	    // Attempt to fetch the PI if user has already approved it.
-	    if ('user_approved' in pii_vault.aggregate_data.per_site_pi[domain]) {
-		if (pii_vault.aggregate_data.per_site_pi[domain].user_approved == 'always') {
-		    //We are here, that means user has given PI download approval for this site
-		    start_pi_download_process(domain, data);
-		    return;
-		}
-		else if (pii_vault.aggregate_data.per_site_pi[domain].user_approved == 'never') {
-		    console.log("APPU DEBUG: User has already set NEVER for PI on this domain: " + domain);
-		    return;
-		}
-	    }
-
-	    //We are here, that means that we have to seek permission from user to download PI for
-	    //this site.
-	    chrome.tabs.sendMessage(sender_tab_id, {
-		    'type' : "get-permission-to-fetch-pi",
-			'site' : domain,
-			}, function(response) {
-		    if (response.fetch_pi_permission == "always") {
-			pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
-			flush_selective_entries("aggregate_data", ["per_site_pi"]);
-			start_pi_download_process(domain, data);
-		    }
-		    else if (response.fetch_pi_permission == "just-this-time") {
-			pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'seek-permission';
-			flush_selective_entries("aggregate_data", ["per_site_pi"]);
-			start_pi_download_process(domain, data);
-		    }
-		    else if (response.fetch_pi_permission == "never") {
-			pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'never';
-			flush_selective_entries("aggregate_data", ["per_site_pi"]);
-			console.log("APPU DEBUG: User set NEVER for PI on this domain: " + domain);
-		    }
-		});
+	get_permission_and_fetch_pi(domain, sender_tab_id);
     }
     else {
 	print_appu_error("Appu Error: FPI Template for domain(" + domain 
@@ -674,6 +660,48 @@ function check_if_pi_fetch_required(domain, sender_tab_id) {
     }
     
     return;
+}
+
+function get_permission_and_fetch_pi(domain, sender_tab_id) {
+    var data = read_file("fpi/" + fpi_metadata[domain]["fpi"]);
+    console.log("APPU DEBUG: Read the template for: " + domain);
+    // We are here that means template is present.
+    // Attempt to fetch the PI if user has already approved it.
+    if ('user_approved' in pii_vault.aggregate_data.per_site_pi[domain]) {
+	if (pii_vault.aggregate_data.per_site_pi[domain].user_approved == 'always') {
+	    //We are here, that means user has given PI download approval for this site
+	    start_pi_download_process(domain, data);
+	    return;
+	}
+	else if (pii_vault.aggregate_data.per_site_pi[domain].user_approved == 'never') {
+	    console.log("APPU DEBUG: User has already set NEVER for PI on this domain: " + domain);
+	    return;
+	}
+    }
+    else {
+    //We are here, that means that we have to seek permission from user to download PI for
+    //this site.
+    chrome.tabs.sendMessage(sender_tab_id, {
+	    'type' : "get-permission-to-fetch-pi",
+		'site' : domain,
+		}, function(response) {
+	    if (response.fetch_pi_permission == "always") {
+		pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
+		flush_selective_entries("aggregate_data", ["per_site_pi"]);
+		start_pi_download_process(domain, data);
+	    }
+	    else if (response.fetch_pi_permission == "just-this-time") {
+		pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'seek-permission';
+		flush_selective_entries("aggregate_data", ["per_site_pi"]);
+		start_pi_download_process(domain, data);
+	    }
+	    else if (response.fetch_pi_permission == "never") {
+		pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'never';
+		flush_selective_entries("aggregate_data", ["per_site_pi"]);
+		console.log("APPU DEBUG: User set NEVER for PI on this domain: " + domain);
+	    }
+	});
+    }
 }
 
 

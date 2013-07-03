@@ -12,9 +12,49 @@ function get_all_cookies(domain, handle_cookies) {
 }
 
 
-//All cookies related to a particular domain
-function print_all_cookies(domain, event_name) {
+function print_appu_session_store_cookies(domain, cookie_class) {
+    var cs = pii_vault.aggregate_data.session_cookie_store[domain];
+    var tot_cookies = 0;
+    var msg = "";
 
+    for (c in cs.cookies) {
+	if (cookie_class && (cs.cookies[c].cookie_class == cookie_class)) {
+	    msg += sprintf(" %s,", c);
+	    tot_cookies += 1;
+	}
+	else if (cookie_class == undefined) {
+	    msg += sprintf(" %s(%s),", c, cs.cookies[c].cookie_class);
+	    tot_cookies += 1;
+	}
+    }
+
+    msg = "APPU DEBUG: Domain: " + domain + ", Total-cookies: " + tot_cookies + ", Cookie-names: " + msg;
+    console.log(msg);
+}
+
+
+//Purely for debugging purpose.
+//We don't need to actually access the cookie values
+//in the field
+function print_single_cookie_value(domain, cookie_name) {
+    chrome.cookies.getAll({
+	    'domain' : domain,
+		'name' : cookie_name
+		}, 
+	function (all_cookies) {
+	    for (var i = 0; i < all_cookies.length; i++) {
+		var msg = sprintf("Here here: Domain: %s, Cookie-name: %s, Value: %s",
+				  all_cookies[i].domain,
+				  all_cookies[i].name,
+				  all_cookies[i].value);
+		console.log(msg);
+	    }
+	});
+}
+
+
+//All cookies related to a particular domain
+function print_all_cookies(domain, event_name, cookie_attributes) {
     var cb_cookies = (function(domain, event_name) {
 	return function(all_cookies) {
 	    var tot_hostonly = 0;
@@ -25,13 +65,21 @@ function print_all_cookies(domain, event_name) {
 	    console.log("APPU DEBUG: Printing all cookies for (EVENT:" + event_name + "): " + domain);
 	    for (var i = 0; i < all_cookies.length; i++) {
 		var cookie_str = "";
-		cookie_str += "Cookie Name: " + all_cookies[i].name;
-		cookie_str += ", Domain: '" + all_cookies[i].domain + "'";
-		cookie_str += ", Path: '" + all_cookies[i].path + "'";
-		cookie_str += ", HostOnly: '" + all_cookies[i].hostOnly + "'";
-		cookie_str += ", Secure: '" + all_cookies[i].secure + "'";
-		cookie_str += ", HttpOnly: '" + all_cookies[i].httpOnly + "'";
-		cookie_str += ", Session: '" + all_cookies[i].session + "'";
+		if (!cookie_attributes) {
+		    cookie_str += "Cookie Name: " + all_cookies[i].name;
+		    cookie_str += ", Domain: '" + all_cookies[i].domain + "'";
+		    cookie_str += ", Path: '" + all_cookies[i].path + "'";
+		    cookie_str += ", HostOnly: '" + all_cookies[i].hostOnly + "'";
+		    cookie_str += ", Secure: '" + all_cookies[i].secure + "'";
+		    cookie_str += ", HttpOnly: '" + all_cookies[i].httpOnly + "'";
+		    cookie_str += ", Session: '" + all_cookies[i].session + "'";
+		}
+		else {
+		    for (var k = 0; k < cookie_attributes.length; k++) {
+			cookie_str += cookie_attributes[k] + " : " + all_cookies[i][cookie_attributes[k]];
+			cookie_str += ", ";
+		    }
+		}
 
 		if (all_cookies[i].hostOnly) {
 		    tot_hostonly += 1;
@@ -68,6 +116,7 @@ function print_all_cookies(domain, event_name) {
 function is_cookie_valid(cookie_name, domain, cb_cookie_valid) {
 
 }
+
 
 //This means that a password element was detected on the page.
 //So the user will probably attempt to login to the site.
@@ -155,33 +204,35 @@ function cleanup_prelogin_cookies(domain) {
     pre_login_cookies[d] = {};
 }
 
+
 function cleanup_session_cookie_store(domain) {
     var d = tld.getDomain(domain);
     delete pii_vault.aggregate_data.session_cookie_store[d];
     flush_session_cookie_store();
 }
 
+
+function check_if_still_logged_in(domain) {
+    var domain_cookies = pii_vault.aggregate_data.session_cookie_store[domain];
+    var logged_in = false;
+    for (c in domain_cookies.cookies) {
+	if (c.cookie_class == 'during') {
+	    logged_in = true;
+	    break;
+	}
+    }
+    if (logged_in == true) {
+	console.log("Here here: Domain: " + domain + ", Status: LOGGED-IN");
+    }
+    else {
+	console.log("Here here: Domain: " + domain + ", Status: LOGGED-OUT");
+    }
+    return logged_in;
+}
+
+
 function cookie_change_detected(change_info) {
     if (change_info.cookie.domain == ".facebook.com") {
-// 	var msg = sprintf('Here here: Domain: %s, Cookie: %s, IsRemoved: %s, Cause: %s', 
-// 			  change_info.cookie.domain,
-// 			  change_info.cookie.name,
-// 			  change_info.removed,
-// 			  change_info.cause);
-// 	if (change_info.cause == 'expired_overwrite') {
-// 	    if (change_info.cookie.expirationDate) {
-// 		var d = new Date(0);
-// 		d.setUTCSeconds(change_info.cookie.expirationDate);
-// 		msg += sprintf(',IsSession: %s, Expiration date: %s', 
-// 			       change_info.cookie.session,
-// 			       d);
-// 	    }
-// 	    else {
-// 		msg += sprintf(',IsSession: %s, Expiration date: UNDEFINED', 
-// 			       change_info.cookie.session);
-// 	    }
-// 	}
-// 	console.log(msg);
 	var domain = change_info.cookie.domain;
 	if (domain[0] == '.') {
 	    domain = domain.slice(1, domain.length);
@@ -207,31 +258,23 @@ function cookie_change_detected(change_info) {
 			flush_session_cookie_store();
 
 			if (cookie_class == 'during') {
-			    check_if_still_logged_in();
+			    check_if_still_logged_in(domain);
 			}
 		    }
-		    else if (change_info.removed) {
+		    else if (change_info.removed && change_info.cause != 'overwrite') {
 			console.log("APPU Error: Cookie removed with unknown cause: " + change_info.cause);
 		    }
 		}
-// 		var msg = sprintf("Here here: CHANGE IN LOGIN-STATE-COOKIE change-cause: %s, is_removed: %s," +
-// 				  " cookie: %s, value: %s, cookie_class: %s, domain: %s", 
-// 				  change_info.cause,
-// 				  change_info.removed,
-// 				  curr_cookie,
-// 				  change_info.cookie.value, 
-// 				  pvadcs[domain].cookies[curr_cookie].cookie_class,
-// 				  change_info.cookie.domain);
-// 		console.log(msg);
 	    }
 	    else {
 		//This cookie was not present during login
-			console.log("Here here: (" + domain + 
-				    ") Creating a new cookie: " + curr_cookie_name);
-			pvadcs[domain].cookies[curr_cookie_name] = {};
-			pvadcs[domain].cookies[curr_cookie_name].cookie_class = 'after';
-			flush_session_cookie_store();
+		console.log("Here here: (" + domain + 
+			    ") Creating a new cookie: " + curr_cookie);
+		pvadcs[domain].cookies[curr_cookie] = {};
+		pvadcs[domain].cookies[curr_cookie].cookie_class = 'after';
+		flush_session_cookie_store();
 	    }
 	}
     }
 }
+

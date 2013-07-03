@@ -298,8 +298,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	if(pending_warnings[sender.tab.id] != undefined) {
 	    var p = pending_warnings[sender.tab.id];
 	    if (p.event_type == 'logout_attempt') {
+		//At this point in code, we have a SUCCESSFUL LOGOUT
 		pending_warnings[sender.tab.id] = undefined;
-		print_all_cookies(p.domain, "LOGOUT_COMPLETE");
+		console.log("APPU DEBUG: LOGOUT_COMPLETE for: " + p.domain);
+		//print_all_cookies(p.domain, "LOGOUT_COMPLETE");
 		//cleanup_session_cookie_store(p.domain);
 	    }
 	}
@@ -312,14 +314,17 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	domain = r.domain;
 	sendResponse(r);
 	if (domain && r.event_type == "login_attempt") {
-	    print_all_cookies(tld.getDomain(domain), "LOGIN_COMPLETE");
+	    //At this point in code, we have a SUCCESSFUL LOGIN event
+	    console.log("APPU DEBUG: LOGIN_COMPLETE for: " + tld.getDomain(domain));
+	    //print_all_cookies(tld.getDomain(domain), "LOGIN_COMPLETE");
 	    detect_login_cookies(tld.getDomain(domain));
 	}
     }
     else if (message.type == "check_passwd_reuse") {
 	message.domain = tld.getDomain(message.domain);
 	console.log("APPU DEBUG: User is attempting to LOGIN in: " + message.domain);
-	print_all_cookies(message.domain, "LOGIN_ATTEMPT");
+	console.log("APPU DEBUG: LOGIN_ATTEMPT for: " + message.domain);
+	//print_all_cookies(message.domain, "LOGIN_ATTEMPT");
 	record_prelogin_cookies('', message.domain);
 
 	console.log("APPU DEBUG: (" + message.caller + ", " + message.pwd_sentmsg + 
@@ -408,7 +413,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "explicit_sign_out") {
 	var domain = tld.getDomain(message.domain);
 	console.log("APPU DEBUG: User is attempting to *explicitly* LOGOUT from: " + domain);
-	print_all_cookies(domain, "LOGOUT_ATTEMPT");
+
+	console.log("APPU DEBUG: LOGOUT_ATTEMPT for: " + domain);
+	//print_all_cookies(domain, "LOGOUT_ATTEMPT");
 	add_domain_to_uas(domain);
 
 	pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration = 
@@ -658,3 +665,6 @@ function test_read() {
 // 	console.log("Here here: printing cookie name for google.com");
 // 	print_all_cookies('facebook.com', "APPU_START_CHECK");
 //     }, 2 * 1000);
+
+//get_permission_and_fetch_pi("google.com", undefined);
+get_permission_and_fetch_pi("amazon.com", undefined);
