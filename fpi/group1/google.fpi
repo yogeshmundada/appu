@@ -4,9 +4,15 @@
      <div name="email-div">
      	  <action type="fetch-dom-element" jquery_filter="ancestor-1">:contains("Email"):not(:has(*))
 	  </action>
-	  <div name="email" can_be_a_null="no" type="vector">	
-	       <action type="store">span.sm
+	  <div name="emails" type="vector">	
+	       <action type="fetch-dom-element">span.sm
 	       </action>
+	       
+	       <div name="email" can_be_a_null="no">
+		 <action type="store">
+		 </action>
+               </div>
+
 	  </div>
      </div>
 
@@ -20,30 +26,20 @@
           </div>
 
 
-	  <div name="Occupation-div">
-	       <action type="fetch-dom-element" jquery_filter="ancestor-0">:contains("Occupation"):not(:has(*))
+	  <div name="occupation">
+	       <action type="store">:contains("Occupation"):not(:has(*)) + div
 	       </action>
-	       <div name="Occupation">	
-	       	    <action type="store">div:nth-child(2)
-	       	    </action>
-	       </div>
           </div>
 
 
 
-	  <div name="employments">
-	       
-	       <action type="fetch-dom-element" jquery_filter="ancestor-0">:contains("Employment"):not(:has(*))
+	  <div name="employments" type="vector">
+	       <action type="fetch-dom-element">:contains("Employment"):not(:has(*)) + div ul li
 	       </action>
 
-	       dsfs
-
-	       <div name="employment" type="vector">	
-	       	    <action type="combine-n-store">tr:contains("Address") td span ul li
+	       <div name="employment" >	
+	       	    <action type="combine-n-store">div
 	  	    </action>
-
-	       	    <action type="store">
-		    </action>
 	       </div>
       	  </div>
 	  
@@ -61,24 +57,23 @@
 
 
 	  <div name="relationship">
-	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains("Relationship") div.Ca
+	       <action type="store">:contains("Relationship"):not(:has(*)) + div
 	       </action>
           </div>
 
 
 
 	  <div name="birthdate">
-	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains("Birthday") div.Ca
+	       <action type="store">:contains("Birthday"):not(:has(*)) + div
 	       </action>
           </div>
 
 
 
 	  <div name="gender">
-	       <action type="store">html body div div#content div div div#contentPane div div div div div div div div div:contains("Gender") div.Ca
+	       <action type="store">:contains("Gender"):not(:has(*)) + div
 	       </action>
           </div>
-
 
 
      </div>

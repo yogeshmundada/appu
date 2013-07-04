@@ -352,6 +352,8 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 
 	var result = [];
 
+	console.log("APPU DEBUG: In combine-n-store");
+
  	var is_editable = $(action).attr('field_type');
  	if (is_editable != undefined) {
  		is_editable = (is_editable == 'editable') ? true : false;
@@ -525,13 +527,13 @@ function apply_jquery_filter(elements, jquery_filter) {
 		    /(ancestor)-([0-9]+)/,
 		    ];
 
-    patterns.forEach(function(value, index, array) {
-	    var r = value.exec(jquery_filter);
-	    if (r[1] == "ancestor") {
-		var rc = $(elements).parents.eq(r[2]);
-		return rc;
-	    }
-	});
+    for (var p = 0; p < patterns.length; p++) {
+	var r = patterns[p].exec(jquery_filter);
+	if (r[1] == "ancestor") {
+	    var rc = $(elements).parents().eq(r[2]);
+	    return rc;
+	}
+    }
 }
 
 function apply_css_selector(elements, css_selector, jquery_filter) {
