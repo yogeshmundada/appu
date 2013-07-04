@@ -75,40 +75,39 @@
 
 
 
-	  <div name="Employers-Table" type="vector">
-	  	    <action  type="fetch-dom-element">tbody:nth-child(1) tr td.data div.mediaRowWrapper ul.uiList li div.clearfix div.clearfix div div.experienceContent div.experienceTitle a
-	  	    </action>
-	  	    <div name="employer">
-	  	    	 <action type="store">
-	  		 </action>
-	  	    </div>
+	  <div name="Employers_Universities_Schools">
+	    <action type="fetch-dom-element" jquery_filter="ancestor-3">.uiHeaderTitle:contains("Work and Education")
+	    </action>
+
+	    <div name="Employers-div" type="vector">
+	      <action type="fetch-dom-element">:contains("Employer:"):not(:has(*)) + td > ul > li > div > div
+	      </action>
+	      <div name="employer">
+	  	<action type="combine-n-store">a span, div
+	  	</action>
+	      </div>
+	    </div>
+
+	    <div name="University-div" type="vector">
+	      <action type="fetch-dom-element">:contains("College/University:"):not(:has(*)) + td > ul > li > div > div
+	      </action>
+	      <div name="graduate-school">
+	  	<action type="store">a span
+	  	</action>
+	      </div>
+	    </div>
+
+	    <div name="Highschool-div" type="vector">
+	      <action type="fetch-dom-element">:contains("High School:"):not(:has(*)) + td > ul > li > div > div
+	      </action>
+	      <div name="high-school">
+	  	<action type="store">a span
+	  	</action>
+	      </div>
+	    </div>
+	    
 	  </div>
-
-
-
-	  <div name="Grad-School-Table" type="vector">
-	  	    <action  type="fetch-dom-element">tbody:nth-child(2) tr td.data div.mediaRowWrapper ul.uiList li div.clearfix div.clearfix div div.experienceContent div.experienceTitle a
-	  	    </action>
-	  	    <div name="gradute-school">
-	  	    	 <action type="store">
-	  		 </action>
-	  	    </div>
-	  </div>
-
-
-
-
-	  <div name="High-School-Table" type="vector">
-	  	    <action  type="fetch-dom-element">tbody:nth-child(3) tr td.data div.mediaRowWrapper ul.uiList li div.clearfix div.clearfix div div.experienceContent div.experienceTitle a
-	  	    </action>
-	  	    <div name="high-school">
-	  	    	 <action type="store">
-	  		 </action>
-	  	    </div>
-	  </div>
-
      </div>
-
 
 
      <div name="Email page">
@@ -122,13 +121,12 @@
 	  </div>
 
 
-
           <div name="Email click">
-               <action type="simulate-click" filter=":contains('Email')">.pls
+               <action type="simulate-click" data="div[class='fsm fwn fcg'] div label">:contains('Email'):not(:has(*)):first-child
                </action>
 
                <div name="emails" type="vector" can_be_a_null="no">
-                    <action type="fetch-dom-element">div[class='fsm fwn fcg'] div label
+                    <action type="fetch-dom-element">div[class='fsm fwn fcg'] div label, :contains('Facebook email:'):not(:has(*)) + td
                     </action>
 
                     <div name="email">
@@ -137,6 +135,7 @@
                     </div>
                </div>
           </div>
+
      </div>
 
 

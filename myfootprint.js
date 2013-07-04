@@ -28,7 +28,6 @@ function toggle_fpi_expand() {
 
 function create_accordion(pi_field, append_accord_child) {
     pi_field = pi_field.toLowerCase();
-    debugger;
     var accord_id = sprintf("accordion-site-list-with-%s", pi_field);
     var accord_div = sprintf('<div id="accordion-site-list-with-%s" class="appuwarning appuaccordion"></div>', 
 			     pi_field);

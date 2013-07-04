@@ -158,16 +158,14 @@ function send_cmd_to_tab(action_type, curr_node, site_pi_fields, fetch_url, my_s
     else if (action_type == "simulate-click") {
 	console.log("APPU DEBUG: In SIMULATE-CLICK, selector: " + curr_node.css_selector 
 		    + ", filter: " + curr_node.css_filter);
-	
-	// Send first child node action as well to detect the change in the web page.
-	var child_node_action = $(curr_node.children[0].xml_node).children('action');
-	var child_node_action_css = $.trim($(child_node_action).text());
+
+	var change_css = $(curr_node.xml_node).children('action').attr('data');
 
 	chrome.tabs.sendMessage(my_slave_tab.tabid, {
 	    type: "simulate-click", 
 	    css_selector : curr_node.css_selector,
 	    css_filter : curr_node.css_filter,
-	    detect_change_css : child_node_action_css
+	    detect_change_css : change_css
 	});
 
 	template_processing_tabs[my_slave_tab.tabid] = "dummy-url";
@@ -835,7 +833,7 @@ function store_per_site_pi_data(domain, site_pi_fields) {
     for (var field in site_pi_fields) {
 	if (site_pi_fields[field].value.length > 0) {
 	    add_field_to_per_site_pi(domain, field, site_pi_fields[field].value);
-	    if (field in old_pi_values) {
+	    if (field in old_pi_values && ('values' in old_pi_values[field])) {
 		if (curr_site_pi[field].values.sort().join(", ") == 
 		    old_pi_values[field].values.sort().join(", ")) {
 	    	    curr_site_pi[field].change_type = 'no-change';
