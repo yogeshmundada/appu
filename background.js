@@ -669,3 +669,4 @@ function test_read() {
 //get_permission_and_fetch_pi("google.com", undefined);
 
 get_permission_and_fetch_pi("facebook.com", undefined);
+

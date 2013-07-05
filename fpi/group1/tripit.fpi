@@ -1,29 +1,29 @@
 <div name="tripit">
-	<action type="fetch-url">https://www.tripit.com/account/edit</action>
-	<div name="name" can_be_a_null="no">
-			<action type="store">html body div div#header_wrapper div div.topHeader div.underdraw a.underdraw_link</action>
-    </div>
-	
-	<div name="email settings">
-		<action type="fetch-href">a:contains('Email settings')</action>
-		<div name="email">
-			<action type="store" field_type="editable">html body div#sidebar_layout_wrapper div div div div#content form#fmAccount div fieldset div.fLt p select option</action>
-        </div>
-	</div>
-		
-	<div name="about you">
-		<action type="fetch-href">a:contains('About you')</action>
-		
-		<div name="company">
-			<action type="store" field_type="editable">html body div#sidebar_layout_wrapper div div div div#content form#fmAccount div fieldset div.fLt p input#company</action>			
-		</div>
-		
-		<div name="home-location">
-			<action type="store" field_type="editable">html body div#sidebar_layout_wrapper div div div div#content form#fmAccount div fieldset div.fLt p input#place</action>			
-		</div>
-		
-		<div name="gender">
-			<action type="store" is_selected="yes">html body div#sidebar_layout_wrapper div#sidebar_wrapper_grey div#sidebar_wrapper_white div#sidebar_layout div#content form#fmAccount div.stdVMrg fieldset.col div.fLt p.fieldBlock select#gender option</action>
-		</div>
-	</div>
+     <action type="fetch-url">https://www.tripit.com/account/edit</action>
+     <div name="name" can_be_a_null="no">
+	  <action type="store">html body div div#header_wrapper div div.topHeader div.underdraw a.underdraw_link</action>
+     </div>
+     
+     <div name="email settings">
+	  <action type="fetch-href">a:contains('Email settings')</action>
+	  <div name="email">
+	       <action type="store" field_type="editable">html body div#sidebar_layout_wrapper div div div div#content form#fmAccount div fieldset div.fLt p select option</action>
+          </div>
+     </div>
+     
+     <div name="about you">
+	  <action type="fetch-href">a:contains('About you')</action>
+	  
+	  <div name="company">
+	       <action type="store" field_type="editable">html body div#sidebar_layout_wrapper div div div div#content form#fmAccount div fieldset div.fLt p input#company</action>			
+	  </div>
+	  
+	  <div name="home-location">
+	       <action type="store" field_type="editable">html body div#sidebar_layout_wrapper div div div div#content form#fmAccount div fieldset div.fLt p input#place</action>			
+	  </div>
+	  
+	  <div name="gender">
+	       <action type="store" is_selected="yes">html body div#sidebar_layout_wrapper div#sidebar_wrapper_grey div#sidebar_wrapper_white div#sidebar_layout div#content form#fmAccount div.stdVMrg fieldset.col div.fLt p.fieldBlock select#gender option</action>
+	  </div>
+     </div>
 </div>

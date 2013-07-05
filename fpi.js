@@ -291,6 +291,11 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var store_data = [];
 	var element;
 	var css_filter = $.trim($(action).attr('filter'));
+	var ignore_default = $.trim($(action).attr('ignore_default'));
+	if (!ignore_default) {
+	    ignore_default = '';
+	}
+
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 	var result = [];
 
@@ -307,7 +312,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	    curr_node.parent.type == 'vector') {
 	    $.each(pfp, function(index, e) {
 		    r = apply_css_filter(apply_css_selector(e, css_selector, jquery_filter), css_filter);
-		result.push(r);
+		    result.push(r);
 	    });
 	}
 	else {
@@ -324,8 +329,8 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		field_value = $.trim($(result[i]).text());
  	    }
 
-	    if (field_value != "") {
-		store_data.push(field_value);
+	    if (field_value != "" && field_value != ignore_default) {
+		store_data.push(field_value.toLowerCase());
 	    }
 	}
 
@@ -346,6 +351,10 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var store_data = [];
 	var element;
 	var css_filter = $.trim($(action).attr('filter'));
+	var ignore_default = $.trim($(action).attr('ignore_default'));
+	if (!ignore_default) {
+	    ignore_default = '';
+	}
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 
 	var result = [];
@@ -363,7 +372,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	    curr_node.parent.type == 'vector') {
 	    $.each(pfp, function(index, e) {
 		    r = apply_css_filter(apply_css_selector(e, css_selector, jquery_filter), css_filter);
-		result.push(r);
+		    result.push(r);
 	    });
 	}
 	else {
@@ -384,7 +393,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 			field_value = $.trim($(value).text());
  		    }
 
-		    if (field_value != "") {
+		    if (field_value != "" && field_value != ignore_default) {
 			combined_value += field_value + ", " 
 		    }
 		});
@@ -403,13 +412,13 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		    field_value = $.trim($(result[i]).text());
  		}
 
-		if (field_value != "") {
+		if (field_value != "" && field_value != ignore_default) {
 		    combined_value = field_value;
 		}
 	    }
 
 	    if (combined_value != "") {
-		store_data.push(combined_value);
+		store_data.push(combined_value.toLowerCase());
 	    }
 	}
 
@@ -538,7 +547,17 @@ function apply_css_selector(elements, css_selector, jquery_filter) {
     if (css_selector && css_selector != "") {
 	var result = $(css_selector, elements);
 	if (jquery_filter && jquery_filter != "") {
-	    result = apply_jquery_filter(result, jquery_filter);
+	    var jqf_result = undefined;
+	    for (var z = 0; z < result.length; z++) {
+		var rc = apply_jquery_filter(result[z], jquery_filter);
+		if (z == 0) {
+		    jqf_result = rc;
+		}
+		else {
+		    jqf_result = jqf_result.add(rc);
+		}
+	    }
+	    result = jqf_result;
 	}
 	return result;
     }

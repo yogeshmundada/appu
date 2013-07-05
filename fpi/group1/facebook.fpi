@@ -1,142 +1,183 @@
 <div name="facebook">
-     <action type="fetch-url">http://www.facebook.com</action>
-     
+	<action type="fetch-url">http://www.facebook.com</action>
+	
+	
+	<div name="Your account">
+		<action type="fetch-href">
+			:contains("Edit Profile"):not(:has(*))
+		</action>
+		
+		<div name="phones" type="vector">
+			<action type="fetch-dom-element">
+				td.contactInfoPhone span
+			</action>
+			
+			<div name="phone">
+				<action type="store">
+				</action>
+			</div>	 
+		</div>
+		
 
-     <div name="Your account">
-     	  <action type="fetch-href">:contains("Edit Profile"):not(:has(*))
-	  </action>
-
-	       
-	  <div name="phones" type="vector">
-	  	<action type="fetch-dom-element">td.contactInfoPhone span
-	  	</action>
-
-	  	<div name="phone">
-	  		 <action type="store">
-	  		 </action>
-	  	</div>	 
-	  </div>
-
-
-
-	  <div name="address" type="vector">
-	  	<action type="combine-n-store">tr:contains("Address") td span ul li
-	  	</action>
-	  </div>
-
-
-	  
-	  <div name="Basic Info">
-	  	<action type="fetch-dom-element">div#pagelet_basic
-	  	</action>
+		<div name="address" type="vector">
+			<action type="combine-n-store">
+				tr:contains("Address") td span ul li
+			</action>
+		</div>
 
 
-	  	    <div name="relationship">
-	  	    	 <action type="store">tbody th:contains("Relationship Status") + td
-	  	    	 </action>
-	       </div>
+		
+		<div name="Basic Info">
+			<action type="fetch-dom-element">
+				div#pagelet_basic
+			</action>
 
 
-
-	  	    <div name="religious-view">
-	  	    	 <action type="store">tbody th:contains("Religious Views") + td
-	  	    	 </action>
-	       </div>
+			<div name="relationship">
+	  			<action type="store">
+					tbody th:contains("Relationship Status") + td
+	  			</action>
+			</div>
 
 
 
-	  	    <div name="political-view">
-	  	    	 <action type="store">tbody th:contains("Political Views") + td
-	  	    	 </action>
-	       </div>
-	  </div>
+			<div name="religious-view">
+	  			<action type="store">
+					tbody th:contains("Religious Views") + td
+	  			</action>
+			</div>
 
 
 
-	  <div name="Current City Div">
-	  	    <action  type="fetch-prev-dom-element">div:contains('Current City'):not(:has(*))
-	  	    </action>
-	  	    <div name="current-city">
-	  	    	 <action type="store">
-	  		 </action>
-	  	    </div>
-	  </div>
+			<div name="political-view">
+	  			<action type="store">
+					tbody th:contains("Political Views") + td
+	  			</action>
+			</div>
+		</div>
 
 
 
-	  <div name="HomeTown Div">
-	  	    <action  type="fetch-prev-dom-element">div:contains('Hometown'):not(:has(*))
-	  	    </action>
-	  	    <div name="hometown">
-	  	    	 <action type="store">
-	  		 </action>
-	  	    </div>
-	  </div>
+		<div name="Current City Div">
+			<action  type="fetch-prev-dom-element">
+				div:contains('Current City'):not(:has(*))
+			</action>
+			<div name="current-city">
+	  			<action type="store">
+	  			</action>
+			</div>
+		</div>
 
 
 
-	  <div name="Employers_Universities_Schools">
-	    <action type="fetch-dom-element" jquery_filter="ancestor-3">.uiHeaderTitle:contains("Work and Education")
-	    </action>
-
-	    <div name="Employers-div" type="vector">
-	      <action type="fetch-dom-element">:contains("Employer:"):not(:has(*)) + td > ul > li > div > div
-	      </action>
-	      <div name="employer">
-	  	<action type="combine-n-store">a span, div
-	  	</action>
-	      </div>
-	    </div>
-
-	    <div name="University-div" type="vector">
-	      <action type="fetch-dom-element">:contains("College/University:"):not(:has(*)) + td > ul > li > div > div
-	      </action>
-	      <div name="graduate-school">
-	  	<action type="store">a span
-	  	</action>
-	      </div>
-	    </div>
-
-	    <div name="Highschool-div" type="vector">
-	      <action type="fetch-dom-element">:contains("High School:"):not(:has(*)) + td > ul > li > div > div
-	      </action>
-	      <div name="high-school">
-	  	<action type="store">a span
-	  	</action>
-	      </div>
-	    </div>
-	    
-	  </div>
-     </div>
+		<div name="HomeTown Div">
+			<action  type="fetch-prev-dom-element">
+				div:contains('Hometown'):not(:has(*))
+			</action>
+			<div name="hometown">
+	  			<action type="store">
+	  			</action>
+			</div>
+		</div>
 
 
-     <div name="Email page">
-          <action type="fetch-url">https://www.facebook.com/settings?ref=mb
-          </action>
+
+		<div name="Employment_Universities_Schools">
+			<action type="fetch-dom-element" jquery_filter="ancestor-3">
+				.uiHeaderTitle:contains("Work and Education")
+			</action>
+
+			<div name="Employment-div" type="vector">
+				<action type="fetch-dom-element">
+					:contains("Employer:"):not(:has(*)) + td > ul > li > div > div
+				</action>
+				<div name="employment">
+	  				<action type="combine-n-store">
+						a span
+	  				</action>
+				</div>
+			</div>
+
+			<div name="University-div" type="vector">
+				<action type="fetch-dom-element">
+					:contains("College/University:"):not(:has(*)) + td > ul > 
+					li > div > div
+				</action>
+				<div name="graduate-school">
+	  				<action type="store">a span
+	  				</action>
+				</div>
+			</div>
+
+			<div name="Highschool-div" type="vector">
+				<action type="fetch-dom-element">
+					:contains("High School:"):not(:has(*)) + td > ul > 
+					li > div > div
+				</action>
+				<div name="high-school">
+	  				<action type="store">a span
+	  				</action>
+				</div>
+			</div>
+			
+		</div>
+	</div>
 
 
-	  <div name="name" can_be_a_null="no">
-	      <action type="store">:contains("Name"):not(:has(*)) ~ span:nth-child(4)
-	      </action>
-	  </div>
+	<div name="Email page">
+		<action type="fetch-url">https://www.facebook.com/settings?ref=mb
+		</action>
 
 
-          <div name="Email click">
-               <action type="simulate-click" data="div[class='fsm fwn fcg'] div label">:contains('Email'):not(:has(*)):first-child
-               </action>
-
-               <div name="emails" type="vector" can_be_a_null="no">
-                    <action type="fetch-dom-element">div[class='fsm fwn fcg'] div label, :contains('Facebook email:'):not(:has(*)) + td
-                    </action>
-
-                    <div name="email">
-                         <action type="store">
-                         </action>
-                    </div>
-               </div>
-          </div>
-
-     </div>
+		<div name="name" can_be_a_null="no">
+			<action type="store">
+				:contains("Name"):not(:has(*)) ~ span:nth-child(4)
+			</action>
+		</div>
 
 
+		<div name="Name click">
+			<action type="simulate-click" data="[name='first_name']">
+				:contains('Name'):not(:has(*)):first-child
+			</action>
+
+			<div name="first-name">
+				<action type="store" field_type="editable">
+					[name='first_name']
+				</action>
+			</div>
+
+			<div name="last-name">
+				<action type="store" field_type="editable">
+					[name='last_name']
+				</action>
+			</div>
+
+			<div name="middle-name">
+				<action type="store" field_type="editable" ignore_default="Optional">
+					[name='middle_name']
+				</action>
+			</div>
+
+		</div>
+
+
+		<div name="Email click">
+			<action type="simulate-click" data="div[class='fsm fwn fcg'] div label">
+				:contains('Email'):not(:has(*)):first-child
+			</action>
+
+			<div name="emails" type="vector" can_be_a_null="no">
+				<action type="fetch-dom-element">
+					div[class='fsm fwn fcg'] div label, 
+					:contains('Facebook email:'):not(:has(*)) + td
+				</action>
+
+				<div name="email">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>

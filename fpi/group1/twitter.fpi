@@ -1,16 +1,16 @@
 <div name="twitter">
-	<action type="fetch-url">https://twitter.com/settings/account</action>
+     <action type="fetch-url">https://twitter.com/settings/account</action>
 
-	<div name="name" can_be_a_null="no">
-		<action type="store">html body div div#page-outer div div.dashboard div div a div div b</action>
-	</div>
+     <div name="name" can_be_a_null="no">
+	  <action type="store">html body div div#page-outer div div.dashboard div div a div div b</action>
+     </div>
 
-	<div name="email">
-		<action type="store" field_type="editable">html body div div#page-outer div div.content-main div.content-inner form fieldset div input#user_email</action>
-	</div>
-	
-	<div name="country">
-		<action type="store" field_type="editable">html body div div#page-outer div div.content-main div.content-inner form fieldset div select#user_country</action>
-	</div>
-		
+     <div name="email">
+	  <action type="store" field_type="editable">html body div div#page-outer div div.content-main div.content-inner form fieldset div input#user_email</action>
+     </div>
+     
+     <div name="country">
+	  <action type="store" field_type="editable">html body div div#page-outer div div.content-main div.content-inner form fieldset div select#user_country</action>
+     </div>
+     
 </div>

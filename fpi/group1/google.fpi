@@ -1,80 +1,90 @@
 <div name="gmail">
-     <action type="fetch-url">https://www.google.com/settings/account</action>
+	<action type="fetch-url">https://www.google.com/settings/account</action>
 
-     <div name="email-div">
-     	  <action type="fetch-dom-element" jquery_filter="ancestor-1">:contains("Email"):not(:has(*))
-	  </action>
-	  <div name="emails" type="vector">	
-	       <action type="fetch-dom-element">span.sm
-	       </action>
-	       
-	       <div name="email" can_be_a_null="no">
-		 <action type="store">
-		 </action>
-               </div>
+	<div name="email-div">
+     		<action type="fetch-dom-element" jquery_filter="ancestor-1">
+			:contains("Email"):not(:has(*))
+		</action>
+		<div name="emails" type="vector">	
+			<action type="fetch-dom-element">
+				span.sm
+			</action>
+			
+			<div name="email" can_be_a_null="no">
+				<action type="store">
+				</action>
+			</div>
 
-	  </div>
-     </div>
+		</div>
+	</div>
 
-     <div name="your account">
-     	  <action type="fetch-href">a:contains("Edit your profile")
-	  </action>
+	<div name="your account">
+     		<action type="fetch-href">
+			a:contains("Edit your profile")
+		</action>
 
-	  <div name="name" can_be_a_null="no">
-	       <action type="store">[data-tooltip="Click to edit your name"]
-	       </action>
-          </div>
-
-
-	  <div name="occupation">
-	       <action type="store">:contains("Occupation"):not(:has(*)) + div
-	       </action>
-          </div>
+		<div name="name" can_be_a_null="no">
+			<action type="store">
+				[data-tooltip="Click to edit your name"]
+			</action>
+		</div>
 
 
-
-	  <div name="employments" type="vector">
-	       <action type="fetch-dom-element">:contains("Employment"):not(:has(*)) + div ul li
-	       </action>
-
-	       <div name="employment" >	
-	       	    <action type="combine-n-store">div
-	  	    </action>
-	       </div>
-      	  </div>
-	  
-
-
-	  <div name="phones" type="vector">
-	       <action type="fetch-dom-element">td.tel
-	       </action>
-	       <div name="phone">	
-	       	    <action type="store">
-		    </action>
-	       </div>
-      	  </div>
+		<div name="occupation">
+			<action type="store">
+				:contains("Occupation"):not(:has(*)) + div
+			</action>
+		</div>
 
 
 
-	  <div name="relationship">
-	       <action type="store">:contains("Relationship"):not(:has(*)) + div
-	       </action>
-          </div>
+		<div name="employments" type="vector">
+			<action type="fetch-dom-element">
+				:contains("Employment"):not(:has(*)) + div ul li
+			</action>
+
+			<div name="employment" >	
+	       			<action type="combine-n-store">
+					div:nth-child(1)
+	  			</action>
+			</div>
+      		</div>
+		
+
+
+		<div name="phones" type="vector">
+			<action type="fetch-dom-element">
+				td.tel
+			</action>
+			<div name="phone">	
+	       			<action type="store">
+				</action>
+			</div>
+      		</div>
 
 
 
-	  <div name="birthdate">
-	       <action type="store">:contains("Birthday"):not(:has(*)) + div
-	       </action>
-          </div>
+		<div name="relationship">
+			<action type="store">
+				:contains("Relationship"):not(:has(*)) + div
+			</action>
+		</div>
 
 
 
-	  <div name="gender">
-	       <action type="store">:contains("Gender"):not(:has(*)) + div
-	       </action>
-          </div>
+		<div name="birthdate">
+			<action type="store">
+				:contains("Birthday"):not(:has(*)) + div
+			</action>
+		</div>
 
 
-     </div>
+
+		<div name="gender">
+			<action type="store">
+				:contains("Gender"):not(:has(*)) + div
+			</action>
+		</div>
+
+	</div>
 </div>

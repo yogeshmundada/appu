@@ -1,8 +1,8 @@
 <div name="iheart">
-	<action type="fetch-url">http://www.iheart.com/account/settings/</action>
+     <action type="fetch-url">http://www.iheart.com/account/settings/</action>
 
-		<div name="email" can_be_a_null="no">
-			<action type="store" filter=":contains('Email Address')">html body div#wrap.clearfix div#cardsWrap.span-58 div section div section ul li p:eq(0)</action>
-        </div>
+     <div name="email" can_be_a_null="no">
+	  <action type="store" filter=":contains('Email Address')">html body div#wrap.clearfix div#cardsWrap.span-58 div section div section ul li p:eq(0)</action>
+     </div>
 
 </div>
