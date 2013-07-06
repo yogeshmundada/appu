@@ -1,29 +1,72 @@
 <div name="tripit">
-     <action type="fetch-url">https://www.tripit.com/account/edit</action>
-     <div name="name" can_be_a_null="no">
-	  <action type="store">html body div div#header_wrapper div div.topHeader div.underdraw a.underdraw_link</action>
-     </div>
-     
-     <div name="email settings">
-	  <action type="fetch-href">a:contains('Email settings')</action>
-	  <div name="email">
-	       <action type="store" field_type="editable">html body div#sidebar_layout_wrapper div div div div#content form#fmAccount div fieldset div.fLt p select option</action>
-          </div>
-     </div>
-     
-     <div name="about you">
-	  <action type="fetch-href">a:contains('About you')</action>
-	  
-	  <div name="company">
-	       <action type="store" field_type="editable">html body div#sidebar_layout_wrapper div div div div#content form#fmAccount div fieldset div.fLt p input#company</action>			
-	  </div>
-	  
-	  <div name="home-location">
-	       <action type="store" field_type="editable">html body div#sidebar_layout_wrapper div div div div#content form#fmAccount div fieldset div.fLt p input#place</action>			
-	  </div>
-	  
-	  <div name="gender">
-	       <action type="store" is_selected="yes">html body div#sidebar_layout_wrapper div#sidebar_wrapper_grey div#sidebar_wrapper_white div#sidebar_layout div#content form#fmAccount div.stdVMrg fieldset.col div.fLt p.fieldBlock select#gender option</action>
-	  </div>
-     </div>
+
+		<action type="fetch-url">
+				https://www.tripit.com/account/edit
+		</action>				
+		
+		<div name="about you">
+			<action type="fetch-href"> 
+					a:contains('About you')
+			</action>		
+			<div name="first-name" can_be_a_null="no">
+				<action type="store" field_type="editable"> 
+					#first_name
+				</action>	
+			</div>
+			<div name="middle-name" can_be_a_null="yes">
+				<action type="store" field_type="editable">
+					#middle_name
+				</action>
+			</div>
+			<div name="last-name" can_be_a_null="no">
+				<action type="store" field_type="editable">
+					#last_name
+				</action>
+			</div>				
+			<div name="name" can_be_a_null="no">
+				<action type="combine-n-store" field_type="editable"> 
+					#first_name,#middle_name,#last_name
+				</action>
+			</div>			
+			
+		
+		
+			<div name="company">
+				<action type="store" field_type="editable">
+					:contains("Company"):not(:has(*))~input
+				</action>			
+			</div>	
+			
+			<div name="current-city">
+				<action type="store" field_type="editable">
+					:contains("Home location"):not(:has(*))~input
+				</action>			
+			</div>		
+			
+			<div name="gender">
+				<action type="store" field_type="editable">
+					:contains("Gender"):not(:has(*))+select
+				</action>
+			</div>		
+		</div>			
+	
+		<div name="email settings" >
+			<action type="fetch-href"> 
+				a:contains('Email settings') 
+			</action>
+			<div name="email" type="vector">
+				<action type="store"> 
+					div:contains("@"):not(:has(*))
+				</action>
+			</div>	
+		</div>			
+		<div name = "billing info">
+			<action type="fetch-href">
+				a:contains('Billing Info')
+			</action> 		
+			<div name="ccn">
+				<action type="store">span.cc_number </action>
+			</div>	
+		</div>		
+	
 </div>
