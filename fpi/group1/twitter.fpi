@@ -1,16 +1,44 @@
 <div name="twitter">
-     <action type="fetch-url">https://twitter.com/settings/account</action>
+	<action type="fetch-url">https://twitter.com/settings/account</action>
 
-     <div name="name" can_be_a_null="no">
-	  <action type="store">html body div div#page-outer div div.dashboard div div a div div b</action>
-     </div>
+	<div name="Acc">
+		<action type="fetch-url">https://twitter.com/settings/account</action>
+		<div name="name" can_be_a_null="no">
+			<action type="store">b.fullname:eq(1)</action>
+		</div>
 
-     <div name="email">
-	  <action type="store" field_type="editable">html body div div#page-outer div div.content-main div.content-inner form fieldset div input#user_email</action>
-     </div>
-     
-     <div name="country">
-	  <action type="store" field_type="editable">html body div div#page-outer div div.content-main div.content-inner form fieldset div select#user_country</action>
-     </div>
-     
+		<div name="email">
+			<action type="store" field_type="editable"> input.email-input </action>
+		</div>
+		
+		<div name="language">
+			<action type="store" field_type="editable"> #user_lang </action>
+		</div>
+		
+		<div name="country">
+			<action type="store" field_type="editable"> #user_country </action>
+		</div>
+	</div>	
+	
+	<div name="mobile">
+		<action type="fetch-url"> https://twitter.com/settings/devices</action>
+			<div name="phone">
+				<action type="store"> 
+					span.device_number_with_country_code
+				</action>				
+			</div>
+		
+	</div>
+	
+	
+	<div name = "loc">
+			<action type="fetch-url"> https://twitter.com/settings/profile</action>
+			<div name = "current-city"> 
+				<action type="store" field_type="editable"> 
+					input#user_location
+				</action>
+			</div>
+	</div>
+	
+		
 </div>

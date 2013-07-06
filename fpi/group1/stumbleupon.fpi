@@ -2,31 +2,34 @@
 	<action type="fetch-url">https://www.stumbleupon.com/settings/profile</action>
 
 		<div name="name">
-			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div.input input#name.xlarge</action>
+			<action type="store" field_type="editable">input#name</action>
+        </div>
+		<div name="username">
+			<action type="store" >span#current-username</action>
         </div>
 
 		<div name="email" can_be_a_null="no">
-			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div.input input#email.xlarge</action>
+			<action type="store" field_type="editable">input#email</action>
         </div>
 		
 		<div name="birthdate">
-			<action type="store">html body div div div section form fieldset div div p.inline-reference-text span:eq(1)</action>
+			<action type="store">:contains("Birthdate"):not(:has(*))+div>p:eq(0) </action>
         </div>
 		
 		<div name="gender">
-			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div label input:checked</action>
+			<action type="store" jquery_filter="ancestor-0">:contains("Gender"):not(:has(*))+div>label>input:checked  </action>
 		</div>
 		
 		<div name="city">
-			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div input#city</action>
+			<action type="store" field_type="editable">input#city</action>
 		</div>
 		
 		<div name="state">
-			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div input#state</action>
+			<action type="store" field_type="editable">input#state</action>
 		</div>
 		
 		<div name="country">
-			<action type="store" field_type="editable">html body div#content div.l-content-primary div section form fieldset div div select#country</action>
+			<action type="store" field_type="editable">select#country</action>
 		</div>
 		
 </div>
