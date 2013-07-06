@@ -119,6 +119,9 @@ function initialize_report() {
     //"auto", "manual" or "differential"
     current_report.report_setting = pii_vault.options.report_setting;
 
+    //"participating", "not-participating"
+    current_report.lottery_setting = pii_vault.options.lottery_setting;
+
     //How many times did user hit "remind me later" for this report?
     current_report.send_report_postponed = 0;
     //Total unique sites accessed since the last report

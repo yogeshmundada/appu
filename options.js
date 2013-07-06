@@ -223,13 +223,24 @@ function show_report_settings(r) {
 }
 
 function show_monitor_icon_settings(r) {
-    var report_opts = $('input:radio[name=grp-cat-icon-options]');
+    var icon_opts = $('input:radio[name=grp-cat-icon-options]');
 
     if (r.monitor_icon_setting == "yes") {
-	report_opts.filter('[value=monitor-icon-on]').attr('checked', true);
+	icon_opts.filter('[value=monitor-icon-on]').attr('checked', true);
     }
     else if (r.monitor_icon_setting == "no") {
-	report_opts.filter('[value=monitor-icon-off]').attr('checked', true);
+	icon_opts.filter('[value=monitor-icon-off]').attr('checked', true);
+    }
+}
+
+function show_lottery_settings(r) {
+    var lottery_opts = $('input:radio[name=grp-lottery-options]');
+
+    if (r.lottery_setting == "participating") {
+	lottery_opts.filter('[value=lottery-on]').attr('checked', true);
+    }
+    else if (r.lottery_setting == "not-participating") {
+	lottery_opts.filter('[value=lottery-off]').attr('checked', true);
     }
 }
 
@@ -296,6 +307,24 @@ document.addEventListener('DOMContentLoaded', function () {
 	var message = {};
 	message.type = "set_monitor_icon_setting";
 	message.monitor_icon_setting = this.value;
+	chrome.extension.sendMessage("", message);
+    });
+
+
+    var message = {};
+    message.type = "get_lottery_setting";
+    chrome.extension.sendMessage("", message, show_lottery_settings);
+
+    $("#accordion-lottery-settings").accordion({
+	collapsible: true,
+	active: false,
+	heightStyle: "content"
+    });
+
+    $("input[name=grp-lottery-options]").change(function() {
+	var message = {};
+	message.type = "set_lottery_setting";
+	message.lottery_setting = this.value;
 	chrome.extension.sendMessage("", message);
     });
 

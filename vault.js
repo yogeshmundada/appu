@@ -18,6 +18,7 @@ var on_disk_values = {
 	"enable_timer",
 	"reporting_hour",
 	"next_reporting_time",
+	"reporting_interval",
 	"report_reminder_time",
 	"reportid",
     ],
@@ -26,6 +27,7 @@ var on_disk_values = {
 	"dontbuglist",
 	"report_setting",
 	"monitor_icon_setting",
+	"lottery_setting",
     ],
     "current_report" : [
 	"initialize_time",
@@ -47,6 +49,7 @@ var on_disk_values = {
 	"scheduled_report_time",
 	"actual_report_send_time",
 	"report_setting",
+	"lottery_setting",
 	"send_report_postponed",
 	"num_total_sites",
 	"total_time_spent",
@@ -205,10 +208,17 @@ function vault_init() {
 	vault_write("config:reporting_hour", pii_vault.config.reporting_hour);
     }    
 
+    if (!pii_vault.config.reporting_interval) {
+	//3 days in minutes
+	pii_vault.config.reporting_interval = 4320;
+	console.log("vault_init(): Updated REPORTING_INTERVAL in vault");
+	vault_write("config:reporting_interval", pii_vault.config.reporting_interval);
+    }
+
     if (!pii_vault.config.next_reporting_time) {
 	var curr_time = new Date();
 	//Advance by 3 days. 
-	curr_time.setMinutes( curr_time.getMinutes() + 4320);
+	curr_time.setMinutes( curr_time.getMinutes() + pii_vault.config.reporting_interval);
 	//Third day's 0:0:0 am
 	curr_time.setSeconds(0);
 	curr_time.setMinutes(0);
@@ -267,6 +277,14 @@ function vault_init() {
 	console.log("vault_init(): Updated MONITOR_ICON_SETTING in vault");
 	vault_write("options:monitor_icon_setting", pii_vault.options.monitor_icon_setting);
     }
+
+    if (!pii_vault.options.lottery_setting) {
+	//By default, not-participating
+	//User can update it to "participating"
+	pii_vault.options.lottery_setting = "not-participating";
+	console.log("vault_init(): Updated LOTTERY_SETTING in vault");
+	vault_write("options:lottery_setting", pii_vault.options.lottery_setting);
+    }    
 
     // All current report values
     if (!pii_vault.current_report) {
@@ -396,3 +414,19 @@ function flush_session_cookie_store() {
 function flush_version() {
     flush_selective_entries("config", ["current_version"]);
 }
+
+function update_reporting_interval(interval, hour) {
+    console.log("Here here: ");
+    if (interval) {
+	console.log("Here here: ");
+	pii_vault.config.reporting_interval = interval;
+	vault_write("config:reporting_interval", pii_vault.config.reporting_interval);
+    }
+
+    if (hour) {
+	console.log("Here here: ");
+	pii_vault.config.reporting_hour = hour;
+	vault_write("config:reporting_hour", pii_vault.config.reporting_hour);
+    }
+}
+

@@ -4,6 +4,7 @@
 
 var myID = -1;
 var is_appu_active = false;
+var am_i_lottery_member = false;
 var last_user_interaction = undefined;
 var am_i_logged_in = false;
 var pwd_pending_warn_timeout = undefined;
@@ -187,6 +188,10 @@ function is_passwd_reused(response) {
 	alrt_msg += "<br/><br/><b style='font-size:16px'> Reused In:</b><br/>";
 	for (var i = 0; i < response.sites.length; i++) {
 	    alrt_msg += response.sites[i] + "<br/>";
+	}
+
+	if (am_i_lottery_member == true) {
+	    return;
 	}
 
 	if(response.dontbugme == "no") {
@@ -568,6 +573,11 @@ function show_pending_warnings(r) {
     if(r.pending == "yes") {
 	var response = r.warnings;
 
+	if (am_i_lottery_member == true) {
+	    //Don't show any warnings to lottery members
+	    return;
+	}
+
 	msg_type = (response.is_password_reused == "yes") ? "Warning" : "Information";
 	    //console.log("Appu: Password is reused");
 	var alrt_msg = "<b style='font-size:16px'>Password " + msg_type + "</b> <br/>" +
@@ -644,6 +654,10 @@ function check_pending_warnings() {
 }
 
 function is_status_active(response) {
+    if (response.lottery_setting == "participating") {
+	am_i_lottery_member = true;
+    }
+
     if (response.status == "active") {
 	console.log(sprintf("Appu: [%s]: Extension is enabled", new Date()));
 	is_appu_active = true;
@@ -914,7 +928,7 @@ function detect_logout_links() {
 }
 
 function monitor_explicit_logouts(eo) {
-    console.log("APPU DEBUG");
+    console.log("APPU DEBUG: In monitor_explicit_logouts");
     var signout_event = false;
     if ((eo.type == "click") || (eo.type == "keypress" && eo.which == 13)) {
 	var message = {};
@@ -960,6 +974,11 @@ function detect_if_user_logged_in() {
 }
 
 function update_status(new_status) {
+
+    if (am_i_lottery_member == true) {
+	return;
+    }
+
     var dialog_msg = sprintf('<div id="appu-status-update-warning" class="appuwarning" title="Appu: Status Change"><p>%s</p><br/>%s</div>', new_status, new Date());
 	var dialog_element = $(dialog_msg);
 	$("#appu-status-update-warning").remove();
@@ -1000,6 +1019,10 @@ function hide_appu_monitor_icon() {
 }
 
 function show_appu_monitor_icon() {
+    if (am_i_lottery_member == true) {
+	return;
+    }
+
     if (is_appu_active) {
 	if ($("#appu-monitor-icon").length == 0) {
 	    var appu_img_src = chrome.extension.getURL('images/appu_new19.png');

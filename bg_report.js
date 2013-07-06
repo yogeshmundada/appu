@@ -4,13 +4,12 @@ function pii_next_report_time() {
 
     curr_time.setSeconds(0);
     // Set next send time after 3 days
-    curr_time.setMinutes( curr_time.getMinutes() + 4320);
+    curr_time.setMinutes( curr_time.getMinutes() + pii_vault.config.reporting_interval);
     curr_time.setMinutes(0);
     curr_time.setHours(0);
     curr_time.setMinutes( curr_time.getMinutes() + pii_vault.config.reporting_hour);
     return new Date(curr_time.toString());
 }
-
 
 
 function open_reports_tab() {
@@ -52,61 +51,48 @@ function check_report_time() {
     var curr_time = new Date();
     var is_report_different = true;
 
-    //Find out if any entries from current report differ from past reports
-    if (pii_vault.options.report_setting == "differential") {
-	if(curr_time.getTime() > (new Date(pii_vault.current_report.scheduled_report_time)).getTime()) {
-
-	    // for (var i = 0; i < pii_vault.report.length; i++) {
-	    // 	var rc = pii_check_if_entry_exists_in_past_pwd_reports(pii_vault.report[i]);
-	    // 	if (rc == false) {
-	    // 	    is_report_different = true;
-	    // 	    break;
-	    // 	}
-	    // }
-
-	    if (!is_report_different) {
-		for (var i = 0; i < pii_vault.master_profile_list.length; i++) {
-		    var rc = pii_check_if_entry_exists_in_past_profile_list(pii_vault.master_profile_list[i]);
-		    if (rc == false) {
-			is_report_different = true;
-			break;
-		    }
-		}
-	    }
-	}
+    //Its not reporting time yet, so return
+    if(curr_time.getTime() < (new Date(pii_vault.current_report.scheduled_report_time)).getTime()) {
+	return;
     }
 
-    //First check that user has signed into Appu
-    if (sign_in_status != 'not-signed-in') {
-	//Make all the following checks only if reporting type is "manual"
-	if (pii_vault.options.report_setting == "manual" || 
-	    (pii_vault.options.report_setting == "differential" && is_report_different)) {
-	    if (pii_vault.config.report_reminder_time == -1) {
-		//Don't want to annoy user with reporting dialog if we are disabled OR
-		//if user already has a review report window open (presumably working on it).
-		if (pii_vault.config.status == "active" && is_report_tab_open == 0) {
-		    if(curr_time.getTime() > (new Date(pii_vault.current_report.scheduled_report_time)).getTime()) {
-			//Send message to all the tabs that report is ready for review and sending
-			chrome.tabs.query({}, function(all_tabs) {
-				for(var i = 0; i < all_tabs.length; i++) {
-				    chrome.tabs.sendMessage(all_tabs[i].id, {type: "report-reminder"});
-				}
-			    });
-		    }
-		}
-	    }
-	    else if (curr_time.getTime() > (new Date(pii_vault.config.report_reminder_time)).getTime()) {
-		console.log(sprintf("[%s]: Enabling Report Reminder", new Date()));
-		pii_vault.config.report_reminder_time = -1;
-		flush_selective_entries("config", ["report_reminder_time"]);
+    //We are not signed-in, so no need to send report.
+    if (sign_in_status == 'not-signed-in') {
+	return;
+    }
+
+    //report_setting is "auto", just send it..
+    if (pii_vault.options.report_setting == "auto") {
+	schedule_report_for_sending(1);
+	return;
+    }
+
+    //user has participated in the "lottery", just send it..
+    if (pii_vault.options.lottery_setting == "participating") {
+	schedule_report_for_sending(1);
+	return;
+    }
+
+    if (pii_vault.options.report_setting == "manual" || 
+	pii_vault.options.report_setting == "differential") {
+	if (pii_vault.config.report_reminder_time == -1) {
+	    //Don't want to annoy user with reporting dialog if we are disabled OR
+	    //if user already has a review report window open (presumably working on it).
+	    if (pii_vault.config.status == "active" && is_report_tab_open == 0) {
+		//Send message to all the tabs that report is ready for review and sending
+		chrome.tabs.query({}, function(all_tabs) {
+			for(var i = 0; i < all_tabs.length; i++) {
+			    chrome.tabs.sendMessage(all_tabs[i].id, {type: "report-reminder"});
+			}
+		    });
 	    }
 	}
-	else if (pii_vault.options.report_setting == "auto" || 
-		 (pii_vault.options.report_setting == "differential" && !is_report_different)) {
-	    if(curr_time.getTime() > (new Date(pii_vault.current_report.scheduled_report_time)).getTime()) {
-		//'1' for current report
-		schedule_report_for_sending(1);
-	    }
+	else if (curr_time.getTime() > (new Date(pii_vault.config.report_reminder_time)).getTime()) {
+	    //For now, lets just enable report-reminder, the next time we are invoked, we will
+	    //attempt to send the report.
+	    console.log(sprintf("[%s]: Enabling Report Reminder", new Date()));
+	    pii_vault.config.report_reminder_time = -1;
+	    flush_selective_entries("config", ["report_reminder_time"]);
 	}
     }
 }
@@ -194,7 +180,7 @@ function pii_send_report(report_number) {
 
     }
 
-    console.log("APPU INFO: Report '" + report_number + "'  is scheduled for sending.");
+    console.log("APPU INFO: Report '" + report.reportid + "'  is scheduled for sending.");
 }
 
 
