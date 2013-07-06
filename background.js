@@ -593,11 +593,14 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "set_lottery_setting") {
 	if (message.lottery_setting == "lottery-on") {
 	    pii_vault.options.lottery_setting = "participating";
+	    pii_vault.current_report.lottery_setting = "participating";
 	}
 	else {
 	    pii_vault.options.lottery_setting = "not-participating";
+	    pii_vault.current_report.lottery_setting = "not-participating";
 	}
 	flush_selective_entries("options", ["lottery_setting"]);
+	flush_current_report();
     }
     else if (message.type == "get_per_site_pi") {
 	r = get_all_pi_data();

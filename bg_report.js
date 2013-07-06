@@ -4,7 +4,7 @@ function pii_next_report_time() {
 
     curr_time.setSeconds(0);
     // Set next send time after 3 days
-    curr_time.setMinutes( curr_time.getMinutes() + 4320);
+    curr_time.setMinutes( curr_time.getMinutes() + pii_vault.config.reporting_interval);
     curr_time.setMinutes(0);
     curr_time.setHours(0);
     curr_time.setMinutes( curr_time.getMinutes() + pii_vault.config.reporting_hour);
@@ -180,7 +180,7 @@ function pii_send_report(report_number) {
 
     }
 
-    console.log("APPU INFO: Report '" + report_number + "'  is scheduled for sending.");
+    console.log("APPU INFO: Report '" + report.reportid + "'  is scheduled for sending.");
 }
 
 

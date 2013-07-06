@@ -73,6 +73,11 @@ function update_specific_changes(last_version) {
 	    ad.user_account_sites[d].username = '';
 	}
 
+	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding new field 'lottery_setting' to " + 
+		    " current_report");
+	
+	pii_vault.current_report.lottery_setting = "not-participating";
+
 	flush_aggregate_data();
 	flush_current_report();
     }

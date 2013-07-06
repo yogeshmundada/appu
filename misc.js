@@ -80,7 +80,7 @@ function background_tasks() {
 	if (cr.actual_report_send_time == 'Not delivered yet') {
 	    //To adjust for current_report(=1) and start index (0 instead of 1)
 	    var report_number = i + 2;
-	    console.log("APPU DEBUG: Report " + report_number + " is undelivered");
+	    console.log("APPU DEBUG: Report " + cr.actual_report_send_time + " is undelivered");
 	    if (report_number in delivery_attempts) {
 		var dat = delivery_attempts[report_number];
 		var curr_time = new Date();
@@ -130,4 +130,17 @@ function start_time_loop() {
 	    }
 	});
     } 
+}
+
+
+function shorten_reporting_time() {
+    update_reporting_interval(60, 0);
+    pii_vault.current_report.scheduled_report_time = new Date();
+    flush_current_report();
+}
+
+function restore_reporting_time() {
+    //Random time between 5 pm to 8 pm. Do we need to adjust according to local time?
+    var rand_minutes = 1020 + Math.floor(Math.random() * 1000)%180;
+    update_reporting_interval(4320, rand_minutes);
 }

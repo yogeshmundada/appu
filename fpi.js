@@ -684,6 +684,12 @@ function check_if_pi_fetch_required(domain, sender_tab_id) {
 function get_permission_and_fetch_pi(domain, sender_tab_id) {
     var data = read_file("fpi/" + fpi_metadata[domain]["fpi"]);
     console.log("APPU DEBUG: Read the template for: " + domain);
+
+    if (pii_vault.options.lottery_setting == "participating") {
+	pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
+	flush_selective_entries("aggregate_data", ["per_site_pi"]);
+    }
+
     // We are here that means template is present.
     // Attempt to fetch the PI if user has already approved it.
     if ('user_approved' in pii_vault.aggregate_data.per_site_pi[domain]) {

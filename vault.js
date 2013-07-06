@@ -18,6 +18,7 @@ var on_disk_values = {
 	"enable_timer",
 	"reporting_hour",
 	"next_reporting_time",
+	"reporting_interval",
 	"report_reminder_time",
 	"reportid",
     ],
@@ -207,10 +208,17 @@ function vault_init() {
 	vault_write("config:reporting_hour", pii_vault.config.reporting_hour);
     }    
 
+    if (!pii_vault.config.reporting_interval) {
+	//3 days in minutes
+	pii_vault.config.reporting_interval = 4320;
+	console.log("vault_init(): Updated REPORTING_INTERVAL in vault");
+	vault_write("config:reporting_interval", pii_vault.config.reporting_interval);
+    }
+
     if (!pii_vault.config.next_reporting_time) {
 	var curr_time = new Date();
 	//Advance by 3 days. 
-	curr_time.setMinutes( curr_time.getMinutes() + 4320);
+	curr_time.setMinutes( curr_time.getMinutes() + pii_vault.config.reporting_interval);
 	//Third day's 0:0:0 am
 	curr_time.setSeconds(0);
 	curr_time.setMinutes(0);
@@ -406,3 +414,16 @@ function flush_session_cookie_store() {
 function flush_version() {
     flush_selective_entries("config", ["current_version"]);
 }
+
+function update_reporting_interval(interval, hour) {
+    if (interval) {
+	pii_vault.config.reporting_interval = interval;
+	vault_write("config:reporting_interval", pii_vault.config.reporting_interval);
+    }
+
+    if (hour) {
+	pii_vault.config.reporting_hour = hour;
+	vault_write("config:reporting_hour", pii_vault.config.reporting_hour);
+    }
+}
+
