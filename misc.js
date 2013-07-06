@@ -43,7 +43,9 @@ function pii_modify_status(message) {
 
 	chrome.tabs.query({}, function(all_tabs) {
 	    for(var i = 0; i < all_tabs.length; i++) {
-		chrome.tabs.sendMessage(all_tabs[i].id, {type: "status-enabled"});
+		chrome.tabs.sendMessage(all_tabs[i].id, {
+			type: "status-enabled",
+			    show_monitor_icon: pii_vault.options.monitor_icon_setting});
 	    }
 	});
 
@@ -121,9 +123,11 @@ function start_time_loop() {
 
 	chrome.tabs.query({}, function(all_tabs) {
 	    for(var i = 0; i < all_tabs.length; i++) {
-		chrome.tabs.sendMessage(all_tabs[i].id, {type: "status-enabled"});
+		chrome.tabs.sendMessage(all_tabs[i].id, {
+			type: "status-enabled",
+			    show_monitor_icon: pii_vault.options.monitor_icon_setting
+			    });
 	    }
 	});
-
     } 
 }

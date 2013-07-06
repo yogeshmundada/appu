@@ -25,6 +25,7 @@ var on_disk_values = {
 	"blacklist",
 	"dontbuglist",
 	"report_setting",
+	"monitor_icon_setting",
     ],
     "current_report" : [
 	"initialize_time",
@@ -260,6 +261,12 @@ function vault_init() {
 	console.log("vault_init(): Updated REPORT_SETTING in vault");
 	vault_write("options:report_setting", pii_vault.options.report_setting);
     }    
+
+    if (!pii_vault.options.monitor_icon_setting) {
+	pii_vault.options.monitor_icon_setting = "no";
+	console.log("vault_init(): Updated MONITOR_ICON_SETTING in vault");
+	vault_write("options:monitor_icon_setting", pii_vault.options.monitor_icon_setting);
+    }
 
     // All current report values
     if (!pii_vault.current_report) {

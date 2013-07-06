@@ -135,8 +135,8 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
-// Total messages: 42
-// Messages that can't be ignored (even if disabled): 32
+// Total messages: 44
+// Messages that can't be ignored (even if disabled): 34
 // Message name, To be ignored when disabled
 // Messages sent by content-script:
 // 1. "user_input", yes
@@ -169,6 +169,8 @@ chrome.cookies.onChanged.addListener(cookie_change_detected);
 // 6. "delete_dontbugme_site_entry", NO
 // 7. "get_report_setting", NO
 // 8. "set_report_setting", NO
+// 9. "get_monitor_icon_setting", NO
+// 10. "set_monitor_icon_setting", NO
 
 //Messages sent by report or text_report
 // 1. "get_report_by_number", NO
@@ -351,10 +353,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	pii_modify_status(message);
     }
     else if (message.type == "query_status") {
-//	console.log("APPU DEBUG: tabid: "+sender.tab.id+", In query status: " + 
-//	template_processing_tabs[sender.tab.id]);
+// 	console.log("APPU DEBUG: tabid: "+sender.tab.id+", In query status: " + 
+// 	template_processing_tabs[sender.tab.id]);
+
 	r = {};
 	r.status = pii_vault.config.status;
+	r.show_monitor_icon = pii_vault.options.monitor_icon_setting;
 	if (sender.tab.id in template_processing_tabs) {
 	    if (template_processing_tabs[sender.tab.id] != "") { 
 //		console.log(sprintf("APPU DEBUG: Tab %s was sent a go-to url earlier", sender.tab.id));
@@ -565,6 +569,20 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	pii_vault.current_report.report_setting = message.report_setting;
 	flush_selective_entries("current_report", ["report_setting"]);
     }
+    else if (message.type == "get_monitor_icon_setting") {
+	r = {};
+	r.monitor_icon_setting = pii_vault.options.monitor_icon_setting;
+	sendResponse(r);
+    }
+    else if (message.type == "set_monitor_icon_setting") {
+	if (message.monitor_icon_setting == "monitor-icon-on") {
+	    pii_vault.options.monitor_icon_setting = "yes";
+	}
+	else {
+	    pii_vault.options.monitor_icon_setting = "no";
+	}
+	flush_selective_entries("options", ["monitor_icon_setting"]);
+    }
     else if (message.type == "get_per_site_pi") {
 	r = get_all_pi_data();
 	sendResponse(r);
@@ -668,5 +686,5 @@ function test_read() {
 
 //get_permission_and_fetch_pi("google.com", undefined);
 
-get_permission_and_fetch_pi("facebook.com", undefined);
+//get_permission_and_fetch_pi("facebook.com", undefined);
 

@@ -222,6 +222,16 @@ function show_report_settings(r) {
     report_opts.filter('[value='+ r.report_setting +']').attr('checked', true);
 }
 
+function show_monitor_icon_settings(r) {
+    var report_opts = $('input:radio[name=grp-cat-icon-options]');
+
+    if (r.monitor_icon_setting == "yes") {
+	report_opts.filter('[value=monitor-icon-on]').attr('checked', true);
+    }
+    else if (r.monitor_icon_setting == "no") {
+	report_opts.filter('[value=monitor-icon-off]').attr('checked', true);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     var message = {};
@@ -272,5 +282,21 @@ document.addEventListener('DOMContentLoaded', function () {
 	chrome.extension.sendMessage("", message);
     });
 
+    var message = {};
+    message.type = "get_monitor_icon_setting";
+    chrome.extension.sendMessage("", message, show_monitor_icon_settings);
+
+    $("#accordion-monitor-icon-settings").accordion({
+	collapsible: true,
+	active: false,
+	heightStyle: "content"
+    });
+
+    $("input[name=grp-cat-icon-options]").change(function() {
+	var message = {};
+	message.type = "set_monitor_icon_setting";
+	message.monitor_icon_setting = this.value;
+	chrome.extension.sendMessage("", message);
+    });
 
 });

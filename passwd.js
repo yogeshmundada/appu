@@ -648,8 +648,10 @@ function is_status_active(response) {
 	console.log(sprintf("Appu: [%s]: Extension is enabled", new Date()));
 	is_appu_active = true;
 
-	show_appu_monitor_icon();
-	$(window).resize(show_appu_monitor_icon);
+	if (response.show_monitor_icon == "yes") {
+	    show_appu_monitor_icon();
+	    $(window).resize(show_appu_monitor_icon);
+	}
 
 	var message = {};
 	message.type = "check_blacklist";
@@ -1004,7 +1006,10 @@ function show_appu_monitor_icon() {
 	    var appu_img = $("<img id='appu-monitor-icon' src='" + appu_img_src + "'></img>");
 	    $("body").append(appu_img);
 	    $("#appu-monitor-icon").attr("title", "Appu is currently enabled. " + 
-					 "You can disable it from Appu-Menu > Disable Appu")
+					 "You can disable it from Appu-Menu > Disable Appu<br/><br/>" +
+					 "You can disable the CAT icon by clicking on it OR " + 
+					 "from Appu-Menu > Options > Per-page Appu status indication");
+	    $('#appu-monitor-icon').on("click", hide_appu_monitor_icon);
 	}
 	else {
 	    $("#appu-monitor-icon").show();
@@ -1084,7 +1089,10 @@ if (document.URL.match(/.pdf$/) == null) {
 	    else if (message.type == "status-enabled") {
 		console.log("APPU DEBUG: status-enabled");
 		is_appu_active = true;
-		show_appu_monitor_icon();
+
+		if (message.show_monitor_icon == "yes") {
+		    show_appu_monitor_icon();
+		}
 		update_status('Appu is enabled');
 	    }
 	    else if (message.type == "status-disabled") {
