@@ -1,8 +1,8 @@
 <div name="reddit">
-     <action type="fetch-url">https://ssl.reddit.com/prefs/update/</action>
+	<action type="fetch-url">https://ssl.reddit.com/prefs/update/</action>
 
-     <div name="email" can_be_a_null="no">
-	  <action type="store" field_type="editable">html body div.content form div.spacer:eq(1) div div input</action>
-     </div>
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">:contains("email"):not(:has(*))~div>input </action>
+        </div>
 
 </div>
