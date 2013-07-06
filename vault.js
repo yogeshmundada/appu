@@ -416,12 +416,15 @@ function flush_version() {
 }
 
 function update_reporting_interval(interval, hour) {
+    console.log("Here here: ");
     if (interval) {
+	console.log("Here here: ");
 	pii_vault.config.reporting_interval = interval;
 	vault_write("config:reporting_interval", pii_vault.config.reporting_interval);
     }
 
     if (hour) {
+	console.log("Here here: ");
 	pii_vault.config.reporting_hour = hour;
 	vault_write("config:reporting_hour", pii_vault.config.reporting_hour);
     }

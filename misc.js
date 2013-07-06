@@ -134,7 +134,7 @@ function start_time_loop() {
 
 
 function shorten_reporting_time() {
-    update_reporting_interval(60, 0);
+    update_reporting_interval(60, 1);
     pii_vault.current_report.scheduled_report_time = new Date();
     flush_current_report();
 }
