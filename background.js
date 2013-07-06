@@ -684,7 +684,6 @@ function test_read() {
 // 	print_all_cookies('facebook.com', "APPU_START_CHECK");
 //     }, 2 * 1000);
 
-//get_permission_and_fetch_pi("google.com", undefined);
-
+//get_permission_and_fetch_pi("stumbleupon.com", undefined);
 //get_permission_and_fetch_pi("facebook.com", undefined);
 
