@@ -131,8 +131,8 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
     }
 });
 
-
-chrome.cookies.onChanged.addListener(cookie_change_detected);
+//Disabling for now
+//chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
 // Total messages: 44
@@ -319,7 +319,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    //At this point in code, we have a SUCCESSFUL LOGIN event
 	    console.log("APPU DEBUG: LOGIN_COMPLETE for: " + tld.getDomain(domain));
 	    //print_all_cookies(tld.getDomain(domain), "LOGIN_COMPLETE");
-	    detect_login_cookies(tld.getDomain(domain));
+	    //detect_login_cookies(tld.getDomain(domain));
 	}
     }
     else if (message.type == "check_passwd_reuse") {
@@ -327,7 +327,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	console.log("APPU DEBUG: User is attempting to LOGIN in: " + message.domain);
 	console.log("APPU DEBUG: LOGIN_ATTEMPT for: " + message.domain);
 	//print_all_cookies(message.domain, "LOGIN_ATTEMPT");
-	record_prelogin_cookies('', message.domain);
+	//record_prelogin_cookies('', message.domain);
 
 	console.log("APPU DEBUG: (" + message.caller + ", " + message.pwd_sentmsg + 
 		    "), Value of is_password_stored: " + message.is_stored);
@@ -359,6 +359,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	r = {};
 	r.status = pii_vault.config.status;
 	r.show_monitor_icon = pii_vault.options.monitor_icon_setting;
+	r.lottery_setting = pii_vault.options.lottery_setting;
+
 	if (sender.tab.id in template_processing_tabs) {
 	    if (template_processing_tabs[sender.tab.id] != "") { 
 //		console.log(sprintf("APPU DEBUG: Tab %s was sent a go-to url earlier", sender.tab.id));
@@ -420,7 +422,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	console.log("APPU DEBUG: LOGOUT_ATTEMPT for: " + domain);
 	//print_all_cookies(domain, "LOGOUT_ATTEMPT");
-	add_domain_to_uas(domain);
+	//add_domain_to_uas(domain);
 
 	pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration = 
 	    get_pwd_unchanged_duration(domain);
@@ -582,6 +584,20 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    pii_vault.options.monitor_icon_setting = "no";
 	}
 	flush_selective_entries("options", ["monitor_icon_setting"]);
+    }
+    else if (message.type == "get_lottery_setting") {
+	r = {};
+	r.lottery_setting = pii_vault.options.lottery_setting;
+	sendResponse(r);
+    }
+    else if (message.type == "set_lottery_setting") {
+	if (message.lottery_setting == "lottery-on") {
+	    pii_vault.options.lottery_setting = "participating";
+	}
+	else {
+	    pii_vault.options.lottery_setting = "not-participating";
+	}
+	flush_selective_entries("options", ["lottery_setting"]);
     }
     else if (message.type == "get_per_site_pi") {
 	r = get_all_pi_data();

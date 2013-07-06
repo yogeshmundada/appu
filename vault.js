@@ -26,6 +26,7 @@ var on_disk_values = {
 	"dontbuglist",
 	"report_setting",
 	"monitor_icon_setting",
+	"lottery_setting",
     ],
     "current_report" : [
 	"initialize_time",
@@ -47,6 +48,7 @@ var on_disk_values = {
 	"scheduled_report_time",
 	"actual_report_send_time",
 	"report_setting",
+	"lottery_setting",
 	"send_report_postponed",
 	"num_total_sites",
 	"total_time_spent",
@@ -267,6 +269,14 @@ function vault_init() {
 	console.log("vault_init(): Updated MONITOR_ICON_SETTING in vault");
 	vault_write("options:monitor_icon_setting", pii_vault.options.monitor_icon_setting);
     }
+
+    if (!pii_vault.options.lottery_setting) {
+	//By default, not-participating
+	//User can update it to "participating"
+	pii_vault.options.lottery_setting = "not-participating";
+	console.log("vault_init(): Updated LOTTERY_SETTING in vault");
+	vault_write("options:lottery_setting", pii_vault.options.lottery_setting);
+    }    
 
     // All current report values
     if (!pii_vault.current_report) {

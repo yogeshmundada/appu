@@ -4,6 +4,7 @@
 
 var myID = -1;
 var is_appu_active = false;
+var am_i_lottery_member = false;
 var last_user_interaction = undefined;
 var am_i_logged_in = false;
 var pwd_pending_warn_timeout = undefined;
@@ -644,6 +645,8 @@ function check_pending_warnings() {
 }
 
 function is_status_active(response) {
+    am_i_lottery_member = response.lottery_setting;
+
     if (response.status == "active") {
 	console.log(sprintf("Appu: [%s]: Extension is enabled", new Date()));
 	is_appu_active = true;
