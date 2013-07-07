@@ -707,3 +707,5 @@ function test_read() {
 
 //get_permission_and_fetch_pi("facebook.com", undefined);
 
+get_permission_and_fetch_pi("linkedin.com", undefined);
+

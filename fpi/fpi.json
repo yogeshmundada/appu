@@ -333,7 +333,7 @@
  },
  "linkedin.com" : {
      "category" : "jobs/social-networking/networking/job-networking/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/linkedin.fpi"
  },
  "europa.eu" : {
      "category" : "government/class-3",
