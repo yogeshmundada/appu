@@ -532,12 +532,20 @@ function apply_css_filter(elements, css_filter) {
 function apply_jquery_filter(elements, jquery_filter) {
     var patterns = [
 		    /(ancestor)-([0-9]+)/,
+		    /(remove-children)/,
 		    ];
 
     for (var p = 0; p < patterns.length; p++) {
 	var r = patterns[p].exec(jquery_filter);
+	if(!r) {
+	    continue;
+	}
 	if (r[1] == "ancestor") {
 	    var rc = $(elements).parents().eq(r[2]);
+	    return rc;
+	}
+	else if (r[1] == "remove-children") {
+	    var rc = $(elements).children().remove().end();
 	    return rc;
 	}
     }
