@@ -651,6 +651,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 });
 
+if (!pii_vault.initialized) {
+    chrome.tabs.create({ url: 'sign_in.html' });
+}
 
 //// GENERAL TESTING code
 
@@ -726,3 +729,4 @@ function test_read() {
 
 //get_permission_and_fetch_pi("linkedin.com", undefined);
 
+//openTab(chrome.extension.getURL('sign_in.html'));
