@@ -135,7 +135,7 @@ function vault_init() {
     }
 
     if (!pii_vault.initialized) {
-	pii_vault.initialized = true;
+	pii_vault.initialized = false;
 	console.log("vault_init(): Updated INITIALIZED in vault");
 	vault_write("initialized", pii_vault.initialized);
     }
@@ -281,10 +281,24 @@ function vault_init() {
     if (!pii_vault.options.lottery_setting) {
 	//By default, not-participating
 	//User can update it to "participating"
-	pii_vault.options.lottery_setting = "not-participating";
+	if (current_user != "default") {
+	    var dug = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+	    var read_key = dug + ":" + "options" + ":" + "lottery_setting";
+	    if (read_key in localStorage) {
+		var val = JSON.parse(localStorage[read_key]);
+		pii_vault.options.lottery_setting = val;
+	    }
+	    else {
+		pii_vault.options.lottery_setting = "not-participating";
+	    }
+	}
+	else {
+	    pii_vault.options.lottery_setting = "not-participating";
+	}
+
 	console.log("vault_init(): Updated LOTTERY_SETTING in vault");
 	vault_write("options:lottery_setting", pii_vault.options.lottery_setting);
-    }    
+    }
 
     // All current report values
     if (!pii_vault.current_report) {

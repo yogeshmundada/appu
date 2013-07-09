@@ -1,4 +1,21 @@
 
+//Following three functions from:
+//http://stackoverflow.com/questions/9614622/equivalent-of-jquery-hide-to-set-visibility-hidden
+jQuery.fn.visible = function() {
+    return this.css('visibility', 'visible');
+}
+
+jQuery.fn.invisible = function() {
+	return this.css('visibility', 'hidden');
+}
+
+jQuery.fn.visibilityToggle = function() {
+    return this.css('visibility', function(i, visibility) {
+	    return (visibility == 'visible') ? 'hidden' : 'visible';
+	});
+}
+
+
 function check_for_enter(e) {
     if (e.which == 13) {
 	if (e.data.type == 'login') {
@@ -23,6 +40,75 @@ function handle_current_user(response) {
 
 function show_version(response) {
     $('#version-info').text(response.version);
+}
+
+function handle_appu_initialized(response) {
+    if (response.initialized == "yes") {
+	console.log("Here here: " + response.initialized);
+	$("#login-container-div").show();
+	$("#login-container-div").visible();
+	chrome.extension.sendMessage("", {
+		'type' : 'get-signin-status',
+		    }, 
+	    handle_current_user);
+    }
+    else {
+	$("#age-verification-container-div").show();
+	$("#age-verification-container-div").visible();
+	$("#sign-in-title").text("Age Verification");
+	$("#age-verification-checkbox").change(function() {
+		if(this.checked) {
+		    $("#age-verification-button").removeClass("disabled");
+		    console.log("Here here: checkbox change: " + this.checked);
+		    $("#age-verification-button").on("click", goto_lottery);
+		}
+	    });
+    }
+}
+
+function goto_lottery() {
+	$("#age-verification-container-div").invisible();
+	$("#age-verification-container-div").hide();
+
+	$("#lottery-container-div").show();
+	$("#lottery-container-div").visible();
+
+	$("#sign-in-title").text("Lottery Participation");
+	$('input[name=lottery-opts]').change(function() {
+		$("#lottery-setting-button").removeClass("disabled");
+		$("#lottery-setting-button").on("click", goto_login);
+	    });
+}
+
+function goto_login() {
+    $("#sign-in-title").text("Log-in");
+    lottery_part = $('input[name=lottery-opts]:checked').val();
+    if (lottery_part == "yes") {
+	chrome.extension.sendMessage("", {
+		'type' : 'set_lottery_setting',
+		    'lottery_setting' : 'lottery-on'
+		    });
+    }
+    else if (lottery_part == "no") {
+	chrome.extension.sendMessage("", {
+		'type' : 'set_lottery_setting',
+		    'lottery_setting' : 'lottery-off'
+		    });
+    }
+
+    chrome.extension.sendMessage("", {
+	    'type' : 'set_appu_initialized',
+		});
+    
+    $("#lottery-container-div").invisible();
+    $("#lottery-container-div").hide();
+
+    $("#login-container-div").show();
+    $("#login-container-div").visible();
+    chrome.extension.sendMessage("", {
+	    'type' : 'get-signin-status',
+		}, 
+	handle_current_user);
 }
 
 function login() {
@@ -105,7 +191,8 @@ $(document).ready(function() {
     chrome.extension.sendMessage("", {
 	'type' : 'get-version',
     }, show_version);
+
     chrome.extension.sendMessage("", {
-	'type' : 'get-signin-status',
-    }, handle_current_user);
+	'type' : 'get_appu_initialized',
+    }, handle_appu_initialized);
 });
