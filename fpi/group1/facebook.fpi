@@ -67,7 +67,7 @@
 
 			<div name="languages">
 	  			<action type="fetch-dom-element">
-					tbody th:contains("Gender") + td a
+					tbody th:contains("Languages") + td a
 	  			</action>
 				<div name="language">
 	  				<action type="combine-n-store">
