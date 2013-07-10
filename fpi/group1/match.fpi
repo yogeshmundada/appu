@@ -1,0 +1,57 @@
+<div name="match">
+		<action type="fetch-url">
+		http://www.match.com/profile/edit/
+		</action>
+
+		<div name="name">
+			<action type="store" can_be_a_null="no">
+				div.profileHDr>div+>h1:eq(0)
+			</action>
+        </div>
+		
+		
+		<div name="current-city" can_be_a_null="no">
+			<action type="store" >span.locality:eq(0)</action>
+        </div>
+		
+		
+		<div name="employment" type="vector">
+			<action type="store" >span.locality:eq(0)</action>
+        </div>
+		
+
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">input#email</action>
+        </div>
+		
+		
+		<div name="birthdate" can_be_a_null="yes">
+			<action type="store"> tr:contains("Birthday")>td </action>
+        </div>		<dt class=​"txt-darkBlue">​
+		
+		
+		<div name="grad-school" type="vector">
+			<action type="store">  </action>
+		</div>
+		
+		
+		
+		<div name="languages-div">
+			<action type="fetch-dom-element"> 
+				div#languages-view>ol>li>h4
+			</action>
+			
+			<div name="pseudo-remove-spans" type="vector">
+				<action type="fetch-dom-element" jquery_filter="remove-children">
+					span
+				</action>
+				
+				<div name="language">
+					<action type="store">
+					</action>
+				</div>	
+			</div>
+		</div>
+		
+		
+</div>

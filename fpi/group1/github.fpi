@@ -1,0 +1,24 @@
+<div name="github">
+	<action type="fetch-url">https://www.github.com/settings/profile</action>
+
+		<div name="name" can_be_a_null="yes" jquery_filter="ancestor-0">
+			<action type="store" field_type="editable"> :contains("Name")>dl>dd>input </action>
+        </div>
+		
+		<div name="email" can_be_a_null="yes"  jquery_filter="ancestor-1">
+			<action type="store" field_type="editable">:contains("Email")>dl>dd>input </action>
+        </div>
+		
+		<div name="company" can_be_a_null="yes" jquery_filter="ancestor-3" >
+			<action type="store" > :contains("Company")>dl>dd>input </action>
+        </div>
+		
+		<div name="location" can_be_a_null="yes" jquery_filter="ancestor-4" >
+			<action type="store"> :contains("Location")>dl>dd>input</action>
+        </div>
+		
+		<div name="gravatarEmail" can_be_a_null="no" jquery_filter="ancestor-5" >
+			<action type="store" > :contains("Gravatar")>dl>dd>input </action>
+        </div>
+
+</div>

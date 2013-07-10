@@ -1,0 +1,85 @@
+<div name="github">
+	<action type="fetch-url">https://account.live.com/EditProf.aspx</action>
+	
+	
+		<div name="email" can_be_a_null="No" >
+			<action type="store"> div>p#idEditProfileTitle>span </action>
+        </div>
+
+		<div name="birthday" >
+				<action type="combine-n-store" > 
+				div#idBirthDateContainer
+				</action>
+				
+				<div name="month" >
+					<action type="store"  field_type="selectable">  
+							select#BirthMonth
+					</action>					
+				</div>
+				<div name="day">
+					<action type="store"  field_type="selectable">  
+							select#BirthMonth
+					</action>					
+				</div>
+				<div name="year">
+					<action type="store">  
+						select#BirthYear			
+					</action>					
+				</div>						
+        </div>		
+		
+		<div name="address" >
+				<action type="combine-n-store" > 
+				div.module+>div#HomeAMContainer>div#HomeAddressContainer
+				</action>
+				
+				<div name="street " >
+					<action type="store"  field_type="editable">  
+							input#HomeAddress1
+					</action>					
+				</div>
+				<div name="city">
+					<action type="store"  field_type="editable">  
+							input#HomeCity
+					</action>					
+				</div>
+				<div name="state">
+					<action type="store" field_type="selectable" >  
+						select#HomeRegion option:selected
+					</action>					
+				</div>						
+				<div name="zip">
+					<action type="store" field_type="editable">  
+						input#HomePostalCode
+					</action>					
+				</div>
+				
+        </div>
+		
+		<diiv name="names">
+			<action type="fetch-url"> http:www.live.com </action>
+			
+			<div name="first-name">
+				<action type="store">
+					input#MainContent_MainContent_isEditName_cxp_pen_NameA
+				</action>	
+			</div>
+			
+			<div name="last-name">
+			</div>
+		
+		</div>
+		
+		<div name="company" can_be_a_null="yes" jquery_filter="ancestor-3" >
+			<action type="store" > :contains("Company")>dl>dd>input </action>
+        </div>
+		
+		<div name="location" can_be_a_null="yes" jquery_filter="ancestor-4" >
+			<action type="store"> :contains("Location")>dl>dd>input</action>
+        </div>
+		
+		<div name="gravatarEmail" can_be_a_null="no" jquery_filter="ancestor-5" >
+			<action type="store" > :contains("Gravatar")>dl>dd>input </action>
+        </div>
+
+</div>
