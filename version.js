@@ -30,7 +30,8 @@ function update_specific_changes(last_version) {
 	flush_selective_entries("aggregate_data", ["non_user_account_sites"]);
 	remove_redundant_pi_identifiers();
     }
-    else if (last_version < '0.3.97') {
+
+    if (last_version < '0.3.97') {
 	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding pwd_group " + 
 		    "to pii_vault.password_hashes");
 
@@ -73,6 +74,9 @@ function update_specific_changes(last_version) {
 	    ad.user_account_sites[d].username = '';
 	}
 
+	flush_aggregate_data();
+	flush_current_report();
+
 	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding new field 'lottery_setting' to " + 
 		    " current_report");
 	
@@ -80,6 +84,24 @@ function update_specific_changes(last_version) {
 
 	flush_aggregate_data();
 	flush_current_report();
+
+	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding new field 'lottery_setting' to " + 
+		    " options");
+
+	pii_vault.options.lottery_setting = "not-participating";
+	vault_write("options:lottery_setting", pii_vault.options.lottery_setting);
+
+	console.log("APPU DEBUG: Update specific changes(<0.3.97). Adding new field 'initialized' to " + 
+		    " pii_vault");
+
+	//Adding to current user
+	pii_vault.initialized = true;
+	vault_write("initialized", pii_vault.initialized);
+
+	//Adding to default user
+	var dug = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+	var read_key = dug + ":" + "initialized";
+	localStorage[read_key] = JSON.stringify(pii_vault.initialized);
     }
 }
 

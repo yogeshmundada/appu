@@ -20,3 +20,18 @@ input[type=text] {
 input[type=password] {
     height: 30px;
 }
+
+#login-container-div {
+    display: none;
+    visibility: hidden;		 			
+}
+
+#age-verification-container-div {
+    display: none;
+    visibility: hidden;		 			
+}
+
+#lottery-container-div {
+    display: none;
+    visibility: hidden;		 			
+}

@@ -135,8 +135,8 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 //chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
-// Total messages: 44
-// Messages that can't be ignored (even if disabled): 34
+// Total messages: 48
+// Messages that can't be ignored (even if disabled): 38
 // Message name, To be ignored when disabled
 // Messages sent by content-script:
 // 1. "user_input", yes
@@ -171,6 +171,10 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 // 8. "set_report_setting", NO
 // 9. "get_monitor_icon_setting", NO
 // 10. "set_monitor_icon_setting", NO
+// 11. "get_lottery_setting", NO
+// 12. "set_lottery_setting", NO
+// 13. "get_appu_initialized", NO
+// 14. "set_appu_initialized", NO
 
 //Messages sent by report or text_report
 // 1. "get_report_by_number", NO
@@ -591,6 +595,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	sendResponse(r);
     }
     else if (message.type == "set_lottery_setting") {
+	console.log("Here here: Lottery setting: " + message.lottery_setting);
 	if (message.lottery_setting == "lottery-on") {
 	    pii_vault.options.lottery_setting = "participating";
 	    pii_vault.current_report.lottery_setting = "participating";
@@ -602,8 +607,20 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	flush_selective_entries("options", ["lottery_setting"]);
 	flush_current_report();
     }
+    else if (message.type == "get_appu_initialized") {
+	r = {};
+	r.initialized = "no";
+	if (pii_vault.initialized) {
+	    r.initialized = "yes";
+	}
+	sendResponse(r);
+    }
+    else if (message.type == "set_appu_initialized") {
+	pii_vault.initialized = true;
+	vault_write("initialized", pii_vault.initialized);
+    }
     else if (message.type == "get_per_site_pi") {
-	r = get_all_pi_data();
+	var r = get_all_pi_data();
 	sendResponse(r);
     }
     else if (message.type == "report_user_approved") {
@@ -634,6 +651,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 });
 
+if (!pii_vault.initialized) {
+    chrome.tabs.create({ url: 'sign_in.html' });
+}
 
 //// GENERAL TESTING code
 
@@ -706,5 +726,6 @@ function test_read() {
 //get_permission_and_fetch_pi("stumbleupon.com", undefined);
 //get_permission_and_fetch_pi("facebook.com", undefined);
 
-get_permission_and_fetch_pi("linkedin.com", undefined);
+//get_permission_and_fetch_pi("linkedin.com", undefined);
 
+//openTab(chrome.extension.getURL('sign_in.html'));
