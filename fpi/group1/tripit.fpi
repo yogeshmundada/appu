@@ -13,7 +13,7 @@
 					#first_name
 				</action>	
 			</div>
-			<div name="middle-name" can_be_a_null="yes">
+			<div name="middle-name" >
 				<action type="store" field_type="editable">
 					#middle_name
 				</action>

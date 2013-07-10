@@ -89,7 +89,7 @@
  },
  "dropbox.com" : {
      "category" : "online-backup/hosting/software-services/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/dropbox.fpi"
  },
  "points2shop.com" : {
      "category" : "software-services/class-3",
@@ -425,7 +425,7 @@
  },
  "netflix.com" : {
      "category" : "video-hosting/entertainment/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/netflix.fpi"
  },
  "wikicfp.com" : {
      "category" : "academia/class-3",
@@ -1233,7 +1233,7 @@
  },
  "github.com" : {
      "category" : "hosting/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/github.fpi"
  },
  "projectbismark.net" : {
      "category" : "academia/software-services/class-4",
@@ -1405,7 +1405,7 @@
  },
  "live.com" : {
      "category" : "software-services/mail/personal-info/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/live.fpi"
  },
  "suntrust.com" : {
      "category" : "finance/class-1",

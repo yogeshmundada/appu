@@ -1,0 +1,22 @@
+<div name="dropbox">
+	<action type="fetch-url">https://www.dropbox.com/account#settings</action>
+
+		<div name="first-name" can_be_a_null="no">
+			<action type="store" field_type="editable"> 
+				td:contains("First name")+>input 
+			</action>
+        </div>
+		
+		<div name="last-name" can_be_a_null="no">
+			<action type="store" field_type="editable">
+				td:contains("Last name")+>input
+			</action>
+        </div>
+		
+		<div name="email" can_be_a_null="no">
+			<action type="store" jquery_filter="remove-children">
+					td:contains("Email")+
+			</action>
+        </div>
+
+</div>
