@@ -62,6 +62,10 @@ function handle_appu_initialized(response) {
 		    console.log("Here here: checkbox change: " + this.checked);
 		    $("#age-verification-button").on("click", goto_lottery);
 		}
+		else {
+		    $("#age-verification-button").addClass("disabled");
+		    $("#age-verification-button").off("click", goto_lottery);
+		}
 	    });
     }
 }

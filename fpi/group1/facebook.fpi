@@ -41,6 +41,50 @@
 
 
 
+			<div name="anniversary-date">
+	  			<action type="store">
+					tbody th:contains("Anniversary") + td
+	  			</action>
+			</div>
+
+
+
+			<div name="birth-date">
+	  			<action type="store">
+					tbody th:contains("Birthday") + td
+	  			</action>
+			</div>
+
+
+
+			<div name="gender">
+	  			<action type="store">
+					tbody th:contains("Gender") + td
+	  			</action>
+			</div>
+
+
+
+			<div name="languages">
+	  			<action type="fetch-dom-element">
+					tbody th:contains("Gender") + td a
+	  			</action>
+				<div name="language">
+	  				<action type="combine-n-store">
+	  				</action>
+				</div>
+			</div>
+
+
+
+			<div name="interested-in">
+	  			<action type="store">
+					tbody th:contains("Interested In") + td
+	  			</action>
+			</div>
+
+
+
 			<div name="religious-view">
 	  			<action type="store">
 					tbody th:contains("Religious Views") + td

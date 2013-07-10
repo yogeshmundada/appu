@@ -72,7 +72,7 @@
 
 
 
-		<div name="birthdate">
+		<div name="birth-date">
 			<action type="store">
 				:contains("Birthday"):not(:has(*)) + div
 			</action>
