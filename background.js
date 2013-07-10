@@ -717,16 +717,16 @@ function test_read() {
     return;
 }
 
+function make_user_approved_always(site) {
+    pii_vault.aggregate_data.per_site_pi[site] = {};
+    pii_vault.aggregate_data.per_site_pi[site].user_approved = "always";
+    get_permission_and_fetch_pi(site, undefined);
+}
+
 //Test code.
 // window.setTimeout(function(){
 // 	console.log("Here here: printing cookie name for google.com");
 // 	print_all_cookies('facebook.com', "APPU_START_CHECK");
 //     }, 2 * 1000);
 
-//get_permission_and_fetch_pi("google.com", undefined);
-
-//get_permission_and_fetch_pi("facebook.com", undefined);
-
-//get_permission_and_fetch_pi("linkedin.com", undefined);
-
-//openTab(chrome.extension.getURL('sign_in.html'));
+//make_user_approved_always("live.com");
