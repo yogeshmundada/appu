@@ -70,16 +70,5 @@
 		
 		</div>
 		
-		<div name="company" can_be_a_null="yes" jquery_filter="ancestor-3" >
-			<action type="store" > :contains("Company")>dl>dd>input </action>
-        </div>
-		
-		<div name="location" can_be_a_null="yes" jquery_filter="ancestor-4" >
-			<action type="store"> :contains("Location")>dl>dd>input</action>
-        </div>
-		
-		<div name="gravatarEmail" can_be_a_null="no" jquery_filter="ancestor-5" >
-			<action type="store" > :contains("Gravatar")>dl>dd>input </action>
-        </div>
 
 </div>

@@ -726,6 +726,6 @@ function test_read() {
 //get_permission_and_fetch_pi("stumbleupon.com", undefined);
 //get_permission_and_fetch_pi("facebook.com", undefined);
 
-//get_permission_and_fetch_pi("linkedin.com", undefined);
+get_permission_and_fetch_pi("live.com", undefined);
 
 //openTab(chrome.extension.getURL('sign_in.html'));
