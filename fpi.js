@@ -999,6 +999,16 @@ function sanitize_ccn(ccns) {
     }
 }
 
+
+function sanitize_date(dates) {
+    for (var i = 0; i < dates.length; i++) {
+	var d = new Date(dates[i]);
+	var m = moment(d);
+	dates[i] = m.calendar();
+    }
+}
+
+
 function add_field_to_per_site_pi(domain, pi_name, pi_value) {
     pi_name = pi_name.toLowerCase();
 
@@ -1010,6 +1020,9 @@ function add_field_to_per_site_pi(domain, pi_name, pi_value) {
     }
     if (pi_name == "ccn") {
 	sanitize_ccn(pi_value);
+    }
+    if (/.*-date/.exec(pi_name)) {
+	sanitize_date(pi_value);
     }
 
     //Nullify the previously existing value in case of

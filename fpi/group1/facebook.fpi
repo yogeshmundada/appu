@@ -41,7 +41,7 @@
 
 
 
-			<div name="anniversary">
+			<div name="anniversary-date">
 	  			<action type="store">
 					tbody th:contains("Anniversary") + td
 	  			</action>
@@ -49,7 +49,7 @@
 
 
 
-			<div name="birthdate">
+			<div name="birth-date">
 	  			<action type="store">
 					tbody th:contains("Birthday") + td
 	  			</action>

@@ -12,7 +12,7 @@
 			<action type="store" field_type="editable">input#email</action>
         </div>
 		
-		<div name="birthdate">
+		<div name="birth-date">
 			<action type="store">:contains("Birthdate"):not(:has(*))+div>p:eq(0) </action>
         </div>
 		
