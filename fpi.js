@@ -1009,6 +1009,19 @@ function sanitize_date(dates) {
 }
 
 
+function sanitize_gender(genders) {
+    for (var i = 0; i < genders.length; i++) {
+	var g = genders[i].toLowerCase();
+	if (g == 'm') {
+	    g = 'male';
+	}
+	else if (g == 'f') {
+	    g = 'female';
+	}
+	genders[i] = g;
+    }
+}
+
 function add_field_to_per_site_pi(domain, pi_name, pi_value) {
     pi_name = pi_name.toLowerCase();
 
@@ -1020,6 +1033,9 @@ function add_field_to_per_site_pi(domain, pi_name, pi_value) {
     }
     if (pi_name == "ccn") {
 	sanitize_ccn(pi_value);
+    }
+    if (pi_name == "gender") {
+	sanitize_gender(pi_value);
     }
     if (/.*-date/.exec(pi_name)) {
 	sanitize_date(pi_value);
