@@ -729,13 +729,7 @@ function make_user_approved_always(site) {
 // 	print_all_cookies('facebook.com', "APPU_START_CHECK");
 //     }, 2 * 1000);
 
-<<<<<<< HEAD
-//get_permission_and_fetch_pi("stumbleupon.com", undefined);
-//get_permission_and_fetch_pi("facebook.com", undefined);
 
+
+make_user_approved_always("live.com");
 get_permission_and_fetch_pi("live.com", undefined);
-
-//openTab(chrome.extension.getURL('sign_in.html'));
-=======
-//make_user_approved_always("live.com");
->>>>>>> upstream/master
