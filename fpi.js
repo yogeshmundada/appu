@@ -299,6 +299,8 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 	var result = [];
 
+	var data_filter = $.trim($(action).attr('data_filter'));
+
  	var is_editable = $(action).attr('field_type');
  	if (is_editable != undefined) {
  		is_editable = (is_editable == 'editable') ? true : false;
@@ -329,6 +331,10 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		field_value = $.trim($(result[i]).text());
  	    }
 
+	    if (data_filter) {
+		field_value = apply_data_filter(field_value, data_filter);
+	    }
+
 	    if (field_value != "" && field_value != ignore_default) {
 		store_data.push(field_value.toLowerCase());
 	    }
@@ -358,6 +364,8 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 
 	var result = [];
+
+	var data_filter = $.trim($(action).attr('data_filter'));
 
 	console.log("APPU DEBUG: In combine-n-store");
 
@@ -527,6 +535,25 @@ function apply_css_filter(elements, css_filter) {
 	return $(elements).filter(css_filter);
     }
     return elements;
+}
+
+
+function apply_data_filter(field_value, data_filter) {
+    var patterns = [
+		    /(delete)-'(.*)'/,
+		    ];
+
+    for (var p = 0; p < patterns.length; p++) {
+	var r = patterns[p].exec(data_filter);
+	if(!r) {
+	    continue;
+	}
+	if (r[1] == "delete") {
+	    var fv = field_value.replace(r[2], "");
+	    return fv;
+	}
+    }
+    return field_value;
 }
 
 function apply_jquery_filter(elements, jquery_filter) {
