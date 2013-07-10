@@ -107,7 +107,7 @@
 
 
 		<div name="manage address book">
-     			<action type="fetch-href">
+			<action type="fetch-href">
 				a:contains("Manage Address Book")
 			</action>
 
@@ -116,13 +116,13 @@
 					.displayAddressUL
 				</action>
 				<div name="address">
-	       	    			<action type="combine-n-store">
+	       	    	<action type="combine-n-store">
 						.displayAddressAddressLine1, 
 						.displayAddressAddressLine2, 
 						.displayAddressCityStateOrRegionPostalCode, 
 						.displayAddressCountryName
 					</action>
-	       			</div>
+	       		</div>
 			</div>
 		</div>
 

@@ -1,22 +1,42 @@
 <div name="netflix">
 	<action type="fetch-url">https://movies.netflix.com/YourAccount</action>
-
-		<div name="name" can_be_a_null="no" >								
-			<action type="store" jquery_filter="remove-children">						
-				div.module>div.bd>div.section>label.strong:first
-			</action>				
-        </div>
-		
-		<div name="email" can_be_a_null="no">
-			<action type="store" >
-				div.module>div.bd>div.section>label.strong+:first
+	
+	
+		<div name="membership-div" >
+			<action type="fetch-dom-element"  jquery_filter="ancestor-0">
+				:contains("YOUR MEMBERSHIP") 
 			</action>
-        </div>
-		
-		<div name="ccn" can_be_a_null="no" >
-			<action type="store" jquery_filter="remove-children"  >
-				div.module>div.bd:first>div+>div>label
-			</action>
-        </div>	
+			
+			<div name="name-inner" can_be_a_null="no">
+				<action type="fetch-dom-element" jquery_filter="remove-children">
+				 label:eq(0)
+				</action>
+				<div name="name">
+					<action type="store">
+					</action>
+				</div>				
+			</div>			
+			
+			<div name="email-inner" can_be_a_null="no">
+				<action type="fetch-dom-element" >
+				 label:eq(1)
+				</action>
+				<div name="email">
+					<action type="store">
+					</action>
+				</div>				
+			</div>			
+			
+			<div name="ccn-inner" can_be_a_null="no">
+				<action type="fetch-dom-element" jquery_filter="remove-children">
+				 div>label:eq(3)
+				</action>
+				<div name="ccn">
+					<action type="store">
+					</action>
+				</div>				
+			</div>
+			
+        </div>				
 
 </div>

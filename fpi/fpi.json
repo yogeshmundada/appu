@@ -1233,7 +1233,7 @@
  },
  "github.com" : {
      "category" : "hosting/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/github.fpi"
  },
  "projectbismark.net" : {
      "category" : "academia/software-services/class-4",
@@ -1405,7 +1405,7 @@
  },
  "live.com" : {
      "category" : "software-services/mail/personal-info/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/live.fpi"
  },
  "suntrust.com" : {
      "category" : "finance/class-1",

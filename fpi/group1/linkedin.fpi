@@ -2,40 +2,82 @@
 	<action type="fetch-url">http://www.linkedin.com/profile/edit?trk=nav_responsive_sub_nav_edit_profile</action>
 
 		<div name="name">
-			<action type="store" can_be_a_null="no">span.full-name</action>
+			<action type="store" can_be_a_null="no">
+			span.full-name
+			</action>
         </div>
+		
 		<div name="current-city" can_be_a_null="no">
 			<action type="store" >span.locality:eq(0)</action>
         </div>
 		
-		<div name="employment" type="vector">
-			<action type="store" >span.locality:eq(0)</action>
+		<div name="employment-div" >
+			<action type="fetch-dom-element"  jquery_filter="ancestor-0">
+				:contains("Experience") 
+			</action>
+			
+			<div name="employment-inner" type="vector">
+				<action type="fetch-dom-element" jquery_filter="remove-children">
+				 div#background-experience strong>a
+				</action>
+				<div name="employment">
+					<action type="store">
+					</action>
+				</div>				
+			</div>			
         </div>
 		
-
-		<div name="email" can_be_a_null="no">
-			<action type="store" field_type="editable">input#email</action>
+		<div name="occupation-div" >
+			<action type="fetch-dom-element" jquery_filter="ancestor-0" >
+				:contains("Experience")
+			</action>
+			
+			<div name="occupation-inner" type="vector">
+				<action type="fetch-dom-element" jquery_filter="remove-children">
+				 div#background-experience h4>a
+				</action>
+				<div name="occupation">
+					<action type="store">
+					</action>
+				</div>				
+			</div>			
         </div>
 		
-		<div name="birthdate" can_be_a_null="yes">
+		
+		<div name="birth-date">
 			<action type="store"> tr:contains("Birthday")>td </action>
         </div>		
 		
-		<div name="grad-school" type="vector">
-			<action type="store">  </action>
+		
+		<div name="grad-school-div">
+			<action type="fetch-dom-element" jquery_filter="ancestor-0">  
+				:contains("Education")
+			</action>
+			
+			<div name="grad-school-inner" type="vector">
+				<action type="fetch-dom-element" jquery_filter="remove-children">
+				div#background-education h4>a
+				</action>
+				<div name="graduate-school">
+					<action type="store">
+					</action>
+				</div>			
+			</div>			
 		</div>
 		
+		
+		
 		<div name="languages-div">
-			<action type="fetch-dom-element"> 
-				div#languages-view>ol>li>h4
+			<action type="fetch-dom-element"> 				
+				:contains("Languages")
 			</action>
 			
 			<div name="pseudo-remove-spans" type="vector">
 				<action type="fetch-dom-element" jquery_filter="remove-children">
-					span
+				div#languages li>h4
 				</action>
 				
-				<div name="language">
+				<div name="languages">
 					<action type="store">
 					</action>
 				</div>	
