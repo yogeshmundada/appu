@@ -1,0 +1,65 @@
+<div name="github">
+	<action type="fetch-url">https://www.github.com/settings/profile</action>
+
+		<div name="name-div">
+			<action type="fetch-dom-element" jquery_filter="ancestor-1"> 
+				label:contains("Name")
+			</action>
+			<div name="name" can_be_a_null="no">
+				<action type="store"  field_type="editable">
+				input
+				</action>
+			</div>			
+        </div>
+		
+		<div name="email-div">
+			<action type="fetch-dom-element" jquery_filter="ancestor-1">
+			label:contains("Email (will be public)")
+			</action>
+			
+			<div name="email" can_be_a_null="no" >
+				<action type="store" field_type="editable">
+				input
+				</action>
+			</div>
+        </div>
+		
+		<div name="company-div">
+			<action type="fetch-dom-element" jquery_filter="ancestor-1">
+			label:contains("Company")
+			</action>
+			
+			<div name="employment">
+				<action type="store" field_type="editable">
+				input
+				</action>
+			</div>
+        </div>
+
+		<div name="location-div">
+			<action type="fetch-dom-element" jquery_filter="ancestor-1">
+			label:contains("Location")
+			</action>
+			
+			<div name="hometown">
+				<action type="store" field_type="editable">
+				input
+				</action>
+			</div>
+        </div>
+		
+		
+		<div name="gravatar-div">
+			<action type="fetch-dom-element" jquery_filter="ancestor-1">
+			label:contains("Gravatar Email (Private)")
+			</action>
+			
+			<div name="email">
+				<action type="store" field_type="editable">
+				input
+				</action>
+			</div>
+        </div>
+		
+
+</div>
