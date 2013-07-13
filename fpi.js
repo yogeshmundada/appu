@@ -297,7 +297,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	}
 	else {
 	    var t = ignore_default.split(',');
-	    ignore_default = t.map(function(s){ return s.replace(/\s+/g, '');});
+	    ignore_default = t.map(function(s){ return $.trim(s);});
 	}
 
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
@@ -367,7 +367,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	}
 	else {
 	    var t = ignore_default.split(',');
-	    ignore_default = t.map(function(s){ return s.replace(/\s+/g, '');});
+	    ignore_default = t.map(function(s){ return $.trim(s)});
 	}
 
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
