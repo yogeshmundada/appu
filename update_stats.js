@@ -199,7 +199,7 @@ function initialize_report() {
     //General info about user's environment
     current_report.browser = environ.browser.name;
     current_report.browser_version = environ.browser.version;
-    current_report.os = environ.platform.name;                      
+    current_report.os = environ.platform.os;                      
     current_report.os_version = environ.platform.version;                                    
     current_report.layout_engine = environ.browser.engine;
     current_report.layout_engine_version = environ.browser.engineVersion;

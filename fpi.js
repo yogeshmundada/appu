@@ -295,6 +295,10 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	if (!ignore_default) {
 	    ignore_default = '';
 	}
+	else {
+	    var t = ignore_default.split(',');
+	    ignore_default = t.map(function(s){ return s.replace(/\s+/g, '');});
+	}
 
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 	var result = [];
@@ -335,7 +339,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		field_value = apply_data_filter(field_value, data_filter);
 	    }
 
-	    if (field_value != "" && field_value != ignore_default) {
+	    if (field_value != "" && ignore_default.indexOf(field_value) == -1) {
 		store_data.push(field_value.toLowerCase());
 	    }
 	}
@@ -361,6 +365,11 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	if (!ignore_default) {
 	    ignore_default = '';
 	}
+	else {
+	    var t = ignore_default.split(',');
+	    ignore_default = t.map(function(s){ return s.replace(/\s+/g, '');});
+	}
+
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 
 	var result = [];
@@ -401,7 +410,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 			field_value = $.trim($(value).text());
  		    }
 
-		    if (field_value != "" && field_value != ignore_default) {
+		    if (field_value != "" && ignore_default.indexOf(field_value) == -1) {
 			combined_value += field_value + ", " 
 		    }
 		});
@@ -420,7 +429,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		    field_value = $.trim($(result[i]).text());
  		}
 
-		if (field_value != "" && field_value != ignore_default) {
+		if (field_value != "" && ignore_default.indexOf(field_value) == -1) {
 		    combined_value = field_value;
 		}
 	    }

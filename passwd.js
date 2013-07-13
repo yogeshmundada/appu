@@ -874,6 +874,7 @@ function detect_logout_links() {
 				 "signout",
 				 "log_out",
 				 "sign_out",
+				 "signoff",
     ];
 
     signout_link_patterns.forEach(function(value, index, array) {
@@ -898,6 +899,7 @@ function detect_logout_links() {
     //We did not find logout elements, so now search as per actual text.
     var signout_patterns = {
 	"Sign out" : "^Sign out$", 
+	"Sign Off" : "^Sign Off$", 
 	"? Sign out" : "\\? Sign out$", 
 	"Log Out"  : "^Log Out$", 
 	"Logout"   : "^Logout$",  
