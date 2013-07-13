@@ -6,52 +6,20 @@
 		<div name="email" can_be_a_null="No" >
 			<action type="store"> div>p#idEditProfileTitle>span </action>
         </div>
-
-			
-		<div name="state">
-			<action type="store">  					
-				div.module+>div#HomeAMContainer>div#HomeAddressContainer>div#HomefldRegion>select#HomeRegion option:selected
-					
-			</action>					
-		</div>				
 		
 		
-		<div name="names" type="combine-n-store" >
-			<action type="fetch-href"> 
-			a#UserProfile
-		    </action>			
-			<div name="first-name">
-				<action type="store">
-					input#MainContent_MainContent_isEditName_cxp_pen_NameA
-				</action>	
-			</div>			
-			<div name="last-name">
-				<action type="store">
-					input#MainContent_MainContent_isEditName_cxp_pen_NameB
-				</action>	
+		<div name="Birthday">				
+			<action type="fetch-dom-element" jquery_filter="ancestor-0">
+			label:contains("Birth date")
+			</action>
+		
+			<div name="birth-date" >		
+				<action type="combine-n-store"> 
+					select#BirthMonth option:selected,
+					select#BirthDay option:selected,
+					select#BirthYear option:selected
+				</action>			
 			</div>
+        </div>					
 		
-		</div>
-		
-		<div name="Birth-Date" >				
-		
-				<action type="combine-n-store" field_type="editable"> 
-					div#idBirthDateContainer>select#BirthMonth,
-					div#idBirthDateContainer>select#BirthDay,
-					div#idBirthDateContainer>select#BirthYear,
-				</action>								
-        </div>		
-		
-		<div name="address">		
-				<action type="combine-n-store" field_type="editable"> 
-					div.module+>div#HomeAMContainer>div#HomeAddressContainer>div#HomefldAddress1>input#HomeAddress1,
-					div.module+>div#HomeAMContainer>div#HomeAddressContainer>div#HomefldCity>input#HomeCity,
-					div.module+>div#HomeAMContainer>div#HomeAddressContainer>div#HomefldPostalCode>input#HomePostalCode					
-				</action>				
-		</div>		
-							
-        		
-		
-		
-
 </div>
