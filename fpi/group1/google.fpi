@@ -65,13 +65,13 @@
 
 
 		<div name="relationship">
-			<action type="store">
+			<action type="store"  ignore_default="Seeing anyone?">
 				:contains("Relationship"):not(:has(*)) + div
 			</action>
 		</div>
 		
 		<div name="interested-in">
-			<action type="store"  ignore_default="Seeing anyone?"> 
+			<action type="store" ignore_default="Who are you looking for?" > 
 				:contains("Looking for"):not(:has(*)) + div
 			</action>
 		</div>
