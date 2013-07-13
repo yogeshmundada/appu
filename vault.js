@@ -108,15 +108,31 @@ function vault_init() {
 	//Create Account or Sign-in.
 	//However, if there is a duplicate GUID then we are in trouble.
 	//Need to take care of that somehow.
-	pii_vault.guid = generate_random_id();
+	// 	pii_vault.guid = generate_random_id();
 	
+	// 	console.log("vault_init(): Updated GUID in vault: " + pii_vault.guid);
+	// 	vault_write("guid", pii_vault.guid);
+	
+	// 	pii_vault.current_user = current_user;
+	// 	vault_write("current_user", pii_vault.current_user);
+	
+	// 	pii_vault.sign_in_status = sign_in_status;
+	// 	vault_write("sign_in_status", pii_vault.sign_in_status);
+
+	pii_vault = { "options" : {}, "config": {}};
+	current_user = "default";
+	pii_vault.guid = default_user_guid;
+	sign_in_status = 'not-signed-in';
+
 	console.log("vault_init(): Updated GUID in vault: " + pii_vault.guid);
 	vault_write("guid", pii_vault.guid);
 
 	pii_vault.current_user = current_user;
+	console.log("vault_init(): Updated CURRENT_USER in vault: " + pii_vault.current_user);
 	vault_write("current_user", pii_vault.current_user);
 
-	pii_vault.sign_in_status = sign_in_status;
+	pii_vault.sign_in_status =  sign_in_status;
+	console.log("vault_init(): Updated SIGN_IN_STATUS in vault: " + pii_vault.sign_in_status);
 	vault_write("sign_in_status", pii_vault.sign_in_status);
     }
 
@@ -135,7 +151,21 @@ function vault_init() {
     }
 
     if (!pii_vault.initialized) {
-	pii_vault.initialized = false;
+	if (current_user != "default") {
+	    var dug = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+	    var read_key = dug + ":" + "initialized";
+	    if (read_key in localStorage) {
+		var val = JSON.parse(localStorage[read_key]);
+		pii_vault.initialized = val;
+	    }
+	    else {
+		pii_vault.initialized = false;
+	    }
+	}
+	else {
+	    pii_vault.initialized = false;
+	}
+
 	console.log("vault_init(): Updated INITIALIZED in vault");
 	vault_write("initialized", pii_vault.initialized);
     }

@@ -32,7 +32,7 @@
 				 div>label:eq(3)
 				</action>
 				<div name="ccn">
-					<action type="store">
+					<action type="store" data_filter="delete-'Visa :'">
 					</action>
 				</div>				
 			</div>

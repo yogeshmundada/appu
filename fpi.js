@@ -295,9 +295,15 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	if (!ignore_default) {
 	    ignore_default = '';
 	}
+	else {
+	    var t = ignore_default.split(',');
+	    ignore_default = t.map(function(s){ return s.replace(/\s+/g, '');});
+	}
 
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 	var result = [];
+
+	var data_filter = $.trim($(action).attr('data_filter'));
 
  	var is_editable = $(action).attr('field_type');
  	if (is_editable != undefined) {
@@ -329,7 +335,11 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		field_value = $.trim($(result[i]).text());
  	    }
 
-	    if (field_value != "" && field_value != ignore_default) {
+	    if (data_filter) {
+		field_value = apply_data_filter(field_value, data_filter);
+	    }
+
+	    if (field_value != "" && ignore_default.indexOf(field_value) == -1) {
 		store_data.push(field_value.toLowerCase());
 	    }
 	}
@@ -355,9 +365,16 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	if (!ignore_default) {
 	    ignore_default = '';
 	}
+	else {
+	    var t = ignore_default.split(',');
+	    ignore_default = t.map(function(s){ return s.replace(/\s+/g, '');});
+	}
+
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 
 	var result = [];
+
+	var data_filter = $.trim($(action).attr('data_filter'));
 
 	console.log("APPU DEBUG: In combine-n-store");
 
@@ -393,7 +410,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 			field_value = $.trim($(value).text());
  		    }
 
-		    if (field_value != "" && field_value != ignore_default) {
+		    if (field_value != "" && ignore_default.indexOf(field_value) == -1) {
 			combined_value += field_value + ", " 
 		    }
 		});
@@ -412,7 +429,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		    field_value = $.trim($(result[i]).text());
  		}
 
-		if (field_value != "" && field_value != ignore_default) {
+		if (field_value != "" && ignore_default.indexOf(field_value) == -1) {
 		    combined_value = field_value;
 		}
 	    }
@@ -527,6 +544,25 @@ function apply_css_filter(elements, css_filter) {
 	return $(elements).filter(css_filter);
     }
     return elements;
+}
+
+
+function apply_data_filter(field_value, data_filter) {
+    var patterns = [
+		    /(delete)-'(.*)'/,
+		    ];
+
+    for (var p = 0; p < patterns.length; p++) {
+	var r = patterns[p].exec(data_filter);
+	if(!r) {
+	    continue;
+	}
+	if (r[1] == "delete") {
+	    var fv = field_value.replace(r[2], "");
+	    return fv;
+	}
+    }
+    return field_value;
 }
 
 function apply_jquery_filter(elements, jquery_filter) {
@@ -1009,6 +1045,20 @@ function sanitize_date(dates) {
 }
 
 
+function sanitize_gender(genders) {
+    for (var i = 0; i < genders.length; i++) {
+	var g = genders[i].toLowerCase();
+	if (g == 'm') {
+	    g = 'male';
+	}
+	else if (g == 'f') {
+	    g = 'female';
+	}
+	genders[i] = g;
+    }
+}
+
+
 function add_field_to_per_site_pi(domain, pi_name, pi_value) {
     pi_name = pi_name.toLowerCase();
 
@@ -1020,6 +1070,9 @@ function add_field_to_per_site_pi(domain, pi_name, pi_value) {
     }
     if (pi_name == "ccn") {
 	sanitize_ccn(pi_value);
+    }
+    if (pi_name == "gender") {
+	sanitize_gender(pi_value);
     }
     if (/.*-date/.exec(pi_name)) {
 	sanitize_date(pi_value);
