@@ -1,4 +1,3 @@
-
 <div name="live">
 	<action type="fetch-url">
 		https://account.live.com/EditProf.aspx
@@ -6,46 +5,67 @@
 	
 		<div name="email" can_be_a_null="No" >
 			<action type="store"> div>p#idEditProfileTitle>span </action>
-        </div>
-		
+        </div>		
 		
 		<div name="Birthday">				
 			<action type="fetch-dom-element" jquery_filter="ancestor-0">
-			label:contains("Birth date")
-			</action>
-		
+				label:contains("Birth date")
+			</action>		
 			<div name="birth-date" >		
-				<action type="combine-n-store"> 
+				<action type="combine-n-store" ignore_default="Month,Day,Year"> 
 					select#BirthMonth option:selected,
 					select#BirthDay option:selected,
 					select#BirthYear option:selected
 				</action>			
 			</div>
-        </div>					
-		
-	<div name="email-div">
-		<action type="fetch-url">
-			https://account.live.com/EditProf.aspx
-		</action>	
-		
-			<div name="email" can_be_a_null="No" >
-				<action type="store"> div>p#idEditProfileTitle>span </action>
+        </div>		
+
+		<div name="Gender-div">				
+			<action type="fetch-dom-element" jquery_filter="ancestor-0">
+				label:contains("Gender")
+			</action>		
+			<div name="gender" >		
+				<action type="store" ignore_default="Select one"> 
+					select#idGender option:selected					
+				</action>			
 			</div>
-			
-			
-			<div name="Birthday">				
-				<action type="fetch-dom-element" jquery_filter="ancestor-0">
-				label:contains("Birth date")
+        </div>	
+		
+		<div name="Profession-div">
+			<action type="fetch-dom-element" jquery_filter="ancestor-0">
+				label:contains("Profession")
+			</action>
+			<div name="occupation">
+				<action type="store" ignore_default="Select...">
+					select#Occupation option:selected					
 				</action>
-			
-				<div name="birth-date" >		
-					<action type="combine-n-store"> 
-						select#BirthMonth option:selected,
-						select#BirthDay option:selected,
-						select#BirthYear option:selected
-					</action>			
-				</div>
-			</div>					
-			
-	</div>
+			</div>
+		</div>
+		
+		<div name="Country-div">
+			<action type="fetch-dom-element" jquery_filter="ancestor-0">
+				label:contains("Country/region")
+			</action>
+			<div name="country">
+				<action type="store" ignore_default="Select...">
+					select#HomeCountry option:selected
+				</action>				
+			</div>
+		</div>
+		
+		<div name="address-div">				
+			<action type="fetch-dom-element" >
+				div#HomeAddressContainer
+			</action>		
+			<div name="address">		
+				<action type="combine-n-store" field_type="editable"> 				
+					input#HomeAddress1,
+					input#HomeCity					
+				</action>			
+			</div>
+        </div>		
+		
+		
+		
+	
 </div>

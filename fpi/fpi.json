@@ -817,7 +817,7 @@
  },
  "craigslist.org" : {
      "category" : "services/forums/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/craigslist.fpi"
  },
  "surfnet.nl" : {
      "category" : "telecommunication/software-services/class-3",
