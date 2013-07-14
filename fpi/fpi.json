@@ -53,7 +53,7 @@
  },
  "pandora.com" : {
      "category" : "music-streaming/entertainment/class-5",
-     "fpi" : "not-present"
+     "fpi" : "group1/pandora.fpi"
  },
  "nsf.gov" : {
      "category" : "academia/collaboration/research/class-1",
