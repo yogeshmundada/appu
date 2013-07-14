@@ -1168,24 +1168,20 @@ if (document.URL.match(/.pdf$/) == null) {
 		//So the page loads but actual data is populated later.
 		window.setTimeout(function() {
 			$(function() { $('*').each(function(i) { $(this).attr('uid', i);}); });
-			var all_selected = $("option:selected");
-			for (var i = 0; i < all_selected.length; i++) {
-			    var uid = $(all_selected[i]).attr("uid");
-			    $("[uid="+uid+"]").attr("selected", true)
-			}
-
-			var html_data = $("html").html();
-			all_selected = $("option:selected", html_data);
-			for (var i = 0; i < all_selected.length; i++) {
-			    var uid = $(all_selected[i]).attr("uid");
-			    if (!$("[uid="+uid+"]").attr("selected")) {
-				$("[uid="+uid+"]").remove();
-			    }
+			var all_vals = {};
+			var all_input_elements = $(":input[type='text'], select");
+			for (var i = 0; i < all_input_elements.length; i++) {
+			    var uid = $(all_input_elements[i]).attr("uid");
+			    var val = $('[uid='+ uid +']').val();
+			    all_vals[uid] = val;
 			}
 
 			debugger;
 			var html_data = $("html").html();
-			send_response(html_data);
+			send_response({
+				'html_data' : html_data,
+				    'all_vals'  :  all_vals
+				    });
 		    }, 2000);
 		return true;
 	    }

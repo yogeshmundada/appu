@@ -187,16 +187,23 @@ function send_cmd_to_tab(action_type, curr_node, site_pi_fields, fetch_url, my_s
 	$('#' + dummy_tab_id).off("page-is-loaded");
 	chrome.tabs.sendMessage(my_slave_tab.tabid, {
 	    type: "get-html"
-	}, function process_fetched_html(html_data) {
-	    my_slave_tab.in_use = false;
-	    
-	    $('#wait-queue-tab-' + my_slave_tab.tabid).trigger("waiting_queue");
-	    var fp = document.implementation.createHTMLDocument("fp");
-	    
-	    fp.documentElement.innerHTML = html_data;
-	    curr_node.fp = fp;
+		    }, function process_fetched_html(result) {
+		var html_data = result['html_data'];
+		var all_vals = result['all_vals'];
 
-	    process_kids(curr_node, site_pi_fields, my_slave_tab, level);
+		my_slave_tab.in_use = false;
+		
+		$('#wait-queue-tab-' + my_slave_tab.tabid).trigger("waiting_queue");
+		var fp = document.implementation.createHTMLDocument("fp");
+		
+		fp.documentElement.innerHTML = html_data;
+		curr_node.fp = fp;
+		
+		for (var uid in all_vals) {
+		    $("[uid="+uid+"]",fp).val(all_vals[uid]);
+		}
+
+		process_kids(curr_node, site_pi_fields, my_slave_tab, level);
 	}); 
     });
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div name="live">
 	<action type="fetch-url">
 		https://account.live.com/EditProf.aspx
@@ -69,3 +70,37 @@
 		
 	
 </div>
+=======
+<div name="live">
+	<action type="fetch-url">
+		https://account.live.com/EditProf.aspx
+	</action>
+	
+	<div name="address-div">
+		<action type="fetch-dom-element" >
+			div#HomeAddressContainer
+		</action>
+		<div name="address">
+			<action type="combine-n-store" field_type="editable"> 
+				input#HomeAddress1,
+				input#HomeCity
+			</action>
+		</div>
+        </div>
+		
+	<div name="Birthday">				
+		<action type="fetch-dom-element" jquery_filter="ancestor-0">
+			label:contains("Birth date")
+		</action>
+		
+		<div name="birth-date" >		
+			<action type="combine-n-store"> 
+				select#BirthMonth option:selected,
+				select#BirthDay option:selected,
+				select#BirthYear option:selected
+			</action>			
+		</div>
+	</div>					
+
+</div>
+>>>>>>> upstream/master
