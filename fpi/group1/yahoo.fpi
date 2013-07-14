@@ -1,0 +1,89 @@
+<div name="yahoo">
+	<action type="fetch-url">https://www.yahoo.com</action>
+
+	<div name="account-div">
+     	<action type="fetch-href">
+			a:contains("Account Settings")
+		</action>
+		<div name="home-address">	
+			<action type="fetch-dom-element" jquery_filter="ancestor-0">
+				:contains("Home Address:"):not(:has(*))
+			</action>			
+			<div name="address" can_be_a_null="no">
+				<action type="store">
+				span.user_data:eq(0)
+				</action>
+			</div>
+		</div>
+		
+		<div name="emails" >
+			<action type="fetch-href">
+				a#edit_menu_link
+			</action>			
+			<div name="email-values" type="vector">
+				<action type="fetch-dom-element">
+					label:contains("E-mail")+
+				</action>				
+				<div name="email">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+
+
+			<div name="genderField">
+				<action type="fetch-dom-element" jquery_filter="ancestor-0"> 
+					label:contains("Gender")
+				</action>				
+				<div name="gender">
+					<action type="store" field_type="editable">
+						select#gender
+					</action>
+				</div>			
+			</div>
+			
+			<div name="birthdayField">
+				<action type="fetch-dom-element" jquery_filter="ancestor-0"> 
+					label:contains("Birthdate")
+				</action>				
+				<div name="birth-date">
+					<action type="combine-n-store" field_type="editable">
+						select#day,
+						select#month,
+						select#year						
+					</action>
+				</div>			
+			</div>
+			
+		</div>		
+		
+		<div name="profile-page" >
+			<action type="fetch-href">
+				a#profile_menu_link
+			</action>	
+			<div name="current-city-field">
+				<action type="fetch-dom-element">
+					input#input_location
+				</action>
+				<div name="current-city">
+					<action type="store" field_type="editable">
+					</action>				
+				</div>
+			</div>
+			
+			<div name="displayname">
+				<action type="fetch-dom-element">
+					input#input_display_name
+				</action>
+				<div name="first-name">
+					<action type="store" field_type="editable">
+					</action>				
+				</div>
+			</div>
+			
+		</div>
+		
+		
+	</div>
+	
+</div>

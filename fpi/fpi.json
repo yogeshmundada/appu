@@ -53,7 +53,7 @@
  },
  "pandora.com" : {
      "category" : "music-streaming/entertainment/class-5",
-     "fpi" : "not-present"
+     "fpi" : "group1/pandora.fpi"
  },
  "nsf.gov" : {
      "category" : "academia/collaboration/research/class-1",
@@ -817,7 +817,7 @@
  },
  "craigslist.org" : {
      "category" : "services/forums/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/craigslist.fpi"
  },
  "surfnet.nl" : {
      "category" : "telecommunication/software-services/class-3",
@@ -877,7 +877,7 @@
  },
  "trello.com" : {
      "category" : "collaboration/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/trello.fpi"
  },
  "papajohns.com" : {
      "category" : "restaurant/food/services/class-3",
@@ -929,7 +929,7 @@
  },
  "yahoo.com" : {
      "category" : "search-engine/social-networking/networking/email/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/yahoo.fpi"
  },
  "paygonline.com" : {
      "category" : "utility/software-services/class-3",
