@@ -31,7 +31,7 @@
 
 
 		<div name="occupation">
-			<action type="store">
+			<action type="store"  ignore_default="What do you do?" >
 				:contains("Occupation"):not(:has(*)) + div
 			</action>
 		</div>
@@ -39,12 +39,12 @@
 
 
 		<div name="employments" type="vector">
-			<action type="fetch-dom-element">
+			<action type="fetch-dom-element"  >
 				:contains("Employment"):not(:has(*)) + div ul li
 			</action>
 
 			<div name="employment" >	
-	       			<action type="combine-n-store">
+	       			<action type="combine-n-store" ignore_default="Where have you worked?" >
 					div:nth-child(1)
 	  			</action>
 			</div>
@@ -57,7 +57,7 @@
 				td.tel
 			</action>
 			<div name="phone">	
-	       			<action type="store">
+	       		<action type="store" ignore_default="How can people reach you at home?,How can people reach you at work?" >
 				</action>
 			</div>
       		</div>
@@ -65,10 +65,17 @@
 
 
 		<div name="relationship">
-			<action type="store">
+			<action type="store"  ignore_default="Seeing anyone?">
 				:contains("Relationship"):not(:has(*)) + div
 			</action>
 		</div>
+		
+		<div name="interested-in">
+			<action type="store" ignore_default="Who are you looking for?" > 
+				:contains("Looking for"):not(:has(*)) + div
+			</action>
+		</div>
+
 
 
 

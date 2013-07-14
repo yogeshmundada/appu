@@ -135,8 +135,8 @@
 				<action type="fetch-dom-element">
 					:contains("Employer:"):not(:has(*)) + td > ul > li > div > div
 				</action>
-				<div name="employment">
-	  				<action type="combine-n-store">
+				<div name="employment" >
+	  				<action type="combine-n-store" ignore_default="Where have you worked?">
 						a span
 	  				</action>
 				</div>
@@ -148,7 +148,7 @@
 					li > div > div
 				</action>
 				<div name="graduate-school">
-	  				<action type="store">a span
+	  				<action type="store" ignore_default="Where did you go to college?">a span
 	  				</action>
 				</div>
 			</div>
@@ -159,7 +159,7 @@
 					li > div > div
 				</action>
 				<div name="high-school">
-	  				<action type="store">a span
+	  				<action type="store"  ignore_default="Where did you go to high school?">a span
 	  				</action>
 				</div>
 			</div>
