@@ -1,0 +1,63 @@
+<div name="pandora">
+	<action type="fetch-url">http://www.pandora.com/account/info</action>
+	
+	<div name="emailField">
+		<action type="fetch-dom-element" jquery_filter="ancestor-0">
+			label:contains("Your email")
+		</action>	
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">
+				input#username
+			</action>
+		</div>
+	</div>
+	
+	<div name="birthyearField">
+		<action type="fetch-dom-element" jquery_filter="ancestor-0">
+			label:contains("Birth year")
+		</action>	
+		<div name="birth-year" can_be_a_null="no">
+			<action type="store" field_type="editable">
+				input#birthyear
+			</action>
+		</div>
+	</div>
+	
+	
+	<div name="genderField">
+		<action type="fetch-dom-element" jquery_filter="ancestor-0">
+			label:contains("Gender")
+		</action>	
+		<div name="gender" can_be_a_null="no">
+			<action type="store" field_type="editable">
+				:radio
+			</action>
+		</div>
+	</div>
+	
+	
+	<div name="myProfilePage">
+		<action type="fetch-url">http://www.pandora.com/profile</action>
+		
+		<div name="hometown">
+			<action type="store"> 
+				span:contains("Hometown")>span
+			</action>
+		</div>
+		
+		<div name="graduate-school">
+			<action type="store"> 
+				span:contains("School")>span
+			</action>
+		</div>
+		
+		<div name="employment">
+			<action type="store"> 
+				span:contains("Employer")>span
+			</action>
+		</div>
+		
+	</div>
+	
+	
+</div>
