@@ -877,7 +877,7 @@
  },
  "trello.com" : {
      "category" : "collaboration/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/trello.fpi"
  },
  "papajohns.com" : {
      "category" : "restaurant/food/services/class-3",
@@ -929,7 +929,7 @@
  },
  "yahoo.com" : {
      "category" : "search-engine/social-networking/networking/email/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/yahoo.fpi"
  },
  "paygonline.com" : {
      "category" : "utility/software-services/class-3",
