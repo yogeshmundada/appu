@@ -1176,21 +1176,6 @@ if (document.URL.match(/.pdf$/) == null) {
 			    all_vals[uid] = val;
 			}
 
-// 			var all_selected = $("option:selected");
-// 			for (var i = 0; i < all_selected.length; i++) {
-// 			    var uid = $(all_selected[i]).attr("uid");
-// 			    $("[uid="+uid+"]").attr("selected", true)
-// 			}
-
-// 			var html_data = $("html").html();
-// 			all_selected = $("option:selected", html_data);
-// 			for (var i = 0; i < all_selected.length; i++) {
-// 			    var uid = $(all_selected[i]).attr("uid");
-// 			    if (!$("[uid="+uid+"]").attr("selected")) {
-// 				$("[uid="+uid+"]").remove();
-// 			    }
-// 			}
-
 			debugger;
 			var html_data = $("html").html();
 			send_response({
