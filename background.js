@@ -731,9 +731,13 @@ function make_user_approved_always(site) {
 
 
 
+<<<<<<< HEAD
 
 make_user_approved_always("trello.com");
 
 
 
+=======
+//make_user_approved_always("facebook.com");
+>>>>>>> upstream/master
 

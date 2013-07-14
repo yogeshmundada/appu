@@ -603,7 +603,6 @@ function show_pending_warnings(r) {
 	//This is according to comment from their developer blog: 
 	//http://filamentgroup.com/lab/using_multiple_jquery_ui_themes_on_a_single_page/#commentNumber4
 
-	//debugger;
 	$('#appu-password-pending-warning').dialog({
 	    draggable : false,
 	    resizable : false,
@@ -1138,9 +1137,9 @@ if (document.URL.match(/.pdf$/) == null) {
 	    else if (message.type == "simulate-click") {
 		var element_to_click = apply_css_filter(apply_css_selector($(document), message.css_selector), 
 							message.css_filter);
-		
+
 		var detect_change_css = message.detect_change_css;  
-		
+
 		//Hard timeout
 		//Wait for 60 seconds before sending event that click cannot be 
 		//completed.
@@ -1168,6 +1167,23 @@ if (document.URL.match(/.pdf$/) == null) {
 		//Adding 2 seconds delay because some sites like Google+ have data populated asynchronously.
 		//So the page loads but actual data is populated later.
 		window.setTimeout(function() {
+			$(function() { $('*').each(function(i) { $(this).attr('uid', i);}); });
+			var all_selected = $("option:selected");
+			for (var i = 0; i < all_selected.length; i++) {
+			    var uid = $(all_selected[i]).attr("uid");
+			    $("[uid="+uid+"]").attr("selected", true)
+			}
+
+			var html_data = $("html").html();
+			all_selected = $("option:selected", html_data);
+			for (var i = 0; i < all_selected.length; i++) {
+			    var uid = $(all_selected[i]).attr("uid");
+			    if (!$("[uid="+uid+"]").attr("selected")) {
+				$("[uid="+uid+"]").remove();
+			    }
+			}
+
+			debugger;
 			var html_data = $("html").html();
 			send_response(html_data);
 		    }, 2000);
