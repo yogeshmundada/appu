@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 <div name="live">
 	<action type="fetch-url">
 		https://account.live.com/EditProf.aspx
@@ -23,30 +23,29 @@
 			</div>
         </div>					
 		
-=======
-<div name="live">
-	<action type="fetch-url">
-		https://account.live.com/EditProf.aspx
-	</action>	
-	
-		<div name="email" can_be_a_null="No" >
-			<action type="store"> div>p#idEditProfileTitle>span </action>
-        </div>
+	<div name="email-div">
+		<action type="fetch-url">
+			https://account.live.com/EditProf.aspx
+		</action>	
 		
-		
-		<div name="Birthday">				
-			<action type="fetch-dom-element" jquery_filter="ancestor-0">
-			label:contains("Birth date")
-			</action>
-		
-			<div name="birth-date" >		
-				<action type="combine-n-store"> 
-					select#BirthMonth option:selected,
-					select#BirthDay option:selected,
-					select#BirthYear option:selected
-				</action>			
+			<div name="email" can_be_a_null="No" >
+				<action type="store"> div>p#idEditProfileTitle>span </action>
 			</div>
-        </div>					
-		
->>>>>>> upstream/master
+			
+			
+			<div name="Birthday">				
+				<action type="fetch-dom-element" jquery_filter="ancestor-0">
+				label:contains("Birth date")
+				</action>
+			
+				<div name="birth-date" >		
+					<action type="combine-n-store"> 
+						select#BirthMonth option:selected,
+						select#BirthDay option:selected,
+						select#BirthYear option:selected
+					</action>			
+				</div>
+			</div>					
+			
+	</div>
 </div>
