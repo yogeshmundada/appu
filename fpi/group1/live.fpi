@@ -67,6 +67,62 @@
         </div>		
 		
 		
+		<div name= "MSFTcommerce"> 
+			<action type="fetch-url">
+				https://commerce.microsoft.com/PaymentHub/Profile
+			</action>			
+			
+			<div name="first-name-field">
+				<action type="fetch-dom-element" jquery_filter="ancestor-0">
+					span:contains("First name:")
+				</action>
+				<div name="first-name">
+					<action type="store">
+						span#account_firstname
+					</action>
+				</div>			
+			</div>	
+			
+			<div name="last-name-field">
+				<action type="fetch-dom-element" jquery_filter="ancestor-0">
+					span:contains("Last name:")
+				</action>
+				<div name="last-name" >
+					<action type="store">
+						span#account_lastname
+					</action>
+				</div>			
+			</div>
+			
+			<div name="email-field">
+				<action type="fetch-dom-element" jquery_filter="ancestor-0">
+					span:contains("Email:")
+				</action>
+				<div name="last-name" can_be_a_null="No" >
+					<action type="store">
+						span#account_email
+					</action>
+				</div>			
+			</div>
+			
+					
+			
+			
+			<div name="telephone-field">
+				<action type="fetch-dom-element" jquery_filter="ancestor-0">
+					span:contains("Telephone:")
+				</action>
+				<div name="last-name" can_be_a_null="No" >
+					<action type="store">
+						span#account_phone
+					</action>
+				</div>			
+			</div>
+			
+			
+		
+		</div>
+		
 		
 	
 </div>
