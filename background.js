@@ -732,6 +732,6 @@ function make_user_approved_always(site) {
 
 
 
-make_user_approved_always("tumblr.com");
+make_user_approved_always("delta.com");
 
 

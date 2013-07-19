@@ -1529,7 +1529,7 @@
  },
  "delta.com" : {
      "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/delta.fpi"
  },
  "1fbusa.com" : {
      "category" : "finance/class-1",

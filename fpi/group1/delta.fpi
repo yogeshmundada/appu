@@ -2,32 +2,30 @@
 	<action type="fetch-url">https://www.delta.com</action>	
 	
 		<div name="profile-redirect" >
-			<action type="fetch-href">
-			a:contains("Profile")
+			<action type="fetch-url">
+				https://www.delta.com/profile/basicInfo.action
 			</action>
 			
-			<div name="emailField" can_be_a_null="no">
-				<action type="fetch-dom-element" jquery_filter="remove-children">
-				 p.email
+			<div name="firstNameField" can_be_a_null="no">
+				<action type="fetch-dom-element">
+					label:contains("First Name")+:eq(0)
 				</action>
-				<div name="email">
+				<div name="first-name">
 					<action type="store">
 					</action>
 				</div>				
-			</div>			
-			
-			<div name="Name click">
-				<action type="simulate-click" data="[name='fullName']">
-					a:contains(' Edit Name, Initials, or Bio ')>span
-				</action>
-
-				<div name="name">
-					<action type="store" field_type="editable">
-						[name='fullName']
-					</action>
-				</div>
-				
 			</div>
+			<div name="lasttNameField" can_be_a_null="no">
+				<action type="fetch-dom-element">
+					label:contains("Last Name")+:eq(0)
+				</action>
+				<div name="last-name">
+					<action type="store">
+					</action>
+				</div>				
+			</div>
+			
+			
 			
         </div>				
 
