@@ -550,15 +550,16 @@ function report_received(report_number, report, do_render) {
     //Now it contains objects of format {"email", "no-change", "3"}
     //First: field name, Second: If there was change since last download, Third: Number of values on that site.
     //I am passing this function so that any past reports will still show proper information.
-    var func_val = undefined;
-    if (Object.keys(report.downloaded_pi).length > 0) {
-	var site = Object.keys(report.downloaded_pi)[0];
-	var obj_type = Object.prototype.toString.call(report.downloaded_pi[site].downloaded_fields[0]);
-	if ((obj_type == "[object Object]") ||
-	    (obj_type == "[object Undefined]")) {
-	    func_val = function(o) { return o.field };
-	}
-    }
+//     var func_val = undefined;
+//     if (Object.keys(report.downloaded_pi).length > 0) {
+// 	var site = Object.keys(report.downloaded_pi)[0];
+// 	var obj_type = Object.prototype.toString.call(report.downloaded_pi[site].downloaded_fields[0]);
+// 	if ((obj_type == "[object Object]") ||
+// 	    (obj_type == "[object Undefined]")) {
+// 	    func_val = function(o) { return o.field };
+// 	}
+//     }
+    func_val = function(o) { return o.field };
 
     var pmt_records = create_datatable_consumable_records(report, "downloaded_pi", 
 							    [
