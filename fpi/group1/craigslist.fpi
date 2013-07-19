@@ -1,0 +1,15 @@
+<div name="craigslist">
+
+	<action type="fetch-url">https://accounts.craigslist.org/?show_tab=account_settings</action>
+	
+	<div name="emailField">
+		<action type="fetch-dom-element" jquery_filter="remove-children">
+			td:contains("email address:")+
+		</action>	
+		<div name="email" can_be_a_null="no">
+			<action type="store">
+			</action>
+		</div>
+	</div>
+	
+</div>
