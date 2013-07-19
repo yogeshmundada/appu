@@ -389,8 +389,6 @@ function report_received(report_number, report, do_render) {
     	$(".get-next-report").addClass("disabled");
     }
 
-    add_hooks();
-
 //     if (!do_render) {
 // 	//This means the query was just to update this structure.
 // 	return;
@@ -614,6 +612,8 @@ function report_received(report_number, report, do_render) {
     dtTable.fnAddData(report.input_fields);
     $("#user-interaction-metadata-table_length select").val('5').trigger('change');
     dtTable.fnSetColumnVis(6, current_report_delete_enabled);
+
+    add_hooks();
 }
 
 function get_value_from_identifier(identifier) {
