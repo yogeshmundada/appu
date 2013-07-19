@@ -565,7 +565,7 @@
  },
  "pinterest.com" : {
      "category" : "collaboration/social-networking/forums/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/pinterest.fpi"
  },
  "terena.org" : {
      "category" : "research/academia/collaboration/class-3",
@@ -1381,7 +1381,7 @@
  },
  "tumblr.com" : {
      "category" : "microblog/social-networking/networking/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/tumblr.fpi"
  },
  "citibank.co.in" : {
      "category" : "finance/class-1",
