@@ -222,10 +222,15 @@ function initialize_aggregate_data() {
     //The structure will be:
     // site_name : {
     //               username : 'john.doe',
+    //               tot_http_requests_since_login : 0,
+    //               tot_http_responses_since_login : 0,
     //               cookies : {
     //                           cookie_name : 'session_cookie_name_1',
     //                           cookie_class : 'before', 'during', or 'after', 
     //                           hashed_cookie_value : sha1sum(actual_cookie_value),
+    //                           cookie_scope: 'www.example.com'
+    //                           cookie_path:  '/mypath'
+    //                           num_http_responses_cookie_unchanged: 
     //                           session_cookie : between 0 and 1.
     //                         }
     //              }

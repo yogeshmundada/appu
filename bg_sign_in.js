@@ -9,7 +9,7 @@ function create_account(sender_tab_id, username, password) {
 	'version' : pii_vault.config.current_version 
     }
 
-    $.post("http://woodland.gtnoise.net:5005/create_new_account", 
+    $.post(server_url + "create_new_account", 
 	   JSON.stringify(wr),
 	   function(data) {
 	       if (data == 'Success') {
@@ -78,7 +78,7 @@ function sign_in(sender_tab_id, username, password) {
 	'version' : pii_vault.config.current_version
     }
 
-    $.post("http://woodland.gtnoise.net:5005/sign_in_account", 
+    $.post(server_url + "sign_in_account", 
 	   JSON.stringify(wr),
 	   function(data) {
 	       if (data.split(' ')[0] == 'Success') {

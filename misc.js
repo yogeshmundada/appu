@@ -3,14 +3,13 @@
 //Function to see if Appu server is up
 //Also tells the server that this appu installation is still running
 function pii_check_if_stats_server_up() {
-    var stats_server_url = "http://woodland.gtnoise.net:5005/"
     try {
 	var wr = {};
 	wr.guid = (sign_in_status == 'signed-in') ? pii_vault.guid : '';
 	wr.version = pii_vault.config.current_version;
 	wr.deviceid = (sign_in_status == 'signed-in') ? pii_vault.config.deviceid : 'Not-reported';
 
-	$.post(stats_server_url, JSON.stringify(wr),
+	$.post(server_url, JSON.stringify(wr),
 	       function(data, textStatus, jqxhr) {
 		   var is_up = false;
 		   stats_message = /Hey ((?:[0-9]{1,3}\.){3}[0-9]{1,3}), Appu Stats Server is UP!/;
@@ -18,7 +17,7 @@ function pii_check_if_stats_server_up() {
 		   console.log("Appu stats server, is_up? : "+ is_up);
 	       })
 	.error(function (data, status) {
-		console.log("Appu: Could not check if server is up: " + stats_server_url
+		console.log("Appu: Could not check if server is up: " + server_url
 			    + ", status: " + status.toString());
 		print_appu_error("Appu Error: Seems like server was down. " +
 				 "Status: " + status.toString() + " " 
@@ -80,7 +79,7 @@ function background_tasks() {
 	if (cr.actual_report_send_time == 'Not delivered yet') {
 	    //To adjust for current_report(=1) and start index (0 instead of 1)
 	    var report_number = i + 2;
-	    console.log("APPU DEBUG: Report " + cr.actual_report_send_time + " is undelivered");
+	    console.log("APPU DEBUG: Report " + cr.reportid + " is undelivered");
 	    if (report_number in delivery_attempts) {
 		var dat = delivery_attempts[report_number];
 		var curr_time = new Date();

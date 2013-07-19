@@ -67,6 +67,8 @@ var hashing_workers = {};
 //and empty this buffer.
 var pre_login_cookies = {};
 
+var server_url = "http://appu.gtnoise.net:5005/";
+
 
 // BIG EXECUTION START
 
@@ -731,5 +733,5 @@ function make_user_approved_always(site) {
 
 
 
-make_user_approved_always("live.com");
+//make_user_approved_always("live.com");
 

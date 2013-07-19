@@ -789,7 +789,7 @@ function fetch_fpi_template_from_server(domain) {
     wr.domain = domain;
 
     try {
-	$.post("http://appu.gtnoise.net:5005/get_template", JSON.stringify(wr), function(data) {
+	$.post(server_url + "get_template", JSON.stringify(wr), function(data) {
 	    pii_vault.aggregate_data.per_site_pi[domain].attempted_download_time = new Date();
 	    flush_selective_entries("aggregate_data", ["per_site_pi"]);
 	    
