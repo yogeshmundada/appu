@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <div name="live">
 	<action type="fetch-url">
 		https://account.live.com/EditProf.aspx
@@ -61,46 +60,93 @@
 			<div name="address">		
 				<action type="combine-n-store" field_type="editable"> 				
 					input#HomeAddress1,
-					input#HomeCity					
+					input#HomeCity,
+					input#WorkPostalCode
 				</action>			
 			</div>
         </div>		
 		
 		
-		
-	
-</div>
-=======
-<div name="live">
-	<action type="fetch-url">
-		https://account.live.com/EditProf.aspx
-	</action>
-	
-	<div name="address-div">
-		<action type="fetch-dom-element" >
-			div#HomeAddressContainer
-		</action>
-		<div name="address">
-			<action type="combine-n-store" field_type="editable"> 
-				input#HomeAddress1,
-				input#HomeCity
-			</action>
-		</div>
-        </div>
-		
-	<div name="Birthday">				
-		<action type="fetch-dom-element" jquery_filter="ancestor-0">
-			label:contains("Birth date")
-		</action>
-		
-		<div name="birth-date" >		
-			<action type="combine-n-store"> 
-				select#BirthMonth option:selected,
-				select#BirthDay option:selected,
-				select#BirthYear option:selected
+		<div name= "MSFTcommerce"> 
+			<action type="fetch-url">
+				https://commerce.microsoft.com/PaymentHub/Profile
 			</action>			
+			
+			<div name="first-name-field">
+				<action type="fetch-dom-element" jquery_filter="ancestor-1">
+					span:contains("First name:")
+				</action>
+				<div name="first-name">
+					<action type="store" can_be_a_null="No" >
+						span#account_firstname
+					</action>
+				</div>			
+			</div>	
+			
+			<div name="last-name-field">
+				<action type="fetch-dom-element" jquery_filter="ancestor-1">
+					span:contains("Last name:")
+				</action>
+				<div name="last-name" >
+					<action type="store" can_be_a_null="No" >
+						span#account_lastname
+					</action>
+				</div>			
+			</div>
+			
+			<div name="email-field">
+				<action type="fetch-dom-element" jquery_filter="ancestor-1">
+					span:contains("Email:")
+				</action>
+				<div name="last-name" can_be_a_null="No" >
+					<action type="store">
+						span#account_email
+					</action>
+				</div>			
+			</div>				
+			
+			<div name="telephone-field">
+				<action type="fetch-dom-element" jquery_filter="ancestor-1">
+					span:contains("Telephone:")
+				</action>
+				<div name="last-name" can_be_a_null="No" >
+					<action type="store">
+						span#account_phone
+					</action>
+				</div>			
+			</div>					
+			
+			<div name="address">	
+	       	    <action type="combine-n-store">
+					span#account_address1,
+					span#account_city,
+					span#account_state,
+					span#account_country,
+					span#account_zip				
+				</action>				
+			</div>
+		
 		</div>
-	</div>					
-
+		
+		
+		<div name= "MSFTcredit"> 
+			<action type="fetch-url">
+				https://commerce.microsoft.com/PaymentHub/PaymentInstrument
+			</action>	
+			
+			<div name="ccn-field" type="vector">			
+				<action type="fetch-dom-element">
+					li.other
+				</action>	
+				<div name="ccn">
+					<action type="store">
+						div.identification.ellipsis				
+					</action>
+				</div>
+			</div>
+			
+			
+		</div>
+	
 </div>
->>>>>>> upstream/master
+

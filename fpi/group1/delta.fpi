@@ -1,0 +1,81 @@
+<div name="delta">
+	<action type="fetch-url">https://www.delta.com</action>	
+	
+		<div name="profile-redirect" >
+			<action type="fetch-url">
+				https://www.delta.com/profile/basicInfo.action
+			</action>
+			
+			<div name="firstNameField" can_be_a_null="no">
+				<action type="fetch-dom-element">
+					label:contains("First Name")+:eq(0)
+				</action>
+				<div name="first-name">
+					<action type="store">
+					</action>
+				</div>				
+			</div>
+			<div name="lastNameField" can_be_a_null="no">
+				<action type="fetch-dom-element">
+					label:contains("Last Name")+:eq(0)
+				</action>
+				<div name="last-name">
+					<action type="store">
+					</action>
+				</div>				
+			</div>			
+			<div name="genderField" can_be_a_null="no">
+				<action type="fetch-dom-element">
+					label:contains("Gender")+:eq(1) 
+				</action>
+				<div name="gender">
+					<action type="store">
+						:selected
+					</action>
+				</div>				
+			</div>
+			<div name="birthField" can_be_a_null="no">
+				<action type="fetch-dom-element">
+					div:contains("DATE OF BIRTH")+:eq(0) 
+				</action>
+				<div name="birth-date">
+					<action type="store">						
+					</action>
+				</div>				
+			</div>
+			<div name="languageField" can_be_a_null="no">
+				<action type="fetch-dom-element">
+					div#langaugeDesc
+				</action>
+				<div name="birth-date">
+					<action type="store">						
+					</action>
+				</div>								
+			</div>
+			
+			<div name="addressField"  type="vector"> 
+				
+				<div name="address">
+					<action type="fetch-dom-element">
+					</action>
+				
+				</div>
+				
+			
+				<div name="CountryField" can_be_a_null="no">							
+					<action type="fetch-dom-element">
+						div.countryvalue
+					</action>
+					<div name="country">
+						<action type="store">						
+						</action>
+					</div>				
+				</div>
+				
+			</div>
+			
+			
+			
+        </div>				
+
+</div>
