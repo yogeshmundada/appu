@@ -1575,6 +1575,10 @@
      "category" : "software-services/class-3",
      "fpi" : "not-present"
  },
+ "imgur.com" : {
+     "category" : "software-services/class-3",
+     "fpi" : "group1/imgur.fpi"
+ },
  "usenix.org" : {
      "category" : "academia/class-2",
      "fpi" : "not-present"
