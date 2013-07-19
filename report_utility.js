@@ -41,7 +41,12 @@ function create_datatable_consumable_records(report, vo, keys, arr_function) {
 			}
 		    }
 		    else {
-			rec_entry.push(value);
+			if (value == "donno") {
+			    rec_entry.push("not sure");
+			}
+			else {
+			    rec_entry.push(value);
+			}
 		    }
 		}
 		records.push(rec_entry);

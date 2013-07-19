@@ -67,6 +67,8 @@ var hashing_workers = {};
 //and empty this buffer.
 var pre_login_cookies = {};
 
+var server_url = "http://appu.gtnoise.net:5005/";
+
 
 // BIG EXECUTION START
 
@@ -729,9 +731,5 @@ function make_user_approved_always(site) {
 // 	print_all_cookies('facebook.com', "APPU_START_CHECK");
 //     }, 2 * 1000);
 
-
-
-
-make_user_approved_always("delta.com");
-
+//make_user_approved_always("live.com");
 

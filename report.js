@@ -389,8 +389,6 @@ function report_received(report_number, report, do_render) {
     	$(".get-next-report").addClass("disabled");
     }
 
-    add_hooks();
-
 //     if (!do_render) {
 // 	//This means the query was just to update this structure.
 // 	return;
@@ -552,14 +550,16 @@ function report_received(report_number, report, do_render) {
     //Now it contains objects of format {"email", "no-change", "3"}
     //First: field name, Second: If there was change since last download, Third: Number of values on that site.
     //I am passing this function so that any past reports will still show proper information.
-    var func_val = undefined;
-    if (Object.keys(report.downloaded_pi).length > 0) {
-	var site = Object.keys(report.downloaded_pi)[0];
-	if (Object.prototype.toString.call(report.downloaded_pi[site].downloaded_fields[0]) 
-	    == "[object Object]") {
-	    func_val = function(o) { return o.field };
-	}
-    }
+//     var func_val = undefined;
+//     if (Object.keys(report.downloaded_pi).length > 0) {
+// 	var site = Object.keys(report.downloaded_pi)[0];
+// 	var obj_type = Object.prototype.toString.call(report.downloaded_pi[site].downloaded_fields[0]);
+// 	if ((obj_type == "[object Object]") ||
+// 	    (obj_type == "[object Undefined]")) {
+// 	    func_val = function(o) { return o.field };
+// 	}
+//     }
+    func_val = function(o) { return o.field };
 
     var pmt_records = create_datatable_consumable_records(report, "downloaded_pi", 
 							    [
@@ -595,10 +595,11 @@ function report_received(report_number, report, do_render) {
     for (var i = 0; i < all_nodes.length; i++) {
 	var n = $("a[id^='pi-field-value-']", all_nodes[i]);
 	var n_id = $(n).attr('id');
-	var orig_value = /pi-field-value-(.*)/g.exec(n_id)[1];
+	var orig_identifier = /pi-field-value-(.*)/g.exec(n_id)[1];
+	var actual_value = get_value_from_identifier(orig_identifier);
 	$('td:eq(0) a', all_nodes[i]).tooltip({
 		'title': "This value is NOT sent to the server. Only displayed for your convenience<br/><br/>" + 
-		    "<span class='pi-value'>" + report.pi_field_value_identifiers[orig_value] + "</span>", 
+		    "<span class='pi-value'>" + actual_value + "</span>", 
 		    'html' : true,
 		    'placement' : 'right',
 		    //'delay': { 'show': 1000, 'hide': 0 },
@@ -612,6 +613,17 @@ function report_received(report_number, report, do_render) {
     dtTable.fnAddData(report.input_fields);
     $("#user-interaction-metadata-table_length select").val('5').trigger('change');
     dtTable.fnSetColumnVis(6, current_report_delete_enabled);
+
+    add_hooks();
+}
+
+function get_value_from_identifier(identifier) {
+    for (var i in current_report.pi_field_value_identifiers) {
+	if (current_report.pi_field_value_identifiers[i] == identifier) {
+	    return i;
+	}
+    }
+    return undefined;
 }
 
 function send_report() {

@@ -1,5 +1,4 @@
 
-
 function print_appu_error(err_str) {
     if (err_str.indexOf("Appu Error: Could not process FPI template for:") == 0) {
 	//No need to push that a template is not present again and again

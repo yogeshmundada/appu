@@ -105,7 +105,11 @@ function schedule_report_for_sending(report_number) {
     pii_send_report(report_number);
 }
 
-
+//This report_number is *NOT* reportid
+//It is actually the index of the report from current_report.
+//Current_report is numbered at 1.
+//Report before that as 2, and report before that as 3 ..
+//So on until total 10 reports in the past_report's queue
 function pii_send_report(report_number) {
     var report = undefined;
     if (report_number == 1) {
@@ -115,6 +119,9 @@ function pii_send_report(report_number) {
 	//Adjust by 2 as current_report's number is 1
 	report = pii_vault.past_reports[report_number - 2];
     }
+
+    report.on_disk_size = roughSizeOfObject(localStorage);
+
     var wr = {};
     wr.type = "periodic_report";
 
@@ -124,19 +131,29 @@ function pii_send_report(report_number) {
     wr.current_report = report;
 
     try {
-	$.post("http://woodland.gtnoise.net:5005/post_report", JSON.stringify(wr), 
+	$.post(server_url + "post_report", JSON.stringify(wr), 
 	       function(report, report_number) {
 		   return function(data, status) {
 		       var is_processed = false;
 		       stats_message = /Report processed successfully/;
 		       is_processed = (stats_message.exec(data) != null);
-
+		       
 		       if (is_processed) {
 			   // Report successfully sent. Update the actual send time.
 			   report.actual_report_send_time = new Date();
-			   console.log("APPU INFO: Report '" + report_number 
+			   console.log("APPU INFO: Report '" + report.reportid 
 				       + "'  is successfully sent to the server at: " 
 				       + report.actual_report_send_time);
+			   vault_write("past_reports", pii_vault.past_reports);
+			   if (report_number in delivery_attempts) {
+			       delete delivery_attempts[report_number];
+			   }
+		       }
+		       else if (data == "Duplicate Entry") {
+			   // Report successfully sent. Update the actual send time.
+			   report.actual_report_send_time = new Date();
+			   console.log("APPU INFO: Report '" + report.reportid
+				       + "'  is duplicate entry at the server. Not going to send it again. ");
 			   vault_write("past_reports", pii_vault.past_reports);
 			   if (report_number in delivery_attempts) {
 			       delete delivery_attempts[report_number];

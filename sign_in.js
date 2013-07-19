@@ -39,6 +39,7 @@ function handle_current_user(response) {
 }
 
 function show_version(response) {
+    console.log("APPU DEBUG: Version is: " + response.version);
     $('#version-info').text(response.version);
 }
 
