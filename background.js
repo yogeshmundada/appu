@@ -222,7 +222,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    return;
 	}
     }
-
     if (message.type == "user_input") {
 	r = pii_log_user_input_type(message);
     }
@@ -650,7 +649,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    'reportnumber' : text_report_tab_ids[sender.tab.id]
 	});
     }
-
 });
 
 if (!pii_vault.initialized) {

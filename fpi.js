@@ -369,12 +369,17 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var element;
 	var css_filter = $.trim($(action).attr('filter'));
 	var ignore_default = $.trim($(action).attr('ignore_default'));
+	var combine_operator = $.trim($(action).attr('combine_operator'));
 	if (!ignore_default) {
 	    ignore_default = '';
 	}
 	else {
 	    var t = ignore_default.split(',');
 	    ignore_default = t.map(function(s){ return $.trim(s)});
+	}
+
+	if (!combine_operator) {
+	    combine_operator = ', ';
 	}
 
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
@@ -418,13 +423,13 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
  		    }
 
 		    if (field_value != "" && ignore_default.indexOf(field_value) == -1) {
-			combined_value += field_value + ", " 
+			combined_value += field_value + combine_operator;
 		    }
 		});
 		
-		if (combined_value.length >= 2 && 
-		    (combined_value.substring(combined_value.length - 2) == ", ")) {
-		    combined_value = combined_value.substring(0, combined_value.length - 2);
+		if (combined_value.length >= combine_operator.length && 
+		    (combined_value.substring(combined_value.length - combine_operator.length) == combine_operator)) {
+		    combined_value = combined_value.substring(0, combined_value.length - combine_operator.length);
 		}
 	    }
 	    else {
