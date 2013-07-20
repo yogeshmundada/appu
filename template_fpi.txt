@@ -1,4 +1,15 @@
-Template design:
+FPI Template design document:
+
+
+<------------------Principles of FPI creation (TODO later):------------>
+
+=>give examples of good case and bad case"
+=>give reasons why exploiting content using contains: etc.
+=>give examples of effectively using the child div. 
+		--> look at delta example. 
+	
+
+<-----------------------------ATTRIBUTES-------------------------------->
 1. Attribute "type" for <div> indicates if that div is scalar or vector.
    By default, every <div> is scalar.
    For fields that could have multiple values such as addresses, ccns etc,
@@ -15,6 +26,8 @@ Template design:
 	</div>
    </div>
 
+   
+			<--------- <div> attributes ------------->   
 2. Attribute "can_be_a_null" for a <div> tells if that field can be 
    empty. Each FPI should have at least one  - can_be_a_null='no'
    to indicate whether PI download was successful or not.
@@ -23,7 +36,9 @@ Template design:
    In case of vector elements, put this attribute (can_be_a_null='no')
    in the parent <div> element where you mention (type="vector") 
    (See point 1).
+     
 
+		<--------- <action "type" attributes ------------->   
 3. Currently supported type-attributes for any <action> are:
    fetch-url: Fetches the actual URL. Store the resulting HTML page
    	      as a DOM document as current node's value.
@@ -57,4 +72,12 @@ Template design:
 	  must be an HTML element which can be passed to
 	  jQuery and can be applied a .text() method on.
 	  (i.e. it should not be a string like "xyz").
+	  
+	  <--------- <action> attributes ------------->   
+   
+	combine_operator : current default is " ," but with this attribute this
+		can be changed to anything such as "-", "" , etc. This useful for 
+		feids such as phonenumber and/or ccn. Where the comma is not effective.
+
+   
    
