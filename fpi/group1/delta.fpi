@@ -53,27 +53,46 @@
 				</div>								
 			</div>
 			
-			<div name="addressField"  type="vector"> 
+			<div name="addressField" > 
+				<action type="fetch-dom-element" jquery_filter="ancestor-0">
+					div.title:contains("MAILING ADDRESSES")
+				</action>
 				
-				<div name="address">
+				<div name="addressVector" type="vector">
 					<action type="fetch-dom-element">
+						div.deleteFields.finder
 					</action>
 				
-				</div>
-				
-			
-				<div name="CountryField" can_be_a_null="no">							
-					<action type="fetch-dom-element">
-						div.countryvalue
-					</action>
-					<div name="country">
-						<action type="store">						
-						</action>
+					<div name="address">
+						<action type="combine-n-store">
+							label:contains("Street Address")+,
+							label:contains("City")+,
+							label:contains("State/Province")+:not(:has(*)),
+							label:contains("Zip/Postal Code")+,
+							div.countryvalue
+						</action>				
 					</div>				
 				</div>
-				
 			</div>
 			
+			<div name="phoneField"> 
+				<action type="fetch-dom-element" >
+					div#phoneInformation
+				</action>
+				
+				<div name="addressVector" type="vector">
+					<action type="fetch-dom-element">
+						div.deleteFields.fltLeft.singleContainer
+					</action>
+				
+					<div name="phone">
+						<action type="combine-n-store">
+							label:contains("Area code")+:not(:has(*)),
+							label:contains("PHONE NUMBER")+:not(:has(*))						
+						</action>				
+					</div>		
+				</div>
+			</div>
 			
 			
         </div>				
