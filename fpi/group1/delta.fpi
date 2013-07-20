@@ -94,20 +94,6 @@
 				</div>
 			</div>
 			
-			<div name="emailAddresses">
-				<action type="fetch-dom-element" >
-					div#emailInformation
-				</action>
-				<div name="emailVector" type="vector">
-					<action type="fetch-dom-element">
-						div.fltLeft.sample
-					</action>
-				
-					<div name="email">
-						div.emailAddress
-					</div>
-				</div>		
-			</div>
 			
 			
         </div>				
