@@ -86,12 +86,27 @@
 					</action>
 				
 					<div name="phone">
-						<action type="combine-n-store">
+						<action type="combine-n-store" combine_opertor="-" >
 							label:contains("Area code")+:not(:has(*)),
 							label:contains("PHONE NUMBER")+:not(:has(*))						
 						</action>				
 					</div>		
 				</div>
+			</div>
+			
+			<div name="emailAddresses">
+				<action type="fetch-dom-element" >
+					div#emailInformation
+				</action>
+				<div name="emailVector" type="vector">
+					<action type="fetch-dom-element">
+						div.fltLeft.sample
+					</action>
+				
+					<div name="email">
+						div.emailAddress
+					</div>
+				</div>		
 			</div>
 			
 			
