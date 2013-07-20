@@ -1,0 +1,60 @@
+Template design:
+1. Attribute "type" for <div> indicates if that div is scalar or vector.
+   By default, every <div> is scalar.
+   For fields that could have multiple values such as addresses, ccns etc,
+   create a parent <div> element that has a selector that will collect
+   all these element and with a - type='vector'. 
+   e.g.
+   <div name="addresses" type="vector">
+   	<action type="fetch-dom-element">body table.address
+	</action>
+	
+	<div name="address">
+	     <action type="store">td:eq(2)
+	     </action>	     
+	</div>
+   </div>
+
+2. Attribute "can_be_a_null" for a <div> tells if that field can be 
+   empty. Each FPI should have at least one  - can_be_a_null='no'
+   to indicate whether PI download was successful or not.
+   Usually these fields are Name and/or Email.
+
+   In case of vector elements, put this attribute (can_be_a_null='no')
+   in the parent <div> element where you mention (type="vector") 
+   (See point 1).
+
+3. Currently supported type-attributes for any <action> are:
+   fetch-url: Fetches the actual URL. Store the resulting HTML page
+   	      as a DOM document as current node's value.
+   fetch-href: Applies the CSS selector in <action>'s text to
+   	       the parent node's value. It reads the href of
+	       resulting element.
+	       Then fetches that href. Store the resulting HTML page
+	       as a DOM document as current node's value.
+   fetch-dom-element: Applies the CSS selector in <action>'s text to
+   	       	      the parent node's value. Store the resulting 
+		      element(s) as current node's value.
+   simulate-click:  Applies the CSS selector in <action>'s text to
+   	       	    the parent node's value. Simulate a mouse-click
+		    on resulting element(s). Then read the HTML page.
+		    Store that HTML page as DOM document in current
+		    node's value.
+   combine-n-store: Applies the CSS selector in <action>'s text to
+   	       	    the parent node's value. Assuming that there are
+		    multiple elements generated, it combines the 
+		    text contained in those elements with a comma.
+		    This is particularly useful for addresses.
+		    One needs to combine Address line 1, line 2,
+		    city, state, zip and country.
+   store: This action can only be associated with a leaf node.
+   	  It apply the CSS selector in <action>'s text to parent
+	  node's value. Store the resulting element's text
+	  as final value of the PI field. The PI field is 
+	  mentioned in the "name" attribute of leaf <div>
+   	  One important thing is the result of applying 
+	  the CSS selector + filter for this leaf node
+	  must be an HTML element which can be passed to
+	  jQuery and can be applied a .text() method on.
+	  (i.e. it should not be a string like "xyz").
+   
