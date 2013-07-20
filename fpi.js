@@ -1028,11 +1028,16 @@ function calculate_common_fields() {
 }
 
 function sanitize_phone(phones) {
-    var ph_regex = /\(([0-9]{3})\) ([0-9]{3})-([0-9]{4})/;
+    var ph_regex_patterns = [
+			     /\(([0-9]{3})\) ([0-9]{3})-([0-9]{4})/,
+			     /\(([0-9]{3})\)-([0-9]{3})([0-9]{4})/,
+			     ];
 
     for (var i = 0; i < phones.length; i++) {
-	if (ph_regex.exec(phones[i]) != null) {
-	    phones[i] = phones[i].replace(ph_regex, "$1-$2-$3");
+	for (var k = 0; k < ph_regex_patterns.length; k++) {
+	    if (ph_regex_patterns[k].exec(phones[i]) != null) {
+		phones[i] = phones[i].replace(ph_regex_patterns[k], "$1-$2-$3");
+	    }
 	}
     }
 }
