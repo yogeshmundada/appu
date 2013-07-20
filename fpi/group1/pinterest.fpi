@@ -1,0 +1,64 @@
+<div name="pinterest">
+	<action type="fetch-url">https://www.pinterest.com</action>	
+	
+		<div name="profile-redirect" >
+			<action type="fetch-url">
+				https://pinterest.com/settings/
+			</action>
+			
+			<div name="emailField" can_be_a_null="no">
+				<action type="fetch-dom-element" >
+					h3:contains("Email Address")+>input
+				</action>
+				<div name="email">
+					<action type="store" field_type="editable">
+					</action>
+				</div>				
+			</div>			
+			
+			<div name="languageSelect" can_be_a_null="no">
+				<action type="fetch-dom-element" >
+					h3:contains("Language")+>select :selected
+				</action>
+
+				<div name="language">
+					<action type="store" >						
+					</action>
+				</div>				
+			</div>
+			
+			<div name="countryField" can_be_a_null="no">
+				<action type="fetch-dom-element" >
+					h3:contains("Country")+>select :selected
+				</action>
+				<div name="country">
+					<action type="store">						
+					</action>
+				</div>			
+			</div>
+			
+			<div name="genderField" can_be_a_null="no">
+				<action type="fetch-dom-element" >
+					h3:contains("Gender")+>fieldset>ul :checked
+				</action>
+				<div name="gender">
+					<action type="store" field_type="editable">						
+					</action>
+				</div>
+				
+			</div>
+			
+        </div>				
+		
+		<div name="profile-likes-redirect" >
+			<action type="fetch-href">
+				a.myPins
+			</action>
+			<div name="name" can_be_a_null="no">
+				<action type="store" >		
+				h2.userProfileHeaderName		
+				</action>
+			</div>
+		</div>
+
+</div>

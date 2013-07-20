@@ -1,0 +1,33 @@
+<div name="tumblr">
+	<action type="fetch-url">https://www.tumblr.com</action>	
+	
+		<div name="profile-redirect" >
+			<action type="fetch-url">
+				https://www.tumblr.com/settings
+			</action>			
+			<div name="emailField" can_be_a_null="no">
+				<action type="fetch-dom-element" >
+				 div:contains("Email address")+
+				</action>
+				<div name="email">
+					<action type="store" field_type="editable">
+						input
+					</action>
+				</div>				
+			</div>
+
+			<div name="languageField" can_be_a_null="no">
+					<action type="fetch-dom-element" >
+					 div:contains("Language")+
+					</action>
+					<div name="language">
+						<action type="store">
+							select#user_language :selected
+						</action>
+					</div>				
+			</div>				
+			
+        </div>				
+	
+
+</div>

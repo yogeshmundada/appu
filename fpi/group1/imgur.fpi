@@ -1,0 +1,22 @@
+<div name="imgur">
+	<action type="fetch-url">https://www.imgur.com</action>	
+	
+		<div name="profile-redirect" >
+			<action type="fetch-url">
+				http://imgur.com/account/settings/password
+			</action>
+			
+			<div name="emailField" can_be_a_null="no">
+				<action type="fetch-dom-element" jquery_filter="remove-children">
+					h2:contains("Email:")+
+				</action>
+				<div name="email">
+					<action type="store" field_type="editable">
+					</action>
+				</div>				
+			</div>			
+			
+			
+        </div>				
+
+</div>
