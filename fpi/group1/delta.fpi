@@ -47,7 +47,7 @@
 				<action type="fetch-dom-element">
 					div#langaugeDesc
 				</action>
-				<div name="birth-date">
+				<div name="language">
 					<action type="store">						
 					</action>
 				</div>								
@@ -91,6 +91,24 @@
 							label:contains("PHONE NUMBER")+:not(:has(*))						
 						</action>				
 					</div>		
+				</div>
+			</div>
+			
+			<div name="emailField">
+				<action type="fetch-dom-element">
+					div#emailInformation
+				</action>
+				
+				<div name="emailVector" type="vector">
+					<action type="fetch-dom-element">
+						div.info.basicInfo
+					</action>
+					
+					<div name="email">
+						<action type="store">
+							div.emailAddress
+						</action>
+					</div>
 				</div>
 			</div>
 			
