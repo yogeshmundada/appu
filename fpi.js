@@ -891,7 +891,7 @@ function get_all_pi_data() {
 //                   }
 // }
 function store_per_site_pi_data(domain, site_pi_fields) {
-    domain = tld.getDomain(domain);
+    domain = get_domain(domain);
     var downloaded_fields = [];
     var old_pi_values = (domain in pii_vault.aggregate_data.per_site_pi) ? 
 	pii_vault.aggregate_data.per_site_pi[domain] : {};
