@@ -1,4 +1,13 @@
 
+function get_domain(curr_domain) {
+    ip_addr_regex = /((?:[0-9]{1,3}\.){3}[0-9]{1,3})/;
+    var r = ip_addr_regex.exec(curr_domain);
+    if(!r) {
+	return tld.getDomain(curr_domain);
+    }
+    return curr_domain;
+}
+
 function print_appu_error(err_str) {
     if (err_str.indexOf("Appu Error: Could not process FPI template for:") == 0) {
 	//No need to push that a template is not present again and again

@@ -222,7 +222,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    return;
 	}
     }
-
     if (message.type == "user_input") {
 	r = pii_log_user_input_type(message);
     }
@@ -256,7 +255,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "time_spent") {
 	focused_tabs -= 1;
-	var domain = tld.getDomain(message.domain);
+	var domain = get_domain(message.domain);
 	
 	pii_vault.current_report.total_time_spent += message.time_spent;
 	if (message.am_i_logged_in) {
@@ -323,13 +322,13 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	sendResponse(r);
 	if (domain && r.event_type == "login_attempt") {
 	    //At this point in code, we have a SUCCESSFUL LOGIN event
-	    console.log("APPU DEBUG: LOGIN_COMPLETE for: " + tld.getDomain(domain));
-	    //print_all_cookies(tld.getDomain(domain), "LOGIN_COMPLETE");
-	    //detect_login_cookies(tld.getDomain(domain));
+	    console.log("APPU DEBUG: LOGIN_COMPLETE for: " + get_domain(domain));
+	    //print_all_cookies(get_domain(domain), "LOGIN_COMPLETE");
+	    //detect_login_cookies(get_domain(domain));
 	}
     }
     else if (message.type == "check_passwd_reuse") {
-	message.domain = tld.getDomain(message.domain);
+	message.domain = get_domain(message.domain);
 	console.log("APPU DEBUG: User is attempting to LOGIN in: " + message.domain);
 	console.log("APPU DEBUG: LOGIN_ATTEMPT for: " + message.domain);
 	//print_all_cookies(message.domain, "LOGIN_ATTEMPT");
@@ -388,10 +387,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
     }
     else if (message.type == "signed_in") {
-	var domain = tld.getDomain(message.domain);
+	var domain = get_domain(message.domain);
 
 	if (message.value == 'yes') {
-	    console.log("APPU DEBUG: Signed in for site: " + tld.getDomain(message.domain));
+	    console.log("APPU DEBUG: Signed in for site: " + get_domain(message.domain));
 
 	    add_domain_to_uas(domain);
 
@@ -411,19 +410,19 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
 	else if (message.value == 'no') {
 	    pending_pi_fetch[sender.tab.id] = "";
-	    console.log("APPU DEBUG: NOT Signed in for site: " + tld.getDomain(message.domain));
+	    console.log("APPU DEBUG: NOT Signed in for site: " + get_domain(message.domain));
 	}
 	else if (message.value == 'unsure') {
 	    pending_pi_fetch[sender.tab.id] = "";
-	    console.log("APPU DEBUG: Signed in status UNSURE: " + tld.getDomain(message.domain));
+	    console.log("APPU DEBUG: Signed in status UNSURE: " + get_domain(message.domain));
 	}
 	else {
 	    console.log("APPU DEBUG: Undefined signed in value " + 
-			message.value + ", for domain: " + tld.getDomain(message.domain));
+			message.value + ", for domain: " + get_domain(message.domain));
 	}
     }
     else if (message.type == "explicit_sign_out") {
-	var domain = tld.getDomain(message.domain);
+	var domain = get_domain(message.domain);
 	console.log("APPU DEBUG: User is attempting to *explicitly* LOGOUT from: " + domain);
 
 	console.log("APPU DEBUG: LOGOUT_ATTEMPT for: " + domain);
@@ -472,7 +471,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "check_blacklist") {
 	r = pii_check_blacklisted_sites(message);
 	if (r.blacklisted == "no") {
-	    var etld = tld.getDomain(message.domain);
+	    var etld = get_domain(message.domain);
 
 	    if(pii_vault.total_site_list.indexOf(etld) == -1) {
 
@@ -650,7 +649,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    'reportnumber' : text_report_tab_ids[sender.tab.id]
 	});
     }
-
 });
 
 if (!pii_vault.initialized) {

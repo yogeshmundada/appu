@@ -1,6 +1,6 @@
 
 function pii_add_dontbug_list(message) {
-    var domain = tld.getDomain(message.domain);
+    var domain = get_domain(message.domain);
     var r = {};
     if(pii_vault.options.dontbuglist.indexOf(domain) == -1) {
 	pii_vault.options.dontbuglist.push(domain);

@@ -200,13 +200,13 @@ function detect_login_cookies(domain) {
 
 
 function cleanup_prelogin_cookies(domain) {
-    var d = tld.getDomain(domain);
+    var d = get_domain(domain);
     pre_login_cookies[d] = {};
 }
 
 
 function cleanup_session_cookie_store(domain) {
-    var d = tld.getDomain(domain);
+    var d = get_domain(domain);
     delete pii_vault.aggregate_data.session_cookie_store[d];
     flush_session_cookie_store();
 }
@@ -237,7 +237,7 @@ function cookie_change_detected(change_info) {
 	if (domain[0] == '.') {
 	    domain = domain.slice(1, domain.length);
 	}
-	domain = tld.getDomain(domain);
+	domain = get_domain(domain);
 
 	var curr_cookie = change_info.cookie.name;
 	var pvadcs = pii_vault.aggregate_data.session_cookie_store;

@@ -430,7 +430,7 @@ function pii_log_user_input_type(message) {
     var domain_input_elements = [
 	last_index + 1,
 	new Date(), 
-	tld.getDomain(message.domain), 
+	get_domain(message.domain), 
 	message.attr_list.name,
 	message.attr_list.type,
 	message.attr_list.length,
