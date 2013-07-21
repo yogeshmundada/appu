@@ -1,32 +1,34 @@
 <div name="instagram">
 	<action type="fetch-url">https://www.instagram.com</action>	
 	
-		<div name="profile-redirect" >
-			<action type="fetch-href">
-			a:contains("Profile")
+		<div name="profile-edit-redirect" >
+			<action type="fetch-url">
+				https://www.instagram.com/accounts/edit/
 			</action>
 			
-			<div name="emailField" can_be_a_null="no">
-				<action type="fetch-dom-element" jquery_filter="remove-children">
-				 p.email
+			<div name="name" can_be_a_null="no">			
+				<action type="store" field_type="editable" >
+					input#first_name
 				</action>
-				<div name="email">
-					<action type="store">
-					</action>
-				</div>				
-			</div>			
+			</div>
 			
-			<div name="Name click">
-				<action type="simulate-click" data="[name='fullName']">
-					a:contains(' Edit Name, Initials, or Bio ')>span
+			
+			<div name="email" can_be_a_null="no">
+				<action type="store" field_type="editable">
+					input#email
 				</action>
-
-				<div name="name">
-					<action type="store" field_type="editable">
-						[name='fullName']
-					</action>
-				</div>
-				
+			</div>
+		
+			<div name="phone" can_be_a_null="no">
+				<action type="store" field_type="editable">
+					input#phone_number
+				</action>
+			</div>
+			
+			<div name="gender">
+				<action type="store" ignore_default="--------">
+					select#gender :selected
+				</action>
 			</div>
 			
         </div>				

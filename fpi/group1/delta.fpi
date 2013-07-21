@@ -24,7 +24,7 @@
 					</action>
 				</div>				
 			</div>			
-			<div name="genderField" can_be_a_null="no">
+			<div name="genderField" can_be_a_null="no">	
 				<action type="fetch-dom-element">
 					label:contains("Gender")+:eq(1) 
 				</action>
@@ -110,10 +110,27 @@
 						</action>
 					</div>
 				</div>
-			</div>
-			
-			
+			</div>			
 			
         </div>				
+		
+		<div name="DeltaWallet">
+			<action type="fetch-url">
+				https://www.delta.com/mydelta/walletStoredPayment
+			</action>				
+			<div name="ccnVector" type="vector">
+				<action type="fetch-dom-element">
+					div.storedPayment_info.slider
+				</action>
+				
+				<div name="Name click">
+					<action type="simulate-click" data="[class='storedPaymentView_summary']">
+						div.right>a
+					</action>				
+					
+				</div>			
+				
+			</div>		
+		</div>
 
 </div>

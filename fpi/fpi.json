@@ -573,7 +573,7 @@
  },
  "instagram.com" : {
      "category" : "social-networking/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/instagram.fpi"
  },
  "hp.com" : {
      "category" : "hardware/software-services/class-3",
@@ -1578,6 +1578,10 @@
  "imgur.com" : {
      "category" : "software-services/media/social-networking/class-4",
      "fpi" : "group1/imgur.fpi"
+ },
+ "match.com" : {
+     "category" : "dating/personal-info/social-networking/networking/services/class-3",
+     "fpi" : "group1/match.fpi"
  },
  "usenix.org" : {
      "category" : "academia/class-2",
