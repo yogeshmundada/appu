@@ -1301,7 +1301,7 @@
  },
  "aa.com" : {
      "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/aa.fpi"
  },
  "kennedy-center.org" : {
      "category" : "reservation/shopping/class-3",
