@@ -621,7 +621,7 @@
  },
  "etsy.com" : {
      "category" : "ecommerce/shopping/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/etsy.fpi"
  },
  "tripit.com" : {
      "category" : "travel/shopping/class-3",

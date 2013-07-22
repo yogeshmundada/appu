@@ -1,36 +1,30 @@
 <div name="etsy">
 	<action type="fetch-url">https://www.etsy.com/your/profile?ref=si_profile</action>	
 	
-		<div name="profile-edit-redirect" >
-			<action type="fetch-url">
-				https://www.instagram.com/accounts/edit/
+		<div name="name" can_be_a_null="no">			
+			<action type="store" jquery_filter="remove-children">
+				p#full-name
 			</action>
-			
-			<div name="name" can_be_a_null="no">			
-				<action type="store" field_type="editable" >
-					input#first_name
-				</action>
-			</div>
-			
-			
-			<div name="email" can_be_a_null="no">
-				<action type="store" field_type="editable">
-					input#email
-				</action>
-			</div>
+		</div>      
 		
-			<div name="phone" can_be_a_null="no">
-				<action type="store" field_type="editable">
-					input#phone_number
-				</action>
-			</div>
-			
-			<div name="gender">
-				<action type="store" ignore_default="--------">
-					select#gender :selected
-				</action>
-			</div>
-			
-        </div>				
+		<div name="gender" can_be_a_null="no">			
+			<action type="store" field_type="editable">
+				div#gender :checked
+			</action>
+		</div> 
+		
+		<div name="city" >			
+			<action type="store" field_type="editable">
+				input#city3
+			</action>
+		</div> 
+		
+		<div name="birth-date" >			
+			<action type="combine-n-store" ignore_default="- month -,- day -">
+				select#birth-month :selected,
+				select#birth-day :selected
+			</action>
+		</div> 
+		
 
 </div>
