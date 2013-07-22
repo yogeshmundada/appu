@@ -1,0 +1,63 @@
+<div name="aa">
+	<action type="fetch-url">https://www.aa.com/myAccount/personalInformationAccess.do</action>	
+	
+		<div name="nameDiv">			
+			<action type="fetch-dom-element">
+					span.aaLgText:eq(0)
+			</action>
+			<div name="name" can_be_a_null="no">
+				<action type="store">					
+				</action>
+			</div>
+		</div>
+        <div name="emailDiv">			
+			<action type="fetch-dom-element">
+					td:contains("Email")+
+			</action>
+			<div name="email" can_be_a_null="no">
+				<action type="store">					
+				</action>
+			</div>			
+		</div>
+		<div name="cellphoneDiv">			
+			<action type="fetch-dom-element">
+					td:contains("Cell:")+
+			</action>
+			<div name="phone" ignore_default="">
+				<action type="store">					
+				</action>
+			</div>
+		</div>
+		<div name="homephoneDiv">			
+			<action type="fetch-dom-element">
+					td:contains("Home:")+
+			</action>
+			<div name="phone" can_be_a_null="no">
+				<action type="store" ignore_default="" >
+				</action>
+			</div>
+		</div>
+		
+		<div name="addressDiv">			
+			<action type="fetch-dom-element">
+					h3:contains("Address")+
+			</action>
+			<div name="address">
+					<action type="store" can_be_a_null="no">
+						tr.vtop>td:eq(0)
+					</action>				
+			</div>
+		</div>
+		<div name="countryDiv">
+			<action type="fetch-dom-element">
+					h3:contains("Country of Residence")+
+			</action>
+			<div name="country">
+					<action type="store">						
+					</action>							
+			</div>
+		</div>
+		
+		
+
+</div>

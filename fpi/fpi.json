@@ -257,7 +257,7 @@
  },
  "vimeo.com" : {
      "category" : "video-hosting/entertainment/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/vimeo.fpi"
  },
  "hulu.com" : {
      "category" : "video-hosting/entertainment/class-3",
@@ -293,7 +293,7 @@
  },
  "paypal.com" : {
      "category" : "finance/class-1",
-     "fpi" : "not-present"
+     "fpi" : "group1/paypal.fpi"
  },
  "venture-lab.org" : {
      "category" : "services/networking/class-3",
@@ -573,7 +573,7 @@
  },
  "instagram.com" : {
      "category" : "social-networking/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/instagram.fpi"
  },
  "hp.com" : {
      "category" : "hardware/software-services/class-3",
@@ -621,7 +621,7 @@
  },
  "etsy.com" : {
      "category" : "ecommerce/shopping/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/etsy.fpi"
  },
  "tripit.com" : {
      "category" : "travel/shopping/class-3",
@@ -1301,7 +1301,7 @@
  },
  "aa.com" : {
      "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/aa.fpi"
  },
  "kennedy-center.org" : {
      "category" : "reservation/shopping/class-3",
@@ -1578,6 +1578,10 @@
  "imgur.com" : {
      "category" : "software-services/media/social-networking/class-4",
      "fpi" : "group1/imgur.fpi"
+ },
+ "match.com" : {
+     "category" : "dating/personal-info/social-networking/networking/services/class-3",
+     "fpi" : "group1/match.fpi"
  },
  "usenix.org" : {
      "category" : "academia/class-2",
