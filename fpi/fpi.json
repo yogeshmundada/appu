@@ -293,7 +293,7 @@
  },
  "paypal.com" : {
      "category" : "finance/class-1",
-     "fpi" : "not-present"
+     "fpi" : "group1/paypal.fpi"
  },
  "venture-lab.org" : {
      "category" : "services/networking/class-3",
