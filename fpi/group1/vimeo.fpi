@@ -1,0 +1,44 @@
+<div name="vimeo">
+	<action type="fetch-url">https://vimeo.com/settings</action>	
+	
+		<div name="name" can_be_a_null="no">			
+			<action type="store" field_type="editable">
+				input#name
+			</action>
+		</div>      
+		
+		
+		<div name="emailList" type="vector">
+			<action type="fetch-dom-element">
+				ul#emails>li:eq(0)
+			</action>			
+			<div name="email" >
+				<action type="store" field_type="editable" can_be_a_null="no">					
+				input
+				</action>
+			</div>				
+		</div>
+	
+	<div name="profile-redirect">
+		<action type="fetch-url">
+		https://vimeo.com/settings/profile
+		</action>
+		
+		<div name="city">			
+			<action type="store" field_type="editable">
+				input#location
+			</action>
+		</div> 
+		
+		<div name="gender">			
+			<action type="store" ignore_default="N/A">
+				select#gender :selected
+			</action>
+		</div> 
+		
+	
+	</div>
+		
+		
+
+</div>
