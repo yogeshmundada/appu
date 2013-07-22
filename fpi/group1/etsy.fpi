@@ -1,0 +1,36 @@
+<div name="etsy">
+	<action type="fetch-url">https://www.etsy.com/your/profile?ref=si_profile</action>	
+	
+		<div name="profile-edit-redirect" >
+			<action type="fetch-url">
+				https://www.instagram.com/accounts/edit/
+			</action>
+			
+			<div name="name" can_be_a_null="no">			
+				<action type="store" field_type="editable" >
+					input#first_name
+				</action>
+			</div>
+			
+			
+			<div name="email" can_be_a_null="no">
+				<action type="store" field_type="editable">
+					input#email
+				</action>
+			</div>
+		
+			<div name="phone" can_be_a_null="no">
+				<action type="store" field_type="editable">
+					input#phone_number
+				</action>
+			</div>
+			
+			<div name="gender">
+				<action type="store" ignore_default="--------">
+					select#gender :selected
+				</action>
+			</div>
+			
+        </div>				
+
+</div>
