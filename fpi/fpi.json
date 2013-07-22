@@ -257,7 +257,7 @@
  },
  "vimeo.com" : {
      "category" : "video-hosting/entertainment/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/vimeo.fpi"
  },
  "hulu.com" : {
      "category" : "video-hosting/entertainment/class-3",
