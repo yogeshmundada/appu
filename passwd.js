@@ -1135,6 +1135,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		window.location = message.url;
 	    }
 	    else if (message.type == "simulate-click") {
+		debugger;
 		var element_to_click = apply_css_filter(apply_css_selector($(document), message.css_selector), 
 							message.css_filter);
 
@@ -1161,22 +1162,40 @@ if (document.URL.match(/.pdf$/) == null) {
 		observer.observe(document, config);
 		
 		//Now do the actual click
-		$(element_to_click).trigger("click");
+		try {
+		    $(element_to_click).trigger("click");
+		}
+		catch(e) {
+		    console.log("Here here: " + JSON.stringify(e));
+		}
+		debugger;
+		console.log("Here here");
 	    }
 	    else if (message.type == "get-html") {
 		//Adding 2 seconds delay because some sites like Google+ have data populated asynchronously.
 		//So the page loads but actual data is populated later.
 		window.setTimeout(function() {
-			$(function() { $('*').each(function(i) { $(this).attr('uid', i);}); });
+			//To give each element unique-id
+			$(function() { $('*').each(function(i) { $(this).attr('appu_uid', i);}); });
+			//To make each element visible or hidden
+			$(function() { 
+				$('*').each(function(i) { 
+					if ($(this).is(":visible")) {
+					    $(this).attr('appu_rendering', "visible");
+					}
+					else {
+					    $(this).attr('appu_rendering', "hidden");
+					}
+				    }); 
+			    });
 			var all_vals = {};
 			var all_input_elements = $(":input[type='text'], select");
 			for (var i = 0; i < all_input_elements.length; i++) {
-			    var uid = $(all_input_elements[i]).attr("uid");
-			    var val = $('[uid='+ uid +']').val();
+			    var uid = $(all_input_elements[i]).attr("appu_uid");
+			    var val = $('[appu_uid='+ uid +']').val();
 			    all_vals[uid] = val;
 			}
-
-			debugger;
+			
 			var html_data = $("html").html();
 			send_response({
 				'html_data' : html_data,
