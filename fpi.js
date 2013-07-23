@@ -1262,6 +1262,28 @@ function sanitize_ccn(ccns) {
 }
 
 
+function sanitize_ssn(ssns) {
+    var regex_digits = /([0-9]+)/g;
+    for (var i = 0; i < ssns.length; i++) {
+	all_digit_sequences = ssns[i].match(regex_digits);
+	var final_ssn = '';
+	if (all_digit_sequences) { 
+	    for (var k = 0; k < all_digit_sequences.length; k++) {
+		final_ssn += all_digit_sequences[k];
+	    }
+
+	    if (final_ssn.length > 3) {
+		final_ssn = final_ssn.substr(final_ssn.length - 3, final_ssn.length);
+	    }
+
+	    var prepend_chars = 'xxx-xx-x';
+	    final_ssn = (prepend_chars + final_ssn);
+	    ssns[i] = final_ssn;
+	}
+    }
+}
+
+
 function sanitize_date(dates) {
     for (var i = 0; i < dates.length; i++) {
 	var d = new Date(dates[i]);
