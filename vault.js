@@ -455,7 +455,10 @@ function flush_session_cookie_store() {
 }
 
 
-function flush_version() {
+function flush_version(version) {
+    if (version) {
+	pii_vault.config.current_version = version;
+    }
     flush_selective_entries("config", ["current_version"]);
 }
 

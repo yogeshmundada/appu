@@ -103,6 +103,50 @@ function update_specific_changes(last_version) {
 	var read_key = dug + ":" + "initialized";
 	localStorage[read_key] = JSON.stringify(pii_vault.initialized);
     }
+
+    if (last_version < '0.4.7') {
+	var per_site_pi = pii_vault.aggregate_data.per_site_pi;
+	var sym_tab = pii_vault.aggregate_data.pi_field_value_identifiers;
+
+	console.log("APPU DEBUG: Update specific changes(<0.4.7). Sanitizing phone numbers.");
+
+	for (var value in sym_tab) {
+	    var identifier = sym_tab[value];
+	    if (identifier.match(/^phone([0-9]+)$/)) {
+		var phone_array = [];
+		phone_array.push(value);
+		sanitize_phone(phone_array);
+		sym_tab[phone_array[0]] = identifier;
+	    }
+	}
+
+	console.log("APPU DEBUG: Update specific changes(<0.4.7). Sanitizing ccn numbers.");
+
+	for (var value in sym_tab) {
+	    var identifier = sym_tab[value];
+	    if (identifier.match(/^ccn([0-9]+)$/)) {
+		var ccn_array = [];
+		ccn_array.push(value);
+		sanitize_ccn(ccn_array);
+		sym_tab[ccn_array[0]] = identifier;
+	    }
+	}
+
+	console.log("APPU DEBUG: Update specific changes(<0.4.7). Sanitizing already downloaded " + 
+		    "phones/ccns in per_site_pi.");
+
+	for (var s in per_site_pi) {
+	    if (per_site_pi[s].ccn) {
+		sanitize_ccn(per_site_pi[s].ccn.values);
+	    }
+
+	    if (per_site_pi[s].phone) {
+		sanitize_phone(per_site_pi[s].phone.values);
+	    }
+	}
+
+	flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
+    }
 }
 
 

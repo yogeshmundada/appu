@@ -4,64 +4,68 @@
 	<div name="profile-redirect" >
 		<action type="fetch-url">
 			https://www.delta.com/profile/basicInfo.action
-			</action>
+		</action>
 
 		<div name="firstNameField" can_be_a_null="no">
 			<action type="fetch-dom-element">
 				label:contains("First Name")+:eq(0)
-				</action>
+			</action>
 			<div name="first-name">
 				<action type="store">
-					</action>
+				</action>
 			</div>
-			</div>
+		</div>
+
 		<div name="lastNameField" can_be_a_null="no">
 			<action type="fetch-dom-element">
 				label:contains("Last Name")+:eq(0)
-				</action>
+			</action>
 			<div name="last-name">
 				<action type="store">
-					</action>
+				</action>
 			</div>
 		</div>
+
 		<div name="genderField" can_be_a_null="no">
 			<action type="fetch-dom-element">
 				label:contains("Gender")+:eq(1) 
-				</action>
+			</action>
 			<div name="gender">
 				<action type="store">
 					:selected
-					</action>
+				</action>
 			</div>
-			</div>
+		</div>
+
 		<div name="birthField" can_be_a_null="no">
 			<action type="fetch-dom-element">
 				div:contains("DATE OF BIRTH")+:eq(0) 
-				</action>
+			</action>
 			<div name="birth-date">
 				<action type="store">
-					</action>
+				</action>
 			</div>
-			</div>
+		</div>
+
 		<div name="languageField" can_be_a_null="no">
 			<action type="fetch-dom-element">
 				div#langaugeDesc
-				</action>
+			</action>
 			<div name="language">
 				<action type="store">
-					</action>
+				</action>
 			</div>
-			</div>
+		</div>
 
 		<div name="addressField" > 
 			<action type="fetch-dom-element" jquery_filter="ancestor-0">
 				div.title:contains("MAILING ADDRESSES")
-				</action>
+			</action>
 
 			<div name="addressVector" type="vector">
 				<action type="fetch-dom-element">
 					div.deleteFields.finder
-					</action>
+				</action>
 
 				<div name="address">
 					<action type="combine-n-store">
@@ -72,18 +76,18 @@
 						div.countryvalue
 					</action>
 				</div>
-				</div>
 			</div>
+		</div>
 
 		<div name="phoneField"> 
 			<action type="fetch-dom-element" >
 				div#phoneInformation
-				</action>
+			</action>
 
 			<div name="addressVector" type="vector">
 				<action type="fetch-dom-element">
 					div.deleteFields.fltLeft.singleContainer
-					</action>
+				</action>
 
 				<div name="phone">
 					<action type="combine-n-store" combine_operator="-" >
@@ -91,46 +95,46 @@
 						label:contains("PHONE NUMBER")+:not(:has(*))
 					</action>
 				</div>
-				</div>
 			</div>
+		</div>
 
 		<div name="emailField">
 			<action type="fetch-dom-element">
 				div#emailInformation
-				</action>
+			</action>
 
 			<div name="emailVector" type="vector">
 				<action type="fetch-dom-element">
 					div.info.basicInfo
-					</action>
+				</action>
 
 				<div name="email">
 					<action type="store">
 						div.emailAddress
-						</action>
-					</div>
+					</action>
 				</div>
+			</div>
 		</div>
 
         </div>
 
-	<div name="DeltaWallet">
-		<action type="fetch-url">
-			https://www.delta.com/mydelta/walletStoredPayment
-		</action>
-		<div name="ccnVector" type="vector">
-			<action type="fetch-dom-element">
-				div.storedPayment_info.slider
-				</action>
-
-			<div name="Name click">
-				<action type="simulate-click" data="[class='storedPaymentView_summary']">
-					div.right>a
-				</action>
-
-			</div>
-
-		</div>
-		</div>
-
+<!-- 	<div name="DeltaWallet"> -->
+<!-- 		<action type="fetch-url"> -->
+<!-- 			https://www.delta.com/mydelta/walletStoredPayment -->
+<!-- 		</action> -->
+<!-- 		<div name="ccnVector" type="vector"> -->
+<!-- 			<action type="fetch-dom-element"> -->
+<!-- 				div.storedPayment_info.slider -->
+<!-- 			</action> -->
+			
+<!-- 			<div name="Name click"> -->
+<!-- 				<action type="simulate-click" data="[class='storedPaymentView_summary']"> -->
+<!-- 					div.right>a -->
+<!-- 				</action> -->
+				
+<!-- 			</div> -->
+			
+<!-- 		</div> -->
+<!-- 	</div> -->
+	
 </div>

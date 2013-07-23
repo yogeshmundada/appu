@@ -1226,26 +1226,37 @@ function calculate_common_fields() {
 }
 
 function sanitize_phone(phones) {
-    var ph_regex_patterns = [
-			     /\(([0-9]{3})\) ([0-9]{3})-([0-9]{4})/,
-			     /\(([0-9]{3})\)-([0-9]{3})([0-9]{4})/,
-			     ];
+    var regex_digits = /([0-9]+)/g;
 
     for (var i = 0; i < phones.length; i++) {
-	for (var k = 0; k < ph_regex_patterns.length; k++) {
-	    if (ph_regex_patterns[k].exec(phones[i]) != null) {
-		phones[i] = phones[i].replace(ph_regex_patterns[k], "$1-$2-$3");
+	all_digit_sequences = phones[i].match(regex_digits);
+	var final_phone = '';
+	if (all_digit_sequences) { 
+	    for (var k = 0; k < all_digit_sequences.length; k++) {
+		final_phone += all_digit_sequences[k];
 	    }
+	    phones[i] = final_phone;
 	}
     }
 }
 
 function sanitize_ccn(ccns) {
-    var ccn_regex = /\*\*\*\*\*\*\*\*\*\*\*\*([0-9]{4})/;
-
+    var regex_digits = /([0-9]+)/g;
     for (var i = 0; i < ccns.length; i++) {
-	if (ccn_regex.exec(ccns[i]) != null) {
-	    ccns[i] = ccns[i].replace(ccn_regex, "XXXX-XXXX-XXXX-$1");
+	all_digit_sequences = ccns[i].match(regex_digits);
+	var final_ccn = '';
+	if (all_digit_sequences) { 
+	    for (var k = 0; k < all_digit_sequences.length; k++) {
+		final_ccn += all_digit_sequences[k];
+	    }
+
+	    if (final_ccn.length > 4) {
+		final_ccn = final_ccn.substr(final_ccn.length - 4, final_ccn.length);
+	    }
+
+	    var prepend_chars = Array(13).join("*");
+	    final_ccn = (prepend_chars + final_ccn);
+	    ccns[i] = final_ccn;
 	}
     }
 }
