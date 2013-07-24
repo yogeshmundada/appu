@@ -2,84 +2,84 @@
 	<action type="fetch-url">https://www.paypal.com/webapps/customerprofile/summary.view
 	</action>	
 				
-<!-- 	<div name="nameDiv">			 -->
-<!-- 		<action type="fetch-dom-element"> -->
-<!-- 			div#name -->
-<!-- 		</action> -->
-<!-- 		<div name="name" can_be_a_null="no"> -->
-<!-- 			<action type="store"> -->
-<!-- 				div.details>span -->
-<!-- 			</action> -->
-<!-- 		</div> -->
-<!-- 	</div> -->
+	<div name="nameDiv">			
+		<action type="fetch-dom-element">
+			div#name
+		</action>
+		<div name="name" can_be_a_null="no">
+			<action type="store">
+				div.details>span
+			</action>
+		</div>
+	</div>
 	
-<!-- 	<div name="emailDiv">			 -->
-<!-- 		<action type="fetch-dom-element"> -->
-<!-- 			div.label.small:contains("Email")+ -->
-<!-- 		</action> -->
-<!-- 		<div name="emailList" type="vector"> -->
-<!-- 			<action type="fetch-dom-element"> -->
-<!-- 				ul#email>li -->
-<!-- 			</action> -->
+	<div name="emailDiv">			
+		<action type="fetch-dom-element">
+			div.label.small:contains("Email")+
+		</action>
+		<div name="emailList" type="vector">
+			<action type="fetch-dom-element">
+				ul#email>li
+			</action>
 			
-<!-- 			<div name="email" > -->
-<!-- 				<action type="store" can_be_a_null="no"> -->
-<!-- 					span:eq(0) -->
-<!-- 				</action> -->
-<!-- 			</div>				 -->
-<!-- 		</div> -->
-<!-- 	</div> -->
+			<div name="email" >
+				<action type="store" can_be_a_null="no">
+					span:eq(0)
+				</action>
+			</div>				
+		</div>
+	</div>
 	
-<!-- 	<div name="addressDiv">			 -->
-<!-- 		<action type="fetch-dom-element"> -->
-<!-- 			div.label.small:contains("Address")+ -->
-<!-- 		</action> -->
-<!-- 		<div name="addressList" type="vector"> -->
-<!-- 			<action type="fetch-dom-element"> -->
-<!-- 				ul#address>li -->
-<!-- 			</action> -->
+	<div name="addressDiv">			
+		<action type="fetch-dom-element">
+			div.label.small:contains("Address")+
+		</action>
+		<div name="addressList" type="vector">
+			<action type="fetch-dom-element">
+				ul#address>li
+			</action>
 			
-<!-- 			<div name="address" > -->
-<!-- 				<action type="store" can_be_a_null="no"> -->
-<!-- 					span:eq(0) -->
-<!-- 				</action> -->
-<!-- 			</div>				 -->
-<!-- 		</div> -->
-<!-- 	</div> -->
+			<div name="address" >
+				<action type="store" can_be_a_null="no">
+					span:eq(0)
+				</action>
+			</div>				
+		</div>
+	</div>
 	
-<!-- 	<div name="phoneDiv">			 -->
-<!-- 		<action type="fetch-dom-element"> -->
-<!-- 			div.label.small:contains("Phone")+ -->
-<!-- 		</action> -->
-<!-- 		<div name="phoneList" type="vector"> -->
-<!-- 			<action type="fetch-dom-element"> -->
-<!-- 				ul#phone>li -->
-<!-- 			</action> -->
+	<div name="phoneDiv">			
+		<action type="fetch-dom-element">
+			div.label.small:contains("Phone")+
+		</action>
+		<div name="phoneList" type="vector">
+			<action type="fetch-dom-element">
+				ul#phone>li
+			</action>
 			
-<!-- 			<div name="phone" can_be_a_null="no"> -->
-<!-- 				<action type="store"> -->
-<!-- 					span:eq(0) -->
-<!-- 				</action> -->
-<!-- 			</div>				 -->
-<!-- 		</div> -->
-<!-- 	</div> -->
+			<div name="phone" can_be_a_null="no">
+				<action type="store">
+					span:eq(0)
+				</action>
+			</div>				
+		</div>
+	</div>
 	
-<!-- 	<div name="ssnDiv">			 -->
-<!-- 		<action type="fetch-dom-element"> -->
-<!-- 			div.label.small:contains("Tax ID number")+ -->
-<!-- 		</action> -->
-<!-- 		<div name="ssn"> -->
-<!-- 			<action type="fetch-dom-element"> -->
-<!-- 				div#ssnID -->
-<!-- 			</action> -->
+	<div name="ssnDiv">			
+		<action type="fetch-dom-element">
+			div.label.small:contains("Tax ID number")+
+		</action>
+		<div name="ssn">
+			<action type="fetch-dom-element">
+				div#ssnID
+			</action>
 			
-<!-- 			<div name="ssn"> -->
-<!-- 				<action type="store"> -->
-<!-- 					div.details -->
-<!-- 				</action> -->
-<!-- 			</div>				 -->
-<!-- 		</div> -->
-<!-- 	</div> -->
+			<div name="ssn">
+				<action type="store">
+					div.details
+				</action>
+			</div>				
+		</div>
+	</div>
 	
 	<div name="ccnRedirect">
 		<action type="simulate-click" data="div#creditCards">
