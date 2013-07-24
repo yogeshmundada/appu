@@ -730,7 +730,7 @@ function make_user_approved_always(site) {
 //     }, 2 * 1000);
 
 //make_user_approved_always("netflix.com");
-make_user_approved_always("match.com");
+//make_user_approved_always("match.com");
 
  
 function print_open_windows(windows) {
