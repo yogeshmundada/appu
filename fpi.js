@@ -852,15 +852,76 @@ function process_template(domain, data, my_slave_tab) {
     traverse_and_fill(template_tree, site_pi_fields, my_slave_tab, level);
 }
 
-/// Template processing code END
 
-function start_pi_download_process(domain, data, sender_tab) {
+function open_tab_inconspicuously(domain, data, sender_tab) {
+    var sender_tab_windowId = sender_tab.windowId;
+    var all_windows = undefined;
+    var last_focused_window = undefined;
+
+    var chosen_windowId = sender_tab_windowId;
+
+    function get_all_windows(windows) {
+	all_windows = windows
+	chrome.windows.getLastFocused({}, get_last_focused_window);
+    }
+
+    function get_last_focused_window(window) {
+	last_focused_window = window;
+	for (var i = 0; i < all_windows.length; i++) {
+	    console.log("APPU DEBUG: ----------- --------- -------- ---------- ");
+	    console.log("APPU DEBUG: Window ID: " + all_windows[i].id);
+	    console.log("APPU DEBUG: Window INCOGNITO: " + all_windows[i].incognito);
+	    console.log("APPU DEBUG: Window TYPE: " + all_windows[i].type);
+	    console.log("APPU DEBUG: Window STATE: " + all_windows[i].state);
+	    console.log("APPU DEBUG: Window TOTAL TABS: " + all_windows[i].tabs.length);
+	}
+	console.log("APPU DEBUG: ----------- --------- -------- ---------- ");
+	console.log("APPU DEBUG: Last focused Window ID: " + last_focused_window.id);
+
+	for (var i = 0; i < all_windows.length; i++) {
+	    if (all_windows[i].incognito == true) {
+		continue;
+	    }
+
+	    if (all_windows[i].type != 'normal') {
+		continue;
+	    }
+
+	    if (all_windows[i].id == last_focused_window.id) {
+		continue;
+	    }
+
+
+	}
+    }
+
+    chrome.windows.getAll({
+	    populate: true,
+		}, get_all_windows);
+
+}
+
+
+function open_slave_tab(domain, data, window_id, tab_index) {
     var process_template_tabid = undefined;
     //Just some link so that appu content script runs on it.
     var default_url = 'http://google.com';
    
+    create_properties = { 
+	url: default_url, 
+	active: false 
+    };
+
+    if (window_id) {
+	create_properties.windowId = window_id;
+    }
+
+    if (tab_index) {
+	create_properties.index = tab_index;
+    }
+
     //Create a new tab. Once its ready, send message to process the template.
-    chrome.tabs.create({ url: default_url, active: false }, function slave_tab_callback(tab) {
+    chrome.tabs.create(create_properties, function slave_tab_callback(tab) {
 	    process_template_tabid = tab.id;
 	    var my_slave_tab = { tabid: process_template_tabid, 'in_use': true}
 	    template_processing_tabs[process_template_tabid] = default_url;
@@ -885,6 +946,13 @@ function start_pi_download_process(domain, data, sender_tab) {
 		    process_template(domain, data, my_slave_tab);    
 		});
 	});
+}
+
+
+/// Template processing code END
+
+function start_pi_download_process(domain, data, sender_tab) {
+    open_slave_tab(domain, data);
 }
 
 function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab) {
@@ -1320,6 +1388,9 @@ function add_field_to_per_site_pi(domain, pi_name, pi_value) {
 
     if (pi_name == "phone") {
 	sanitize_phone(pi_value);
+    }
+    if (pi_name == "ssn") {
+	sanitize_ssn(pi_value);
     }
     if (pi_name == "ccn") {
 	sanitize_ccn(pi_value);
