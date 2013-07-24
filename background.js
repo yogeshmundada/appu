@@ -401,7 +401,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    if (sender.tab.id in pending_pi_fetch) { 
 		if (pending_pi_fetch[sender.tab.id] == domain) {
 		    console.log("APPU DEBUG: domain: " + domain + ", tab-id: " + sender.tab.id);
-    		    check_if_pi_fetch_required(domain, sender.tab.id);		
+    		    check_if_pi_fetch_required(domain, sender.tab.id, sender.tab);		
 		}
 		else {
 		    pending_pi_fetch[sender.tab.id] = "";
@@ -729,5 +729,30 @@ function make_user_approved_always(site) {
 // 	print_all_cookies('facebook.com', "APPU_START_CHECK");
 //     }, 2 * 1000);
 
-make_user_approved_always("vimeo.com");
+//make_user_approved_always("netflix.com");
+//make_user_approved_always("match.com");
+
+ 
+function print_open_windows(windows) {
+    for (var i = 0; i < windows.length; i++) {
+	console.log("APPU DEBUG: ----------- --------- -------- ---------- ");
+	console.log("APPU DEBUG: Window ID: " + windows[i].id);
+	console.log("APPU DEBUG: Window INCOGNITO: " + windows[i].incognito);
+	console.log("APPU DEBUG: Window TYPE: " + windows[i].type);
+	console.log("APPU DEBUG: Window STATE: " + windows[i].state);
+	console.log("APPU DEBUG: Window TOTAL TABS: " + windows[i].tabs.length);
+    }
+}
+
+chrome.windows.getAll({
+	populate: true,
+	    }, print_open_windows);
+
+
+function print_last_focused(window) {
+    console.log("APPU DEBUG: Last focused Window ID: " + window.id);
+}
+
+chrome.windows.getLastFocused({}, print_last_focused);
+
 

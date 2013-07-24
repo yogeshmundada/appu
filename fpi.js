@@ -32,6 +32,7 @@ function traverse_template_create_tree(fd, curr_node, site_pi_fields) {
 	for(var i = 0; i < all_kids.length; i++) {
 	    var new_node = {};
 	    new_node.parent = curr_node;
+	    new_node.root = curr_node.root;
 	    new_node.sibling_num = i;
 	    new_node.completely_processed = false;
 	    
@@ -43,6 +44,7 @@ function traverse_template_create_tree(fd, curr_node, site_pi_fields) {
 	    }
 	    else {
 		new_node.left_sibling = null;
+		new_node.right_sibling = null;
 		last_kid = new_node;
 	    }
 
@@ -200,13 +202,14 @@ function send_cmd_to_tab(action_type, curr_node, site_pi_fields, fetch_url, my_s
 		curr_node.fp = fp;
 		
 		for (var uid in all_vals) {
-		    $("[uid="+uid+"]",fp).val(all_vals[uid]);
+		    $("[appu_uid="+uid+"]",fp).val(all_vals[uid]);
 		}
 
 		process_kids(curr_node, site_pi_fields, my_slave_tab, level);
 	}); 
     });
 }
+
 
 //Simulate a waiting queue. When someone calls to fetch url and if their slave tab is busy 
 //fetching another url, then put that node on waiting queue.
@@ -250,12 +253,118 @@ function make_slavetab_do_work(action_type, curr_node, site_pi_fields, fetch_url
     }
 }
 
+// Copies current FPI tree node to a new node and attaches it to the given parent 
+// It will also take care of children nodes by recursively calling itself
+// with parent set to the new node.
+function copy_fpi_node(node, parent) {
+    var copied_node = {};
+    var properties_array = [
+			    "type",
+			    "root",
+			    "sibling_num",
+			    "completely_processed",
+			    "xml_node",
+			    "name",
+			    ];
+
+    copied_node.parent = parent;
+
+    $.map(properties_array, function(property, i) {
+	    if (node[property] != undefined) {
+		copied_node[property] = node[property];
+	    }
+	});
+
+    copied_node.children = [];
+    var last_kid = null;
+
+    for (var i = 0; i < node.children.length; i++) {
+	var n = copy_fpi_node(node.children[i], copied_node);
+	    
+	if (last_kid != null) {
+	    n.left_sibling = last_kid;
+	    last_kid.right_sibling = n;
+	    n.right_sibling = null;
+	    last_kid = n;
+	}
+	else {
+	    n.left_sibling = null;
+	    n.right_sibling = null;
+	    last_kid = n;
+	}
+	copied_node.children.push(n);
+    }
+    return copied_node;
+}
+
+// This will copy the same subtree under different parents.
+// This is useful for the case when there are multiple elements selected
+// on which action "simulate-click" is to be performed.
+
+// This does not need to return anything since newly created subtree
+// copies will be attached to the parents anyway.
+function get_subtree_copies(subtree, parents) {
+    for (var i = 0; i < parents.length; i++) {
+	var n = copy_fpi_node(subtree, parents[i]);
+	parents[i].children.push(n);
+    }
+}
+
+
+// Dynamically create new nodes in the FPI template tree.
+// Tricky part is generating xml_node. For this, caller has
+// to send the correct xml_text which MUST have at least one "action" element in it.
+function create_empty_node(name, sibling_num, parent, xml_text) {
+    var fd = $(xml_text);
+    var curr_node = {};
+
+    curr_node.children = [];
+    curr_node.xml_node = fd;
+    curr_node.name = name;
+    curr_node.sibling_num = sibling_num;
+    curr_node.completely_processed = false;
+    curr_node.parent = parent;
+    curr_node.root = parent.root;
+    curr_node.left_sibling = null;
+    curr_node.right_sibling = null;
+
+    return curr_node;
+}
+
+
+function create_dummy_fetch_url_children(curr_node, curr_page_url, pfp) {
+    var new_children = [];
+    var last_kid = null;
+    for(var i = 0; i < pfp.length; i++) {
+	var name = "dummy-multiple-fetch-url-"+ i;
+	var xml_text = '<div name="'+ name +'">' +
+	    '<action type="fetch-url">' + curr_page_url + '</action></div>';
+
+	var n = create_empty_node(name, i, curr_node, xml_text);
+	if (last_kid != null) {
+	    n.left_sibling = last_kid;
+	    last_kid.right_sibling = n;
+	    n.right_sibling = null;
+	    last_kid = n;
+	}
+	else {
+	    n.left_sibling = null;
+	    n.right_sibling = null;
+	    last_kid = n;
+	}
+
+	new_children.push(n);
+    }
+
+    return new_children;
+}
+
 function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) {
     //console.log("APPU DEBUG, Name: " + curr_node.name + ", action: " + $(action).attr('type'));
-
     if ($(action).attr('type') == 'fetch-url') {
 	var fetch_url = $.trim($(action).text());
-	//console.log('APPU DEBUG: Fetching :' + fetch_url);
+	console.log('APPU DEBUG: Got fetch-url:' + fetch_url);
+	curr_node.fetched_url = fetch_url;
 	make_slavetab_do_work("fetch-url", curr_node, site_pi_fields, fetch_url, my_slave_tab, level);
     }
     else if ($(action).attr('type') == 'fetch-href') {
@@ -263,26 +372,110 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var css_selector = $.trim($(action).text());
 	var fetch_url = $.trim($(css_selector, pfp).attr('href'));
 	console.log("APPU DEBUG: Got fetch-href: " + fetch_url);
+	curr_node.fetched_url = fetch_url;
 	make_slavetab_do_work("fetch-url", curr_node, site_pi_fields, fetch_url, my_slave_tab, level);
     }
     else if ($(action).attr('type') == 'simulate-click') {
 	var pfp = curr_node.parent.fp;
 	var css_selector = $.trim($(action).text());
 	var css_filter = $.trim($(action).attr('filter'));
-	curr_node.css_selector = css_selector;
-	curr_node.css_filter = css_filter;
-	make_slavetab_do_work('simulate-click', curr_node, site_pi_fields, undefined, my_slave_tab, level);
+	var jquery_filter = $.trim($(action).attr('jquery_filter'));
+
+	if (pfp.length == 1 || pfp.length == undefined) {
+	    var tmp_fp = apply_css_filter(apply_css_selector(pfp, css_selector, jquery_filter), css_filter);
+	    var appu_uid = $(tmp_fp).attr("appu_uid");
+	    curr_node.css_selector = "[appu_uid='" + appu_uid + "']";
+	    curr_node.css_filter = "";
+	    make_slavetab_do_work('simulate-click', curr_node, site_pi_fields, undefined, my_slave_tab, level);
+	}
+	else {
+	    //get the current page url: fetch-url OR fetch-href
+	    var curr_page_url = '';
+	    curr_ancestor = curr_node.parent;
+	    
+	    while (curr_ancestor != undefined) {
+		var curr_ancestor_action = $(curr_ancestor.xml_node).children("action").attr('type');
+		if (curr_ancestor_action == "fetch-url" || 
+		    curr_ancestor_action == "fetch-href" ) {
+		    curr_page_url = curr_ancestor.fetched_url;
+		    break;
+		}
+		curr_ancestor = curr_ancestor.parent;
+	    }
+	    
+	    if (curr_page_url == '') {
+		print_appu_error("Appu Error: Could not find curr_page_url for domain: " + 
+				 curr_node.root.domain);
+		// Terminate processing of subtree here.
+		inform_parent(curr_node);
+		return;
+	    }
+	    
+	    var parent_action = $(curr_node.parent.xml_node).children("action").attr("type");
+	    if (parent_action != "fetch-dom-element") {
+		print_appu_error("Appu Error: For mulitple-select, parent-action is not" + 
+				 " fetch-dom-element, domain: " + curr_node.root.domain);
+		// Terminate processing of subtree here.
+		inform_parent(curr_node);
+		return;
+	    }
+	    
+	    var old_children = curr_node.children;
+	    // First create new children with fetch-url for the curr_node
+	    // This will bring us back to the current-url after each simulate-click
+	    var new_children = create_dummy_fetch_url_children(curr_node, curr_page_url, pfp);
+	    
+	    // Following with select specific element on the current page to 
+	    // simulate click on. Thus using "select_index" we segregate each
+	    // element to simulate click on under a different subtree and we 
+	    // also have a fetch-url as a parent, effectively nullifying previous
+	    // simulate-click effects.
+	    var action_element = {};
+	    $.extend(true, action_element, $(curr_node.parent.xml_node).children("action"));
+	    
+	    var new_grand_children = [];
+	    var last_kid = null;
+	    
+	    for(var i = 0; i < new_children.length; i++) {
+		$(action_element).attr("select_index", i);
+		var action_element_xml = $('<div>').append(action_element).html();
+		
+		var name = "dummy-multiple-fetch-dom-element-"+ i;
+		var xml_text = '<div name="'+ name +'">' + action_element_xml + '</div>';
+		
+		var n = create_empty_node(name, i, new_children[i], xml_text);
+		new_grand_children.push(n);
+		new_children[i].children.push(n);
+	    }
+
+	    for (var k = 0; k < old_children.length; k++) {
+		//get_subtree_copies(old_children[k], new_children);
+		get_subtree_copies(curr_node, new_grand_children);
+	    }
+
+	    curr_node.children = new_children;
+	    process_kids(curr_node, site_pi_fields, my_slave_tab, level);
+	}
     }
     else if ($(action).attr('type') == 'fetch-dom-element') {
 	var pfp = curr_node.parent.fp;
 	var css_selector = $.trim($(action).text());
 	var css_filter = $.trim($(action).attr('filter'));
+	var select_index = $.trim($(action).attr('select_index'));
 	var jquery_filter = $.trim($(action).attr('jquery_filter'));
 
 	curr_node.fp = apply_css_filter(apply_css_selector(pfp, css_selector, jquery_filter), css_filter);
+
+	if (select_index) {
+	    curr_node.fp = $(curr_node.fp[select_index]);
+	}
+
 	process_kids(curr_node, site_pi_fields, my_slave_tab, level)
     }
     else if ($(action).attr('type') == 'fetch-prev-dom-element') {
+	// I think I coded this because there is no way to goto previous in current CSS std.
+	// I believe in future same thing can be done by using "!".
+	// Everything in this condition is same as above EXCEPT .prev() applied when generating "fp"
 	var pfp = curr_node.parent.fp;
 	var css_selector = $.trim($(action).text());
 	var css_filter = $.trim($(action).attr('filter'));
@@ -463,7 +656,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	inform_parent(curr_node);
     }
     else {
-	print_appu_error("Appu Error: Unknow action in FPI template: " + $(action).attr('type'));
+	print_appu_error("Appu Error: Unknown action in FPI template: " + $(action).attr('type'));
     }
 }
 
@@ -577,10 +770,11 @@ function apply_data_filter(field_value, data_filter) {
     return field_value;
 }
 
-function apply_jquery_filter(elements, jquery_filter) {
+function apply_jquery_filter(element, jquery_filter) {
     var patterns = [
 		    /(ancestor)-([0-9]+)/,
 		    /(remove-children)/,
+		    /(is_visible)/,
 		    ];
 
     for (var p = 0; p < patterns.length; p++) {
@@ -589,14 +783,20 @@ function apply_jquery_filter(elements, jquery_filter) {
 	    continue;
 	}
 	if (r[1] == "ancestor") {
-	    var rc = $(elements).parents().eq(r[2]);
+	    var rc = $(element).parents().eq(r[2]);
 	    return rc;
 	}
 	else if (r[1] == "remove-children") {
-	    var rc = $(elements).children().remove().end();
+	    var rc = $(element).children().remove().end();
 	    return rc;
 	}
+	else if (r[1] == "is_visible") {
+	    if ($(element).attr("appu_rendering") == "visible") {
+		return element;
+	    }
+	}
     }
+    return undefined;
 }
 
 function apply_css_selector(elements, css_selector, jquery_filter) {
@@ -606,11 +806,13 @@ function apply_css_selector(elements, css_selector, jquery_filter) {
 	    var jqf_result = undefined;
 	    for (var z = 0; z < result.length; z++) {
 		var rc = apply_jquery_filter(result[z], jquery_filter);
-		if (z == 0) {
-		    jqf_result = rc;
-		}
-		else {
-		    jqf_result = jqf_result.add(rc);
+		if (rc != undefined) {
+		    if (!jqf_result || jqf_result.length == 0) {
+			jqf_result = rc;
+		    }
+		    else {
+			jqf_result = jqf_result.add(rc);
+		    }
 		}
 	    }
 	    result = jqf_result;
@@ -638,6 +840,7 @@ function process_template(domain, data, my_slave_tab) {
     template_tree.name = 'root';
     template_tree.completely_processed = false;
     template_tree.domain = domain;
+    template_tree.root = template_tree;
     template_tree.site_pi_fields = site_pi_fields;
 
     template_tree.my_slave_tab = my_slave_tab;
@@ -651,40 +854,40 @@ function process_template(domain, data, my_slave_tab) {
 
 /// Template processing code END
 
-function start_pi_download_process(domain, data) {
+function start_pi_download_process(domain, data, sender_tab) {
     var process_template_tabid = undefined;
     //Just some link so that appu content script runs on it.
     var default_url = 'http://google.com';
-    
+   
     //Create a new tab. Once its ready, send message to process the template.
-    chrome.tabs.create({ url: default_url, active: false }, function(tab) {
-	process_template_tabid = tab.id;
-	var my_slave_tab = { tabid: process_template_tabid, 'in_use': true}
-	template_processing_tabs[process_template_tabid] = default_url;
-	//console.log("APPU DEBUG: XXX tabid: " + tab.id + ", value: " + 
-	// template_processing_tabs[tab.id]);
-	
-	//Dummy element to wait for HTML fetch
-	var dummy_tab_id = sprintf('tab-%s', process_template_tabid);
-	var dummy_div_str = sprintf('<div id="%s"></div>', dummy_tab_id);
-	var dummy_div = $(dummy_div_str);
-	$('body').append(dummy_div);
-	
-	//Dummy element to wait for SLAVE tab to become free.
-	var wait_dummy_tab_id = sprintf('wait-queue-tab-%s', process_template_tabid);
-	var wait_dummy_div_str = sprintf('<div id="%s"></div>', wait_dummy_tab_id);
-	var wait_dummy_div = $(wait_dummy_div_str);
-	$('body').append(wait_dummy_div);
-	
-	$('#' + dummy_tab_id).on("page-is-loaded", function() {
-	    my_slave_tab.in_use = false;
-	    $('#' + dummy_tab_id).off("page-is-loaded");
-	    process_template(domain, data, my_slave_tab);    
+    chrome.tabs.create({ url: default_url, active: false }, function slave_tab_callback(tab) {
+	    process_template_tabid = tab.id;
+	    var my_slave_tab = { tabid: process_template_tabid, 'in_use': true}
+	    template_processing_tabs[process_template_tabid] = default_url;
+	    //console.log("APPU DEBUG: XXX tabid: " + tab.id + ", value: " + 
+	    // template_processing_tabs[tab.id]);
+    
+	    //Dummy element to wait for HTML fetch
+	    var dummy_tab_id = sprintf('tab-%s', process_template_tabid);
+	    var dummy_div_str = sprintf('<div id="%s"></div>', dummy_tab_id);
+	    var dummy_div = $(dummy_div_str);
+	    $('body').append(dummy_div);
+    
+	    //Dummy element to wait for SLAVE tab to become free.
+	    var wait_dummy_tab_id = sprintf('wait-queue-tab-%s', process_template_tabid);
+	    var wait_dummy_div_str = sprintf('<div id="%s"></div>', wait_dummy_tab_id);
+	    var wait_dummy_div = $(wait_dummy_div_str);
+	    $('body').append(wait_dummy_div);
+    
+	    $('#' + dummy_tab_id).on("page-is-loaded", function() {
+		    my_slave_tab.in_use = false;
+		    $('#' + dummy_tab_id).off("page-is-loaded");
+		    process_template(domain, data, my_slave_tab);    
+		});
 	});
-    });
 }
 
-function check_if_pi_fetch_required(domain, sender_tab_id) {
+function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab) {
     if (!(domain in pii_vault.aggregate_data.per_site_pi)) {
 	pii_vault.aggregate_data.per_site_pi[domain] = {};
 	flush_selective_entries("aggregate_data", ["per_site_pi"]);
@@ -727,7 +930,7 @@ function check_if_pi_fetch_required(domain, sender_tab_id) {
 
     if ((domain in fpi_metadata) && 
 	(fpi_metadata[domain]["fpi"] != "not-present")) {
-	get_permission_and_fetch_pi(domain, sender_tab_id);
+	get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab);
     }
     else {
 	print_appu_error("Appu Error: FPI Template for domain(" + domain 
@@ -737,7 +940,7 @@ function check_if_pi_fetch_required(domain, sender_tab_id) {
     return;
 }
 
-function get_permission_and_fetch_pi(domain, sender_tab_id) {
+function get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab) {
     var data = read_file("fpi/" + fpi_metadata[domain]["fpi"]);
     console.log("APPU DEBUG: Read the template for: " + domain);
 
@@ -1028,26 +1231,59 @@ function calculate_common_fields() {
 }
 
 function sanitize_phone(phones) {
-    var ph_regex_patterns = [
-			     /\(([0-9]{3})\) ([0-9]{3})-([0-9]{4})/,
-			     /\(([0-9]{3})\)-([0-9]{3})([0-9]{4})/,
-			     ];
+    var regex_digits = /([0-9]+)/g;
 
     for (var i = 0; i < phones.length; i++) {
-	for (var k = 0; k < ph_regex_patterns.length; k++) {
-	    if (ph_regex_patterns[k].exec(phones[i]) != null) {
-		phones[i] = phones[i].replace(ph_regex_patterns[k], "$1-$2-$3");
+	all_digit_sequences = phones[i].match(regex_digits);
+	var final_phone = '';
+	if (all_digit_sequences) { 
+	    for (var k = 0; k < all_digit_sequences.length; k++) {
+		final_phone += all_digit_sequences[k];
 	    }
+	    phones[i] = final_phone;
 	}
     }
 }
 
 function sanitize_ccn(ccns) {
-    var ccn_regex = /\*\*\*\*\*\*\*\*\*\*\*\*([0-9]{4})/;
-
+    var regex_digits = /([0-9]+)/g;
     for (var i = 0; i < ccns.length; i++) {
-	if (ccn_regex.exec(ccns[i]) != null) {
-	    ccns[i] = ccns[i].replace(ccn_regex, "XXXX-XXXX-XXXX-$1");
+	all_digit_sequences = ccns[i].match(regex_digits);
+	var final_ccn = '';
+	if (all_digit_sequences) { 
+	    for (var k = 0; k < all_digit_sequences.length; k++) {
+		final_ccn += all_digit_sequences[k];
+	    }
+
+	    if (final_ccn.length > 4) {
+		final_ccn = final_ccn.substr(final_ccn.length - 4, final_ccn.length);
+	    }
+
+	    var prepend_chars = Array(13).join("*");
+	    final_ccn = (prepend_chars + final_ccn);
+	    ccns[i] = final_ccn;
+	}
+    }
+}
+
+
+function sanitize_ssn(ssns) {
+    var regex_digits = /([0-9]+)/g;
+    for (var i = 0; i < ssns.length; i++) {
+	all_digit_sequences = ssns[i].match(regex_digits);
+	var final_ssn = '';
+	if (all_digit_sequences) { 
+	    for (var k = 0; k < all_digit_sequences.length; k++) {
+		final_ssn += all_digit_sequences[k];
+	    }
+
+	    if (final_ssn.length > 3) {
+		final_ssn = final_ssn.substr(final_ssn.length - 3, final_ssn.length);
+	    }
+
+	    var prepend_chars = 'xxx-xx-x';
+	    final_ssn = (prepend_chars + final_ssn);
+	    ssns[i] = final_ssn;
 	}
     }
 }
@@ -1065,10 +1301,10 @@ function sanitize_date(dates) {
 function sanitize_gender(genders) {
     for (var i = 0; i < genders.length; i++) {
 	var g = genders[i].toLowerCase();
-	if (g == 'm') {
+	if (g == 'm' || g == 'man') {
 	    g = 'male';
 	}
-	else if (g == 'f') {
+	else if (g == 'f' || g == 'woman') {
 	    g = 'female';
 	}
 	genders[i] = g;
