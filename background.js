@@ -730,29 +730,29 @@ function make_user_approved_always(site) {
 //     }, 2 * 1000);
 
 //make_user_approved_always("netflix.com");
-//make_user_approved_always("match.com");
+make_user_approved_always("paypal.com");
 
  
-function print_open_windows(windows) {
-    for (var i = 0; i < windows.length; i++) {
-	console.log("APPU DEBUG: ----------- --------- -------- ---------- ");
-	console.log("APPU DEBUG: Window ID: " + windows[i].id);
-	console.log("APPU DEBUG: Window INCOGNITO: " + windows[i].incognito);
-	console.log("APPU DEBUG: Window TYPE: " + windows[i].type);
-	console.log("APPU DEBUG: Window STATE: " + windows[i].state);
-	console.log("APPU DEBUG: Window TOTAL TABS: " + windows[i].tabs.length);
-    }
-}
+// function print_open_windows(windows) {
+//     for (var i = 0; i < windows.length; i++) {
+// 	console.log("APPU DEBUG: ----------- --------- -------- ---------- ");
+// 	console.log("APPU DEBUG: Window ID: " + windows[i].id);
+// 	console.log("APPU DEBUG: Window INCOGNITO: " + windows[i].incognito);
+// 	console.log("APPU DEBUG: Window TYPE: " + windows[i].type);
+// 	console.log("APPU DEBUG: Window STATE: " + windows[i].state);
+// 	console.log("APPU DEBUG: Window TOTAL TABS: " + windows[i].tabs.length);
+//     }
+// }
 
-chrome.windows.getAll({
-	populate: true,
-	    }, print_open_windows);
+// chrome.windows.getAll({
+// 	populate: true,
+// 	    }, print_open_windows);
 
 
-function print_last_focused(window) {
-    console.log("APPU DEBUG: Last focused Window ID: " + window.id);
-}
+// function print_last_focused(window) {
+//     console.log("APPU DEBUG: Last focused Window ID: " + window.id);
+// }
 
-chrome.windows.getLastFocused({}, print_last_focused);
+// chrome.windows.getLastFocused({}, print_last_focused);
 
 

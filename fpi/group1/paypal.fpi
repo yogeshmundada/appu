@@ -64,47 +64,47 @@
 <!-- 		</div> -->
 <!-- 	</div> -->
 	
-<!-- 	<div name="ssnDiv">			 -->
-<!-- 		<action type="fetch-dom-element"> -->
-<!-- 			div.label.small:contains("Tax ID number")+ -->
-<!-- 		</action> -->
-<!-- 		<div name="ssn"> -->
-<!-- 			<action type="fetch-dom-element"> -->
-<!-- 				div#ssnID -->
-<!-- 			</action> -->
-			
-<!-- 			<div name="ssn"> -->
-<!-- 				<action type="store"> -->
-<!-- 					div.details -->
-<!-- 				</action> -->
-<!-- 			</div>				 -->
-<!-- 		</div> -->
-<!-- 	</div> -->
-	
-	<div name="ccnRedirect">
-		<action type="simulate-click" data="div#creditCards">
-			a#FINANCIAL_SETTINGS
+	<div name="ssnDiv">
+		<action type="fetch-dom-element">
+			div.label.small:contains("Tax ID number")+
 		</action>
-		<div name="ccn-div">
-			<action type="fetch-dom-element" jquery_filter="ancestor-1">
-				strong:contains('Debit and credit cards')
+		<div name="ssn">
+			<action type="fetch-dom-element">
+				div#ssnID
 			</action>
-
-			<div name="ccn-update-link">
-				<action type="fetch-href">
-					a:contains('Update')
+			
+			<div name="ssn">
+				<action type="store">
+					div.details
 				</action>
-
-				<div name="ccns" type="vector">
-					<action type="fetch-dom-element">
-						td:nth-child(2)
-					</action>
-					<div name="ccn">
-						<action type="store">
-						</action>
-					</div>
-				</div>
 			</div>
 		</div>
 	</div>
+	
+<!-- 	<div name="ccnRedirect"> -->
+<!-- 		<action type="simulate-click" data="div#creditCards"> -->
+<!-- 			a#FINANCIAL_SETTINGS -->
+<!-- 		</action> -->
+<!-- 		<div name="ccn-div"> -->
+<!-- 			<action type="fetch-dom-element" jquery_filter="ancestor-1"> -->
+<!-- 				strong:contains('Debit and credit cards') -->
+<!-- 			</action> -->
+
+<!-- 			<div name="ccn-update-link"> -->
+<!-- 				<action type="fetch-href"> -->
+<!-- 					a:contains('Update') -->
+<!-- 				</action> -->
+
+<!-- 				<div name="ccns" type="vector"> -->
+<!-- 					<action type="fetch-dom-element"> -->
+<!-- 						td:nth-child(2) -->
+<!-- 					</action> -->
+<!-- 					<div name="ccn"> -->
+<!-- 						<action type="store"> -->
+<!-- 						</action> -->
+<!-- 					</div> -->
+<!-- 				</div> -->
+<!-- 			</div> -->
+<!-- 		</div> -->
+<!-- 	</div> -->
 </div>
