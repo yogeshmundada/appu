@@ -379,16 +379,20 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	var pfp = curr_node.parent.fp;
 	var css_selector = $.trim($(action).text());
 	var css_filter = $.trim($(action).attr('filter'));
-	curr_node.css_selector = css_selector;
-	curr_node.css_filter = css_filter;
+	var jquery_filter = $.trim($(action).attr('jquery_filter'));
+
 	if (pfp.length == 1 || pfp.length == undefined) {
+	    var tmp_fp = apply_css_filter(apply_css_selector(pfp, css_selector, jquery_filter), css_filter);
+	    var appu_uid = $(tmp_fp).attr("appu_uid");
+	    curr_node.css_selector = "[appu_uid='" + appu_uid + "']";
+	    curr_node.css_filter = "";
 	    make_slavetab_do_work('simulate-click', curr_node, site_pi_fields, undefined, my_slave_tab, level);
 	}
 	else {
 	    //get the current page url: fetch-url OR fetch-href
 	    var curr_page_url = '';
 	    curr_ancestor = curr_node.parent;
-	    	    
+	    
 	    while (curr_ancestor != undefined) {
 		var curr_ancestor_action = $(curr_ancestor.xml_node).children("action").attr('type');
 		if (curr_ancestor_action == "fetch-url" || 
@@ -398,7 +402,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		}
 		curr_ancestor = curr_ancestor.parent;
 	    }
-
+	    
 	    if (curr_page_url == '') {
 		print_appu_error("Appu Error: Could not find curr_page_url for domain: " + 
 				 curr_node.root.domain);
@@ -406,7 +410,7 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		inform_parent(curr_node);
 		return;
 	    }
-
+	    
 	    var parent_action = $(curr_node.parent.xml_node).children("action").attr("type");
 	    if (parent_action != "fetch-dom-element") {
 		print_appu_error("Appu Error: For mulitple-select, parent-action is not" + 
@@ -415,11 +419,11 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 		inform_parent(curr_node);
 		return;
 	    }
-
+	    
 	    var old_children = curr_node.children;
 	    // First create new children with fetch-url for the curr_node
 	    // This will bring us back to the current-url after each simulate-click
-	    curr_node.children = create_dummy_fetch_url_children(curr_node, curr_page_url, pfp);
+	    var new_children = create_dummy_fetch_url_children(curr_node, curr_page_url, pfp);
 	    
 	    // Following with select specific element on the current page to 
 	    // simulate click on. Thus using "select_index" we segregate each
@@ -428,27 +432,28 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	    // simulate-click effects.
 	    var action_element = {};
 	    $.extend(true, action_element, $(curr_node.parent.xml_node).children("action"));
-
-	    var new_children = [];
+	    
+	    var new_grand_children = [];
 	    var last_kid = null;
-
-	    for(var i = 0; i < curr_node.children.length; i++) {
+	    
+	    for(var i = 0; i < new_children.length; i++) {
 		$(action_element).attr("select_index", i);
 		var action_element_xml = $('<div>').append(action_element).html();
-
+		
 		var name = "dummy-multiple-fetch-dom-element-"+ i;
 		var xml_text = '<div name="'+ name +'">' + action_element_xml + '</div>';
 		
-		var n = create_empty_node(name, i, curr_node.children[i], xml_text);
-		new_children.push(n);
-		curr_node.children[i].children.push(n);
+		var n = create_empty_node(name, i, new_children[i], xml_text);
+		new_grand_children.push(n);
+		new_children[i].children.push(n);
 	    }
 
 	    for (var k = 0; k < old_children.length; k++) {
 		//get_subtree_copies(old_children[k], new_children);
-		get_subtree_copies(curr_node, new_children);
+		get_subtree_copies(curr_node, new_grand_children);
 	    }
 
+	    curr_node.children = new_children;
 	    process_kids(curr_node, site_pi_fields, my_slave_tab, level);
 	}
     }
@@ -765,7 +770,7 @@ function apply_data_filter(field_value, data_filter) {
     return field_value;
 }
 
-function apply_jquery_filter(elements, jquery_filter) {
+function apply_jquery_filter(element, jquery_filter) {
     var patterns = [
 		    /(ancestor)-([0-9]+)/,
 		    /(remove-children)/,
@@ -778,16 +783,16 @@ function apply_jquery_filter(elements, jquery_filter) {
 	    continue;
 	}
 	if (r[1] == "ancestor") {
-	    var rc = $(elements).parents().eq(r[2]);
+	    var rc = $(element).parents().eq(r[2]);
 	    return rc;
 	}
 	else if (r[1] == "remove-children") {
-	    var rc = $(elements).children().remove().end();
+	    var rc = $(element).children().remove().end();
 	    return rc;
 	}
 	else if (r[1] == "is_visible") {
-	    if ($(fp).attr("appu_rendering") == "visible") {
-		return fp;
+	    if ($(element).attr("appu_rendering") == "visible") {
+		return element;
 	    }
 	}
     }
@@ -802,7 +807,7 @@ function apply_css_selector(elements, css_selector, jquery_filter) {
 	    for (var z = 0; z < result.length; z++) {
 		var rc = apply_jquery_filter(result[z], jquery_filter);
 		if (rc != undefined) {
-		    if (z == 0) {
+		    if (!jqf_result || jqf_result.length == 0) {
 			jqf_result = rc;
 		    }
 		    else {
@@ -849,40 +854,40 @@ function process_template(domain, data, my_slave_tab) {
 
 /// Template processing code END
 
-function start_pi_download_process(domain, data) {
+function start_pi_download_process(domain, data, sender_tab) {
     var process_template_tabid = undefined;
     //Just some link so that appu content script runs on it.
     var default_url = 'http://google.com';
-    
+   
     //Create a new tab. Once its ready, send message to process the template.
-    chrome.tabs.create({ url: default_url, active: false }, function(tab) {
-	process_template_tabid = tab.id;
-	var my_slave_tab = { tabid: process_template_tabid, 'in_use': true}
-	template_processing_tabs[process_template_tabid] = default_url;
-	//console.log("APPU DEBUG: XXX tabid: " + tab.id + ", value: " + 
-	// template_processing_tabs[tab.id]);
-	
-	//Dummy element to wait for HTML fetch
-	var dummy_tab_id = sprintf('tab-%s', process_template_tabid);
-	var dummy_div_str = sprintf('<div id="%s"></div>', dummy_tab_id);
-	var dummy_div = $(dummy_div_str);
-	$('body').append(dummy_div);
-	
-	//Dummy element to wait for SLAVE tab to become free.
-	var wait_dummy_tab_id = sprintf('wait-queue-tab-%s', process_template_tabid);
-	var wait_dummy_div_str = sprintf('<div id="%s"></div>', wait_dummy_tab_id);
-	var wait_dummy_div = $(wait_dummy_div_str);
-	$('body').append(wait_dummy_div);
-	
-	$('#' + dummy_tab_id).on("page-is-loaded", function() {
-	    my_slave_tab.in_use = false;
-	    $('#' + dummy_tab_id).off("page-is-loaded");
-	    process_template(domain, data, my_slave_tab);    
+    chrome.tabs.create({ url: default_url, active: false }, function slave_tab_callback(tab) {
+	    process_template_tabid = tab.id;
+	    var my_slave_tab = { tabid: process_template_tabid, 'in_use': true}
+	    template_processing_tabs[process_template_tabid] = default_url;
+	    //console.log("APPU DEBUG: XXX tabid: " + tab.id + ", value: " + 
+	    // template_processing_tabs[tab.id]);
+    
+	    //Dummy element to wait for HTML fetch
+	    var dummy_tab_id = sprintf('tab-%s', process_template_tabid);
+	    var dummy_div_str = sprintf('<div id="%s"></div>', dummy_tab_id);
+	    var dummy_div = $(dummy_div_str);
+	    $('body').append(dummy_div);
+    
+	    //Dummy element to wait for SLAVE tab to become free.
+	    var wait_dummy_tab_id = sprintf('wait-queue-tab-%s', process_template_tabid);
+	    var wait_dummy_div_str = sprintf('<div id="%s"></div>', wait_dummy_tab_id);
+	    var wait_dummy_div = $(wait_dummy_div_str);
+	    $('body').append(wait_dummy_div);
+    
+	    $('#' + dummy_tab_id).on("page-is-loaded", function() {
+		    my_slave_tab.in_use = false;
+		    $('#' + dummy_tab_id).off("page-is-loaded");
+		    process_template(domain, data, my_slave_tab);    
+		});
 	});
-    });
 }
 
-function check_if_pi_fetch_required(domain, sender_tab_id) {
+function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab) {
     if (!(domain in pii_vault.aggregate_data.per_site_pi)) {
 	pii_vault.aggregate_data.per_site_pi[domain] = {};
 	flush_selective_entries("aggregate_data", ["per_site_pi"]);
@@ -925,7 +930,7 @@ function check_if_pi_fetch_required(domain, sender_tab_id) {
 
     if ((domain in fpi_metadata) && 
 	(fpi_metadata[domain]["fpi"] != "not-present")) {
-	get_permission_and_fetch_pi(domain, sender_tab_id);
+	get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab);
     }
     else {
 	print_appu_error("Appu Error: FPI Template for domain(" + domain 
@@ -935,7 +940,7 @@ function check_if_pi_fetch_required(domain, sender_tab_id) {
     return;
 }
 
-function get_permission_and_fetch_pi(domain, sender_tab_id) {
+function get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab) {
     var data = read_file("fpi/" + fpi_metadata[domain]["fpi"]);
     console.log("APPU DEBUG: Read the template for: " + domain);
 
@@ -1296,10 +1301,10 @@ function sanitize_date(dates) {
 function sanitize_gender(genders) {
     for (var i = 0; i < genders.length; i++) {
 	var g = genders[i].toLowerCase();
-	if (g == 'm') {
+	if (g == 'm' || g == 'man') {
 	    g = 'male';
 	}
-	else if (g == 'f') {
+	else if (g == 'f' || g == 'woman') {
 	    g = 'female';
 	}
 	genders[i] = g;

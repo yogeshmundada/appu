@@ -28,11 +28,7 @@
 							<action type="simulate-click" 
 								data="label:contains('CARD NUMBER'):visible">
 							</action>
-							<div name="ccn">
-								<action type="store" jquery_filter="is_visible" 
-									field_type="editable">
-								</action>
-							</div>
+
 						</div>
 					</div>
 				</div>

@@ -1163,12 +1163,20 @@ if (document.URL.match(/.pdf$/) == null) {
 		
 		//Now do the actual click
 		try {
-		    $(element_to_click).trigger("click");
+		    //Commenting following as thats not foolproof
+		    //$(element_to_click).trigger("click");
+		    //Instead using following, thanks to SO: http://goo.gl/9zCJiu
+		    //jsFiddle: http://jsfiddle.net/UtzND/26/
+		    var evt = document.createEvent("MouseEvents");
+		    evt.initMouseEvent('click', true, true, window, 
+				       0, 0, 0, 0, 0, false, false, 
+				       false, false, 0, null);
+		    $(element_to_click)[0].dispatchEvent(evt);
 		}
 		catch(e) {
 		    console.log("Here here: " + JSON.stringify(e));
 		}
-		debugger;
+
 		console.log("Here here");
 	    }
 	    else if (message.type == "get-html") {

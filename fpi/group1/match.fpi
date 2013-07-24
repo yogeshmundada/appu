@@ -3,10 +3,6 @@
 		http://www.match.com/profile/edit
 		</action>
 	
-	
-	
-	
-		
 		<div name="editButton">
 			<action type="simulate-click" data="div#SelfGender">
 				a.modal-edit
@@ -24,9 +20,4 @@
 			
 			</div>			
 		</div>
-		
-	
-		
-		
-		
 </div>
