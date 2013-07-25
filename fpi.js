@@ -822,6 +822,7 @@ function apply_css_selector(elements, css_selector, jquery_filter) {
     return elements;
 }
 
+
 function process_template(domain, data, my_slave_tab) {
     var fd = $.parseXML(data);
     var template_tree = {};
@@ -897,7 +898,6 @@ function open_tab_inconspicuously(domain, data, sender_tab) {
 		console.log("APPU DEBUG: Index of the window is: " + i);
 		break;
 	    }
-
 	}
 
 	if (chosen_windowId == undefined) {
@@ -1469,6 +1469,19 @@ function delete_fetched_pi(domain, force_permission) {
     pii_vault.aggregate_data.per_site_pi[domain] = {};
     if ((!force_permission) && (force_permission != false)) {
 	pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
+    }
+    flush_aggregate_data();
+}
+
+
+function delete_all_fetched_pi(force_permission) {
+    var pvadpsp = pii_vault.aggregate_data.per_site_pi;
+    for (var d in pvadpsp) {
+	delete pvadpsp[d];
+	pvadpsp[d] = {};
+	if ((!force_permission) && (force_permission != false)) {
+	    pvadpsp[d].user_approved = 'always';
+	}
     }
     flush_aggregate_data();
 }
