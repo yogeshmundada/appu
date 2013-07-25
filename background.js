@@ -402,6 +402,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		if (pending_pi_fetch[sender.tab.id] == domain) {
 		    console.log("APPU DEBUG: domain: " + domain + ", tab-id: " + sender.tab.id);
     		    check_if_pi_fetch_required(domain, sender.tab.id, sender.tab);		
+		    pending_pi_fetch[sender.tab.id] = "";
 		}
 		else {
 		    pending_pi_fetch[sender.tab.id] = "";
@@ -730,7 +731,7 @@ function make_user_approved_always(site) {
 //     }, 2 * 1000);
 
 //make_user_approved_always("netflix.com");
-make_user_approved_always("paypal.com");
+//make_user_approved_always("paypal.com");
 
  
 // function print_open_windows(windows) {

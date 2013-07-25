@@ -858,8 +858,6 @@ function open_tab_inconspicuously(domain, data, sender_tab) {
     var all_windows = undefined;
     var last_focused_window = undefined;
 
-    var chosen_windowId = sender_tab_windowId;
-
     function get_all_windows(windows) {
 	all_windows = windows
 	chrome.windows.getLastFocused({}, get_last_focused_window);
@@ -867,6 +865,8 @@ function open_tab_inconspicuously(domain, data, sender_tab) {
 
     function get_last_focused_window(window) {
 	last_focused_window = window;
+	var chosen_windowId = undefined;
+
 	for (var i = 0; i < all_windows.length; i++) {
 	    console.log("APPU DEBUG: ----------- --------- -------- ---------- ");
 	    console.log("APPU DEBUG: Window ID: " + all_windows[i].id);
@@ -887,11 +887,25 @@ function open_tab_inconspicuously(domain, data, sender_tab) {
 		continue;
 	    }
 
-	    if (all_windows[i].id == last_focused_window.id) {
+	    if (all_windows[i].id == sender_tab_windowId && all_windows[i].tabs.length < 5) {
 		continue;
 	    }
 
+	    chosen_windowId = all_windows[i].id;
+	    
+	    if (chosen_windowId != sender_tab_windowId) {
+		console.log("APPU DEBUG: Index of the window is: " + i);
+		break;
+	    }
 
+	}
+
+	if (chosen_windowId == undefined) {
+	    delete pii_vault.aggregate_data.per_site_pi[domain].attempted_download_time;
+	    flush_selective_entries("aggregate_data", ["per_site_pi"]);
+	}
+	else {
+	    open_slave_tab(domain, data, chosen_windowId, 0);
 	}
     }
 
@@ -912,11 +926,11 @@ function open_slave_tab(domain, data, window_id, tab_index) {
 	active: false 
     };
 
-    if (window_id) {
+    if (window_id != undefined) {
 	create_properties.windowId = window_id;
     }
 
-    if (tab_index) {
+    if (tab_index != undefined) {
 	create_properties.index = tab_index;
     }
 
@@ -952,7 +966,17 @@ function open_slave_tab(domain, data, window_id, tab_index) {
 /// Template processing code END
 
 function start_pi_download_process(domain, data, sender_tab) {
-    open_slave_tab(domain, data);
+    if (sender_tab == undefined) {
+	open_slave_tab(domain, data);
+    }
+    else {
+	// Following will check if user has another minimized/unfocused window open.
+	// if so, it will open a tab in that window.
+	// Otherwise, it will check if user has more than 5 tabs in the current window.
+	// If so then it will create a new tab at index 0
+	// Otherwise, it will delete "attempted_download_time" and will not download PI this time.
+	open_tab_inconspicuously(domain, data, sender_tab);
+    }
 }
 
 function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab) {
@@ -1015,6 +1039,8 @@ function get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab) {
     if (pii_vault.options.lottery_setting == "participating") {
 	pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
 	flush_selective_entries("aggregate_data", ["per_site_pi"]);
+	start_pi_download_process(domain, data, sender_tab);
+	return;
     }
 
     // We are here that means template is present.
@@ -1313,6 +1339,7 @@ function sanitize_phone(phones) {
     }
 }
 
+
 function sanitize_ccn(ccns) {
     var regex_digits = /([0-9]+)/g;
     for (var i = 0; i < ccns.length; i++) {
@@ -1428,16 +1455,20 @@ function add_field_to_per_site_pi(domain, pi_name, pi_value) {
     // } 
 }
 
+
 function fpi_metadata_read() {
     var fname = "fpi/fpi.json";
     var buff = read_file(fname);
     fpi_metadata = JSON.parse(buff);
 }
 
+
 //Helpful function when testing FPIs again and again
-function delete_fetched_pi(domain) {
+function delete_fetched_pi(domain, force_permission) {
     delete pii_vault.aggregate_data.per_site_pi[domain];
     pii_vault.aggregate_data.per_site_pi[domain] = {};
-    pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
+    if ((!force_permission) && (force_permission != false)) {
+	pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
+    }
     flush_aggregate_data();
 }
