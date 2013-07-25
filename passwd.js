@@ -879,6 +879,10 @@ function detect_logout_links() {
     signout_link_patterns.forEach(function(value, index, array) {
 	    signout_elements = signout_elements.add($("a, form").filter(function() {
 			if (this.tagName == "A") {
+			    if ($(this).attr('href') == '#') {
+				return false;
+			    }
+
 			    if (this.href.toLowerCase().indexOf(value) !== -1) {
 				return true;
 			    }

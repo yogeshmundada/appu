@@ -353,6 +353,7 @@ function add_domain_to_uas(domain) {
 	    !(does_user_have_account(domain))) {
 	    // This means that this site was counted as non user account site before.
 	    // So adjust it.
+	    console.log("Here here: Subtracting from num_non_user_account_sites: " + domain);
 	    cr.num_non_user_account_sites -= 1;
 	    flush_selective_entries("current_report", ["num_non_user_account_sites"]);
 	}
