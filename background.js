@@ -87,9 +87,9 @@ if (am_i_updated && last_version != '0.0.0') {
     update_specific_changes(last_version);
 }
 
-//Call init. This will set properties that are newly added from release to release.
-//Eventually, after the vault properties stabilise, call it only if vault property
-//"initialized" is not set to true.
+// Call init. This will set properties that are newly added from release to release.
+// Eventually, after the vault properties stabilise, call it only if vault property
+// "initialized" is not set to true.
 vault_init();
 
 tld = tld_module.init();
@@ -104,7 +104,7 @@ else {
 setInterval(check_report_time, 1000 * report_check_interval * 60);
 setInterval(background_tasks, 1000 * bg_tasks_interval * 60);
 
-//Check if appu was disabled in the last run. If yes, then check if disable period is over yet.
+// Check if appu was disabled in the last run. If yes, then check if disable period is over yet.
 if (pii_vault.config.status == "disabled") {
     if (((new Date()) - (new Date(pii_vault.config.disable_start))) > 
 	(60 * 1000 * pii_vault.config.disable_period)) {
@@ -134,8 +134,8 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
     }
 });
 
-//Disabling for now
-//chrome.cookies.onChanged.addListener(cookie_change_detected);
+// Disabling for now
+// chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
 // Total messages: 48
@@ -235,7 +235,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		p.user_is_warned = true;
 		//I should not update the password here because user might have entered
 		//an incorrect password. Must wait for a successful login event detection.
-
 		//vault_update_domain_passwd(p.domain, p.username, p.passwd, p.pwd_strength, p.is_stored);
 		//pending_warnings[sender.tab.id] = undefined;
 	    }
@@ -411,10 +410,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	}
 	else if (message.value == 'no') {
+	    add_domain_to_nuas(domain);
 	    pending_pi_fetch[sender.tab.id] = "";
 	    console.log("APPU DEBUG: NOT Signed in for site: " + get_domain(message.domain));
 	}
 	else if (message.value == 'unsure') {
+	    add_domain_to_nuas(domain);
 	    pending_pi_fetch[sender.tab.id] = "";
 	    console.log("APPU DEBUG: Signed in status UNSURE: " + get_domain(message.domain));
 	}
@@ -483,6 +484,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		flush_selective_entries("current_report", ["num_total_sites"]);
 		pii_vault.aggregate_data.num_total_sites += 1;
 		flush_selective_entries("aggregate_data", ["num_total_sites"]);
+
+		pii_vault.current_report.num_non_user_account_sites = 
+		    pii_vault.current_report.num_total_sites - pii_vault.current_report.num_user_account_sites;
+		flush_selective_entries("current_report", ["num_non_user_account_sites"]);
+
 	    }
 	}
 	sendResponse(r);
@@ -733,7 +739,7 @@ function make_user_approved_always(site) {
 
 //make_user_approved_always("netflix.com");
 //make_user_approved_always("paypal.com");
-make_user_approved_always("facebook.com");
+//make_user_approved_always("facebook.com");
 
  
 // function print_open_windows(windows) {

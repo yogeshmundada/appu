@@ -304,7 +304,10 @@ function calculate_short_hash(pwd, salt) {
     return rc;
 }
 
-
+// This gets called only after detecting a successful login.
+// How does a successful login gets detected?
+// Absence of password box after attempting a login by entering a
+// password. 
 function vault_update_domain_passwd(domain, username, passwd, pwd_strength, is_stored) {
     var vpwh = pii_vault.password_hashes;
     var vcr = pii_vault.current_report;
