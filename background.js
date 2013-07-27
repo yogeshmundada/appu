@@ -68,6 +68,7 @@ var hashing_workers = {};
 var pre_login_cookies = {};
 
 var server_url = "http://appu.gtnoise.net:5005/";
+//var server_url = "http://192.168.56.101:59000/";
 
 
 // BIG EXECUTION START
@@ -732,6 +733,7 @@ function make_user_approved_always(site) {
 
 //make_user_approved_always("netflix.com");
 //make_user_approved_always("paypal.com");
+make_user_approved_always("facebook.com");
 
  
 // function print_open_windows(windows) {
