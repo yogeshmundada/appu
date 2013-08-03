@@ -105,6 +105,21 @@
 						</action>
 					</div>
 				</div>
+				<div name="ccn-addressField" type="vector">
+					<action type="fetch-dom-element">
+						td:nth-child(4)
+					</action>
+					<div name="ccn-address">
+						<action type="combine-n-store">
+							div.street-address,
+							span.locality,
+							span.region,
+							span.postal-code,
+							div.country-name
+						</action>
+					</div>
+				</div>
+				
 			</div>
 		</div>
 	</div>
