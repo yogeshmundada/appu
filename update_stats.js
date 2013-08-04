@@ -410,6 +410,7 @@ function update_user_account_sites_stats(domain, is_stored) {
 // Its also not right because it keeps track of all the sites that user is 
 // visiting. If there was a way to periodically purge entries then adding them
 // here might make sense. However, currently there is no systematic way to do so.
+// A better idea would be to use a bloomfilter to count sites w/o user's account.
 function update_ad_non_uas(domain) {
     if (!(does_user_have_account(domain))) {
 	pii_vault.current_report.num_non_user_account_sites += 1;

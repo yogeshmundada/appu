@@ -2,6 +2,146 @@
 		<action type="fetch-url">
 		http://www.match.com/profile/edit
 		</action>
+			
+		<div name="relationshipField">
+			<action type="fetch-dom-element">
+				dt:contains("Relationship:")+
+			</action>
+			<div name="relationship">		
+				<action type="store">					
+				</action>
+			</div>	
+		</div>
+		
+		<div name="ethnicityField">
+			<action type="fetch-dom-element">
+				dt:contains("Ethnicity:")+
+			</action>
+			<div name="ethnicity">
+				<action type="store">					
+				</action>
+			</div>	
+		</div>
+		
+		<div name="faith">
+			<action type="fetch-dom-element">
+			dt:contains("Faith:")+
+			</action>
+			<div name="religious-view">
+				<action type="store" ignore_default="No answer">				
+				</action>
+			</div>
+		</div>
+		
+		<div name="politics">
+			<action type="fetch-dom-element">
+			dt:contains("Political views:")+
+			</action>
+			<div name="political-view">
+				<action type="store" ignore_default="No answer">
+				div.answer-view
+				</action>
+			</div>
+		</div>
+		
+		<div name="college">
+			<action type="fetch-dom-element">
+			dt:contains("College:")+
+			</action>
+			<div name="graduate-school">
+				<action type="store" ignore_default="No answer">				
+				div.answer-view
+				</action>
+			</div>
+		</div>
+		
+		<div name="occupationField">
+			<action type="fetch-dom-element">
+			th:contains("Occupation:")+
+			</action>
+			<div name="occupation">
+				<action type="store" ignore_default="No answer">				
+				div.answer-view
+				</action>
+			</div>
+		</div>
+		
+		<div name="incomeField">
+			<action type="fetch-dom-element">
+			th:contains("Income:")+
+			</action>
+			<div name="income">
+				<action type="store" ignore_default="No answer">				
+				div.answer-view
+				</action>
+			</div>
+		</div>
+		
+		<div name="languagesField">
+			<action type="fetch-dom-element">
+			th:contains("Languages:")+
+			</action>
+			<div name="languages">
+				<action type="store">				
+				div.answer-view
+				</action>
+			</div>
+		</div>
+		
+		<div name="educationField">
+			<action type="fetch-dom-element">
+			th:contains("Education:")+
+			</action>
+			<div name="education">
+				<action type="store" ignore_default="No answer">		
+				div.answer-view
+				</action>
+			</div>
+		</div>
+		
+		<div name="heightField">
+			<action type="fetch-dom-element">
+			th:contains("Height:")+
+			</action>
+			<div name="height">
+				<action type="store">				
+				div.answer-view
+				</action>
+			</div>
+		</div>
+		
+		<div name="eyesField">
+			<action type="fetch-dom-element">
+			th:contains("Eyes:")+
+			</action>
+			<div name="eyes">
+				<action type="store" ignore_default="No answer">		
+				div.answer-view
+				</action>
+			</div>
+		</div>
+		
+		<div name="hairField">
+			<action type="fetch-dom-element">
+			th:contains("Hair:")+
+			</action>
+			<div name="hair">
+				<action type="store" ignore_default="No answer">	
+				div.answer-view
+				</action>
+			</div>
+		</div>
+		
+		<div name="kids">
+			<action type="fetch-dom-element">
+			th:contains("Have kids:")+
+			</action>
+			<div name="have-kids">
+				<action type="store" ignore_default="No answer">	
+				div.answer-view
+				</action>
+			</div>		
+		</div>
 	
 		<div name="editButton">
 			<action type="simulate-click" data="div#SelfGender">
@@ -10,14 +150,13 @@
 			<div name="genderField">			
 				<action type="fetch-dom-element" jquery_filter="ancestor-1">
 					label:contains("I am a:")
-				</action>
-			
+				</action>			
 				<div name="gender">
 					<action type="store">
 						select :selected
 					</action>
-				</div>
-			
+				</div>			
 			</div>			
-		</div>
+		</div>		
+		
 </div>
