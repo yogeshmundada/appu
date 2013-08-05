@@ -693,7 +693,7 @@
  },
  "groupon.com" : {
      "category" : "utility/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/groupon.fpi"
  },
  "bitcoin.cz" : {
      "category" : "services/software-services/class-2",
