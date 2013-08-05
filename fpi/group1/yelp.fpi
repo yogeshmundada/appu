@@ -1,0 +1,81 @@
+<div name="yelp">
+	<action type="fetch-url">https://www.yelp.com/profile</action>	
+	
+	<div name="public_profile_redirect">
+		<action type="fetch-href">
+			a:contains("Profile")
+		</action>
+		
+		<div name="first-name-div">
+			<action type="fetch-dom-element">
+				li:contains("First Name")
+			</action>
+			<div name="first-name">
+				<action type="store" field_type="editable">
+					input
+				</action>
+			</div>			
+		</div>
+		<div name="last-name-div">
+			<action type="fetch-dom-element">
+				li:contains("Last Name")
+			</action>
+			<div name="last-name">
+				<action type="store" field_type="editable">
+					input
+				</action>
+			</div>			
+		</div>
+		<div name="gender-div">
+			<action type="fetch-dom-element">
+				li:contains("Gender")
+			</action>
+			<div name="gender">
+				<action type="store" field_type="editable">
+					input:checked
+				</action>
+			</div>			
+		</div>
+		<div name="hometown-div">
+			<action type="fetch-dom-element">
+				li:contains("My Hometown")
+			</action>
+			<div name="hometown">
+				<action type="store" field_type="editable">
+					input
+				</action>
+			</div>			
+		</div>		
+	</div>
+
+	<div name="currentcity-redirect">
+	<action type="fetch-url">
+		https://www.yelp.com/profile_location
+	</action>
+		<div name="currentcitydiv">	
+			<action type="fetch-dom-element">
+				h3:contains("Home")+
+			</action>
+			<div name="current-city">
+				<action type="store">				
+				</action>
+			</div>
+		</div>
+	</div>
+	
+	<div name="email-accounts-redirect">
+	<action type="fetch-url">
+		https://www.yelp.com/profile_email_notifications
+	</action>
+		<div name="email-accounts-div" type="vector">
+			<action type="fetch-dom-element">
+				span.saved-email-address
+			</action>
+			<div name="email">
+				<action type="store">
+				</action>
+			</div>
+		</div>	
+	</div>
+	
+</div>

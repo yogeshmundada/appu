@@ -731,7 +731,7 @@ function make_user_approved_always(site) {
 //     }, 2 * 1000);
 
 
-make_user_approved_always("groupon.com");
+make_user_approved_always("yelp.com");
 
 
 

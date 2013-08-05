@@ -70,14 +70,14 @@
 						</action>
 					</div>
 				</div>										
-				<div name="ccn-address">
+				<!-- <div name="ccn-address">
 					<action type="combine-n-store" field_type="editable">
 						input#billing_record_address1,
 						input#billing_record_city,
 						select#billing_record_country_and_state,
 						input#billing_record_zip
 					</action>
-				</div>										
+				</div>	 -->									
 				
 			</div>					
 		</div>				

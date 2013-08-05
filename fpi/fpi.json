@@ -957,7 +957,7 @@
  },
  "yelp.com" : {
      "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/yelp.fpi"
  },
  "ml.com" : {
      "category" : "finance/class-1",
