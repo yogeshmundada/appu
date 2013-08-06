@@ -13,7 +13,7 @@
  },
  "apple.com" : {
      "category" : "software-services/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/apple.fpi"
  },
  "dante.net" : {
      "category" : "research/telecommunication/software-services/class-3",
