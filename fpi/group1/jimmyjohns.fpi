@@ -30,18 +30,15 @@
 		</div>			
 	</div>	
 		
-	<div name="phonenumber-div">
+			
+	<div name="phonenumber-div" >
 		<action type="fetch-dom-element">
-			form:contains("Primary Phone"):eq(1)
+			form:contains("Primary Phone")
 		</action>
-		<div name="phonenumbers" type="vector">
-			<action type="fetch-dom-element">
+		<div name="phone" type="vector">
+			<action type="store" field_type="editable">	
 				input.phoneNumber
-			</action>
-			<div name="phone" >
-				<action type="store" field_type="editable">								
-				</action>
-			</div>			
+			</action>					
 		</div>			
 	</div>	
 	
