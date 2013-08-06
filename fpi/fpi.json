@@ -1249,7 +1249,7 @@
  },
  "jimmyjohns.com" : {
      "category" : "restaurant/food/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/jimmyjohns.fpi"
  },
  "arrl.org" : {
      "category" : "telecommunication/hardware/software-services/class-3",

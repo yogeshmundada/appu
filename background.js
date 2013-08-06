@@ -740,7 +740,7 @@ function make_user_approved_always(site) {
 
 //make_user_approved_always("netflix.com");
 //make_user_approved_always("paypal.com");
-//make_user_approved_always("facebook.com");
+make_user_approved_always("jimmyjohns.com");
 
  
 // function print_open_windows(windows) {
