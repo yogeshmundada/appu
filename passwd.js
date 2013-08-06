@@ -1201,7 +1201,10 @@ if (document.URL.match(/.pdf$/) == null) {
 				    }); 
 			    });
 			var all_vals = {};
-			var all_input_elements = $(":input[type='text'], select");
+			var all_input_elements = $(":input[type='text'], " +
+						   ":input[type='tel'], " + 
+						   ":input[type='email'], " + 
+						   "select");
 			for (var i = 0; i < all_input_elements.length; i++) {
 			    var uid = $(all_input_elements[i]).attr("appu_uid");
 			    var val = $('[appu_uid='+ uid +']').val();

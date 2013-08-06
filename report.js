@@ -486,9 +486,10 @@ function report_received(report_number, report, do_render) {
     $("#donotbugmelist-div span b").text(report.dontbuglist.join(", "));
     $("#extension-updated-div span b").text(report.extension_updated);
 
+    $("#appu-errors-content-div").empty();
     for (var i = 0; i < report.appu_errors.length; i++) {
 	var error = $("<p>" + report.appu_errors[i] + "</p>");
-	$("#appu-errors-div").append(error);
+	$("#appu-errors-content-div").append(error);
     }
 
     if (last_displayed_report_number && (last_displayed_report_number == current_report_number)) {

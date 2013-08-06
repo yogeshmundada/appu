@@ -334,6 +334,12 @@ function initialize_aggregate_data() {
     return aggregate_data;
 }
 
+function add_domain_to_nuas(domain) {
+}
+
+// This gets called from update_user_account_sites_stats() (which in turn gets called from 
+// bg_passwd.js after successful login) OR from "background.js" if the message is "signed_in"
+// with value "yes"
 function add_domain_to_uas(domain) {
     var cr = pii_vault.current_report;
     var ad = pii_vault.aggregate_data;
@@ -367,9 +373,13 @@ function add_domain_to_uas(domain) {
 
 	flush_selective_entries("aggregate_data", ["num_user_account_sites", "user_account_sites"]);
     }
+
+    cr.num_non_user_account_sites = cr.num_total_sites - cr.num_user_account_sites;
+    flush_selective_entries("current_report", ["num_non_user_account_sites"]);
 }
 
-
+// This gets called from bg_passwd.js after its clear that the login
+// to this domain was successful.
 function update_user_account_sites_stats(domain, is_stored) {
     var cr = pii_vault.current_report;
     var ad = pii_vault.aggregate_data;
@@ -394,7 +404,13 @@ function update_user_account_sites_stats(domain, is_stored) {
     flush_selective_entries("aggregate_data", ["user_account_sites"]);
 }
 
-
+// I wrote following functions but it is not called from anywhere
+// because it adds 'domains' to aggregate_data.non_user_account_sites.
+// This will keep increasing in size and very soon will fill up all the storage.
+// Its also not right because it keeps track of all the sites that user is 
+// visiting. If there was a way to periodically purge entries then adding them
+// here might make sense. However, currently there is no systematic way to do so.
+// A better idea would be to use a bloomfilter to count sites w/o user's account.
 function update_ad_non_uas(domain) {
     if (!(does_user_have_account(domain))) {
 	pii_vault.current_report.num_non_user_account_sites += 1;
@@ -413,7 +429,10 @@ function update_ad_non_uas(domain) {
     }
 }
 
-
+// I wrote following functions but it is not called from anywhere
+// because I do not want to keep track of sites where user does not have
+// an account in aggregate_data as it will just keep increasing.
+// Hence I also can't keep track of time spent on those sites.
 function update_ad_non_uas_time_spent(domain, time_spent) {
     if (!(does_user_have_account(domain)) && 
 	(domain in pii_vault.aggregate_data.non_user_account_sites)) {

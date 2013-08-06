@@ -204,19 +204,24 @@
 			</div>
 
 		</div>
+	</div>
 
 
+	<div name="Email page">
+		<action type="fetch-url">https://www.facebook.com/settings?ref=mb
+		</action>
+		
 		<div name="Email click">
 			<action type="simulate-click" data="div[class='fsm fwn fcg'] div label">
 				:contains('Email'):not(:has(*)):first-child
 			</action>
-
+			
 			<div name="emails" type="vector" can_be_a_null="no">
 				<action type="fetch-dom-element">
 					div[class='fsm fwn fcg'] div label, 
 					:contains('Facebook email:'):not(:has(*)) + td
 				</action>
-
+				
 				<div name="email">
 					<action type="store">
 					</action>
@@ -224,4 +229,5 @@
 			</div>
 		</div>
 	</div>
+
 </div>
