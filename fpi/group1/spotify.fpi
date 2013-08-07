@@ -1,0 +1,80 @@
+<div name="spotify">
+	<action type="fetch-url">https://play.spotify.com/settings</action>	
+	
+	<div name="viewAccount">	
+	<action type="fetch-url" >
+		https://www.spotify.com/us/account/overview/
+	</action>
+		
+		<div name="profile-div">
+			<action type="fetch-dom-element">
+			h2:contains("Profile")+
+			</action>
+			<div name="email-div">
+				<action type="fetch-dom-element">
+					tr:contains("Email address:") td:eq(1)
+				</action>
+				<div name="email">
+					<action type="store">						
+					</action>
+				</div>				
+			</div>
+			<div name="dob-div">
+				<action type="fetch-dom-element">
+					tr:contains("Date of birth:") td:eq(1)
+				</action>
+				<div name="dob">
+					<action type="store">						
+					</action>
+				</div>				
+			</div>
+			<div name="country-div">
+				<action type="fetch-dom-element">
+					tr:contains("Country:") td:eq(1)
+				</action>
+				<div name="country">
+					<action type="store">						
+					</action>
+				</div>				
+			</div>
+			<div name="postal-div">
+				<action type="fetch-dom-element">
+					tr:contains("Postal code:") td:eq(1)
+				</action>
+				<div name="zipcode">
+					<action type="store">						
+					</action>
+				</div>				
+			</div>
+			
+		</div>	
+	</div>
+	
+	<div name="edit-profile-div">
+	<action type="fetch-url">
+	https://www.spotify.com/us/account/profile/
+	</action>
+		<div name="gender-div">
+			<action type="fetch-dom-element">
+				label:contains("Gender")+
+			</action>
+			<div name="gender">
+				<action type="store" field_type="editable">					
+				</action>
+			</div>
+		</div>
+		
+		<div name="phone-number-div">
+			<action type="fetch-dom-element">
+				label:contains("Mobile phone number")+
+			</action>
+			<div name="phone">
+				<action type="store" field_type="editable">					
+				</action>
+			</div>
+		</div>
+	</div>
+	
+	
+</div>
+

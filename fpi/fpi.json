@@ -403,9 +403,9 @@
      "category" : "reservation/shopping/services/class-3",
      "fpi" : "not-present"
  },
- "spotify" : {
+ "spotify.com" : {
      "category" : "music-streaming/entertainment/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/spotify.fpi"
  },
  "shtyle.fm" : {
      "category" : "social-networking/networking/class-3",
