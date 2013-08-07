@@ -132,6 +132,20 @@ function login() {
     }
 }
 
+function redirect_to_check_report() {
+    $(".progress-div").show();
+    $(".progress-div").visible();
+    time = 1;
+    max = 5;
+    int = setInterval(function() {
+	    $("#progress").css("width", Math.floor(100 * time++ / max) + '%');
+	    time - 1 == max && function() {
+		clearInterval(int);
+		window.location = chrome.extension.getURL('report.html');
+	    }();
+	}, 1000);
+}
+
 function create_account() {
     var username = $("#ca-username").val();
     var password = $("#ca-password").val();
@@ -173,6 +187,7 @@ chrome.extension.onMessage.addListener(function(message, sender, send_response) 
 	$("#top-status").removeClass("text-error");
 	$("#top-status").addClass("text-success");
 	$("#top-status").text(message.desc);
+	redirect_to_check_report();
     }
     else if (message.type == "login-failure") {
 	$("#top-status").addClass("text-error");
@@ -185,6 +200,7 @@ chrome.extension.onMessage.addListener(function(message, sender, send_response) 
 	$("#top-status").removeClass("text-error");
 	$("#top-status").addClass("text-success");
 	$("#top-status").text(message.desc);
+	redirect_to_check_report();
     }
     else if (message.type == "account-failure") {
 	$("#top-status").addClass("text-error");
