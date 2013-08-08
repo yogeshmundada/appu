@@ -40,5 +40,31 @@
 				</div>				
 			</div>			
 		</div>
-
+		
+		
+		<div name="ccn-redirect">
+			<action type="fetch-url">
+			https://www.starbucks.com/account/profile/paymentmethods
+			</action>	
+			<div name="ccn-div" type="vector">
+				<action type="fetch-dom-element">
+					ol.list-payment-methods>li
+				</action>				
+				
+				<div name="ccn">
+					<action type="store">
+						dd:contains("Card Number:")>span
+					</action>
+				</div>
+				
+				<div name="ccn-address">
+					<action type="combine-n-store">
+					dd.street-address,
+					dd.country-name
+					</action>
+				</div>
+			</div>
+			
+			
+		</div>
 </div>
