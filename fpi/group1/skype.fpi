@@ -1,5 +1,106 @@
 <div name="skype">
 	<action type="fetch-url">https://secure.skype.com/portal/overview</action>
 	
+	<div name="profile-page">
+		<action type="fetch-url">
+		https://secure.skype.com/portal/profile
+		</action>
+		<div name="first-name-div">
+			<action type="fetch-dom-element">
+			label:contains("First name")+
+			</action>
+			<div name="first-name">
+				<action type="store" field_type="editable">
+					input
+				</action>
+			</div>
+		</div>		
+		
+		<div name="last-name-div">
+			<action type="fetch-dom-element">
+			label:contains("Last name")+
+			</action>
+			<div name="last-name">
+				<action type="store" field_type="editable">
+				input
+				</action>
+			</div>
+		</div>
+		
+		<div name="gender-div">
+			<action type="fetch-dom-element">
+			label:contains("Gender")+
+			</action>
+			<div name="gender">
+				<action type="store">
+				span
+				</action>
+			</div>
+		</div>
+		
+		<div name="birthday-div">
+			<action type="fetch-dom-element">
+			div.birthday
+			</action>
+			<div name="dob">
+				<action type="store">
+				div.selectRepresentative
+				</action>
+			</div>
+		</div>
+		
+		<div name="city-div">
+			<action type="fetch-dom-element">
+			label:contains("City")+
+			</action>
+			<div name="city">
+				<action type="combine-n-store" field_type="editable">
+				input#city,
+				input#province
+				</action>
+			</div>
+		</div>
+		
+		<div name="country-div">
+			<action type="fetch-dom-element">
+			div.country
+			</action>
+			<div name="country">
+				<action type="store" >
+				div.selectRepresentative>span
+				</action>
+			</div>
+		</div>
+		
+		<div name="email-div" type="vector">
+			<action type="fetch-dom-element">
+			div.profileEmailAddress>div.inputContainer
+			</action>
+			<div name="email">
+				<action type="store" field_type="editable">
+				input
+				</action>
+			</div>
+		</div>
+		
+		<div name="phone-div" type="vector">
+			<action type="fetch-dom-element">
+			input.validPhonenumber
+			</action>
+			<div name="phone">
+				<action type="store" field_type="editable">				
+				</action>
+			</div>
+		</div>
+		
+	</div>
+	
+	<!-- <div name="ccn-info">
+		<action type="explore">
+		</action>
+	</div> -->
+	
+	
+	
 
 </div>
