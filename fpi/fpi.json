@@ -841,7 +841,7 @@
  },
  "skype.com" : {
      "category" : "software-services/video-chatting/telecommunication/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/skype.fpi"
  },
  "care.com" : {
      "category" : "services/class-3",

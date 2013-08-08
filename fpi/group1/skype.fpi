@@ -1,0 +1,5 @@
+<div name="skype">
+	<action type="fetch-url">https://secure.skype.com/portal/overview</action>
+	
+
+</div>
