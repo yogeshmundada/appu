@@ -1,7 +1,7 @@
 {
  "quora.com" : {
      "category" : "forums/social-networking/networking/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/quora.fpi"
  },
  "adp.com" : {
      "category" : "software-services/class-2",
@@ -1582,6 +1582,10 @@
  "match.com" : {
      "category" : "dating/personal-info/social-networking/networking/services/class-3",
      "fpi" : "group1/match.fpi"
+ },
+  "starbucks.com" : {
+     "category" : "shopping/class-3",
+     "fpi" : "group1/starbucks.fpi"
  },
  "usenix.org" : {
      "category" : "academia/class-2",

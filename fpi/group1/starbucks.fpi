@@ -1,0 +1,44 @@
+<div name="starbucks">
+	<action type="fetch-url">https://www.starbucks.com/account/profile</action>
+
+		<div name="birthday-field">
+			<action type="fetch-dom-element">
+			li:contains("Birthday")>span
+			</action>
+			<div name="dob">
+				<action type="store">				
+				</action>
+			</div>
+        </div>
+		
+		<div name="email-info-redirect">
+			<action type="fetch-url">
+			https://www.starbucks.com/account/profile/emailedit
+			</action>			
+			<div name="email-div">
+				<action type="fetch-dom-element">
+					span:contains("Current Email")+
+				</action>				
+				<div name="email">
+					<action type="store">
+					</action>
+				</div>				
+			</div>			
+		</div>
+		
+		<div name="phone-number-redirect">
+			<action type="fetch-url">
+			https://www.starbucks.com/account/profile/mobileedit
+			</action>			
+			<div name="phone-div">
+				<action type="fetch-dom-element">
+					span:contains("Current Mobile Number")+
+				</action>				
+				<div name="phone">
+					<action type="store">
+					</action>
+				</div>				
+			</div>			
+		</div>
+
+</div>
