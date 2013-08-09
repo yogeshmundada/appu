@@ -13,7 +13,7 @@
 		</div>
 	</div>	
 	
-	<div name="name-div">
+	<div name="email-div">
 		<action type="fetch-dom-element">
 		label:contains("Email")+
 		</action>

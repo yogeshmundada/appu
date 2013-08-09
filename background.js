@@ -739,7 +739,7 @@ function make_user_approved_always(site) {
 
 
 
-make_user_approved_always("bitly.com");
+make_user_approved_always("twitterfeed.com");
 
 
  
