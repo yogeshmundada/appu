@@ -1073,7 +1073,7 @@
  },
  "evernote.com" : {
      "category" : "notetaking/archiving/personal-info/software-services/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/evernote.fpi"
  },
  "iheart.com" : {
      "category" : "music-streaming/entertainment/class-5",
