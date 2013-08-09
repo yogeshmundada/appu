@@ -1,0 +1,26 @@
+<div name="bitly">
+	<action type="fetch-url">
+	https://bitly.com/a/settings
+	</action>	
+	
+	<div name="name-div">
+		<action type="fetch-dom-element">
+		label:contains("Full name")+
+		</action>
+		<div name="name">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>	
+	
+	<div name="name-div">
+		<action type="fetch-dom-element">
+		label:contains("Email")+
+		</action>
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+</div>

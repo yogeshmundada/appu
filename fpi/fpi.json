@@ -229,7 +229,7 @@
  },
  "bitly.com" : {
      "category" : "notetaking/archiving/personal-info/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/bitly.fpi"
  },
  "onlinesbi.com" : {
      "category" : "finance/class-1",
