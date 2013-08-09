@@ -1017,7 +1017,7 @@
  },
  "eventbrite.com" : {
      "category" : "social-networking/networking/entertainment/class-4",
-     "fpi" : "not-present"
+     "fpi" : "group1/eventbrite.fpi"
  },
  "stumbleupon.com" : {
      "category" : "discovery-engine/news/class-4",
