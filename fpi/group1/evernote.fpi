@@ -15,7 +15,7 @@
 			<action type="fetch-dom-element" >
 				label:contains("Display Language")+
 			</action>
-			<div name="name">
+			<div name="language">
 				<action type="store" >				
 				:selected
 				</action>
