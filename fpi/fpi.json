@@ -601,7 +601,7 @@
  },
  "godaddy.com" : {
      "category" : "software-services/web-hosting/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/godaddy.fpi"
  },
  "designshack.net" : {
      "category" : "ecommerce/shopping/services/class-3",
@@ -1586,6 +1586,10 @@
   "starbucks.com" : {
      "category" : "shopping/class-3",
      "fpi" : "group1/starbucks.fpi"
+ },
+  "groupme.com" : {
+     "category" : "collaboration/class-3",
+     "fpi" : "group1/groupme.fpi"
  },
  "usenix.org" : {
      "category" : "academia/class-2",
