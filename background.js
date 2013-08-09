@@ -739,7 +739,7 @@ function make_user_approved_always(site) {
 
 
 
-make_user_approved_always("grubhub.com");
+make_user_approved_always("wordpress.com");
 
 
  

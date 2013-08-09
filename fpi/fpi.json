@@ -561,7 +561,7 @@
  },
  "wordpress.com" : {
      "category" : "blog/social-networking/networking/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/wordpress.fpi"
  },
  "pinterest.com" : {
      "category" : "collaboration/social-networking/forums/class-3",
