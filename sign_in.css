@@ -35,3 +35,8 @@ input[type=password] {
     display: none;
     visibility: hidden;		 			
 }
+
+.progress-div {
+    display: none;
+    visibility: hidden;		 			
+}

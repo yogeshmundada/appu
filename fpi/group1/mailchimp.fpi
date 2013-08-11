@@ -1,0 +1,57 @@
+<div name="mailchimp">
+	<action type="fetch-url">
+	https://us7.admin.mailchimp.com/account/profile/
+	</action>	
+	
+	<div name="first-name-div">
+		<action type="fetch-dom-element">
+		label:contains("First name")+
+		</action>
+		<div name="first-name" >
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>	
+	
+	<div name="last-name-div">
+		<action type="fetch-dom-element">
+		label:contains("Last name")+
+		</action>
+		<div name="last-name" >
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>	
+	
+	<div name="email-div">
+		<action type="fetch-dom-element">
+		label:contains("Email address")+
+		</action>
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="phone-div">
+		<action type="fetch-dom-element">
+		span#verified_phone_label
+		</action>
+		<div name="phone">
+			<action type="store">
+			</action>
+		</div>
+	</div>
+	
+	
+	<div name="billing-redirect">
+		<action type="fetch-href">
+		https://us7.admin.mailchimp.com/account/billinginfo-post/
+		</action>
+	<!-- <div name="ccn-info">
+		<action type="explore">
+		</action>
+	</div> -->		
+	</div>
+	
+</div>

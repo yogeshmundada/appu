@@ -739,8 +739,8 @@ function make_user_approved_always(site) {
 
 
 
-make_user_approved_always("ebay.com");
 
+make_user_approved_always("ebay.com");
 
  
 // function print_open_windows(windows) {

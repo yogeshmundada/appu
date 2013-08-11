@@ -655,6 +655,10 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 
 	inform_parent(curr_node);
     }
+    else if ($(action).attr('type') == 'explore') {
+	console.log("APPU DEBUG: In action type: EXPLORE");
+	inform_parent(curr_node);
+    }
     else {
 	print_appu_error("Appu Error: Unknown action in FPI template: " + $(action).attr('type'));
     }
