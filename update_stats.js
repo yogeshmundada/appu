@@ -334,8 +334,93 @@ function initialize_aggregate_data() {
     return aggregate_data;
 }
 
+
+//---------------------- START of CODE to MANAGE NON-USER-ACCOUNT SITES
+// NUAS: NON USER-ACCOUNT SITES, Uses bloom filter and chrome.storage
+
+// Perhaps I should create a class or a closure to deal with this shit
+// but then so far I have not used it (except a few callbacks), and just 
+// plain old procedural programming seems suffice for now.
+
+// n: Assuming a user would have 10000 different nuas sites.
+// k: 10 hash functions
+// p: false positive rate: 1.0E-10
+// Substituting: 1 / (1 - (1 - p ** (1 / k)) ** (1 / (k * n)))
+// Size of BF ~ 1MB = 1048576
+function init_nuas_bf() {
+    var bf_size = 1048576;
+    var ab = new ArrayBuffer(bf_size);
+    pii_vault.nuas_bf = new Uint16Array(ab);
+    
+}
+
+function sync_nuas_bf_to_disk() {
+
+}
+
+function read_nuas_bf_from_disk() {
+
+}
+
+function get_bits() {
+
+}
+
+function set_bits() {
+
+}
+
+function is_url_counted(url) {
+    // return yes/no
+}
+
+function add_url_to_nuas_bf(url) {
+
+}
+
+
+// I wrote following functions but it is not called from anywhere
+// because it adds 'domains' to aggregate_data.non_user_account_sites.
+// This will keep increasing in size and very soon will fill up all the storage.
+// Its also not right because it keeps track of all the sites that user is 
+// visiting. If there was a way to periodically purge entries then adding them
+// here might make sense. However, currently there is no systematic way to do so.
+// A better idea would be to use a bloomfilter to count sites w/o user's account.
+function update_ad_non_uas(domain) {
+    if (!(does_user_have_account(domain))) {
+	pii_vault.current_report.num_non_user_account_sites += 1;
+	flush_selective_entries("current_report", ["num_non_user_account_sites"]);
+	if (!(domain in pii_vault.aggregate_data.non_user_account_sites)) {
+	    pii_vault.aggregate_data.num_non_user_account_sites += 1;
+	    pii_vault.aggregate_data.non_user_account_sites[domain] = 
+		init_non_user_account_sites_entry();
+	    flush_selective_entries("aggregate_data", [
+						       "num_non_user_account_sites", 
+						       "non_user_account_sites"
+						       ]);
+	}
+	pii_vault.aggregate_data.non_user_account_sites[domain].latest_access = new Date();
+	flush_selective_entries("aggregate_data", ["non_user_account_sites"]);
+    }
+}
+
+// I wrote following functions but it is not called from anywhere
+// because I do not want to keep track of sites where user does not have
+// an account in aggregate_data as it will just keep increasing.
+// Hence I also can't keep track of time spent on those sites.
+function update_ad_non_uas_time_spent(domain, time_spent) {
+    if (!(does_user_have_account(domain)) && 
+	(domain in pii_vault.aggregate_data.non_user_account_sites)) {
+	pii_vault.aggregate_data.non_user_account_sites[domain].tts += time_spent;
+	flush_selective_entries("aggregate_data", ["non_user_account_sites"]);
+    }
+}
+
 function add_domain_to_nuas(domain) {
 }
+
+//---------------------- END of CODE to MANAGE NON-USER-ACCOUNT SITES
+
 
 // This gets called from update_user_account_sites_stats() (which in turn gets called from 
 // bg_passwd.js after successful login) OR from "background.js" if the message is "signed_in"
@@ -403,44 +488,6 @@ function update_user_account_sites_stats(domain, is_stored) {
     flush_selective_entries("current_report", ["user_account_sites"]);
     flush_selective_entries("aggregate_data", ["user_account_sites"]);
 }
-
-// I wrote following functions but it is not called from anywhere
-// because it adds 'domains' to aggregate_data.non_user_account_sites.
-// This will keep increasing in size and very soon will fill up all the storage.
-// Its also not right because it keeps track of all the sites that user is 
-// visiting. If there was a way to periodically purge entries then adding them
-// here might make sense. However, currently there is no systematic way to do so.
-// A better idea would be to use a bloomfilter to count sites w/o user's account.
-function update_ad_non_uas(domain) {
-    if (!(does_user_have_account(domain))) {
-	pii_vault.current_report.num_non_user_account_sites += 1;
-	flush_selective_entries("current_report", ["num_non_user_account_sites"]);
-	if (!(domain in pii_vault.aggregate_data.non_user_account_sites)) {
-	    pii_vault.aggregate_data.num_non_user_account_sites += 1;
-	    pii_vault.aggregate_data.non_user_account_sites[domain] = 
-		init_non_user_account_sites_entry();
-	    flush_selective_entries("aggregate_data", [
-						       "num_non_user_account_sites", 
-						       "non_user_account_sites"
-						       ]);
-	}
-	pii_vault.aggregate_data.non_user_account_sites[domain].latest_access = new Date();
-	flush_selective_entries("aggregate_data", ["non_user_account_sites"]);
-    }
-}
-
-// I wrote following functions but it is not called from anywhere
-// because I do not want to keep track of sites where user does not have
-// an account in aggregate_data as it will just keep increasing.
-// Hence I also can't keep track of time spent on those sites.
-function update_ad_non_uas_time_spent(domain, time_spent) {
-    if (!(does_user_have_account(domain)) && 
-	(domain in pii_vault.aggregate_data.non_user_account_sites)) {
-	pii_vault.aggregate_data.non_user_account_sites[domain].tts += time_spent;
-	flush_selective_entries("aggregate_data", ["non_user_account_sites"]);
-    }
-}
-
 
 // current_report.input_fields = [
 // 	[1, new Date(1354966002000), 'www.abc.com', 'test', 'button', 0],
