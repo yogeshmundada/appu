@@ -665,7 +665,7 @@
  },
  "mailchimp.com" : {
      "category" : "software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/mailchimp.fpi"
  },
  "extendedstayhotels.com" : {
      "category" : "travel/shopping/class-3",
@@ -1401,7 +1401,7 @@
  },
  "ebay.com" : {
      "category" : "ecommerce/shopping/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/ebay.fpi"
  },
  "live.com" : {
      "category" : "software-services/mail/personal-info/class-2",
