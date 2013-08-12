@@ -101,7 +101,7 @@
  },
  "rescuetime.com" : {
      "category" : "software-services/class-4",
-     "fpi" : "not-present"
+     "fpi" : "group1/rescuetime.fpi"
  },
  "prudential.com" : {
      "category" : "finance/class-1",

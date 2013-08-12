@@ -740,7 +740,7 @@ function make_user_approved_always(site) {
 
 
 
-make_user_approved_always("statcounter.com");
+make_user_approved_always("rescuetime.com");
 
  
 // function print_open_windows(windows) {
