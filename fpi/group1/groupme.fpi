@@ -1,0 +1,39 @@
+<div name="groupme">
+	<action type="fetch-url">https://web.groupme.com/profile</action>
+	
+	<div name="name-div">
+		<action type="fetch-dom-element">
+		label:contains("Name")+
+		</action>
+		<div name="name">
+			<action type="store" field_type="editable">
+			input
+			</action>
+		</div>		
+	</div>
+	
+	<div name="email-div">
+		<action type="fetch-dom-element">
+		label:contains("Email")+
+		</action>
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">
+			input
+			</action>
+		</div>		
+	</div>
+	
+	
+	<div name="phone-div">
+		<action type="fetch-dom-element">
+		h2:contains("Mobile Phone")+
+		</action>
+		<div name="phone">
+			<action type="store">					
+			</action>
+		</div>
+		
+	</div>
+	
+
+</div>

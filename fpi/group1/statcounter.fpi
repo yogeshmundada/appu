@@ -1,0 +1,71 @@
+<div name="statcounter">
+	<action type="fetch-url">http://statcounter.com/account/</action>
+		
+		<div name="Account-info-div" >
+			<action type="fetch-dom-element">
+				h1:contains("Account Info")+
+			</action>
+			
+			<div name="company-div">
+				<action type="fetch-dom-element" >
+				 label:contains("Company Name:")+
+				</action>
+				<div name="company">
+					<action type="store" field_type="editable">
+					</action>
+				</div>				
+			</div>			
+
+			<div name="address">
+				<action type="combine-n-store" field_type="editable">
+				input#address1,
+				input#address2,
+				input#address3,
+				input#address4,
+				input#address5
+				</action>
+			</div>
+			
+			<div name="country-div">
+				<action type="fetch-dom-element" >
+				 label:contains("Country:")+
+				</action>
+				<div name="country">
+					<action type="store" field_type="editable" ignore_default="select your country" >
+					</action>
+				</div>	
+			</div>
+			
+			<div name="name-div">
+				<action type="fetch-dom-element" >
+				 label:contains("Name:")+:eq(1)
+				</action>
+				<div name="name">
+					<action type="store" field_type="editable">
+					</action>
+				</div>	
+			</div>
+			
+			<div name="email-div">
+				<action type="fetch-dom-element" >
+				 label:contains("Email:")+:eq(1)
+				</action>
+				<div name="email" can_be_a_null="no">
+					<action type="store" field_type="editable">
+					</action>
+				</div>	
+			</div>
+			
+			<div name="phone-div">
+				<action type="fetch-dom-element" >
+				 label:contains("Phone number:")+:eq(1)
+				</action>
+				<div name="phone">
+					<action type="store" field_type="editable">
+					</action>
+				</div>	
+			</div>
+			
+        </div>						
+
+</div>

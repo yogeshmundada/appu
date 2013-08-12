@@ -1,0 +1,82 @@
+<div name="quora">
+	<action type="fetch-url">http://www.quora.com</action>
+	
+		<div name="profile-redirect">
+			<action type="simulate-click" data="h2:contains('profile is')">
+			a>img.profile_photo_img
+			</action>
+			<div name="name-div">
+				<action type="fetch-dom-element" >
+				 div:contains("Short Bio")+:eq(0)
+				</action>
+				<div name="name">
+					<action type="store">
+					strong
+					</action>
+				</div>
+			</div>					
+			
+			<div name="location-div">
+				<action type="fetch-dom-element">
+					div:contains("Location")+:eq(0)
+				</action>
+				<div name="current-city">
+					<action type="store">	
+					span.name_text:eq(0)
+					</action>
+				</div>				
+			</div>
+			
+			<div name="employment-div">
+				<action type="fetch-dom-element">
+					div:contains("Employment")+:eq(0)
+				</action>
+				<div name="employment" type="vector">
+					<action type="store">	
+					span.name_text
+					</action>
+				</div>				
+			</div>
+			
+			<div name="education-div">
+				<action type="fetch-dom-element">
+					div:contains("Education")+:eq(0)
+				</action>
+				<div name="employment" type="vector">
+					<action type="store">	
+					span.name_text
+					</action>
+				</div>				
+			</div>
+			
+		</div>
+
+		<div name="quora_settings_redirect">
+			<action type="fetch-url">https://www.quora.com/settings</action>
+			
+			<div name="email-vectors" type="vector">
+				<action type="fetch-dom-element" >
+				div.feed_item:contains("@")
+				</action>
+				
+				<div name="email">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+			<div name="phone-vectors" type="vector">
+				<action type="fetch-dom-element" >
+				div.feed_item:contains("-")
+				</action>
+				
+				<div name="phone">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+			
+        </div>
+
+</div>

@@ -1,0 +1,66 @@
+<div name="eventbrite">
+	<action type="fetch-url">https://www.eventbrite.com/account/</action>
+	
+		<div name="email-div" >
+			<action type="fetch-dom-element" >
+				:contains("Your account email address")+
+			</action>
+			<div name="email">
+				<action type="store">
+				td>b
+				</action>
+			</div>
+		</div>
+		
+		<div name="first-name-div" >
+			<action type="fetch-dom-element" >
+				label:contains("First Name")+
+			</action>
+			<div name="first-name">
+				<action type="store" field_type="editable">
+				input
+				</action>
+			</div>
+		</div>
+		
+		
+		<div name="last-name-div" >
+			<action type="fetch-dom-element" >
+				label:contains("Last Name")+
+			</action>
+			<div name="last-name">
+				<action type="store" field_type="editable">
+				input
+				</action>
+			</div>
+		</div>
+		
+		<div name="home-phone-div" >
+			<action type="fetch-dom-element" >
+				label:contains("Home Phone")+
+			</action>
+			<div name="phone">
+				<action type="combine-n-store" field_type="editable">
+				input#contactinfo_homephone,
+				input#contactinfo_cellphone
+				</action>
+			</div>
+		</div>
+		
+		<div name="home-address-div" >
+			<action type="fetch-dom-element" >
+				label:contains("Address")+
+			</action>
+			<div name="address">
+				<action type="combine-n-store" field_type="editable">
+				input#home_address,	
+				input#home_city,
+				select#home_state_us :selected,
+				input#home_zip,
+				select#home_country :selected
+				</action>
+			</div>
+		</div>
+		
+		
+</div>

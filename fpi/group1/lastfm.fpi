@@ -1,0 +1,8 @@
+<div name="last.fm">
+	<action type="fetch-url">
+	http://www.last.fm/settings
+	</action>		
+	
+	
+	
+</div>

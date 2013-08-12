@@ -1,0 +1,104 @@
+<div name="groupon">
+	<action type="fetch-url">https://www.groupon.com/mygroupons</action>
+
+	<div name="My account">
+		<action type="fetch-href" >
+			a:contains("My Account"):not(:has(*))
+		</action>
+		
+		<div name="first-name-field">
+			<action type="fetch-dom-element" >
+				label:contains("First name")+
+			</action>
+			
+			<div name="first-name">
+				<action type="store" field_type="editable">					
+				</action>
+			</div>
+		
+		</div>
+		<div name="last-name-field">
+			<action type="fetch-dom-element" >
+				label:contains("Last name")+
+			</action>
+			
+			<div name="last-name">
+				<action type="store" field_type="editable">					
+				</action>
+			</div>		
+		</div>
+		
+		<div name="email-field">
+			<action type="fetch-dom-element" jquery_filter="remove-children">
+				label:contains("Email address")+
+			</action>			
+			<div name="email">
+				<action type="store" >					
+				</action>
+			</div>		
+		</div>		
+		
+		
+		<div name="ccn-redirect">
+			<action type="fetch-href">
+				a:contains("Credit Cards"):not(:has(*))
+			</action>						
+			
+			<div name="ccn-number-field"  >
+				<action type="fetch-dom-element">
+					h3:contains("Billing Info")+
+				</action>
+				<div name="ccn" type="vector" >
+					<action type="store">
+						span:contains("*")
+					</action>
+				</div>				
+			</div>
+			
+			
+			<div name="ccn-edit" type="vector">
+				<action type="simulate-click" data="input#billing_record_full_name">
+					a.edit_billing_record_handle
+				</action>
+				
+				<div name="ccn-name-field">
+					<action type="fetch-dom-element">
+						label:contains("Cardholder Name")+						
+					</action>
+					<div name="ccn-name">
+						<action type="store" field_type="editable">
+						</action>
+					</div>
+				</div>										
+				<!-- <div name="ccn-address">
+					<action type="combine-n-store" field_type="editable">
+						input#billing_record_address1,
+						input#billing_record_city,
+						select#billing_record_country_and_state,
+						input#billing_record_zip
+					</action>
+				</div>	 -->									
+				
+			</div>					
+		</div>				
+		
+	</div>		
+	
+	<div name="My profile">
+			<action type="fetch-href">
+				a:contains("My Profile")
+			</action>	
+			
+			<div name="address">
+				<action type="store">
+				span.location_string.home
+				</action>
+			</div>
+			
+			<div name="zip">
+				<action type="store">
+				span.location_string.play
+				</action>
+			</div>
+	</div>
+</div>

@@ -738,9 +738,9 @@ function make_user_approved_always(site) {
 //     }, 2 * 1000);
 
 
-//make_user_approved_always("netflix.com");
-//make_user_approved_always("paypal.com");
-//make_user_approved_always("jimmyjohns.com");
+
+
+make_user_approved_always("dominos.com");
 
  
 // function print_open_windows(windows) {

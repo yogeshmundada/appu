@@ -1,0 +1,82 @@
+<div name="physicsforums">
+	<action type="fetch-url">http://www.physicsforums.com/profile.php?do=editprofile</action>	
+	
+	<div name="dob-div">
+		<action type="fetch-dom-element">
+			fieldset:contains("Date of Birth")
+		</action>
+		<div name="dob">
+			<action type="combine-n-store" field_type="editable">
+			select#bd_month,
+			select#bd_day,
+			input#bd_year
+			</action>
+		</div>
+	</div>
+	
+	<div name="country-div">
+		<action type="fetch-dom-element">
+			fieldset:contains("Country")
+		</action>
+		<div name="country">
+			<action type="store" field_type="editable">
+				td>input
+			</action>
+		</div>		
+	</div>
+	
+	<div name="education-field">
+		<action type="fetch-dom-element">
+			fieldset:contains("Educational Background")
+		</action>
+		<div name="education">
+			<action type="store">
+				td>select :selected
+			</action>
+		</div>
+	</div>
+	
+	<div name="degree-field">
+		<action type="fetch-dom-element">
+			fieldset:contains("Degree in")
+		</action>
+		<div name="degree">
+			<action type="store" field_type="editable">
+				td>input
+			</action>
+		</div>
+	</div>
+	
+	<div name="profession-field">
+		<action type="fetch-dom-element">
+			fieldset:contains("Your job")
+		</action>
+		<div name="employment">
+			<action type="store" field_type="editable">
+				td>input
+			</action>
+		</div>
+	</div>
+	
+	
+	<div name="email-redirect">
+		<action type="fetch-url">
+		http://www.physicsforums.com/profile.php?do=editpassword
+		</action>
+		<div name="email-div">
+			<action type="fetch-dom-element">
+			 div:contains("New Email Address:"):not(:has(*))+:eq(0)
+			</action>
+			<div name="email">
+				<action type="store" field_type="editable">
+				input
+				</action>
+			</div>
+			
+		</div>
+		
+	</div>
+	
+	
+</div>
+

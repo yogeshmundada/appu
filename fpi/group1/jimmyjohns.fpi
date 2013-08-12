@@ -1,14 +1,48 @@
 <div name="jimmyjohns">
-	<action type="fetch-url">https://online.jimmyjohns.com/#/accountinfo</action>
+
+	<action type="fetch-url">https://online.jimmyjohns.com/#/accountinfo</action>	
 	
+	<div name="first-name-div">
+		<action type="fetch-dom-element">
+			label:contains("First Name")+
+		</action>
+		<div name="first-name">
+			<action type="store" field_type="editable">				
+			</action>
+		</div>			
+	</div>
+	<div name="last-name-div">
+		<action type="fetch-dom-element">
+			label:contains("Last Name")+
+		</action>
+		<div name="last-name">
+			<action type="store" field_type="editable">				
+			</action>
+		</div>			
+	</div>
 	<div name="email-div">
 		<action type="fetch-dom-element">
 			label:contains("Email")+
-			</action>
+		</action>
 		<div name="email">
-			<action type="store" field_type="editable">
-				</action>
-		</div>
-	</div>
+			<action type="store" field_type="editable">							
+			</action>
+		</div>			
+	</div>	
+		
+			
+	<div name="phonenumber-div" >
+		<action type="fetch-dom-element">
+			form:contains("Primary Phone")
+		</action>
+		<div name="phone" type="vector">
+			<action type="store" field_type="editable">	
+				input.phoneNumber
+			</action>					
+		</div>			
+	</div>	
+	
+
 	
 </div>
+

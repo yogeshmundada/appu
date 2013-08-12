@@ -1,0 +1,43 @@
+<div name="evernote">
+	<action type="fetch-url">https://www.evernote.com/PersonalSettings.action</action>
+	
+		<div name="full-name-div" >
+			<action type="fetch-dom-element" >
+				label:contains("Full Name")+
+			</action>
+			<div name="name">
+				<action type="store" field_type="editable">				
+				</action>
+			</div>
+		</div>	
+
+		<div name="language-div" >
+			<action type="fetch-dom-element" >
+				label:contains("Display Language")+
+			</action>
+			<div name="language">
+				<action type="store" >				
+				:selected
+				</action>
+			</div>
+		</div>		
+
+		<div name="email-redirect">
+			<action type="fetch-url">
+			https://www.evernote.com/Settings.action
+			</action>
+			
+			<div name="email-div">
+				<action type="fetch-dom-element">
+					h3:contains("Email")+:eq(0)
+				</action>
+				<div name="email">
+					<action type="store" can_be_a_null="no">
+						div:eq(0)
+					</action>
+				</div>
+			</div>
+			
+		</div>
+		
+</div>

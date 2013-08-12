@@ -1,0 +1,119 @@
+<div name="papajohns">
+	<action type="fetch-url">
+	https://order.papajohns.com/secure/account/manage.html
+	</action>		
+	
+	<div name="name-phone-dob-div">
+		<action type="fetch-dom-element">
+		div#editPersonalInfo
+		</action>		
+			<div name="personalInfoDiv">	
+				<action type="simulate-click" data="label:contains('First Name')">
+					div:eq(0)
+				</action>	
+				
+					<div name="first-name-div">
+						<action type="fetch-dom-element">
+						label:contains("First Name")+
+						</action>
+						<div name="first-name" can_be_a_null="no">
+							<action type="store" field_type="editable">
+							</action>
+						</div>
+					</div>	
+					
+					<div name="last-name-div">
+						<action type="fetch-dom-element">
+						label:contains("Last Name")+
+						</action>
+						<div name="last-name" can_be_a_null="no">
+							<action type="store" field_type="editable">
+							</action>
+						</div>
+					</div>
+							
+					<div name="phone" can_be_a_null="no">
+						<action type="combine-n-store" field_type="editable">
+							input#phoneAreaCode:eq(0),
+							input#phonePrefix:eq(0),
+							input#phoneSuffix:eq(0)
+						</action>
+					</div>
+					
+					<div name="dob">
+						<action type="combine-n-store" ignore_default="Month,Day">
+							span#birthMonth-Field,
+							span#birthDayOfMonth-Field
+						</action>
+					</div>					
+			</div>
+	</div>
+	
+	<div name="email-div">
+		<action type="fetch-dom-element">
+		div#editSignInInfo
+		</action>		
+			<div name="SignInInfoDiv">	
+				<action type="simulate-click" data="label:contains('New Email')">
+					div:eq(0)
+				</action>	
+				
+				<div name="email-div">
+					<action type="fetch-dom-element">
+					label:contains("New Email")+
+					</action>
+					<div name="email" can_be_a_null="no">
+						<action type="store" field_type="editable">
+						</action>
+					</div>
+				</div>	
+			</div>
+	</div>
+	
+	
+	<div name="address-div">
+		<action type="fetch-dom-element">
+		div#addressInfo
+		</action>		
+			<div name="AddressDiv">	
+				<action type="simulate-click" data="a:contains('Add a new address')">
+					div:eq(0)
+				</action>	
+				
+				<div name="address-inner-div">
+					<action type="fetch-dom-element">
+					a:contains('Add a new address')+
+					</action>
+					<div name="address-info" type="vector" >
+						<action type="fetch-dom-element">
+						li.item
+						</action>
+						<div name="address" >
+							<action type="combine-n-store">
+							div.street1,
+							span.city,
+							span.state,
+							span.zip							
+							</action>
+						</div>
+					</div>
+				</div>	
+			</div>
+	</div>
+	
+	<div name="payment-div">
+		<action type="fetch-dom-element">
+		div#editPaymentInfo
+		</action>		
+			<div name="PaymentDiv">	
+				<action type="simulate-click" data="div.toggleBoxContent">
+					div:eq(0)
+				</action>	
+				<div name="ccn">
+					<action type="explore">
+					</action>
+				</div>				
+			</div>
+	</div>
+	
+</div>
