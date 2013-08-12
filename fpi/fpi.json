@@ -861,7 +861,7 @@
  },
  "last.fm" : {
      "category" : "music-streaming/entertainment/class-5",
-     "fpi" : "not-present"
+     "fpi" : "group1/last.fm"
  },
  "theborgata.com" : {
      "category" : "travel/shopping/class-3",
@@ -881,7 +881,7 @@
  },
  "papajohns.com" : {
      "category" : "restaurant/food/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/papajohns.fpi"
  },
  "digitick.com" : {
      "category" : "reservation/shopping/class-3",
