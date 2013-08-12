@@ -1421,7 +1421,7 @@
  },
  "statcounter.com" : {
      "category" : "software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/statcounter.fpi"
  },
  "twitter.com" : {
      "category" : "microblog/social-networking/networking/class-3",
