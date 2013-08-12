@@ -205,7 +205,7 @@
  },
  "coursera.org" : {
      "category" : "academia/class-4",
-     "fpi" : "not-present"
+     "fpi" : "group1/coursera.fpi"
  },
  "bankofamerica.com" : {
      "category" : "finance/class-1",
