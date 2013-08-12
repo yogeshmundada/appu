@@ -861,7 +861,7 @@
  },
  "last.fm" : {
      "category" : "music-streaming/entertainment/class-5",
-     "fpi" : "group1/last.fm"
+     "fpi" : "not-present"
  },
  "theborgata.com" : {
      "category" : "travel/shopping/class-3",
@@ -1017,7 +1017,7 @@
  },
  "eventbrite.com" : {
      "category" : "social-networking/networking/entertainment/class-4",
-     "fpi" : "group1/eventbrite.fpi"
+     "fpi" : "not-present"
  },
  "stumbleupon.com" : {
      "category" : "discovery-engine/news/class-4",
@@ -1401,7 +1401,7 @@
  },
  "ebay.com" : {
      "category" : "ecommerce/shopping/class-3",
-     "fpi" : "group1/ebay.fpi"
+     "fpi" : "not-present"
  },
  "live.com" : {
      "category" : "software-services/mail/personal-info/class-2",
