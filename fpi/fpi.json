@@ -725,7 +725,7 @@
  },
  "gogoair.com" : {
      "category" : "software-services/shopping/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/gogoair.fpi"
  },
  "courseoff.com" : {
      "category" : "software-services/class-3",
