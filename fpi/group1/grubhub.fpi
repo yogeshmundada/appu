@@ -1,0 +1,72 @@
+<div name="grubhub">
+	<action type="fetch-url">https://www.grubhub.com/Account.action</action>
+	
+	
+	<div name="name-div">
+		<action type="fetch-dom-element">
+		h4:contains("Your name")+
+		</action>
+		<div name="name">
+			<action type="store">
+			</action>
+		</div>
+	</div>	
+	
+	<div name="email-redirect">
+	<action type="fetch-url">
+	https://www.grubhub.com/Account.action?changeEmail
+	</action>
+		<div name="email-div">
+			<action type="fetch-dom-element">
+			label:contains("Enter new account email")+
+			</action>
+			<div name="email" can_be_a_null="no">
+				<action type="store" field_type="editable">
+				</action>
+			</div>
+		</div>
+	</div>
+	
+	<div name="address-redirect">
+	<action type="fetch-url">
+	https://www.grubhub.com/EditSavedAddress.action
+	</action>
+		<div name="address-div" type="vector">
+			<action type="fetch-dom-element">
+				div.savedAddress_content
+			</action>
+			<div name="address">
+				<action type="combine-n-store">
+				p:eq(0),
+				p:eq(1)			
+				</action>
+			</div>
+		</div>
+		<div name="phone-div" type="vector">
+			<action type="fetch-dom-element">
+				div.savedAddress_content
+			</action>
+			<div name="phone">
+				<action type="store">
+				p:eq(2)		
+				</action>
+			</div>
+		</div>		
+	</div>
+	
+	<div name="ccn-redirect">
+	<action type="fetch-url">
+	https://www.grubhub.com/Account.action?savedCreditCards
+	</action>
+		<div name="ccn-vector" type="vector">
+			<action type="fetch-dom-element" jquery_filter="remove-children">
+			div.ccDetails
+			</action>	
+			<div name="ccn">
+				<action type="store">
+				</action>
+			</div>
+		</div>
+	</div>
+
+</div>

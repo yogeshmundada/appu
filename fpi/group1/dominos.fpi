@@ -1,0 +1,21 @@
+<div name="dominos">
+	<action type="fetch-url">https://order.dominos.com/en/pages/customer/#/customer/profile/</action>
+	
+	<div name="name-email-phone-div">
+		<action type="fetch-dom-element">
+		h2:contains("My Pizza Profile")+
+		</action>
+		
+		<div name="first-name-div">
+			<action type="fetch-dom-element">
+			li:eq(0)
+			</action>			
+			<div name="first-name">
+				<action type="store" jquery_filter="remove-children">
+				</action>
+			</div>
+		</div>
+	</div>
+	
+
+</div>

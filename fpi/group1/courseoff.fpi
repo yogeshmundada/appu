@@ -1,0 +1,15 @@
+<div name="courseoff">
+	<action type="fetch-url">https://gatech.courseoff.com/workspace</action>
+	
+	<div name="email-div">
+		<action type="fetch-dom-element">
+		a.dropdown-toggle :eq(2)
+		</action>
+		<div name="email" can_be_a_null="no">
+			<action type="store">
+			</action>
+		</div>
+	</div>
+	
+
+</div>

@@ -1,0 +1,18 @@
+<div name="ebay">
+	<action type="fetch-url">
+	http://www.ebay.com/
+	</action>		
+	
+	<div name="account-redirect">
+		<action type="fetch-href">
+		a:contains("Account settings")
+		</action>
+		
+		<div name="personal-information-redirect">
+			<action type="fetch-href">
+			a:contains("Personal Information"):eq(0)
+			</action>
+		</div>		
+	</div>
+	
+</div>

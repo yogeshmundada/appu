@@ -1,0 +1,97 @@
+<div name="mailchimp">
+	<action type="fetch-url">
+	https://us7.admin.mailchimp.com/account/profile/
+	</action>	
+	
+	<div name="first-name-div">
+		<action type="fetch-dom-element">
+		label:contains("First name")+
+		</action>
+		<div name="first-name" >
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>	
+	
+	<div name="last-name-div">
+		<action type="fetch-dom-element">
+		label:contains("Last name")+
+		</action>
+		<div name="last-name" >
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>	
+	
+	<div name="email-div">
+		<action type="fetch-dom-element">
+		label:contains("Email address")+
+		</action>
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="phone-div">
+		<action type="fetch-dom-element">
+		span#verified_phone_label
+		</action>
+		<div name="phone">
+			<action type="store">
+			</action>
+		</div>
+	</div>
+	
+	
+	<div name="billing-redirect">
+		<action type="fetch-url">
+		https://us7.admin.mailchimp.com/account/billinginfo/
+		</action>
+		
+		<div name="ccn-div">
+			<action type="fetch-dom-element">
+				td:contains("Card ending in")
+			</action>
+			<div name="ccn">
+				<action type="store">
+				</action>
+			</div>
+		</div>
+		
+		<div name="ccn-address">
+			<action type="combine-n-store" field_type="editable">
+				input#address1,
+				input#city,
+				input#state,
+				input#zip				
+			</action>
+		</div>
+		
+		<div name="country">
+			<action type="store">
+			table#country
+			</action>
+		</div>
+				
+		<div name="company-div">
+			<action type="fetch-dom-element">
+			label:contains("Company / organization")+
+			</action>
+			<div name="company">
+				<action type="store" field_type="editable">				
+				</action>
+			</div>
+		</div>
+		
+		<div name="ccn-name">			
+			<action type="combine-n-store" field_type="editable">				
+			 input#fname,
+			 input#lname
+			</action>			
+		</div>
+		
+		
+	</div>
+	
+</div>
