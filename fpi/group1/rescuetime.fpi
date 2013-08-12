@@ -1,0 +1,89 @@
+<div name="rescuetime">
+	<action type="fetch-url">https://www.rescuetime.com/users/settings</action>
+		
+	<div name="email-address-div">
+		<action type="fetch-dom-element">
+		label:contains("Email Address:")+:eq(0)
+		</action>
+		<div name="email">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="city-div">
+		<action type="fetch-dom-element">
+		label:contains("City:")+
+		</action>
+		<div name="city">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="state-div">
+		<action type="fetch-dom-element">
+		label:contains("State/Province:")+
+		</action>
+		<div name="state">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="country-div">
+		<action type="fetch-dom-element">
+		label:contains("Country:")+
+		</action>
+		<div name="country">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="occupation-div">
+		<action type="fetch-dom-element">
+		label:contains("Job Title")++
+		</action>
+		<div name="occupation">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="employment-div">
+		<action type="fetch-dom-element">
+		label:contains("Company Name")+
+		</action>
+		<div name="employment">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="income-div">
+		<action type="fetch-dom-element">
+		label:contains("Your Income:")+
+		</action>
+		<div name="income">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="billing-redirect">
+		<action type="fetch-url">https://www.rescuetime.com/accounts/billing</action>
+		
+		<div name="ccn-div">
+			<action type="fetch-dom-element">
+				div#credit_card_form
+			</action>
+			<div name="ccn">
+				<action type="store" ignore_default="0000">
+				li:eq(0)
+				</action>
+			</div>
+		</div>
+	</div>
+		
+</div>

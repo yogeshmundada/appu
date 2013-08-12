@@ -1,0 +1,44 @@
+<div name="gogoair">
+	<action type="fetch-url">https://myaccount.gogoair.com/account/myAccount.do</action>
+	
+	<div name="email-div">
+		<action type="fetch-dom-element">
+		span:contains("Email:")+
+		</action>
+		<div name="email" can_be_a_null="no">
+			<action type="store">
+			</action>
+		</div>
+	</div>
+	
+	<div name="address-div">
+		<action type="fetch-dom-element">
+		div:contains("ADDRESS")+ :eq(0)
+		</action>
+		<div name="name" can_be_a_null="no">
+			<action type="store">
+			dd:eq(0)
+			</action>
+		</div>
+		
+		<div name="address">
+			<action type="combine-n-store">
+			dd:eq(1),
+			dd:eq(3)
+			</action>
+		</div>
+	</div>
+	
+	<div name="ccn-div">
+		<action type="fetch-dom-element">
+		div:contains("CREDIT CARD")+ :eq(0)
+		</action>
+		<div name="ccn" >
+			<action type="store">
+			dd#cc_number
+			</action>
+		</div>
+	</div>
+	
+
+</div>

@@ -1,0 +1,16 @@
+<div name="twitterfeed">
+	<action type="fetch-url">
+	https://twitterfeed.com/account
+	</action>	
+		
+	<div name="name-div">
+		<action type="fetch-dom-element">
+		a:contains("update email address")+
+		</action>
+		<div name="email" can_be_a_null="no">
+			<action type="store">
+			</action>
+		</div>
+	</div>
+	
+</div>

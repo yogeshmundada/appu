@@ -1,0 +1,49 @@
+<div name="apple">
+	<action type="fetch-url">https://secure2.store.apple.com/us/account/setup</action>	
+	
+	<div name="billingContact">
+	<action type="fetch-dom-element" jquery_filter="ancestor-0">
+		h3:contains("Billing Contact")
+	</action>
+		<div name="name">
+			<action type="store">
+			p:eq(0)
+			</action>
+		</div>
+		<div name="phone">
+			<action type="store">
+			p:eq(1)
+			</action>
+		</div>
+		<div name="email">
+			<action type="store">
+			p:eq(3)
+			</action>
+		</div>
+	</div>
+	
+	<div name="billingContact">
+	<action type="fetch-dom-element" jquery_filter="ancestor-0">
+		h3:contains("Billing Address")
+	</action>
+		<div name="address">
+			<action type="combine-n-store">
+			p:eq(1),
+			p:eq(3)
+			</action>
+		</div>
+		<div name="country">
+			<action type="store">
+			p:eq(4)	
+			</action>
+		</div>		
+	</div>
+	
+	
+	<div name="ccn">
+		<action type="store">
+		span#payment-credit-cc-cardNumber	
+		</action>	
+	</div>
+</div>
+

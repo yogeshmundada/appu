@@ -1,7 +1,7 @@
 {
  "quora.com" : {
      "category" : "forums/social-networking/networking/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/quora.fpi"
  },
  "adp.com" : {
      "category" : "software-services/class-2",
@@ -13,7 +13,7 @@
  },
  "apple.com" : {
      "category" : "software-services/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/apple.fpi"
  },
  "dante.net" : {
      "category" : "research/telecommunication/software-services/class-3",
@@ -101,7 +101,7 @@
  },
  "rescuetime.com" : {
      "category" : "software-services/class-4",
-     "fpi" : "not-present"
+     "fpi" : "group1/rescuetime.fpi"
  },
  "prudential.com" : {
      "category" : "finance/class-1",
@@ -149,7 +149,7 @@
  },
  "grubhub.com" : {
      "category" : "restaurant/food/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/grubhub.fpi"
  },
  "fidelity.com" : {
      "category" : "finance/class-1",
@@ -205,7 +205,7 @@
  },
  "coursera.org" : {
      "category" : "academia/class-4",
-     "fpi" : "not-present"
+     "fpi" : "group1/coursera.fpi"
  },
  "bankofamerica.com" : {
      "category" : "finance/class-1",
@@ -229,7 +229,7 @@
  },
  "bitly.com" : {
      "category" : "notetaking/archiving/personal-info/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/bitly.fpi"
  },
  "onlinesbi.com" : {
      "category" : "finance/class-1",
@@ -403,9 +403,9 @@
      "category" : "reservation/shopping/services/class-3",
      "fpi" : "not-present"
  },
- "spotify" : {
+ "spotify.com" : {
      "category" : "music-streaming/entertainment/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/spotify.fpi"
  },
  "shtyle.fm" : {
      "category" : "social-networking/networking/class-3",
@@ -561,7 +561,7 @@
  },
  "wordpress.com" : {
      "category" : "blog/social-networking/networking/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/wordpress.fpi"
  },
  "pinterest.com" : {
      "category" : "collaboration/social-networking/forums/class-3",
@@ -601,7 +601,7 @@
  },
  "godaddy.com" : {
      "category" : "software-services/web-hosting/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/godaddy.fpi"
  },
  "designshack.net" : {
      "category" : "ecommerce/shopping/services/class-3",
@@ -665,7 +665,7 @@
  },
  "mailchimp.com" : {
      "category" : "software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/mailchimp.fpi"
  },
  "extendedstayhotels.com" : {
      "category" : "travel/shopping/class-3",
@@ -693,7 +693,7 @@
  },
  "groupon.com" : {
      "category" : "utility/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/groupon.fpi"
  },
  "bitcoin.cz" : {
      "category" : "services/software-services/class-2",
@@ -725,11 +725,11 @@
  },
  "gogoair.com" : {
      "category" : "software-services/shopping/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/gogoair.fpi"
  },
  "courseoff.com" : {
      "category" : "software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/courseoff.fpi"
  },
  "icloud.com" : {
      "category" : "online-backup/hosting/software-services/class-2",
@@ -841,7 +841,7 @@
  },
  "skype.com" : {
      "category" : "software-services/video-chatting/telecommunication/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/skype.fpi"
  },
  "care.com" : {
      "category" : "services/class-3",
@@ -881,7 +881,7 @@
  },
  "papajohns.com" : {
      "category" : "restaurant/food/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/papajohns.fpi"
  },
  "digitick.com" : {
      "category" : "reservation/shopping/class-3",
@@ -957,7 +957,7 @@
  },
  "yelp.com" : {
      "category" : "travel/shopping/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/yelp.fpi"
  },
  "ml.com" : {
      "category" : "finance/class-1",
@@ -1073,7 +1073,7 @@
  },
  "evernote.com" : {
      "category" : "notetaking/archiving/personal-info/software-services/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/evernote.fpi"
  },
  "iheart.com" : {
      "category" : "music-streaming/entertainment/class-5",
@@ -1361,7 +1361,7 @@
  },
  "twitterfeed.com" : {
      "category" : "microblog/social-networking/networking/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/twitterfeed.fpi"
  },
  "edas.info" : {
      "category" : "collaboration/software-services/class-3",
@@ -1421,7 +1421,7 @@
  },
  "statcounter.com" : {
      "category" : "software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/statcounter.fpi"
  },
  "twitter.com" : {
      "category" : "microblog/social-networking/networking/class-3",
@@ -1457,7 +1457,7 @@
  },
  "physicsforums.com" : {
      "category" : "academia/class-4",
-     "fpi" : "not-present"
+     "fpi" : "group1/physicsforums.fpi"
  },
  "chase.com" : {
      "category" : "finance/class-1",
@@ -1582,6 +1582,14 @@
  "match.com" : {
      "category" : "dating/personal-info/social-networking/networking/services/class-3",
      "fpi" : "group1/match.fpi"
+ },
+  "starbucks.com" : {
+     "category" : "shopping/class-3",
+     "fpi" : "group1/starbucks.fpi"
+ },
+  "groupme.com" : {
+     "category" : "collaboration/class-3",
+     "fpi" : "group1/groupme.fpi"
  },
  "usenix.org" : {
      "category" : "academia/class-2",

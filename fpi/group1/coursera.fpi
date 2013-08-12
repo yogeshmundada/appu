@@ -1,0 +1,62 @@
+<div name="coursera">
+	<action type="fetch-url">https://www.coursera.org/account/profile</action>
+		
+		<div name="location-div">
+			<action type="fetch-dom-element">
+				label:contains("Location")+>
+			</action>
+			<div name="location">
+				<action type="store" field_type="editable">					
+				</action>
+			</div>
+		</div>
+		
+		<div name="gender-div">
+			<action type="fetch-dom-element">
+				label:contains("Gender")+ :checked
+			</action>
+			<div name="gender">
+				<action type="store">									
+				</action>
+			</div>
+		</div>
+		
+		<div name="birthday-div">
+			<action type="fetch-dom-element">
+				label:contains("Birthday")+>select :selected
+			</action>
+			<div name="dob">
+				<action type="store" ignore_default="MonthDayYear">						
+				</action>
+			</div>
+		</div>
+		
+		
+		<div name="settings-redirect">
+			<action type="fetch-url">
+			https://www.coursera.org/account/settings
+			</action>
+			
+			<div name="name-div">
+				<action type="fetch-dom-element">
+				label:contains("Full Name")+>
+				</action>				
+				<div name="name" can_be_a_null="no">
+					<action type="store" field_type="editable">
+					</action>
+				</div>
+			</div>
+			
+			<div name="email-div">
+				<action type="fetch-dom-element">
+				label:contains("New Email Address")+>
+				</action>				
+				<div name="email" can_be_a_null="no">
+					<action type="store" field_type="editable">
+					</action>
+				</div>
+			</div>
+			
+		</div>
+
+</div>

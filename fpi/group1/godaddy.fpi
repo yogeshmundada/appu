@@ -1,0 +1,98 @@
+<div name="godaddy">
+	<action type="fetch-url">
+	https://mya.godaddy.com/settings.aspx
+	</action>
+	
+	<div name="first-name-div">
+		<action type="fetch-dom-element">
+		td:contains("First Name:")
+		</action>
+		<div name="first-name" can_be_a_null="no">
+			<action type="store" field_type="editable">
+			input
+			</action>
+		</div>
+	</div>
+	<div name="last-name-div">
+		<action type="fetch-dom-element">
+		td:contains("Last Name:")
+		</action>
+		<div name="last-name" can_be_a_null="no">
+			<action type="store" field_type="editable">
+			input
+			</action>
+		</div>
+	</div>
+	<div name="country-div">
+		<action type="fetch-dom-element">
+		td:contains("Country:")>select
+		</action>
+		<div name="country" can_be_a_null="no" >
+			<action type="store">
+			:selected
+			</action>
+		</div>
+	</div>
+	<div name="address" >		
+		<action type="combine-n-store" field_type="editable">
+			input#street1,
+			input#city,
+			select#state :selected,
+			input#zip
+		</action>		
+	</div>
+	<div name="phone-field">		
+		<action type="fetch-dom-element">
+			td:contains("Work Phone:")
+		</action>		
+		<div name="phone" can_be_a_null="no">
+			<action type="store" field_type="editable">
+			input
+			</action>
+		</div>
+	</div>
+	<div name="gender-field">		
+		<action type="fetch-dom-element">
+			td:contains("Gender:")>select
+		</action>		
+		<div name="gender" can_be_a_null="no">
+			<action type="store">
+			:selected
+			</action>
+		</div>
+	</div>
+	<div name="dob">		
+		<action type="combine-n-store">			
+			select#birthMonth :selected,
+			select#birthDay :selected			
+		</action>		
+	</div>
+	
+	<div name="billing-redirect">
+	<action type="fetch-url">
+	https://mya.godaddy.com/payments.aspx
+	</action>
+		<div name="payment-methods">
+			<action type="simulate-click" data="div:contains('Payment Methods')">
+			li#settpaymentmethod
+			</action>
+			<div name="ccn-vectors" >
+				<action type="fetch-dom-element" >
+					tbody#pmlist>tr.pm-detail
+				</action>
+				<div name="ccn-numbers" type="vector">
+					<action type="fetch-dom-element">
+					td:eq(1)>div.ml10>span
+					</action>
+					<div name="ccn">
+						<action type="store">
+						</action>
+					</div>
+				</div>
+			</div>			
+		</div>		
+	
+	</div>
+	
+	
+</div>

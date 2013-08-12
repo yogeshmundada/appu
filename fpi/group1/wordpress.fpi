@@ -1,0 +1,112 @@
+<div name="wordpress">
+	<action type="fetch-url">https://www.wordpress.com</action>
+	
+	<div name="redirect-admin">
+		<action type="fetch-dom-element">
+		li#wp-admin-bar-my-account:eq(0)
+		</action>
+		<div name="admin-redirected">						
+			<action type="fetch-href">
+			a.ab-item:eq(0)
+			</action>
+			
+			<div name="profile-redirect">
+				<action type="fetch-href">
+				a:contains("My Profile")
+				</action>
+				
+				<div name="name-div">
+					<action type="fetch-dom-element">
+					th:contains("Full name")+
+					</action>
+					<div name="name">
+						<action type="store" field_type="editable">
+						input
+						</action>
+					</div>
+				</div>	
+				
+				<div name="first-name-div">
+					<action type="fetch-dom-element">
+					th:contains("First name")+
+					</action>
+					<div name="first-name">
+						<action type="store" field_type="editable">
+						input
+						</action>
+					</div>
+				</div>	
+				
+				<div name="last-name-div">
+					<action type="fetch-dom-element">
+					th:contains("Last name")+
+					</action>
+					<div name="last-name">
+						<action type="store" field_type="editable">
+						input
+						</action>
+					</div>
+				</div>	
+				
+				<div name="location-div">
+					<action type="fetch-dom-element">
+					th:contains("Location")+
+					</action>
+					<div name="current-city">
+						<action type="store" field_type="editable">
+						input
+						</action>
+					</div>
+				</div>
+
+				<div name="phone-divs">
+					<action type="fetch-dom-element">
+						h3:contains("Contacts")++
+					</action>
+					<div name="phone">
+						<action type="store" field_type="editable">
+						input:eq(0)
+						</action>
+					</div>
+				</div>
+			</div>
+			
+			<div name="profile-redirect">
+				<action type="fetch-href">
+				a:contains("General")
+				</action>
+				
+				<div name="email-div">
+					<action type="fetch-dom-element">
+					th:contains("E-mail Address")+
+					</action>
+					<div name="email" can_be_a_null="no"> 
+						<action type="store" field_type="editable">
+						input
+						</action>
+					</div>
+				</div>	
+				
+				<div name="language-div">
+					<action type="fetch-dom-element">
+					th:contains("Language")+
+					</action>
+					<div name="language">
+						<action type="store">
+						select :selected
+						</action>
+					</div>
+				</div>	
+				
+			</div>
+			
+		</div>
+		
+		
+	</div>
+	
+	
+	
+	
+
+</div>
