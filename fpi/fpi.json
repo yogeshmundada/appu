@@ -729,7 +729,7 @@
  },
  "courseoff.com" : {
      "category" : "software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/courseoff.fpi"
  },
  "icloud.com" : {
      "category" : "online-backup/hosting/software-services/class-2",

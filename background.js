@@ -740,7 +740,7 @@ function make_user_approved_always(site) {
 
 
 
-make_user_approved_always("coursera.org");
+make_user_approved_always("courseoff.com");
 
  
 // function print_open_windows(windows) {
