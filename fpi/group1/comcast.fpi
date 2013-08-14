@@ -1,0 +1,48 @@
+<div name="comcast">
+	<action type="fetch-url">
+	https://customer.comcast.com/Secure/UserSettings
+	</action>		
+	
+	<div name="street">
+		<action type="fetch-dom-element" jquery_filter="remove-children">
+		li:contains("Home") :eq(0)
+		</action>
+		<div name="address" can_be_a_null="no">
+			<action type="store">
+			</action>
+		</div>
+		
+	</div>
+	
+	<div name="name-div">
+		<action type="fetch-dom-element" jquery_filter="remove-children">
+		strong:contains("Username")+
+		</action>
+		<div name="name" can_be_a_null="no">
+			<action type="store" can_be_a_null="no">
+			</action>
+		</div>		
+	</div>
+	
+	<div name="phone-div" type="vector">
+		<action type="fetch-dom-element">
+		li.phone>div
+		</action>
+		<div name="phone" >
+			<action type="store">
+			p>span
+			</action>
+		</div>		
+	</div>
+	
+	<div name="email-div" >
+		<action type="fetch-dom-element">
+		strong:contains("Contact emails")+>span:eq(0)
+		</action>
+		<div name="email" >
+			<action type="store" can_be_a_null="no">						
+			</action>
+		</div>		
+	</div>
+	
+</div>

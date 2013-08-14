@@ -809,7 +809,7 @@
  },
  "zagat.com" : {
      "category" : "discovery-engine/restaurant/food/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/zagat.fpi"
  },
  "bsnl.in" : {
      "category" : "software-services/telecommunication/class-3",
@@ -861,7 +861,7 @@
  },
  "last.fm" : {
      "category" : "music-streaming/entertainment/class-5",
-     "fpi" : "not-present"
+     "fpi" : "group1/last.fm.fpi"
  },
  "theborgata.com" : {
      "category" : "travel/shopping/class-3",
@@ -873,7 +873,7 @@
  },
  "comcast.net" : {
      "category" : "software-services/telecommunication/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/comcast.fpi"
  },
  "trello.com" : {
      "category" : "collaboration/software-services/class-3",
