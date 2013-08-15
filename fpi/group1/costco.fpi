@@ -1,0 +1,31 @@
+<div name="costco">
+	<action type="fetch-url">
+	https://www.costco.com/UserRegistrationForm
+	</action>		
+	
+	<div name="email-div">
+		<action type="fetch-dom-element">
+		label:contains("Email")+ :eq(1)
+		</action>
+		<div name="email" can_be_a_null="no">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="billing-redirect">
+		<action type="fetch-url">
+		https://www.costco.com/PaymentMethodDisplayView
+		</action>	
+		<div name="payment-div">
+			<action type="fetch-dom-element">
+				td.paymentMethod >p:eq(0)
+			</action>
+			<div name="ccn">
+				
+			</div>
+		</div>
+		
+	</div>
+	
+</div>

@@ -1169,7 +1169,7 @@
  },
  "costco.com" : {
      "category" : "shopping/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/costco.fpi"
  },
  "verizonwireless.com" : {
      "category" : "telecommunication/hardware/software-services/class-3",
