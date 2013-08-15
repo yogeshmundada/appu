@@ -893,7 +893,7 @@
  },
  "att.net" : {
      "category" : "utility/hardware/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "att.fpi"
  },
  "ironport.com" : {
      "category" : "security/software-services/class-3",
