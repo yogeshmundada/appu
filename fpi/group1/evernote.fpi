@@ -38,6 +38,11 @@
 				</div>
 			</div>
 			
+			<div name="ccn">
+				<action type="explore">
+				</action>
+			</div>
+			
 		</div>
 		
 </div>

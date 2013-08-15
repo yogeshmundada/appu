@@ -61,5 +61,14 @@
 			</div>
         </div>
 		
+		<div name="github-billing">
+			<action type="fetch-url">
+			https://github.com/settings/billing
+			</action>
+			<div name="ccn">
+				<action type="explore">
+				</action>
+			</div>
+		</div>
 
 </div>

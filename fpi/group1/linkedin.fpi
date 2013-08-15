@@ -84,5 +84,14 @@
 			</div>
 		</div>
 		
+		<div name="linkedin-billing">
+			<action type="fetch-url">
+			https://www.linkedin.com/mnyfe/secure/purchasehistoryv4
+			</action>
+			<div name="ccn">
+				<action type="explore">
+				</action>
+			</div>
+		</div>
 		
 </div>

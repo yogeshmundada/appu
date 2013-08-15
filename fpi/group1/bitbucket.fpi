@@ -1,0 +1,7 @@
+<div name="bitbucket">
+	<action type="fetch-url">
+	https://bitly.com/a/settings
+	</action>	
+	
+	
+</div>
