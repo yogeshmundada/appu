@@ -329,7 +329,7 @@
  },
  "active.com" : {
      "category" : "health/class-4",
-     "fpi" : "not-present"
+     "fpi" : "active.fpi"
  },
  "linkedin.com" : {
      "category" : "jobs/social-networking/networking/job-networking/class-2",
@@ -845,7 +845,7 @@
  },
  "care.com" : {
      "category" : "services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "care.fpi"
  },
  "sprint.com" : {
      "category" : "utility/hardware/software-services/class-3",
