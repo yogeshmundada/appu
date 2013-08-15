@@ -1,7 +1,89 @@
 <div name="bitbucket">
 	<action type="fetch-url">
-	https://bitly.com/a/settings
+	https://bitbucket.org/dashboard/overview
 	</action>	
+	
+	<div name="click-profile">
+	<action type="simulate-click" data="a#profile-link">
+	div.aui-avatar-inner
+	</action>
+		
+		<div name="profile-redirect">
+			<action type="fetch-href">
+			a:contains("Manage account")
+			</action>			
+			
+			<div name="first-name-div">
+				<action type="fetch-dom-element">
+				label:contains("First name")+
+				</action>
+				<div name="first-name" can_be_a_null="no">
+					<action type="store" field_type="editable">
+					</action>
+				</div>
+			</div>
+			
+			<div name="last-name-div">
+				<action type="fetch-dom-element">
+				label:contains("Last name")+
+				</action>
+				<div name="last-name">
+					<action type="store" field_type="editable">
+					</action>
+				</div>
+			</div>
+			
+			<div name="city-div">
+				<action type="fetch-dom-element">
+				label:contains("Location")+
+				</action>
+				<div name="city">
+					<action type="store" field_type="editable">
+					</action>
+				</div>
+			</div>
+			
+			
+			<div name="language">
+				<action type="store" >
+				a.chzn-single>span
+				</action>
+			</div>						
+			
+			
+			<div name="email-redirect">
+				<action type="fetch-href">
+				a:contains("Email addresses")
+				</action>	
+				
+				<div name="emails" type="vector">
+					<action type="fetch-dom-element">
+						td.email>div:not(:has(*))
+					</action>
+					<div name="email">
+						<action type="store">
+						</action>
+					</div>
+				</div>			
+			</div>
+			
+			<div name="billing-redirect">
+				<action type="fetch-href">
+				a:contains("Plans and billing")
+				</action>	
+				<div name="ccn">
+					<action type="explore">
+					</action>
+				</div>
+							
+			</div>
+			
+		</div>		
+		
+		
+		
+		
+	</div>
 	
 	
 </div>

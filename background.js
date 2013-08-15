@@ -740,7 +740,7 @@ function make_user_approved_always(site) {
 
 
 
-make_user_approved_always("bitbucket.com");
+make_user_approved_always("bitbucket.org");
 
  
 // function print_open_windows(windows) {

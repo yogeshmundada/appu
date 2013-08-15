@@ -457,7 +457,7 @@
  },
  "bitbucket.org" : {
      "category" : "services/software-services/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/bitbucket.fpi"
  },
  "kickstarter.com" : {
      "category" : "services/networking/class-3",
