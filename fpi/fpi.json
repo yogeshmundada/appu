@@ -329,7 +329,7 @@
  },
  "active.com" : {
      "category" : "health/class-4",
-     "fpi" : "active.fpi"
+     "fpi" : "group1/active.fpi"
  },
  "linkedin.com" : {
      "category" : "jobs/social-networking/networking/job-networking/class-2",
@@ -845,7 +845,7 @@
  },
  "care.com" : {
      "category" : "services/class-3",
-     "fpi" : "care.fpi"
+     "fpi" : "group1/care.fpi"
  },
  "sprint.com" : {
      "category" : "utility/hardware/software-services/class-3",
@@ -893,7 +893,7 @@
  },
  "att.net" : {
      "category" : "utility/hardware/software-services/class-3",
-     "fpi" : "att.fpi"
+     "fpi" : "group1/att.fpi"
  },
  "ironport.com" : {
      "category" : "security/software-services/class-3",
@@ -1205,7 +1205,7 @@
  },
  "hellosign.com" : {
      "category" : "software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/hellosign.fpi"
  },
  "bookholders.com" : {
      "category" : "shopping/services/class-3",

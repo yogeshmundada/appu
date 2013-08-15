@@ -1,0 +1,73 @@
+<div name="hellosign">
+	<action type="fetch-url">https://www.hellosign.com/home/myAccount#settings</action>
+	
+	<div name="email-div">
+		<action type="fetch-dom-element">
+			label:contains("Current Email")+
+		</action>
+		<div name="email">
+			<action type="store" can_be_a_null="no">
+			</action>
+		</div>
+	</div>
+	
+	<div name="first-name-div">
+		<action type="fetch-dom-element">
+			label:contains("First Name")+
+		</action>
+		<div name="first-name">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="last-name-div">
+		<action type="fetch-dom-element">
+			label:contains("Last Name")+
+		</action>
+		<div name="last-name">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="company-div">
+		<action type="fetch-dom-element">
+			label:contains("Company Name")+
+		</action>
+		<div name="company">
+			<action type="store" field_type="editable">
+			</action>
+		</div>
+	</div>
+	
+	<div name="occupation-div">
+		<action type="fetch-dom-element">
+			label:contains("Industry")+> :selected
+		</action>
+		<div name="occupation">
+			<action type="store" >
+			</action>
+		</div>
+	</div>
+	
+	
+	<div name="billing-redirect">
+		<action type="simulate-click" data="li#billing_tab">
+		li#billing_tab
+		</action>
+		
+		<div name="ccn-div">
+			<action type="fetch-dom-element" jquery_filter="remove-children">
+				li:contains("Billing Information")
+			</action>
+			<div name="ccn">
+				<action type="store" >
+				</action>
+			</div>
+		</div>
+	
+		
+	</div>
+	
+</div>
