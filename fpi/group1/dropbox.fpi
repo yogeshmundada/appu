@@ -18,5 +18,13 @@
 					td:contains("Email")+
 			</action>
         </div>
+		
+		<div name="payment-div">
+		<action type="fetch-url">https://www.dropbox.com/payments</action>		
+			<div name="ccn">
+				<action type="explore">
+				</action>
+			</div>		
+		</div>
 
 </div>
