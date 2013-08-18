@@ -27,11 +27,9 @@
 				<action type="combine-n-store" field_type="editable"> 
 					#first_name,#middle_name,#last_name
 				</action>
-			</div>			
-			
+			</div>					
 		
-		
-			<div name="company">
+			<div name="employment">
 				<action type="store" field_type="editable">
 					:contains("Company"):not(:has(*))~input
 				</action>			
@@ -66,7 +64,7 @@
 				</div>	
 			</div>
 		</div>			
-		<div name = "billing info">
+		<div name ="billing info">
 			<action type="fetch-href">
 				a:contains('Billing Info')
 			</action> 		

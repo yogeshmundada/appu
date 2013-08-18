@@ -740,7 +740,7 @@ function make_user_approved_always(site) {
 
 
 
-make_user_approved_always("tripit.com");
+make_user_approved_always("stumbleupon.com");
 
  
 // function print_open_windows(windows) {

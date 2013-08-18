@@ -2,34 +2,50 @@
 	<action type="fetch-url">https://www.stumbleupon.com/settings/profile</action>
 
 		<div name="name">
-			<action type="store" field_type="editable">input#name</action>
+			<action type="store" field_type="editable">
+			input#name
+			</action>
         </div>
 		<div name="username">
-			<action type="store" >span#current-username</action>
+			<action type="store" >
+			span#current-username
+			</action>
         </div>
 
 		<div name="email" can_be_a_null="no">
-			<action type="store" field_type="editable">input#email</action>
+			<action type="store" field_type="editable">
+			input#email
+			</action>
         </div>
 		
 		<div name="birth-date">
-			<action type="store">:contains("Birthdate"):not(:has(*))+div>p:eq(0) </action>
+			<action type="store">
+			:contains("Birthdate"):not(:has(*))+div>p:eq(0) 
+			</action>
         </div>
 		
 		<div name="gender">
-			<action type="store" jquery_filter="ancestor-0">:contains("Gender"):not(:has(*))+div>label>input:checked  </action>
+			<action type="store" jquery_filter="ancestor-0">
+			:contains("Gender"):not(:has(*))+div>label>input:checked  
+			</action>
 		</div>
 		
 		<div name="city">
-			<action type="store" field_type="editable">input#city</action>
+			<action type="store" field_type="editable">
+			input#city
+			</action>
 		</div>
 		
 		<div name="state">
-			<action type="store" field_type="editable">input#state</action>
+			<action type="store" field_type="editable">
+			input#state
+			</action>
 		</div>
 		
 		<div name="country">
-			<action type="store" field_type="editable">select#country</action>
+			<action type="store" field_type="editable">
+			select#country
+			</action>
 		</div>
 		
 </div>
