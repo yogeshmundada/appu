@@ -18,7 +18,7 @@
 			</action>
         </div>
 		
-		<div name="birth-date">
+		<div name="dob">
 			<action type="store">
 			:contains("Birthdate"):not(:has(*))+div>p:eq(0) 
 			</action>

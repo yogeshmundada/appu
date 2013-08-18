@@ -5,7 +5,7 @@
 			<action type="fetch-dom-element">
 				label:contains("Location")+>
 			</action>
-			<div name="location">
+			<div name="current-city">
 				<action type="store" field_type="editable">					
 				</action>
 			</div>
@@ -31,7 +31,7 @@
 			<action type="fetch-dom-element">
 				label:contains("Birthday")+>select :selected
 			</action>
-			<div name="dob">
+			<div name="birth-date">
 				<action type="store" ignore_default="MonthDayYear">						
 				</action>
 			</div>

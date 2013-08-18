@@ -61,7 +61,7 @@
 			</action>
 		</div>
 	</div>
-	<div name="dob">		
+	<div name="birth-date">		
 		<action type="combine-n-store">			
 			select#birthMonth :selected,
 			select#birthDay :selected			

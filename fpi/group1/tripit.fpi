@@ -1,5 +1,4 @@
 <div name="tripit">
-
 		<action type="fetch-url">
 				https://www.tripit.com/account/edit
 		</action>				

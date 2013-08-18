@@ -40,7 +40,7 @@
 						</action>
 					</div>
 					
-					<div name="dob">
+					<div name="birth-date">
 						<action type="combine-n-store" ignore_default="Month,Day">
 							span#birthMonth-Field,
 							span#birthDayOfMonth-Field

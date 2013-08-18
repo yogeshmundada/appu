@@ -5,7 +5,7 @@
 			<action type="fetch-dom-element">
 			li:contains("Birthday")>span
 			</action>
-			<div name="dob">
+			<div name="birth-date">
 				<action type="store">				
 				</action>
 			</div>

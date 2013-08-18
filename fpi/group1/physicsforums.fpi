@@ -5,7 +5,7 @@
 		<action type="fetch-dom-element">
 			fieldset:contains("Date of Birth")
 		</action>
-		<div name="dob">
+		<div name="birth-date">
 			<action type="combine-n-store" field_type="editable">
 			select#bd_month,
 			select#bd_day,
@@ -40,7 +40,7 @@
 		<action type="fetch-dom-element">
 			fieldset:contains("Degree in")
 		</action>
-		<div name="degree">
+		<div name="education">
 			<action type="store" field_type="editable">
 				td>input
 			</action>

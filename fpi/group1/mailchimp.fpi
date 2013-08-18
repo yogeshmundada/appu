@@ -78,7 +78,7 @@
 			<action type="fetch-dom-element">
 			label:contains("Company / organization")+
 			</action>
-			<div name="company">
+			<div name="employment">
 				<action type="store" field_type="editable">				
 				</action>
 			</div>

@@ -1053,7 +1053,7 @@
  },
  "mint.com" : {
      "category" : "finance/class-1",
-     "fpi" : "not-present"
+     "fpi" : "group1/mint.fpi"
  },
  "zifty.com" : {
      "category" : "restaurant/food/services/class-3",
