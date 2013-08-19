@@ -335,12 +335,12 @@ function initialize_aggregate_data() {
 }
 
 
-//---------------------- START of CODE to MANAGE NON-USER-ACCOUNT SITES
+//---------------------- START of CODE to MANAGE NON-USER-ACCOUNT SITES ---
 // NUAS: NON USER-ACCOUNT SITES, Uses bloom filter and chrome.storage
 
 // Perhaps I should create a class or a closure to deal with this shit
 // but then so far I have not used it (except a few callbacks), and just 
-// plain old procedural programming seems suffice for now.
+// plain old procedural programming seems good enough for now.
 
 // n: Assuming a user would have 10000 different nuas sites.
 // k: 10 hash functions
@@ -350,8 +350,18 @@ function initialize_aggregate_data() {
 function init_nuas_bf() {
     var bf_size = 1048576;
     var ab = new ArrayBuffer(bf_size);
-    pii_vault.nuas_bf = new Uint16Array(ab);
+
+    pii_vault.nuas_bf = new Uint8Array(ab);
+    pii_vault.num_nuas_bf = 0;
     
+}
+
+function flush_1024_buffer_chunk() {
+
+}
+
+function read_1024_buffer_chunk() {
+
 }
 
 function sync_nuas_bf_to_disk() {

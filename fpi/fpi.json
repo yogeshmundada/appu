@@ -329,7 +329,7 @@
  },
  "active.com" : {
      "category" : "health/class-4",
-     "fpi" : "not-present"
+     "fpi" : "group1/active.fpi"
  },
  "linkedin.com" : {
      "category" : "jobs/social-networking/networking/job-networking/class-2",
@@ -457,7 +457,7 @@
  },
  "bitbucket.org" : {
      "category" : "services/software-services/class-2",
-     "fpi" : "not-present"
+     "fpi" : "group1/bitbucket.fpi"
  },
  "kickstarter.com" : {
      "category" : "services/networking/class-3",
@@ -809,7 +809,7 @@
  },
  "zagat.com" : {
      "category" : "discovery-engine/restaurant/food/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/zagat.fpi"
  },
  "bsnl.in" : {
      "category" : "software-services/telecommunication/class-3",
@@ -845,7 +845,7 @@
  },
  "care.com" : {
      "category" : "services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/care.fpi"
  },
  "sprint.com" : {
      "category" : "utility/hardware/software-services/class-3",
@@ -861,7 +861,7 @@
  },
  "last.fm" : {
      "category" : "music-streaming/entertainment/class-5",
-     "fpi" : "not-present"
+     "fpi" : "group1/last.fm.fpi"
  },
  "theborgata.com" : {
      "category" : "travel/shopping/class-3",
@@ -873,7 +873,7 @@
  },
  "comcast.net" : {
      "category" : "software-services/telecommunication/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/comcast.fpi"
  },
  "trello.com" : {
      "category" : "collaboration/software-services/class-3",
@@ -893,7 +893,7 @@
  },
  "att.net" : {
      "category" : "utility/hardware/software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/att.fpi"
  },
  "ironport.com" : {
      "category" : "security/software-services/class-3",
@@ -1053,7 +1053,7 @@
  },
  "mint.com" : {
      "category" : "finance/class-1",
-     "fpi" : "not-present"
+     "fpi" : "group1/mint.fpi"
  },
  "zifty.com" : {
      "category" : "restaurant/food/services/class-3",
@@ -1169,7 +1169,7 @@
  },
  "costco.com" : {
      "category" : "shopping/services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/costco.fpi"
  },
  "verizonwireless.com" : {
      "category" : "telecommunication/hardware/software-services/class-3",
@@ -1205,7 +1205,7 @@
  },
  "hellosign.com" : {
      "category" : "software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/hellosign.fpi"
  },
  "bookholders.com" : {
      "category" : "shopping/services/class-3",

@@ -75,6 +75,16 @@
 		</div>
 	</div>
 	
+	<div name="spotify-billing">
+			<action type="fetch-url">
+			https://www.spotify.com/us/account/subscription/
+			</action>
+			<div name="ccn">
+				<action type="explore">
+				</action>
+			</div>
+		</div>
+	
 	
 </div>
 

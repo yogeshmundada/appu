@@ -1,0 +1,115 @@
+<div name="care">
+	<action type="fetch-url">https://www.care.com</action>
+	
+	<div name="profile-redirect">
+		<action type="simulate-click" data="h1:contains('My Profile & Settings')">
+		a:contains("My Profile & Settings")
+		</action>
+		
+		<div name="general-info">
+			<action type="fetch-dom-element">
+			table:contains("General Information")++
+			</action>
+			
+			<div name="first-name-div">
+				<action type="fetch-dom-element">
+				th:contains("First Name")+
+				</action>
+				<div name="first-name">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			<div name="last-name-div">
+				<action type="fetch-dom-element">
+				th:contains("Last Name")+
+				</action>
+				<div name="last-name">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			<div name="birthday-div">
+				<action type="fetch-dom-element">
+				th:contains("Birthday")+
+				</action>
+				<div name="dob">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+			<div name="address-div">
+				<action type="fetch-dom-element">
+				th:contains("Mailing Address")+
+				</action>
+				<div name="address">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+			<div name="city-div">
+				<action type="fetch-dom-element">
+				th:contains("City")+
+				</action>
+				<div name="city">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+			<div name="state-div">
+				<action type="fetch-dom-element">
+				th:contains("State")+
+				</action>
+				<div name="state">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+			<div name="zip-div">
+				<action type="fetch-dom-element">
+				th:contains("ZIP")+
+				</action>
+				<div name="zip">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+			<div name="phone-div">
+				<action type="fetch-dom-element">
+				th:contains("Primary Phone")+
+				</action>
+				<div name="phone">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+			<div name="email-div">
+				<action type="fetch-dom-element" jquery_filter="remove-children">
+				th:contains("Email")+
+				</action>
+				<div name="email">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+			<div name="ccn-div">
+				<action type="fetch-dom-element" jquery_filter="remove-children">
+				th:contains("Credit Card on File")+
+				</action>
+				<div name="ccn">
+					<action type="store">
+					</action>
+				</div>
+			</div>
+			
+		</div>
+	</div>
+	
+</div>

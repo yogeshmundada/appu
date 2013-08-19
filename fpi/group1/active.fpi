@@ -1,0 +1,94 @@
+<div name="active">
+	<action type="fetch-url">http://www.active.com/my_profile</action>
+	
+	<div name="profile-div">
+		<action type="fetch-dom-element">
+		legend:contains("Profile")++		
+		</action>
+		
+		<div name="first-name-div">
+			<action type="fetch-dom-element">
+			span:contains("First Name:")+
+			</action>
+			<div name="first-name">
+				<action type="store" can_be_a_null="no">
+				</action>
+			</div>
+		</div>
+		
+		<div name="last-name-div">
+			<action type="fetch-dom-element">
+			span:contains("Last Name:")+
+			</action>
+			<div name="last-name">
+				<action type="store" can_be_a_null="no">
+				</action>
+			</div>
+		</div>
+		
+		<div name="email-div">
+			<action type="fetch-dom-element">
+			span:contains("Email:")+
+			</action>
+			<div name="email">
+				<action type="store" can_be_a_null="no">
+				</action>
+			</div>
+		</div>
+		
+		<div name="age-div">
+			<action type="fetch-dom-element">
+			span:contains("Age:")+
+			</action>
+			<div name="age">
+				<action type="store">
+				</action>
+			</div>
+		</div>
+		
+		<div name="dob-div">
+			<action type="fetch-dom-element">
+			span:contains("Date of Birth:")+
+			</action>
+			<div name="dob">
+				<action type="store" can_be_a_null="no">
+				</action>
+			</div>
+		</div>
+		
+		<div name="gender-div">
+			<action type="fetch-dom-element">
+			span:contains("Gender:")+
+			</action>
+			<div name="gender">
+				<action type="store">
+				</action>
+			</div>
+		</div>
+		
+		<div name="phone-div">
+			<action type="fetch-dom-element">
+			span:contains("Gender:")+
+			</action>
+			<div name="gender">
+				<action type="store">
+				</action>
+			</div>
+		</div>
+		
+		<div name="address-div">
+			<action type="fetch-dom-element">
+			span:contains("Address:")+
+			</action>
+			<div name="address">
+				<action type="combine-n-store">
+				li:eq(0),
+				li:eq(1),
+				li:eq(2)
+				</action>
+			</div>
+		</div>
+		
+	</div>
+
+</div>

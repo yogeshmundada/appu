@@ -737,11 +737,7 @@ function make_user_approved_always(site) {
 // 	print_all_cookies('facebook.com', "APPU_START_CHECK");
 //     }, 2 * 1000);
 
-
-
-
 //make_user_approved_always("dominos.com");
-
  
 // function print_open_windows(windows) {
 //     for (var i = 0; i < windows.length; i++) {

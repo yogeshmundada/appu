@@ -42,7 +42,7 @@
 			<action type="fetch-dom-element">
 			div.birthday
 			</action>
-			<div name="dob">
+			<div name="birth-date">
 				<action type="store">
 				div.selectRepresentative
 				</action>
@@ -53,7 +53,7 @@
 			<action type="fetch-dom-element">
 			label:contains("City")+
 			</action>
-			<div name="city">
+			<div name="current-city">
 				<action type="combine-n-store" field_type="editable">
 				input#city,
 				input#province

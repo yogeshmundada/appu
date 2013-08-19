@@ -17,6 +17,16 @@
 
 		</div>
 	</div>
+	
+	<div name="languages-div">
+		<action type="fetch-dom-element">
+		div.Lc.MH>div>div>div :eq(0)
+		</action>
+		<div name="language">
+			<action type="store">
+			</action>
+		</div>		
+	</div>
 
 	<div name="your account">
      		<action type="fetch-href">

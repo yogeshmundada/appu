@@ -5,7 +5,7 @@
 			<action type="fetch-dom-element">
 				label:contains("Location")+>
 			</action>
-			<div name="location">
+			<div name="current-city">
 				<action type="store" field_type="editable">					
 				</action>
 			</div>
@@ -13,10 +13,16 @@
 		
 		<div name="gender-div">
 			<action type="fetch-dom-element">
-				label:contains("Gender")+ :checked
+				label:contains("Gender")+ 
 			</action>
-			<div name="gender">
-				<action type="store">									
+			<div name="gender-inner">
+				<action type="fetch-dom-element" jquery_filter="ancestor-0" >									
+				label 
+				<div name="gender">
+					<action type="store" ignore_default="I'd rather not say">
+					:selected
+					</action>
+				</div>
 				</action>
 			</div>
 		</div>
@@ -25,7 +31,7 @@
 			<action type="fetch-dom-element">
 				label:contains("Birthday")+>select :selected
 			</action>
-			<div name="dob">
+			<div name="birth-date">
 				<action type="store" ignore_default="MonthDayYear">						
 				</action>
 			</div>

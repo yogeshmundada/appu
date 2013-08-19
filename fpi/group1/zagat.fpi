@@ -1,0 +1,16 @@
+<div name="zagat">
+	<action type="fetch-url">
+	https://support.google.com/zagat/
+	</action>	
+		
+	<div name="email-div">
+		<action type="fetch-dom-element">
+		a.user-email.user-email--last-visible
+		</action>
+		<div name="email" can_be_a_null="no">
+			<action type="store" >
+			</action>
+		</div>
+	</div>
+	
+</div>

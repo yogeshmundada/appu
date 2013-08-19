@@ -8,7 +8,7 @@
 		</action>
 		<div name="name" can_be_a_null="no">
 			<action type="store">
-				div.details>span
+				div.details>span>span
 			</action>
 		</div>
 	</div>

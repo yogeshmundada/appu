@@ -1,0 +1,117 @@
+<div name="mint">
+	<action type="fetch-url">
+	https://wwws.mint.com/overview.event
+	</action>
+	
+	<div name="net-worth-div">
+		<action type="fetch-dom-element">
+			li:contains("Net Worth")>span
+		</action>
+		<div name="net-worth">
+			<action type="store">
+			</action>
+		</div>
+	</div>
+	
+	<div name="profile-div">
+		<action type="simulate-click" data="h2:contains('Settings')">
+			a:contains("Profile")
+		</action>
+		
+		<div name="email">
+			<action type="store" field_type="editable">
+				input#as-nav-content-settings-email
+			</action>
+		</div>
+		
+		<div name="about-me-div">
+			<action type="simulate-click" data="span:contains('About Me')">
+				a:contains("About Me")
+			</action>		
+			
+			<div name="age-div">
+				<action type="fetch-dom-element">
+				td:contains("Age"):eq(1) :selected
+				</action>
+				<div name="age">
+					<action type="store">					
+					</action>
+				</div>
+			</div>
+			
+			<div name="gender-div">
+				<action type="fetch-dom-element">
+				td:contains("Gender")+> :checked
+				</action>
+				<div name="gender">
+					<action type="store" field_type="editable">					
+					</action>
+				</div>
+			</div>
+			
+			<div name="martial-status-div">
+				<action type="fetch-dom-element">
+				td:contains("Marital Status"):eq(1) :selected
+				</action>
+				<div name="relationship-status">
+					<action type="store" >					
+					</action>
+				</div>
+			</div>
+			
+			<div name="graduate-school-div">
+				<action type="fetch-dom-element">
+				select#as-nav-content-about-education :selected
+				</action>
+				<div name="graduate-school">
+					<action type="store" >					
+					</action>
+				</div>
+			</div>
+			
+			<div name="occupation-div">
+				<action type="fetch-dom-element">
+				select#as-nav-content-about-profession :selected
+				</action>
+				<div name="occupation">
+					<action type="store" >					
+					</action>
+				</div>
+			</div>
+			
+			<div name="income-div">
+				<action type="fetch-dom-element">
+				td:contains("Income") :selected
+				</action>
+				<div name="income">
+					<action type="store" >					
+					</action>
+				</div>
+			</div>
+			
+			<div name="zip-div">
+				<action type="fetch-dom-element">
+				td:contains("Zip Code")+>input 
+				</action>
+				<div name="zip">
+					<action type="store" field_type="editable">					
+					</action>
+				</div>
+			</div>
+			
+			<div name="country-div">
+				<action type="fetch-dom-element">
+				td:contains("Country")+
+				</action>
+				<div name="country">
+					<action type="store">					
+					</action>
+				</div>
+			</div>
+			
+			
+			
+		</div>
+	</div>
+	
+</div>

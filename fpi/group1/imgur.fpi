@@ -14,9 +14,17 @@
 					<action type="store" field_type="editable">
 					</action>
 				</div>				
-			</div>			
-			
-			
-        </div>				
+			</div>				
+        </div>		
+
+		<div name="imgur-billing">
+			<action type="fetch-url">
+			http://imgur.com/account/settings/
+			</action>
+			<div name="ccn">
+				<action type="explore">
+				</action>
+			</div>
+		</div>
 
 </div>

@@ -5,7 +5,7 @@
 			<action type="fetch-dom-element" jquery_filter="ancestor-1"> 
 				label:contains("Name")
 			</action>
-			<div name="name" can_be_a_null="no">
+			<div name="name" >
 				<action type="store"  field_type="editable">
 				input
 				</action>
@@ -17,7 +17,7 @@
 			label:contains("Email (will be public)")
 			</action>
 			
-			<div name="email" can_be_a_null="no" >
+			<div name="email"  >
 				<action type="store" field_type="editable">
 				input
 				</action>
@@ -61,5 +61,14 @@
 			</div>
         </div>
 		
+		<div name="github-billing">
+			<action type="fetch-url">
+			https://github.com/settings/billing
+			</action>
+			<div name="ccn">
+				<action type="explore">
+				</action>
+			</div>
+		</div>
 
 </div>

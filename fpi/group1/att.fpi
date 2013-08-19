@@ -1,0 +1,140 @@
+<div name="att">
+	<action type="fetch-url">https://www.att.com/olam/passthroughAction.myworld?actionType=ViewProfile</action>
+	
+	<div name="ccn-name-div>">
+		<action type="fetch-dom-element">
+			div:contains("Billing Name")++:eq(0)
+		</action>
+		<div name="ccn-name-removeChildren">
+			<action type="fetch-dom-element" jquery_filter="remove-children">
+				label
+			</action>
+			<div name="ccn">
+				<action type="store">
+				</action>
+			</div>
+		</div>	
+	</div>
+	
+	<div name="ccn-address-div>">
+		<action type="fetch-dom-element">
+			div:contains("Address Line 1")++:eq(0)
+		</action>
+		<div name="ccn-address-removeChildren">
+			<action type="fetch-dom-element" jquery_filter="remove-children">
+				label
+			</action>
+			<div name="address">
+				<action type="store">
+				</action>
+			</div>
+		</div>	
+	</div>
+	
+	<div name="city-div>">
+		<action type="fetch-dom-element">
+			div:contains("City")++:eq(0)
+		</action>
+		<div name="div">
+			<action type="fetch-dom-element" >
+				label
+			</action>
+			<div name="city">
+				<action type="store">
+				</action>
+			</div>
+		</div>	
+	</div>
+	
+	<div name="state-div>">
+		<action type="fetch-dom-element">
+			div:contains("State")++:eq(0)
+		</action>
+		<div name="div">
+			<action type="fetch-dom-element" >
+				label
+			</action>
+			<div name="state">
+				<action type="store">
+				</action>
+			</div>
+		</div>	
+	</div>
+	
+	<div name="zipcode-div>">
+		<action type="fetch-dom-element">
+			div:contains("ZIP Code")++:eq(0)
+		</action>
+		<div name="div">
+			<action type="fetch-dom-element" >
+				label
+			</action>
+			<div name="zip">
+				<action type="store">
+				</action>
+			</div>
+		</div>	
+	</div>
+	
+	<div name="phone-div>">
+		<action type="fetch-dom-element">
+			div:contains("Home Phone")++:eq(0)
+		</action>
+		<div name="div">
+			<action type="fetch-dom-element" >
+				label
+			</action>
+			<div name="phone">
+				<action type="store">
+				</action>
+			</div>
+		</div>	
+	</div>
+	
+	<div name="email-div>">
+		<action type="fetch-dom-element">
+			div:contains("Billing Email Address")++:eq(0)
+		</action>
+		<div name="div">
+			<action type="fetch-dom-element" >
+				label
+			</action>
+			<div name="email">
+				<action type="store">
+				</action>
+			</div>
+		</div>	
+	</div>
+		
+	<div name="language-div>">
+		<action type="fetch-dom-element">
+			div:contains("Bill Language")++:eq(0)
+		</action>
+		<div name="ccn-address-removeChildren">
+			<action type="fetch-dom-element" jquery_filter="remove-children">
+				label
+			</action>
+			<div name="language">
+				<action type="store">
+				</action>
+			</div>
+		</div>	
+	</div>
+	
+	<div name="billpage-redirect">
+	<action fetch-url="https://www.att.com/pmt/displayHistoryPage.do?reportActionEvent=A_PMT_PAYMENT_HISTORY"></action>
+		<div name="bill">
+			<action type="simulate-click" data="label:contains('Payment Method')">
+			a:contains("CREDIT CARD"):eq(0)
+			</action>
+			<div name="ccn-div">
+				<action type="store">
+					label:contains("Payment Method")++
+				</action>
+			</div>
+		</div>
+	
+	
+	</div>
+
+</div>
