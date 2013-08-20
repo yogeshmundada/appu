@@ -347,38 +347,129 @@ function initialize_aggregate_data() {
 // p: false positive rate: 1.0E-10
 // Substituting: 1 / (1 - (1 - p ** (1 / k)) ** (1 / (k * n)))
 // Size of BF ~ 1MB = 1048576
+
+var total_chunks = 1024;
+var chunk_size = 1024;
+
 function init_nuas_bf() {
-    var bf_size = 1048576;
+    var bf_size = total_chunks * chunk_size;
     var ab = new ArrayBuffer(bf_size);
 
-    pii_vault.nuas_bf = new Uint8Array(ab);
+    pii_vault.nuas_bf = ab;
+    pii_vault.nuas_bf_byteview = new Uint8Array(ab);
     pii_vault.num_nuas_bf = 0;
-    
 }
 
-function flush_1024_buffer_chunk() {
-
+function flush_num_nuas_bf() {
+    var write_key = pii_vault.guid + ":nuas_bf:num_nuas_bf";
+    localStorage[write_key] = JSON.stringify(pii_vault.num_nuas_bf);
 }
 
-function read_1024_buffer_chunk() {
-
+function read_num_nuas_bf() {
+    var read_key = pii_vault.guid + ":nuas_bf:num_nuas_bf";
+    pii_vault.num_nuas_bf = JSON.parse(localStorage[write_key]);
 }
 
-function sync_nuas_bf_to_disk() {
-
+function flush_nuas_bf_to_disk() {
+    flush_num_nuas_bf();
+    for (var i = 0; i < total_chunks; i++) {
+	flush_buffer_chunk(chunk_number+1);
+    }
 }
 
 function read_nuas_bf_from_disk() {
-
+    init_nuas_bf();
+    read_num_nuas_bf();
+    for (var i = 0; i < total_chunks; i++) {
+	var temp_buf = read_buffer_chunk(chunk_number+1);
+	byte_start_index = i * chunk_size;
+	for (var j = 0; j < chunk_size; j++) {
+	    pii_vault.nuas_bf_byteview[byte_start_index + j] = temp_buf[j];
+	}
+    }
 }
+
+//Following 2 functions are from: http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
+//I modified them to use Uint8Array instead of Uint16Array
+function ab2str(buf) {
+    return String.fromCharCode.apply(null, new Uint8Array(buf));
+}
+
+function str2ab(str) {
+    var buf = new ArrayBuffer(str.length); 
+    var bufView = new Uint8Array(buf);
+
+    for (var i=0, strLen=str.length; i<strLen; i++) {
+	bufView[i] = str.charCodeAt(i);
+    }
+
+    return buf;
+}
+
+// guid:nuas_bf:0-1023
+// guid:nuas_bf:1024-2047
+// Chunk number starts from 1,2, .., 1024
+function flush_buffer_chunk(chunk_number) {
+    //Extract buffer as per the chunk number.
+    start_index = (chunk_number - 1) * chunk_size;
+    //Last index is non-inclusive
+    end_index = start_index + chunk_size;
+    flush_buf = pii_vault.nuas_bf_byteview.subarray(start_index, last_index);
+    flush_buf_str = ab2str(flush_buf);
+    var write_key = pii_vault.guid + ":nuas_bf:" + start_index + "-" + (end_index-1);
+    localStorage[write_key] = JSON.stringify(flush_buf_str);
+}
+
+function read_buffer_chunk(chunk_number) {
+    //Extract buffer as per the chunk number.
+    start_index = (chunk_number - 1) * chunk_size;
+    //Last index is non-inclusive
+    end_index = start_index + chunk_size;
+    var read_key = pii_vault.guid + ":nuas_bf:" + start_index + "-" + (end_index-1);
+    var read_buf_str = JSON.parse(localStorage[read_key]);
+    var temp_bufview = new Uint8Array(str2ab(read_buf_str));
+    return temp_bufview;
+}
+
+var bit_set_array = {
+    '0': 128,
+    '1': 64,
+    '2': 32,
+    '3': 16,
+    '4': 8,
+    '5': 4,
+    '6': 2,
+    '7': 1,
+};
 
 function get_bits() {
 
 }
 
-function set_bits() {
+//Accepts an array containing bit numbers to be set.
+function set_bits(bit_numbers) {
+    var chunks_array = {};
+    for (var i = 0; i < bit_numbers.length; i++) {
+	byte_number = Math.floor(bit_numbers[i]/8);
+	byte_bit_number = bit_numbers[i] % 8;
+	if (bit_numbers[i] > 7) {
+	    byte_number += 1;
+	}
 
+	if (pii_vault.nuas_bf_byteview[byte_number] != 0) {
+	    console.log("APPU DEBUG: Byte number(" + byte_number + ") already has some bits set:");
+	}
+
+	pii_vault.nuas_bf_byteview[byte_number]	|= bit_set_array[byte_bit_number];
+	var chunk_number = Math.floor(byte_number/total_chunks) + 1;
+	chunks_array[chunk_number] = true;
+    }
+    for (var k in chunks_array) {
+	flush_buffer_chunk(k);
+    }
 }
+
+
 
 function is_url_counted(url) {
     // return yes/no
