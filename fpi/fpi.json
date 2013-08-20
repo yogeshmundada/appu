@@ -277,7 +277,7 @@
  },
  "monster.com" : {
      "category" : "software-services/class-3",
-     "fpi" : "not-present"
+     "fpi" : "group1/monster.fpi"
  },
  "go.co" : {
      "category" : "software-services/class-3",
