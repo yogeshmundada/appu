@@ -1,0 +1,130 @@
+<div name="monster">
+	<action type="fetch-url">
+	http://my.monster.com/Profile/EditContactInformation
+	</action>
+	
+	<div name="contact-div">
+		<action type="fetch-dom-element">
+		div#mcMainPrimary
+		</action>
+		
+		<div name="first-name-div">
+			<action type="fetch-dom-element">
+			strong:contains("First Name")+
+			</action>
+			<div name="first-name" can_be_a_null="no">
+				<action type="fetch-dom-element" field_type="editable">				
+				</action>
+			</div>		
+		</div>		
+		
+		<div name="last-name-div">
+			<action type="fetch-dom-element">
+			strong:contains("Last Name")+
+			</action>
+			<div name="last-name" can_be_a_null="no">
+				<action type="fetch-dom-element" field_type="editable">				
+				</action>
+			</div>		
+		</div>
+		
+		<div name="email-div">
+			<action type="fetch-dom-element" jquery_filter="remove-children">
+			strong:contains("Email Address")+>
+			</action>
+			<div name="email" can_be_a_null="no">
+				<action type="fetch-dom-element">				
+				</action>
+			</div>		
+		</div>
+		
+		<div name="address-div">
+			<action type="fetch-dom-element" >
+			strong:contains("Email Address")+
+			</action>
+			<div name="address">
+				<action type="fetch-dom-element" field_type="editable">				
+				</action>
+			</div>		
+		</div>
+		
+		<div name="zip-div">
+			<action type="fetch-dom-element" >
+			strong:contains("Zip code")+
+			</action>
+			<div name="zip">
+				<action type="fetch-dom-element" field_type="editable">				
+				</action>
+			</div>		
+		</div>
+		
+		<div name="country-div">
+			<action type="fetch-dom-element" >
+			strong:contains("Country")+> :selected
+			</action>
+			<div name="country">
+				<action type="fetch-dom-element">				
+				</action>
+			</div>		
+		</div>
+		
+		<div name="phone-div" type="vector">
+			<action type="fetch-dom-element" >
+			strong:contains("Number")+:not(:has(*))
+			</action>
+			<div name="phone">
+				<action type="fetch-dom-element" field_type="editable">				
+				</action>
+			</div>		
+		</div>
+	
+	</div>
+	
+	<div name="experience-redirect">
+		<action type="fetch-url">
+		http://my.monster.com/Profile/ExperienceList
+		</action>
+		
+		<div name="employment-div" type="vector">
+			<action type="fetch-dom-element">
+			div.contentRow.withActionBar
+			</action>
+			<div name="employment">
+				<action type="store">
+				div:eq(1)
+				</action>
+			</div>
+		</div>		
+	</div>
+	
+	<div name="education-redirect">
+		<action type="fetch-url">
+		http://my.monster.com/Profile/EditEducation
+		</action>
+		
+		<div name="schools-div" type="vector">
+			<action type="fetch-dom-element">
+			div.contentRow.withActionBar
+			</action>
+			<div name="schools">
+				<action type="store">
+				p:eq(0)
+				</action>
+			</div>
+		</div>	
+		
+		<div name="education-div" type="vector">
+			<action type="fetch-dom-element">
+			div.contentRow.withActionBar
+			</action>
+			<div name="education">
+				<action type="store">
+				p:eq(1)
+				</action>
+			</div>
+		</div>	
+
+		
+	</div>
+
+</div>
