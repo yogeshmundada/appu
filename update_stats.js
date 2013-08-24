@@ -348,8 +348,13 @@ function initialize_aggregate_data() {
 // Substituting: 1 / (1 - (1 - p ** (1 / k)) ** (1 / (k * n)))
 // Size of BF ~ 1MB = 1048576
 
-var total_chunks = 1024;
-var chunk_size = 1024;
+// var total_chunks = 1024;
+// var chunk_size = 1024;
+// var total_hash_funcs = 10;
+
+var total_chunks = 100;
+var chunk_size = 100;
+var total_hash_funcs = 5;
 
 function init_nuas_bf() {
     var bf_size = total_chunks * chunk_size;
@@ -373,7 +378,7 @@ function read_num_nuas_bf() {
 function flush_nuas_bf_to_disk() {
     flush_num_nuas_bf();
     for (var i = 0; i < total_chunks; i++) {
-	flush_buffer_chunk(chunk_number+1);
+	flush_buffer_chunk(i+1);
     }
 }
 
@@ -381,7 +386,7 @@ function read_nuas_bf_from_disk() {
     init_nuas_bf();
     read_num_nuas_bf();
     for (var i = 0; i < total_chunks; i++) {
-	var temp_buf = read_buffer_chunk(chunk_number+1);
+	var temp_buf = read_buffer_chunk(i+1);
 	byte_start_index = i * chunk_size;
 	for (var j = 0; j < chunk_size; j++) {
 	    pii_vault.nuas_bf_byteview[byte_start_index + j] = temp_buf[j];
@@ -414,7 +419,7 @@ function flush_buffer_chunk(chunk_number) {
     start_index = (chunk_number - 1) * chunk_size;
     //Last index is non-inclusive
     end_index = start_index + chunk_size;
-    flush_buf = pii_vault.nuas_bf_byteview.subarray(start_index, last_index);
+    flush_buf = pii_vault.nuas_bf_byteview.subarray(start_index, end_index);
     flush_buf_str = ab2str(flush_buf);
     var write_key = pii_vault.guid + ":nuas_bf:" + start_index + "-" + (end_index-1);
     localStorage[write_key] = JSON.stringify(flush_buf_str);
@@ -442,8 +447,19 @@ var bit_set_array = {
     '7': 1,
 };
 
-function get_bits() {
+function get_bits(bit_numbers) {
+    var val_bit_numbers = [];
 
+    for (var i = 0; i < bit_numbers.length; i++) {
+	byte_number = Math.floor(bit_numbers[i]/8);
+	byte_bit_number = bit_numbers[i] % 8;
+	if (bit_numbers[i] > 7) {
+	    byte_number += 1;
+	}
+
+	val_bit_numbers.push(pii_vault.nuas_bf_byteview[byte_number] & bit_set_array[byte_bit_number]);
+    }
+    return val_bit_numbers;
 }
 
 //Accepts an array containing bit numbers to be set.
@@ -469,14 +485,40 @@ function set_bits(bit_numbers) {
     }
 }
 
+function url_to_bits(url) {
+    var hash_bit_numbers = [];
 
+    var hash1_str = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(url));
+    var hash1 = parseInt(hash1_str.substring(hash1_str.length - 10, hash1_str.length), 16);
 
-function is_url_counted(url) {
-    // return yes/no
+    var hash2_str = CryptoJS.SHA1(url).toString();
+    var hash2 = parseInt(hash2_str.substring(hash2_str.length - 10, hash2_str.length), 16);
+
+    var max_bit_number = total_chunks * chunk_size * 8;
+    for (var i = 1; i <= total_hash_funcs; i++) {
+	var curr_hash_bit_number = (hash1 + i * hash2) % max_bit_number;
+	hash_bit_numbers.push(curr_hash_bit_number);
+    }
+    return hash_bit_numbers;
+}
+
+function is_url_counted(url, bit_numbers) {
+    var val_bit_numbers = get_bits(bit_numbers);
+    if (val_bit_numbers.reduce(function(a, b) { return a + b }) != 10) {
+	return false;
+    }
+    return true;
 }
 
 function add_url_to_nuas_bf(url) {
+    var bit_numbers = url_to_bits(url);    
+    if (is_url_counted(url, bit_numbers)) {
+	return;
+    }
 
+    set_bits(bit_numbers);
+    pii_vault.num_nuas_bf += 1;
+    flush_num_nuas_bf();
 }
 
 

@@ -118,3 +118,35 @@ function roughSizeOfObject( object ) {
     }
     return bytes;
 }
+
+
+// Gets all the GUIDs created in this installation
+function get_all_guids() {
+    var all_guids = {};
+    guid_regex = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}).*/;
+    
+    for (var key in localStorage) {
+	var r = guid_regex.exec(key);	
+	if (r) {
+	    all_guids[r[1]] = true;
+	}
+    }
+    return all_guids;
+}
+
+function delete_keys_with_prefix(prefix_array) {
+    guid_regex = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}).*/;
+    
+    for (key in localStorage) {
+	var r = guid_regex.exec(key);	
+	for (var i = 0; i < prefix_array.length; i++) {
+	    if (key.indexOf(prefix_array[i]) == -1) {
+		continue;
+	    }
+	    if (r && prefix_array.indexOf(r[1]) != -1) {
+		delete localStorage[key];
+	    }
+	}
+    }
+
+}
