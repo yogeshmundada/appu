@@ -475,7 +475,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	r = pii_check_blacklisted_sites(message);
 	if (r.blacklisted == "no") {
 	    var etld = get_domain(message.domain);
-
+	    
+	    add_ad_non_uas(etld);
 	    if(pii_vault.total_site_list.indexOf(etld) == -1) {
 
 		pii_vault.total_site_list.push(etld);
@@ -500,6 +501,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	response_report.report_number = message.report_number;
 	response_report.num_total_report = pii_vault.past_reports.length + 1;
 	response_report.pi_field_value_identifiers = pii_vault.aggregate_data.pi_field_value_identifiers;
+	
+	response_report.num_user_account_sites_overall = Object.keys(pii_vault.password_hashes).length;
+	response_report.num_non_user_account_sites_overall = pii_vault.aggregate_data.num_non_user_account_sites;
+	response_report.num_total_sites_overall = response_report.num_user_account_sites_overall + 
+	    response_report.num_non_user_account_sites_overall;
+
 	sendResponse(response_report);
 
 	original_report.report_updated = false;

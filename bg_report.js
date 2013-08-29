@@ -121,7 +121,11 @@ function pii_send_report(report_number) {
     }
 
     report.on_disk_size = roughSizeOfObject(localStorage);
-
+    report.num_user_account_sites_overall = Object.keys(pii_vault.password_hashes).length;
+    report.num_non_user_account_sites_overall = pii_vault.aggregate_data.num_non_user_account_sites;
+    report.num_total_sites_overall = report.num_user_account_sites_overall + 
+	report.num_non_user_account_sites_overall;
+    
     var wr = {};
     wr.type = "periodic_report";
 

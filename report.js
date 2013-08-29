@@ -53,6 +53,9 @@ var all_help_descriptions = {
     "help-total-sites" : "Total number of sites that you visited during report duration",
     "help-sites-with-ac" : "Total number of sites where you actually logged in during report duration",
     "help-sites-wo-ac" : "Total number of sites that you accessed w/o logging in during report duration. This could mean 1. sites do not require user login, 2. you do not have an account on the site or 3. you have an account but you did not login",
+    "help-total-sites-overall" : "Total number of sites that you visited since Appu was installed",
+    "help-sites-with-ac-overall" : "Total number of sites where you actually logged in since Appu was installed",
+    "help-sites-wo-ac-overall" : "Total number of sites that you accessed w/o logging in since Appu was installed. This could mean 1. sites do not require user login, 2. you do not have an account on the site or 3. you have an account but you did not login",
     "help-total-time" : "Total time spent browsing any site",
     "help-total-time-logged-in" : "Total time spent logged-in with your account on any site. When you are logged in on any site, every action you take on that site can be correlated with your personal data present on that site",
     "help-total-time-logged-out" : "Total time spent browsing sites without logging in",
@@ -411,6 +414,10 @@ function report_received(report_number, report, do_render) {
     $("#total-sites-div span b").text(report.num_total_sites);
     $("#total-sites-with-ac-div span b").text(report.num_user_account_sites);
     $("#total-sites-wo-ac-div span b").text(report.num_non_user_account_sites);
+
+    $("#total-sites-overall-div span b").text(report.num_total_sites_overall);
+    $("#total-sites-with-ac-overall-div span b").text(report.num_user_account_sites_overall);
+    $("#total-sites-wo-ac-overall-div span b").text(report.num_non_user_account_sites_overall);
 
     $("#total-time-spent-div span b").text(format_display_time(report.total_time_spent, "no"));
     $("#total-time-spent-loggedin-div span b").text(format_display_time(report.total_time_spent_logged_in, "no"));
