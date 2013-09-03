@@ -138,7 +138,7 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 // chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
-// Total messages: 48
+// Total messages: 49
 // Messages that can't be ignored (even if disabled): 38
 // Message name, To be ignored when disabled
 // Messages sent by content-script:
@@ -151,12 +151,13 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 // 7. "explicit_sign_out", yes
 // 8. "simulate_click_done", yes
 // 9. "check_blacklist", yes
-// 10. "remind_report_later", NO
-// 11. "close_report_reminder", NO
-// 12. "review_and_send_report", NO
-// 13. "am_i_active", NO
-// 14. "query_status", NO
-// 15. "clear_pending_warnings", NO
+// 10. "log_error", yes
+// 11. "remind_report_later", NO
+// 12. "close_report_reminder", NO
+// 13. "review_and_send_report", NO
+// 14. "am_i_active", NO
+// 15. "query_status", NO
+// 16. "clear_pending_warnings", NO
 
 // Messages sent by popup:
 // 1. "get-signin-status", NO
@@ -216,7 +217,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    "signed_in",
 	    "explicit_sign_out",
 	    "simulate_click_done",
-	    "check_blacklist"
+	    "check_blacklist",
+	    "log_error"
 	];
 
 	if (ignore_messages.indexOf(message.type) != -1 ) {
@@ -225,6 +227,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     if (message.type == "user_input") {
 	r = pii_log_user_input_type(message);
+    }
+    else if (message.type == "log_error") {
+	var err_msg = message.error;
+	print_appu_error(err_msg);
     }
     else if (message.type == "clear_pending_warnings") {
 	//This message indicates that user has interacted with earlier warning in some way.
@@ -331,12 +337,21 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	message.domain = get_domain(message.domain);
 	console.log("APPU DEBUG: User is attempting to LOGIN in: " + message.domain);
 	console.log("APPU DEBUG: LOGIN_ATTEMPT for: " + message.domain);
+	console.log("APPU DEBUG: Username info: " + JSON.stringify(message.uname_results));
 	//print_all_cookies(message.domain, "LOGIN_ATTEMPT");
 	//record_prelogin_cookies('', message.domain);
 
 	console.log("APPU DEBUG: (" + message.caller + ", " + message.pwd_sentmsg + 
 		    "), Value of is_password_stored: " + message.is_stored);
 	r = pii_check_passwd_reuse(message, sender);
+
+	var username = '';
+	var reason = message.uname_results.reason;
+	if (message.uname_results.rc) {
+	    username = message.uname_results.username;
+	    console.log("APPU DEBUG: Domain: " + message.domain + ", Username: " 
+			+ username + ", username_identifier: " + get_username_identifier(username));
+	}
 
 	//Add the current pwd info to pending warnings
 	var pend_warn = {};
@@ -348,7 +363,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    'passwd' : message.passwd,
 	    'pwd_strength' : r.pwd_strength,
 	    'domain' : message.domain,
-	    'username' : '',
+	    'username' : username,
+	    'username_reason' : reason,
 	    'is_stored' : message.is_stored,
 	};
 
@@ -410,12 +426,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	}
 	else if (message.value == 'no') {
-	    add_domain_to_nuas(domain);
+	    //add_domain_to_nuas(domain);
 	    pending_pi_fetch[sender.tab.id] = "";
 	    console.log("APPU DEBUG: NOT Signed in for site: " + get_domain(message.domain));
 	}
 	else if (message.value == 'unsure') {
-	    add_domain_to_nuas(domain);
+	    //add_domain_to_nuas(domain);
 	    pending_pi_fetch[sender.tab.id] = "";
 	    console.log("APPU DEBUG: Signed in status UNSURE: " + get_domain(message.domain));
 	}

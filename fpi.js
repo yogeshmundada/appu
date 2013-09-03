@@ -1489,3 +1489,39 @@ function delete_all_fetched_pi(force_permission) {
     }
     flush_aggregate_data();
 }
+
+
+function get_username_identifier(username) {
+    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+    var username_identifier_prefix = "";
+
+    if (username.indexOf("@") == -1) {
+	username_identifier_prefix = "username";
+    }
+    else {
+	username_identifier_prefix = "email";
+    }
+
+    var username_identifier = undefined;
+    if (username in vpfvi) {
+	username_identifier = vpfvi[username];
+    }
+    else {
+	var j = 1;
+	var identifier_array = Object.keys(vpfvi).map(function(key){
+		return vpfvi[key];
+	    });
+
+	//Just to check that this identifier does not already exist.
+	while(1) {
+	    username_identifier = username_identifier_prefix + j;
+	    if (identifier_array.indexOf(username_identifier) == -1) {
+		break;
+	    }
+	    j++;
+	}
+	vpfvi[username] = username_identifier;
+    }
+    flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
+    return username_identifier;
+}

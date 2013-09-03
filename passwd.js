@@ -259,12 +259,172 @@ function is_passwd_reused(response) {
     }
 }
 
+// What should be reported back to server:
+// name anonymized: john.doe -> username1
+// username text box (X,Y) and password text box (X,Y)
+// reason for why that username was picked from that location (so if it is incorrect, that can be detected at the server)
+// General Algorithm:
+// 1. Find out any input box in the same form as password input box (what happens if there is no form?)
+// 2. If one found multiple such boxes then only consider those username boxes that have their
+//    left sides or top sides aligned with password boxes.
+// 3. Now see if the remaining username elements have any attributes that match with 
+//    typical username regex pattern. If there are multiple username boxes as a result of
+//    step-2 then filter out those that do not match regular expression.
+// 4. If there are still multiple username boxes from above two steps then select
+//    that box which is closest to the password box (either on top of it or on left of it).
+// 5. Send the value of this box as username along with reason as to why it was chosen.
+function get_username(pwd_element) {
+    var username = '';
+    var reason = '';
+    var pwd_element_pos = $(pwd_element).offset();
+    var uname_element = $("input[type=password]").parents('form').find('input[type=text], input[type=email]');
+
+    if (uname_element.length > 1) {
+	// First filter based on the X,Y coordinates
+	var filtered_uname_elements = undefined;
+	for (var k = 0; k < uname_element.length; k++) {
+	    var tmp_off = $(uname_element[k]).offset();
+	    if (tmp_off.left == pwd_element_pos.left || tmp_off.top == pwd_element_pos.top) {
+		if (!filtered_uname_elements) {
+		    filtered_uname_elements = $(uname_element[k]); 
+		}
+		else {
+		    filtered_uname_elements = filtered_uname_elements.add($(uname_element[k]));
+		}
+	    }
+	}
+	uname_element = filtered_uname_elements;
+    }
+
+    {
+	var filtered_uname_elements = undefined;
+	// check that element is either email or has username somewhere in it
+	// look for 'id', 'name', 'aria-labelledby'
+	var patterns = [
+			/username/gi,
+			/email/gi,
+			/^id$/i,
+			];
+	var attributes = [
+			  'id',
+			  'name',
+			  'aria-labelledby'
+			  ];
+	for (var k = 0; k < uname_element.length; k++) {
+	    for (var i = 0; i < attributes.length; i++) {
+		var attrib_val = $(uname_element[k]).attr(attributes[i]);
+		if (!attrib_val) {
+		    continue;
+		}
+		for (var j = 0; j < patterns.length; j++) {
+		    var rc = attrib_val.match(patterns[j]);
+		    if (rc) {
+			reason += ", " + patterns[j] + ": " + attributes[i] + " = " + attrib_val;
+			if (!filtered_uname_elements) {
+			    filtered_uname_elements = $(uname_element[k]);
+			}
+			else {
+			    filtered_uname_elements.add($(uname_element[k]));
+			}
+		    }
+		}
+	    }
+	}
+
+	if (uname_element.length > 1) {
+	    uname_element = filtered_uname_elements;
+	}
+    }
+
+    if (uname_element.length == 0) {
+	// Error we found no username element.
+	// This would help me debug the issue at server side.
+	return {
+	    rc : false,
+		'reason': "Appu Error: No username element was found: " + document.domain,
+		};
+    }
+
+    if (uname_element.length > 1) {
+	// Now only pick the nearest element
+	var min_vertical_distance = 100000;
+	var min_horizontal_distance = 100000;
+	// First filter based on the X,Y coordinates
+	var curr_min_vertical_uname_element = undefined;
+	var curr_min_horizontal_uname_element = undefined;
+	for (var k = 0; k < uname_element.length; k++) {
+	    var tmp_off = $(uname_element[k]).offset();
+	    if ((tmp_off.left == pwd_element_pos.left) &&
+		(tmp_off.top < pwd_element_pos.top) &&
+		(Math.abs(tmp_off.top - pwd_element_pos.top) < min_vertical_distance)) {
+		// In this case the password box and username box have their lefts aligned
+		// So username box would be on top of password box.
+		// If there are multiple username boxes, then we want the one that is 
+		// closest to the password box. 
+		 min_vertical_distance = Math.abs(tmp_off.top - pwd_element_pos.top);
+		 curr_min_vertical_uname_element = $(uname_element[k]) 
+	    }
+	    if ((tmp_off.top == pwd_element_pos.top) &&
+		(tmp_off.left < pwd_element_pos.left) &&
+		(Math.abs(tmp_off.left - pwd_element_pos.left) < min_horizontal_distance)) {
+		// In this case the password box and username box have their tops aligned
+		// So username box would be on the left of password box.(see Facebook login).
+		// If there are multiple username boxes, then we want the one that is 
+		// closest to the password box. 
+		 min_horizontal_distance = Math.abs(tmp_off.left - pwd_element_pos.left);
+		 curr_min_horizontal_uname_element = $(uname_element[k]) 
+	    }
+	}
+	uname_element = $([]);
+	if (curr_min_vertical_uname_element) {
+	    uname_element = uname_element.add($(curr_min_vertical_uname_element));
+	}
+	if (curr_min_horizontal_uname_element) {
+	    uname_element = uname_element.add($(curr_min_horizontal_uname_element));
+	}
+    }
+
+    if (uname_element.length > 1) {
+	return {
+	    rc : false,
+		'reason': "Appu Error: More than one username element (" + 
+		uname_element.length + ") found: " + document.domain,
+		};
+    }
+
+    reason += ", type: " + $(uname_element).attr('type');
+
+    var uname_element_pos = $(uname_element).offset();
+    //make position check
+    //Either 'X' coordinates should match (e.g. gmail)
+    //Or 'Y' coordinates should match (e.g. facebook)
+    reason += ", password position (" + pwd_element_pos.left + ","+ pwd_element_pos.top + ")";
+    reason += ", username position (" + uname_element_pos.left + ","+ uname_element_pos.top + ")";
+
+    username = $(uname_element).val();
+    if (username == '') {
+	// Log an error
+	return {
+	    rc : false,
+		'reason': "Appu Error: Username length zero(" + document.domain + "), " + reason,
+		};
+    }
+
+    return {
+	'rc': true,
+	    'username': username,
+	    'reason': reason,
+	    };
+}
+
 function check_passwd_reuse(jevent) {
     if ( jevent.target.value != "" ) {
 	var message = {};
+	var uname_results = get_username(jevent.target);
 	message.type = "check_passwd_reuse";
 	message.caller = "check_passwd_reuse";
 	message.domain = document.domain;
+	message.uname_results = uname_results;
 	message.is_stored = is_password_stored(jevent.target);
 	message.passwd = jevent.target.value;
 	message.warn_later = false;
@@ -331,6 +491,8 @@ function check_for_enter(e) {
 
 	    var message = {};
 	    message.type = "check_passwd_reuse";
+	    var uname_results = get_username(e.target);
+	    message.uname_results = uname_results;
 	    message.caller = "check_for_enter";
 	    message.pwd_sentmsg = $(e.target).data("is_reuse_checked");
 	    message.domain = document.domain;
@@ -431,6 +593,8 @@ function final_password_reuse_check() {
 
 		message.pwd_sentmsg = $(all_passwds[i]).data("is_reuse_checked");
                 message.type = "check_passwd_reuse";
+		var uname_results = get_username($(all_passwds[i]));
+		message.uname_results = uname_results;
 		message.caller = "final_password_reuse_check";
                 message.domain = document.domain;
                 message.passwd = all_passwds[i].value;
@@ -470,16 +634,16 @@ function is_blacklisted(response) {
 	    //Otherwise, password might be wrong.
 	    check_pending_warnings();
 	}
-	else {
-            //Register for password input type element. 
-            $('body').on('focusout', 'input:password', check_passwd_reuse);
-            $('body').on('keydown', 'input:password', check_for_enter);
-            $('body').on('keyup', 'input:password', update_current_password);
 
-            //Finally handle the case for someone enters password and then
-            //with mouse clicks on "log in" 
-            $(window).on('unload', final_password_reuse_check);
-        }
+	//Register for password input type element. 
+	$('body').on('focusout', 'input:password', check_passwd_reuse);
+	$('body').on('keydown', 'input:password', check_for_enter);
+	$('body').on('keyup', 'input:password', update_current_password);
+	
+	//Finally handle the case for someone enters password and then
+	//with mouse clicks on "log in" 
+	$(window).on('unload', final_password_reuse_check);
+
 
 	//Register for all input type elements. Capture any changes to them.
 	//Log which input element user actively changes on a site.
@@ -1227,5 +1391,3 @@ if (document.URL.match(/.pdf$/) == null) {
 	    }
 	});
 }
-
-

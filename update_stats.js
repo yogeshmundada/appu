@@ -557,11 +557,6 @@ function subtract_ad_non_uas(domain) {
 
 //---------------------- END of CODE to MANAGE NON-USER-ACCOUNT SITES
 
-
-//----- SIMPLE CODE TO MANAGE NON-USER-ACCOUNT-SITES
-
-//----- END OF SIMPLE CODE TO MANAGE NON-USER-ACCOUNT-SITES
-
 // This gets called from update_user_account_sites_stats() (which in turn gets called from 
 // bg_passwd.js after successful login) OR from "background.js" if the message is "signed_in"
 // with value "yes"
