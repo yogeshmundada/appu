@@ -147,6 +147,39 @@ function update_specific_changes(last_version) {
 
 	flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
     }
+
+    if (last_version < '0.5.11') {
+	console.log("APPU DEBUG: Update specific changes(<0.5.11). Creating a null identifier");
+
+	var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+	var vcr = pii_vault.current_report;
+	var vad = pii_vault.aggregate_data;
+
+	vpfvi[''] = 'null_identifier';
+	flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
+
+	console.log("APPU DEBUG: Update specific changes(<0.5.11). Zeroing out user_account_sites (CR & AD)");
+
+	vad.num_user_account_sites = 0;
+	vad.user_account_sites = {};
+	vcr.num_user_account_sites = 0;
+	vcr.user_account_sites = {};
+
+	console.log("APPU DEBUG: Update specific changes(<0.5.11). Deleting sites from pwd_groups (AD)");
+	for (var pg in vad.pwd_groups) {
+	    vad.pwd_groups[pg].sites = [];
+	}
+
+	console.log("APPU DEBUG: Update specific changes(<0.5.11). Zeroing out pwd_groups (CR)");
+	vcr.pwd_groups = {};
+
+	flush_aggregate_data();
+	flush_current_report();
+
+	console.log("APPU DEBUG: Update specific changes(<0.5.11). Zeroing out password_hashes");
+	pii_vault.password_hashes = {};
+	vault_write("password_hashes", pii_vault.password_hashes);
+    }
 }
 
 

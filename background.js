@@ -33,15 +33,15 @@ var report_tab_ids = [];
 // Which text report to be shown in which tab-id
 var text_report_tab_ids = {};
 
-//All open "My footprint" pages. These are useful to send updates to stats
+// All open "My footprint" pages. These are useful to send updates to stats
 var myfootprint_tab_ids = [];
 
 var template_processing_tabs = {};
 
-//Was an undelivered report attempted to be sent in last-24 hours?
+// Was an undelivered report attempted to be sent in last-24 hours?
 var delivery_attempts = {};
 
-//Keep server updated about my alive status
+// Keep server updated about my alive status
 var last_server_contact = undefined;
 
 var tld = undefined;
@@ -343,15 +343,25 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	console.log("APPU DEBUG: (" + message.caller + ", " + message.pwd_sentmsg + 
 		    "), Value of is_password_stored: " + message.is_stored);
-	r = pii_check_passwd_reuse(message, sender);
 
 	var username = '';
+	var username_length = 0;
 	var reason = message.uname_results.reason;
 	if (message.uname_results.rc) {
-	    username = message.uname_results.username;
+	    username = get_username_identifier(message.uname_results.username);
+	    username_length = message.uname_results.username.length;
 	    console.log("APPU DEBUG: Domain: " + message.domain + ", Username: " 
-			+ username + ", username_identifier: " + get_username_identifier(username));
+			+ message.uname_results.username + ", username_identifier: " + username);
 	}
+	else {
+	    username = get_username_identifier('');
+	    username_length = 0;
+	    console.log("APPU DEBUG: Domain: " + message.domain + ", NO USERNAME FOUND, reason: " + reason 
+			+ ", username_identifier: " + username);
+	}
+
+	message.username = username;
+	r = pii_check_passwd_reuse(message, sender);
 
 	//Add the current pwd info to pending warnings
 	var pend_warn = {};
@@ -364,6 +374,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    'pwd_strength' : r.pwd_strength,
 	    'domain' : message.domain,
 	    'username' : username,
+	    'username_length' : username_length,
 	    'username_reason' : reason,
 	    'is_stored' : message.is_stored,
 	};
@@ -408,10 +419,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	if (message.value == 'yes') {
 	    console.log("APPU DEBUG: Signed in for site: " + get_domain(message.domain));
 
-	    add_domain_to_uas(domain);
+	    // First check with which username the user has logged into the site
+	    var username_list = get_logged_in_username(domain);
+	    add_domain_to_uas(domain, username_list[0], username_list[1], username_list[2]);
 
 	    pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration = 
-		get_pwd_unchanged_duration(domain);
+		get_pwd_unchanged_duration(domain, username_list[0]);
 	    flush_selective_entries("current_report", ["user_account_sites"]);
 
 	    if (sender.tab.id in pending_pi_fetch) { 
@@ -448,8 +461,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	//print_all_cookies(domain, "LOGOUT_ATTEMPT");
 	//add_domain_to_uas(domain);
 
+	var username_list = get_logged_in_username(domain);
+
 	pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration = 
-	    get_pwd_unchanged_duration(domain);
+	    get_pwd_unchanged_duration(domain, username_list[0]);
 	pii_vault.current_report.user_account_sites[domain].num_logouts += 1;
 	flush_selective_entries("current_report", ["user_account_sites"]);
 	send_user_account_site_row_to_reports(domain);

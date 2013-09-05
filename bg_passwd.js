@@ -67,15 +67,16 @@ function new_group_name(pwd_groups) {
 }
 
 
-//Remember, this pwd is iterated over a million times. 
+//This pwd is hash chained a million times. 
 //Not easy to crack
-function get_pwd_group(domain, full_hash, password_strength) {
+function get_pwd_group(domain, username, full_hash, password_strength, pwd_length) {
     var pwd_groups = pii_vault.aggregate_data.pwd_groups;
+    var account_info = username + ":" + domain;
     var previous_group = false;
     var current_group = false;
 
     for (g in pwd_groups) {
-	if (pwd_groups[g].sites.indexOf(domain) != -1) {
+	if (pwd_groups[g].sites.indexOf(account_info) != -1) {
 	    previous_group = g;
 	}
 	if (pwd_groups[g].full_hash == full_hash) {
@@ -85,15 +86,21 @@ function get_pwd_group(domain, full_hash, password_strength) {
 
     if (previous_group && 
 	pwd_groups[previous_group].full_hash != full_hash) {
-	//This means password changed .. means group change .. first delete the domain from previous group
-	pwd_groups[previous_group].sites.splice(pwd_groups[previous_group].sites.indexOf(domain), 1);
+	//This means password changed .. means group change .. first delete the account_info from previous group
+	pwd_groups[previous_group].sites.splice(pwd_groups[previous_group].sites.indexOf(account_info), 1);
     }
 
     if (current_group) {
 	//This means that there exists a group with exact same full hash
-	if (pwd_groups[current_group].sites.indexOf(domain) == -1) {
-	    //This means that even though the group exists, this domain is not part of it. So we will add it.
-	    pwd_groups[current_group].sites.push(domain);
+	if (pwd_groups[current_group].sites.indexOf(account_info) == -1) {
+	    //This means that even though the group exists, this account_info is not part of it. So we will add it.
+	    pwd_groups[current_group].sites.push(account_info);
+	}
+
+	// For existing groups, if pwd_length is not present, then add it.
+	if (!('pwd_length' in pwd_groups[current_group])) {
+	    pwd_groups[current_group].length = pwd_length;
+	    flush_selective_entries("aggregate_data", ["pwd_groups"]);
 	}
     }
     else {
@@ -102,10 +109,11 @@ function get_pwd_group(domain, full_hash, password_strength) {
 	var new_grp = new_group_name(pwd_groups);
 	new_grp = 'Grp ' + new_grp;
 	pwd_groups[new_grp] = {};
-	pwd_groups[new_grp].sites = [domain];
+	pwd_groups[new_grp].sites = [account_info];
 	pwd_groups[new_grp].strength = password_strength;
 	pwd_groups[new_grp].full_hash = full_hash;
-	    
+	pwd_groups[new_grp].length = pwd_length;
+
 	pii_vault.aggregate_data.num_pwds += 1;
 
 	flush_selective_entries("aggregate_data", ["num_pwds", "pwd_groups"]);
@@ -115,28 +123,32 @@ function get_pwd_group(domain, full_hash, password_strength) {
     // Now do similar things for current_report
     var cr_pwd_groups = pii_vault.current_report.pwd_groups;
     var cr_previous_group = false;
-    // First find if domain is already present in any of the groups
+    // First find if account_info is already present in any of the groups
     for (g in cr_pwd_groups) {
-	if (cr_pwd_groups[g].sites.indexOf(domain) != -1) {
+	if (cr_pwd_groups[g].sites.indexOf(account_info) != -1) {
 	    cr_previous_group = g;
 	    break;
 	}
     }
 
     if (cr_previous_group) {
-	//This means that domain was seen earlier in this report period
+	//This means that account_info was seen earlier in this report period
 	if (cr_previous_group != current_group) {
 	    // This means that password has changed groups, so first delete it from previous group
-	    cr_pwd_groups[cr_previous_group].sites.splice(cr_pwd_groups[cr_previous_group].sites.indexOf(domain), 1);
+	    cr_pwd_groups[cr_previous_group].sites.splice(cr_pwd_groups[cr_previous_group].sites.indexOf(account_info), 1);
 	    send_pwd_group_row_to_reports('replace', cr_previous_group, cr_pwd_groups[cr_previous_group].sites, 
 					  cr_pwd_groups[cr_previous_group].strength);
 	}
     }
 
-    //Also add the domain to current_group
+    //Also add the account_info to current_group
     if (current_group in cr_pwd_groups) {
-	if (cr_pwd_groups[current_group].sites.indexOf(domain) == -1) {
-	    cr_pwd_groups[current_group].sites.push(domain);
+	if (cr_pwd_groups[current_group].sites.indexOf(account_info) == -1) {
+	    cr_pwd_groups[current_group].sites.push(account_info);
+	}
+
+	if (!('pwd_length' in cr_pwd_groups[current_group])) {
+	    cr_pwd_groups[current_group].length = pwd_length;
 	}
     }
     else {
@@ -157,9 +169,9 @@ function get_pwd_group(domain, full_hash, password_strength) {
 }
 
 
-function get_pwd_unchanged_duration(domain) {
+function get_pwd_unchanged_duration(domain, username) {
     try {
-	var hk = '' + ':' + domain;
+	var hk = username + ':' + domain;
 	if (hk in pii_vault.password_hashes) {
 	    return (new Date() - new Date(pii_vault.password_hashes[hk].initialized));
 	}
@@ -179,15 +191,15 @@ function get_pwd_unchanged_duration(domain) {
 //using the same cluster used in arstechnica article (goo.gl/BYi7M)
 //shows that cracking time would be about ~200 days using brute force.
 function calculate_full_hash(domain, username, pwd, pwd_strength) {
-    var hw_key = domain + "_" + username;
-    if (hw_key in hashing_workers) {
-	console.log("APPU DEBUG: Cancelling previous active hash calculation worker for: " + hw_key);
-	hashing_workers[hw_key].terminate();
-	delete hashing_workers[hw_key];
+    var hk = username + ":" + domain;
+    if (hk in hashing_workers) {
+	console.log("APPU DEBUG: Cancelling previous active hash calculation worker for: " + hk);
+	hashing_workers[hk].terminate();
+	delete hashing_workers[hk];
     }
 
     var hw = new Worker('hash.js');
-    hashing_workers[hw_key] = hw;
+    hashing_workers[hk] = hw;
 
     hw.onmessage = function(worker_key, my_domain, my_username, my_pwd, my_pwd_strength) {
 	return function(event) {
@@ -204,15 +216,16 @@ function calculate_full_hash(domain, username, pwd, pwd_strength) {
 		    pii_vault.password_hashes[hk].pwd_full_hash = rc.hashed_pwd;
 
 		    //Now calculate the pwd_group
-		    var curr_pwd_group = get_pwd_group(my_domain, rc.hashed_pwd, [
+		    var curr_pwd_group = get_pwd_group(my_domain, my_username, rc.hashed_pwd, [
 										  my_pwd_strength.entropy, 
 										  my_pwd_strength.crack_time,
 										  my_pwd_strength.crack_time_display
-										  ]);
+											       ],
+						       my_pwd.length);
 		    
 		    pii_vault.password_hashes[hk].my_pwd_group = curr_pwd_group;
-		    if (curr_pwd_group != pii_vault.current_report.user_account_sites[domain].my_pwd_group) {
-			pii_vault.current_report.user_account_sites[domain].my_pwd_group = curr_pwd_group;
+		    if (curr_pwd_group != pii_vault.current_report.user_account_sites[hk].my_pwd_group) {
+			pii_vault.current_report.user_account_sites[hk].my_pwd_group = curr_pwd_group;
 			flush_selective_entries("current_report", ["user_account_sites"]);
 		    }
 		    
@@ -237,7 +250,7 @@ function calculate_full_hash(domain, username, pwd, pwd_strength) {
 		    }
 		    //Done with everything? Now flush those damn hashed passwords to the disk
 		    vault_write("password_hashes", pii_vault.password_hashes);
-		    send_user_account_site_row_to_reports(domain);
+		    send_user_account_site_row_to_reports(hk);
 		}
 		//Now delete the entry from web workers.
 		delete hashing_workers[worker_key];
@@ -246,7 +259,7 @@ function calculate_full_hash(domain, username, pwd, pwd_strength) {
 		console.log("(" + worker_key + ")Hashing worker said : " + rc.reason);
 	    }
 	}
-    } (hw_key, domain, username, pwd, pwd_strength);
+    } (hk, domain, username, pwd, pwd_strength);
  
     //First calculate the salt
     //This salt is only for the purpose of defeating rainbow attack
@@ -308,14 +321,16 @@ function calculate_short_hash(pwd, salt) {
 // How does a successful login gets detected?
 // Absence of password box after attempting a login by entering a
 // password. 
-function vault_update_domain_passwd(domain, username, passwd, pwd_strength, is_stored) {
+function vault_update_domain_passwd(domain, username, username_length, passwd, pwd_strength, is_stored, username_reason) {
     var vpwh = pii_vault.password_hashes;
     var vcr = pii_vault.current_report;
 
-    var hk = '' + ':' + domain;
+    var hk = username + ':' + domain;
     var salt; 
     var recalculate_hashes = false;
-    update_user_account_sites_stats(domain, is_stored);       
+    var pwd_length = passwd.length; 
+
+    update_user_account_sites_stats(domain, username, username_length, username_reason, is_stored);       
 
     if (hk in vpwh) {
 	salt = vpwh[hk].salt;
@@ -325,17 +340,18 @@ function vault_update_domain_passwd(domain, username, passwd, pwd_strength, is_s
 	    recalculate_hashes = true;
 	}
 	else {
-	    if (vcr.user_account_sites[domain].my_pwd_group == "no group") {
+	    if (vcr.user_account_sites[hk].my_pwd_group == "no group") {
 		//This means that this is the first time we are logging in to this site
 		//during this report's duration.
 		//However, we have logged into this site in previous reports.
-		var curr_pwd_group = get_pwd_group(domain, vpwh[hk].pwd_full_hash, [
+		var curr_pwd_group = get_pwd_group(domain, username, vpwh[hk].pwd_full_hash, [
 										    pwd_strength.entropy, 
 										    pwd_strength.crack_time,
 										    pwd_strength.crack_time_display
-										    ]);
+											      ],
+						   pwd_length);
 		
-		vcr.user_account_sites[domain].my_pwd_group = curr_pwd_group;
+		vcr.user_account_sites[hk].my_pwd_group = curr_pwd_group;
 		flush_selective_entries("current_report", ["user_account_sites"]);
 	    }
 	}
@@ -347,7 +363,7 @@ function vault_update_domain_passwd(domain, username, passwd, pwd_strength, is_s
     if (recalculate_hashes == true) {
 	rc = calculate_new_short_hash(passwd, '');
 	
-	console.log("APPU DEBUG: (calculate_new_short_hash) Added salt: " + rc.salt + " to domain: " + domain);
+	console.log("APPU DEBUG: (calculate_new_short_hash) Added salt: " + rc.salt + " to domain: " + hk);
 	
 	vpwh[hk] = {};
 	vpwh[hk].pwd_short_hash = rc.short_hash;
@@ -355,37 +371,37 @@ function vault_update_domain_passwd(domain, username, passwd, pwd_strength, is_s
 	vpwh[hk].salt = rc.salt;
 	vpwh[hk].initialized = new Date();
 	//Now calculate sha256 by iterating a million times
-	calculate_full_hash(domain, '', passwd, pwd_strength);
+	calculate_full_hash(domain, username, passwd, pwd_strength);
     }
     
     vault_write("password_hashes", vpwh);
-    vcr.user_account_sites[domain].pwd_unchanged_duration =
+    vcr.user_account_sites[hk].pwd_unchanged_duration =
 	new Date() - new Date(vpwh[hk].initialized);
     flush_selective_entries("current_report", ["user_account_sites"]);
     
-    send_user_account_site_row_to_reports(domain);
+    send_user_account_site_row_to_reports(hk);
 }
 
 
 function pii_check_passwd_reuse(message, sender) {
     var r = {};
-    // Why the f'k am I using os when there is r.sites?? Need to do cleanup.
-    var os = [];
     r.is_password_reused = "no";
     r.already_exists = "no";
     r.initialized = 'Not sure';
     r.sites = [];
-    var curr_username = '';
-    var hk = curr_username + ':' + message.domain;
+    var username = message.username;
+    var curr_hk = username + ':' + message.domain;
 
     var pwd_strength = zxcvbn(message.passwd);
+    var pwd_length = message.passwd.length;
+    var username_length = get_idenfier_value(username)[0];
     r.pwd_strength = pwd_strength;
 
     for(var hk in pii_vault.password_hashes) {
 	var curr_entry = pii_vault.password_hashes[hk];
 	var rc = calculate_short_hash(message.passwd, curr_entry.salt);
 	if (curr_entry.pwd_short_hash == rc.short_hash) {
-	    if (hk.split(":")[1] != message.domain || hk.split(":")[0] != curr_username) {
+	    if (hk.split(":")[1] != message.domain || hk.split(":")[0] != username) {
 		r.is_password_reused = "yes";
 		r.dontbugme = "no";
 
@@ -393,9 +409,10 @@ function pii_check_passwd_reuse(message, sender) {
 		var all_sites = pii_vault.aggregate_data.pwd_groups[pwd_grp].sites;
 		for (var i = 0; i < all_sites.length; i++) {
 		    var cs = all_sites[i];
-		    if (cs != message.domain) {
-			r.sites.push(cs);		
-			os.push(cs);
+		    var site_username = get_idenfier_value(cs.split(":")[0])[1];
+		    var account_info = site_username + ":" + cs.split(":")[1];
+		    if (cs != curr_hk) {
+			r.sites.push(account_info);		
 		    }
 		}
 		break;
@@ -403,7 +420,7 @@ function pii_check_passwd_reuse(message, sender) {
 	}
     }
 
-    var curr_hk = curr_username + ':' + message.domain;
+    // To calculate time since this password was changed last.
     if (curr_hk in pii_vault.password_hashes) {
 	var curr_entry = pii_vault.password_hashes[curr_hk];
 	var rc = calculate_short_hash(message.passwd, curr_entry.salt);
@@ -432,13 +449,13 @@ function pii_check_passwd_reuse(message, sender) {
 
     if(r.is_password_reused == "no") {
 	var user_log = sprintf("APPU INFO: [%s]: Checked password for '%s', NO match was found", 
-			       new Date(), message.domain);
+			       new Date(), curr_hk);
 	console.log(user_log);
     }
     else {
 	var user_log = sprintf("APPU INFO: [%s]: Checked password for '%s', MATCH was found: ", 
-			       new Date(), message.domain);
-	user_log += "{ " + os.join(", ") + " }";
+			       new Date(), curr_hk);
+	user_log += "{ " + r.sites.join(", ") + " }";
 	console.log(user_log);
     }
 
@@ -448,8 +465,8 @@ function pii_check_passwd_reuse(message, sender) {
 	var new_row = [
 	    last_index + 1, 
 	    (new Date()).getTime(), 
-	    message.domain,
-	    os.join(", ")
+	    curr_hk,
+	    r.sites.join(", ")
 	];
 
 	pii_vault.current_report.pwd_reuse_warnings.push(new_row);
@@ -486,7 +503,8 @@ function pii_check_pending_warning(message, sender) {
 	    r.warnings = p.pending_warnings;
 	    r.domain = p.domain;
 	    r.event_type = p.event_type;
-	    vault_update_domain_passwd(p.domain, p.username, p.passwd, p.pwd_strength, p.is_stored);
+	    vault_update_domain_passwd(p.domain, p.username, p.username_length, 
+				       p.passwd, p.pwd_strength, p.is_stored, p.username_reason);
 	    pending_warnings[sender.tab.id] = undefined;
 	    r.pending = "yes";
 	    if (p.user_is_warned) {
@@ -497,7 +515,8 @@ function pii_check_pending_warning(message, sender) {
     return r;
 }
 
-
+// We don't need to check username for this.
+// Just a 'yes'/'no' question.
 function does_user_have_account(domain) {
     for(var hk in pii_vault.password_hashes) {
 	if (hk.split(":")[1] == domain) {

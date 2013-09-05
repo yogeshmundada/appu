@@ -1491,6 +1491,9 @@ function delete_all_fetched_pi(force_permission) {
 }
 
 
+// Checks if the username has identifier associated with it.
+// If there is, it returns the identifier.
+// Otherwise, creates an identifier for that username and returns it.
 function get_username_identifier(username) {
     var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
     var username_identifier_prefix = "";
@@ -1524,4 +1527,24 @@ function get_username_identifier(username) {
     }
     flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
     return username_identifier;
+}
+
+
+function does_username_have_identifier(username) {
+    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+    if (username in vpfvi) {
+	return true;
+    }
+    return false;
+}
+
+// Accepts identifier like "username2" and returns it length and actual identifier-value
+function get_idenfier_value(identifier) {
+    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+    for (var i in vpfvi) {
+	if (vpfvi[i] == identifier) {
+	    return [i.length, i];
+	}
+    }
+    return [0, undefined];
 }

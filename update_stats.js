@@ -1,5 +1,5 @@
 
-function init_user_account_sites_entry() {
+function init_user_account_sites_entry(username, username_length, username_reason) {
     var uas_entry = {};
     uas_entry.num_logins = 0;
     uas_entry.pwd_unchanged_duration = 0;
@@ -14,7 +14,9 @@ function init_user_account_sites_entry() {
     //get replaced by "username23".
     //For this, we use pii_vault.aggregate_data.pi_field_value_identifiers
     //This will take care of anonymizing the fields in current_report
-    uas_entry.username = '';
+    uas_entry.username = username;
+    uas_entry.username_reason = username_reason;
+    uas_entry.username_length = username_length;
 
     //Values could be 'yes', 'no', 'maybe'
     uas_entry.am_i_logged_in = 'no';
@@ -137,7 +139,7 @@ function initialize_report() {
     current_report.num_user_account_sites = 0;
 
     //Each site is a record such as
-    // site_name --> Primary Key
+    // username + ':' + site_name --> Primary Key
     // tts = Total Time Spent
     // tts_login = Total Time Spent Logged In
     // tts_logout = Total Time Spent Logged out
@@ -560,18 +562,20 @@ function subtract_ad_non_uas(domain) {
 // This gets called from update_user_account_sites_stats() (which in turn gets called from 
 // bg_passwd.js after successful login) OR from "background.js" if the message is "signed_in"
 // with value "yes"
-function add_domain_to_uas(domain) {
+function add_domain_to_uas(domain, username, username_length, username_reason) {
     var cr = pii_vault.current_report;
     var ad = pii_vault.aggregate_data;
     var site_category = 'unclassified';
+
+    var hk = username + ":" + domain;
 
     if (domain in fpi_metadata) {
 	site_category = fpi_metadata[domain]["category"];
     }
 
-    if (!(domain in cr.user_account_sites)) {
-	cr.user_account_sites[domain] = init_user_account_sites_entry();
-	cr.user_account_sites[domain].site_category = site_category;
+    if (!(hk in cr.user_account_sites)) {
+	cr.user_account_sites[hk] = init_user_account_sites_entry(username, username_length, username_reason);
+	cr.user_account_sites[hk].site_category = site_category;
 	cr.num_user_account_sites += 1;
 	flush_selective_entries("current_report", ["user_account_sites", "num_user_account_sites"]);
 
@@ -586,9 +590,9 @@ function add_domain_to_uas(domain) {
     }
 
     //Add this site to aggregate data
-    if (!(domain in ad.user_account_sites)) {
-	ad.user_account_sites[domain] = init_user_account_sites_entry();
-	ad.user_account_sites[domain].site_category = site_category;
+    if (!(hk in ad.user_account_sites)) {
+	ad.user_account_sites[hk] = init_user_account_sites_entry(username, username_length, username_reason);
+	ad.user_account_sites[hk].site_category = site_category;
 	ad.num_user_account_sites += 1;
 
 	flush_selective_entries("aggregate_data", ["num_user_account_sites", "user_account_sites"]);
@@ -600,12 +604,13 @@ function add_domain_to_uas(domain) {
 
 // This gets called from bg_passwd.js after its clear that the login
 // to this domain was successful.
-function update_user_account_sites_stats(domain, is_stored) {
+function update_user_account_sites_stats(domain, username, username_length, username_reason, is_stored) {
     var cr = pii_vault.current_report;
     var ad = pii_vault.aggregate_data;
+    var hk = username + ":" + domain;
 
     //Add this site to current report, aggregate data if already not present
-    add_domain_to_uas(domain);
+    add_domain_to_uas(domain, username, username_length, username_reason);
     subtract_ad_non_uas(domain);
 
     cr.user_account_sites[domain].num_logins += 1;

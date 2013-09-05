@@ -278,3 +278,12 @@ function cookie_change_detected(change_info) {
     }
 }
 
+// Function that magically returns current username that 
+// user has logged in on the site
+function get_logged_in_username(domain) {
+    var username = "";
+    var username_identifier = get_username_identifier("");
+    var username_length = username.length;
+    var username_reason = "";
+    return [username_identifier, username_length, username_reason];
+}
