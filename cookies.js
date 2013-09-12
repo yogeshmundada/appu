@@ -33,9 +33,9 @@ function print_appu_session_store_cookies(domain, cookie_class) {
 }
 
 
-//Purely for debugging purpose.
-//We don't need to actually access the cookie values
-//in the field
+// Purely for debugging purpose.
+// We don't need to actually access the cookie values
+// in actual deployments
 function print_single_cookie_value(domain, cookie_name) {
     chrome.cookies.getAll({
 	    'domain' : domain,
@@ -43,9 +43,10 @@ function print_single_cookie_value(domain, cookie_name) {
 		}, 
 	function (all_cookies) {
 	    for (var i = 0; i < all_cookies.length; i++) {
-		var msg = sprintf("Here here: Domain: %s, Cookie-name: %s, Value: %s",
-				  all_cookies[i].domain,
+		var msg = sprintf("Here here: Cookie-name: %s, Cookie-domain: %s, Cookie-path: %s, Value: %s",
 				  all_cookies[i].name,
+				  all_cookies[i].domain,
+				  all_cookies[i].path,
 				  all_cookies[i].value);
 		console.log(msg);
 	    }
@@ -113,6 +114,8 @@ function print_all_cookies(domain, event_name, cookie_attributes) {
 
 //Returns true or false depending on if cookie exists and
 //if expiry date is not reached.
+//Delete cookie example
+//chrome.cookies.remove({"url": "https://www.google.com", "name": "T"})
 function is_cookie_valid(cookie_name, domain, cb_cookie_valid) {
 
 }
@@ -150,9 +153,13 @@ function record_prelogin_cookies(username, domain) {
 		pre_login_cookies[domain].cookies = {};
 		for (var i = 0; i < all_cookies.length; i++) {
 		    //var hashed_cookie_val = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(all_cookies[i].value));
+		    var cookie_name = all_cookies[i].name;
+		    var cookie_domain = all_cookies[i].domain;
+		    var cookie_path = all_cookies[i].path;
+		    var cookie_key = cookie_domain + cookie_path + ":" + cookie_name;
 		    pre_login_cookies[domain].username = username;
 		    //pre_login_cookies[domain].cookies[all_cookies[i].name] = hashed_cookie_val;
-		    pre_login_cookies[domain].cookies[all_cookies[i].name] = true;
+		    pre_login_cookies[domain].cookies[cookie_key] = true;
 		}
 	    }
 	})(username, domain);
@@ -170,20 +177,24 @@ function detect_login_cookies(domain) {
 		login_state_cookies.cookies = {};
 
 		for (var i = 0; i < all_cookies.length; i++) {
+		    var cookie_name = all_cookies[i].name;
+		    var cookie_domain = all_cookies[i].domain;
+		    var cookie_path = all_cookies[i].path;
+		    var cookie_key = cookie_domain + cookie_path + ":" + cookie_name;
+
 		    //var hashed_cookie_val = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(all_cookies[i].value));
-		    var curr_cookie_name = all_cookies[i].name;
-		    if (curr_cookie_name in pre_login_cookies[domain].cookies) {
+		    if (cookie_key in pre_login_cookies[domain].cookies) {
 			//&& hashed_cookie_val == pre_login_cookies[domain].cookies[curr_cookie_name]) {
 			//This means that this cookie was present before logging in 
 			//So probably not a login cookie (overlooking a case where same cookie is
 			//overwritten with new values)
-			login_state_cookies.cookies[curr_cookie_name] = {};
-			login_state_cookies.cookies[curr_cookie_name].cookie_class = 'before';
+			login_state_cookies.cookies[cookie_key] = {};
+			login_state_cookies.cookies[cookie_key].cookie_class = 'before';
 		    }
 		    else {
 			//Cookie is newly created.
-			login_state_cookies.cookies[curr_cookie_name] = {};
-			login_state_cookies.cookies[curr_cookie_name].cookie_class = 'during';
+			login_state_cookies.cookies[cookie_key] = {};
+			login_state_cookies.cookies[cookie_key].cookie_class = 'during';
 			//login_state_cookies.cookies[curr_cookie_name].hashed_cookie_value = 'None';
 		    }
 		}
@@ -286,4 +297,45 @@ function get_logged_in_username(domain) {
     var username_length = username.length;
     var username_reason = "";
     return [username_identifier, username_length, username_reason];
+}
+
+
+// function onauthrequired_cb(details, my_callback) {
+//     console.log("Here here: RequestID: " + details.requestId);
+//     console.log("Here here: URL: " + details.url);
+//     console.log("Here here: Method: " + details.method);
+//     console.log("Here here: FrameID: " + details.frameId);
+//     console.log("Here here: Parent FrameID: " + details.parentFrameId);
+//     console.log("Here here: Tab ID: " + details.tabId);
+//     console.log("Here here: Type: " + details.type);
+//     console.log("Here here: Timestamp: " + details.timeStamp);
+//     console.log("Here here: Scheme: " + details.scheme);
+//     console.log("Here here: Realm: " + details.realm);
+//     console.log("Here here: Challenger: " + details.challenger);
+//     console.log("Here here: ResponseHeaders: " + details.responseHeaders);
+//     console.log("Here here: StatusLine: " + details.statusLine);
+// }
+
+
+function cb_headers_received(details) {
+    //console.log("APPU DEBUG: Web Request ID: " + details.requestId);
+
+    if ("responseHeaders" in details) {
+	var rh = details.responseHeaders;
+	for (var i = 0; i < rh.length; i++) {
+	    if (rh[i].name != "set-cookie") {
+		continue;
+	    }
+	    console.log("APPU DEBUG: Response Header Name: " + rh[i].name);
+	    if ("value" in rh[i]) {
+		console.log("APPU DEBUG: Response Header Value: " + rh[i].value);
+	    }
+	    else if ("binaryValue" in rh[i]) {
+		console.log("APPU DEBUG: Response Header Binary Value: " + rh[i].binaryValue);
+	    }
+	    else {
+		console.log("APPU DEBUG: Response Header No Value Present");
+	    }
+	}
+    }
 }

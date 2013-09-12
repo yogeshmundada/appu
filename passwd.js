@@ -285,6 +285,9 @@ function get_username(pwd_element) {
 	for (var k = 0; k < uname_element.length; k++) {
 	    var tmp_off = $(uname_element[k]).offset();
 	    if (tmp_off.left == pwd_element_pos.left || tmp_off.top == pwd_element_pos.top) {
+		if ($(uname_element[k]).val().length == 0) {
+		    continue;
+		}
 		if (!filtered_uname_elements) {
 		    filtered_uname_elements = $(uname_element[k]); 
 		}

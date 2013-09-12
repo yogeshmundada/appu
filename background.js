@@ -340,6 +340,13 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	console.log("APPU DEBUG: Username info: " + JSON.stringify(message.uname_results));
 	//print_all_cookies(message.domain, "LOGIN_ATTEMPT");
 	//record_prelogin_cookies('', message.domain);
+	
+	console.log("Here here here: Registering for responses");
+	chrome.webRequest.onHeadersReceived.addListener(cb_headers_received, {
+		"urls": ["<all_urls>"],
+		    "tabId": sender.tab.id
+		    },
+	    ["responseHeaders"]);
 
 	console.log("APPU DEBUG: (" + message.caller + ", " + message.pwd_sentmsg + 
 		    "), Value of is_password_stored: " + message.is_stored);
@@ -801,3 +808,4 @@ function make_user_approved_always(site) {
 // chrome.windows.getLastFocused({}, print_last_focused);
 
 
+//chrome.webRequest.onAuthRequired.addListener(onauthrequired_cb, {urls: ["<all_urls>"]});

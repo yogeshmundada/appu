@@ -219,6 +219,7 @@ function initialize_aggregate_data() {
     //Since multiple users cannot sign into the same site without
     //removing cookies for others, we can have only site-name as key
     //instead of having username+sitename.
+    //(However, have to check how many users create chrome-profiles)
     //Whenever a successful login event is triggered, we record
     //what are the session cookies for this site.
     //The structure will be:
@@ -226,22 +227,23 @@ function initialize_aggregate_data() {
     //               username : 'john.doe',
     //               tot_http_requests_since_login : 0,
     //               tot_http_responses_since_login : 0,
-    //               cookies : {
-    //                           cookie_name : 'session_cookie_name_1',
-    //                           cookie_class : 'before', 'during', or 'after', 
-    //                           hashed_cookie_value : sha1sum(actual_cookie_value),
-    //                           cookie_scope: 'www.example.com'
-    //                           cookie_path:  '/mypath'
-    //                           num_http_responses_cookie_unchanged: 
-    //                           session_cookie : between 0 and 1.
-    //                         }
+    //               cookies : 
+    //                        'session_cookie_name_1':
+    //                               {
+    //                                 cookie_class : 'before', 'during', or 'after', 
+    //                                 hashed_cookie_value : sha1sum(actual_cookie_value),
+    //                                 cookie_scope: 'www.example.com'
+    //                                 cookie_path:  '/mypath'
+    //                                 num_http_responses_cookie_unchanged: 
+    //                                 session_cookie : between 0 and 1.
+    //                               }
     //              }
     // 1. Cookie_class: 
     // 'during': for cookies that are set explicitly during a successful login process.
-    // 'before': then that cookie was created even before a successful login. 
+    // 'before': for cookies cookie that are created even before a successful login. 
     //           That may mean that its not a necessary cookie for detecting 
     //           login-state. However, depending on the server, its still possible for a cookie
-    //           to get that value.
+    //           in this class to get different value after logging-in.
     // 'after':  cookie was set after successful login and hence is not related to detecting login-state.
     // Some initial observations: For facebook, all session cookies get class 'during'
     // For github and amazon, all session cookies get class 'before'. That is they exist even before 
