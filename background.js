@@ -59,7 +59,6 @@ var fpi_metadata = {};
 //asynchronously hashing passwords for you .. a million times.
 var hashing_workers = {};
 
-
 //Record cookie_names temporarily when user attempts to login
 //to a site. After the login is successful, check which new
 //cookies are added or which cookies have been modified.
@@ -68,8 +67,7 @@ var hashing_workers = {};
 var pre_login_cookies = {};
 
 var server_url = "http://appu.gtnoise.net:5005/";
-//var server_url = "http://192.168.56.101:59000/";
-
+// var server_url = "http://192.168.56.101:59000/";
 
 // BIG EXECUTION START
 
@@ -134,8 +132,8 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
     }
 });
 
-// Disabling for now
-// chrome.cookies.onChanged.addListener(cookie_change_detected);
+// Start listening to cookie changes
+chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
 // Total messages: 49
@@ -330,7 +328,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    //At this point in code, we have a SUCCESSFUL LOGIN event
 	    console.log("APPU DEBUG: LOGIN_COMPLETE for: " + get_domain(domain));
 	    //print_all_cookies(get_domain(domain), "LOGIN_COMPLETE");
-	    //detect_login_cookies(get_domain(domain));
+	    detect_login_cookies(get_domain(domain));
 	}
     }
     else if (message.type == "check_passwd_reuse") {
@@ -339,14 +337,14 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	console.log("APPU DEBUG: LOGIN_ATTEMPT for: " + message.domain);
 	console.log("APPU DEBUG: Username info: " + JSON.stringify(message.uname_results));
 	//print_all_cookies(message.domain, "LOGIN_ATTEMPT");
-	//record_prelogin_cookies('', message.domain);
+	record_prelogin_cookies('', message.domain);
 	
-	console.log("Here here here: Registering for responses");
-	chrome.webRequest.onHeadersReceived.addListener(cb_headers_received, {
-		"urls": ["<all_urls>"],
-		    "tabId": sender.tab.id
-		    },
-	    ["responseHeaders"]);
+// 	console.log("Here here here: Registering for responses");
+// 	chrome.webRequest.onHeadersReceived.addListener(cb_headers_received, {
+// 		"urls": ["<all_urls>"],
+// 		    "tabId": sender.tab.id
+// 		    },
+// 	    ["responseHeaders"]);
 
 	console.log("APPU DEBUG: (" + message.caller + ", " + message.pwd_sentmsg + 
 		    "), Value of is_password_stored: " + message.is_stored);
@@ -428,10 +426,17 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	    // First check with which username the user has logged into the site
 	    var username_list = get_logged_in_username(domain);
-	    add_domain_to_uas(domain, username_list[0], username_list[1], username_list[2]);
+	    add_domain_to_uas(domain, username_list[0], username_list[1], undefined);
 
-	    pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration = 
-		get_pwd_unchanged_duration(domain, username_list[0]);
+	    var hk = username_list[0] + ":" + domain;
+	    if (hk in pii_vault.current_report.user_account_sites) {
+		pii_vault.current_report.user_account_sites[hk].pwd_unchanged_duration = 
+		    get_pwd_unchanged_duration(domain, username_list[0]);
+	    }
+	    else {
+		console.log("APPU DEBUG: " + hk + " not present in cr.user_account_sites");
+	    }
+
 	    flush_selective_entries("current_report", ["user_account_sites"]);
 
 	    if (sender.tab.id in pending_pi_fetch) { 
@@ -468,11 +473,19 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	//print_all_cookies(domain, "LOGOUT_ATTEMPT");
 	//add_domain_to_uas(domain);
 
+	cleanup_session_cookie_store(domain);
+	update_logged_in_state("logged-out", domain, undefined);
 	var username_list = get_logged_in_username(domain);
 
-	pii_vault.current_report.user_account_sites[domain].pwd_unchanged_duration = 
-	    get_pwd_unchanged_duration(domain, username_list[0]);
-	pii_vault.current_report.user_account_sites[domain].num_logouts += 1;
+	var hk = username_list[0] + ":" + domain;
+	if (hk in pii_vault.current_report.user_account_sites) {
+	    pii_vault.current_report.user_account_sites[hk].pwd_unchanged_duration = 
+		get_pwd_unchanged_duration(domain, username_list[0]);
+	    pii_vault.current_report.user_account_sites[hk].num_logouts += 1;
+	}
+	else {
+	    console.log("APPU DEBUG: " + hk + " not present in cr.user_account_sites");
+	}
 	flush_selective_entries("current_report", ["user_account_sites"]);
 	send_user_account_site_row_to_reports(domain);
 

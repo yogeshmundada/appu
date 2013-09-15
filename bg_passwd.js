@@ -317,6 +317,22 @@ function calculate_short_hash(pwd, salt) {
     return rc;
 }
 
+
+function update_logged_in_state(state, domain, username) {
+    if (!(domain in pii_vault.aggregate_data.current_loggedin_state)) {
+	pii_vault.aggregate_data.current_loggedin_state[domain] = {};
+    }
+    if (state == "logged-in") {
+	pii_vault.aggregate_data.current_loggedin_state[domain].state = "logged-in";
+	pii_vault.aggregate_data.current_loggedin_state[domain].username = username;
+    }
+    else if (state == "logged-out") {
+	pii_vault.aggregate_data.current_loggedin_state[domain].state = "logged-out";
+	delete pii_vault.aggregate_data.current_loggedin_state[domain].username;
+    }
+    flush_selective_entries("aggregate_data", ["current_loggedin_state"]);
+}
+
 // This gets called only after detecting a successful login.
 // How does a successful login gets detected?
 // Absence of password box after attempting a login by entering a
@@ -330,7 +346,9 @@ function vault_update_domain_passwd(domain, username, username_length, passwd, p
     var recalculate_hashes = false;
     var pwd_length = passwd.length; 
 
-    update_user_account_sites_stats(domain, username, username_length, username_reason, is_stored);       
+    // Note that this is udername identifer and not actual username
+    update_logged_in_state("logged-in", domain, username);
+    update_user_account_sites_stats(domain, username, username_length, username_reason, is_stored);
 
     if (hk in vpwh) {
 	salt = vpwh[hk].salt;

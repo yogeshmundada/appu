@@ -75,6 +75,7 @@ var on_disk_values = {
     ],
     "aggregate_data" : [
 	"session_cookie_store",		
+	"current_loggedin_state",
 	"initialized_time",
 	"num_viewed",
 	"total_time_spent",

@@ -263,6 +263,14 @@ function initialize_aggregate_data() {
     //    Need to devise some good parameters to calculate posterior beliefs.
     aggregate_data.session_cookie_store = {};
 
+    // Records if one is logged-in to any particular site at the moment.
+    // If so, what is the username identifier (such as username1) used.
+    // e.g. google.com : { 
+    //                     logged-in: yes,
+    //                     username: "xyz"
+    //                   }
+    aggregate_data.current_loggedin_state = {};
+
     //When was this created?
     aggregate_data.initialized_time = new Date();
     //Is user aware? How many times is he reviewing his own data?
@@ -613,19 +621,20 @@ function update_user_account_sites_stats(domain, username, username_length, user
 
     //Add this site to current report, aggregate data if already not present
     add_domain_to_uas(domain, username, username_length, username_reason);
+    //Send only domain here. No need to send username or hk
     subtract_ad_non_uas(domain);
 
-    cr.user_account_sites[domain].num_logins += 1;
-    cr.user_account_sites[domain].latest_login = new Date();
+    cr.user_account_sites[hk].num_logins += 1;
+    cr.user_account_sites[hk].latest_login = new Date();
 
-    ad.user_account_sites[domain].num_logins += 1;
-    ad.user_account_sites[domain].latest_login = new Date();
+    ad.user_account_sites[hk].num_logins += 1;
+    ad.user_account_sites[hk].latest_login = new Date();
 
     if (is_stored) {
-        cr.user_account_sites[domain].pwd_stored_in_browser = 'yes';
+        cr.user_account_sites[hk].pwd_stored_in_browser = 'yes';
     }
     else {
-        cr.user_account_sites[domain].pwd_stored_in_browser = 'no';
+        cr.user_account_sites[hk].pwd_stored_in_browser = 'no';
     }
 
     flush_selective_entries("current_report", ["user_account_sites"]);

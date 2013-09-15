@@ -173,6 +173,9 @@ function update_specific_changes(last_version) {
 	console.log("APPU DEBUG: Update specific changes(<0.5.11). Zeroing out pwd_groups (CR)");
 	vcr.pwd_groups = {};
 
+	console.log("APPU DEBUG: Update specific changes(<0.5.11). Adding a new field, current_loggedin_state to AD");
+	pii_vault.aggregate_data.current_loggedin_state = {};
+
 	flush_aggregate_data();
 	flush_current_report();
 
