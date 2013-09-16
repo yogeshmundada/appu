@@ -37,6 +37,7 @@ var text_report_tab_ids = {};
 var myfootprint_tab_ids = [];
 
 var template_processing_tabs = {};
+var cookie_investigating_tabs = {};
 
 // Was an undelivered report attempted to be sent in last-24 hours?
 var delivery_attempts = {};
@@ -136,7 +137,7 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
-// Total messages: 49
+// Total messages: 51
 // Messages that can't be ignored (even if disabled): 38
 // Message name, To be ignored when disabled
 // Messages sent by content-script:
@@ -150,12 +151,14 @@ chrome.cookies.onChanged.addListener(cookie_change_detected);
 // 8. "simulate_click_done", yes
 // 9. "check_blacklist", yes
 // 10. "log_error", yes
-// 11. "remind_report_later", NO
-// 12. "close_report_reminder", NO
-// 13. "review_and_send_report", NO
-// 14. "am_i_active", NO
-// 15. "query_status", NO
-// 16. "clear_pending_warnings", NO
+// 11. "record_prelogin_cookies", yes
+// 12. "usernames_detected", yes
+// 13. "remind_report_later", NO
+// 14. "close_report_reminder", NO
+// 15. "review_and_send_report", NO
+// 16. "am_i_active", NO
+// 17. "query_status", NO
+// 18. "clear_pending_warnings", NO
 
 // Messages sent by popup:
 // 1. "get-signin-status", NO
@@ -216,7 +219,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    "explicit_sign_out",
 	    "simulate_click_done",
 	    "check_blacklist",
-	    "log_error"
+	    "log_error",
+	    "record_prelogin_cookies",
+	    "usernames_detected"
 	];
 
 	if (ignore_messages.indexOf(message.type) != -1 ) {
@@ -320,6 +325,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	return true;
     }
     else if (message.type == "check_pending_warning") {
+	console.log("Here here: In check_pending_warning");
 	r = pii_check_pending_warning(message, sender);
 	r.id = sender.tab.id;
 	domain = r.domain;
@@ -330,6 +336,27 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    //print_all_cookies(get_domain(domain), "LOGIN_COMPLETE");
 	    detect_login_cookies(get_domain(domain));
 	}
+
+	var pi_usernames = get_all_usernames();
+	if (pi_usernames.length > 0) {
+	console.log("Here here: Sending command to detect usernames");
+	    chrome.tabs.sendMessage(sender.tab.id, {
+		    'type' : "check-if-username-present",
+			'usernames' : pi_usernames,
+			});
+	}
+    }
+    else if (message.type == "usernames_detected") {
+	message.domain = get_domain(message.domain);
+	console.log("APPU DEBUG: On domain(" + message.domain + ") detected usernames:");
+	for (var uname in message.present_usernames) {
+	    console.log("APPU DEBUG: Username: " + uname + ", Frequency: " + message.present_usernames[uname]);
+	}
+    }
+    else if (message.type == "record_prelogin_cookies") {
+	message.domain = get_domain(message.domain);
+	console.log("APPU DEBUG: Recording prelogin cookies for: " + message.domain);
+	record_prelogin_cookies('', message.domain);
     }
     else if (message.type == "check_passwd_reuse") {
 	message.domain = get_domain(message.domain);
@@ -337,14 +364,13 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	console.log("APPU DEBUG: LOGIN_ATTEMPT for: " + message.domain);
 	console.log("APPU DEBUG: Username info: " + JSON.stringify(message.uname_results));
 	//print_all_cookies(message.domain, "LOGIN_ATTEMPT");
-	record_prelogin_cookies('', message.domain);
-	
-// 	console.log("Here here here: Registering for responses");
-// 	chrome.webRequest.onHeadersReceived.addListener(cb_headers_received, {
-// 		"urls": ["<all_urls>"],
-// 		    "tabId": sender.tab.id
-// 		    },
-// 	    ["responseHeaders"]);
+
+	// 	console.log("Here here here: Registering for responses");
+	// 	chrome.webRequest.onHeadersReceived.addListener(cb_headers_received, {
+	// 		"urls": ["<all_urls>"],
+	// 		    "tabId": sender.tab.id
+	// 		    },
+	// 	    ["responseHeaders"]);
 
 	console.log("APPU DEBUG: (" + message.caller + ", " + message.pwd_sentmsg + 
 		    "), Value of is_password_stored: " + message.is_stored);
@@ -413,6 +439,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		r.status = "process_template";
 		sendResponse(r);
 	    }
+	}
+	else if (sender.tab.id in cookie_investigating_tabs) {
+	    r.status = "investigate_cookies";
+	    r.url = cookie_investigating_tabs[sender.tab.id];
+	    sendResponse(r);
+	    delete cookie_investigating_tabs[sender.tab.id];
 	}
 	else {
 	    sendResponse(r);

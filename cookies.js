@@ -58,17 +58,30 @@ function print_appu_session_store_cookies(domain, cookie_class) {
 
     for (c in cs.cookies) {
 	if (cookie_class && (cs.cookies[c].cookie_class == cookie_class)) {
-	    msg += sprintf(" %s,\n", c);
+	    msg += sprintf("(%s) %s,\n", cs.cookies[c].current_state, c);
 	    tot_cookies += 1;
 	}
 	else if (cookie_class == undefined) {
-	    msg += sprintf(" %s(%s),\n", c, cs.cookies[c].cookie_class);
+	    msg += sprintf("(%s) %s(%s),\n", cs.cookies[c].current_state, c, cs.cookies[c].cookie_class);
 	    tot_cookies += 1;
 	}
     }
 
     msg = "APPU DEBUG: Domain: " + domain + ", Total-cookies: " + tot_cookies + ", Cookie-names: " + msg;
     console.log(msg);
+}
+
+function print_account_cookies(domain) {
+    var cs = pii_vault.aggregate_data.session_cookie_store[domain];
+    var account_cookies = [];
+
+    for (c in cs.cookies) {
+	if (cs.cookies[c].cookie_class == 'during') {
+	    account_cookies.push(c.split(":")[1]);
+	}
+    }
+
+    print_cookie_values(domain, account_cookies);
 }
 
 
@@ -306,6 +319,7 @@ function record_prelogin_cookies(username, domain) {
 function detect_login_cookies(domain) {
     var cb_cookies = (function(domain) {
 	    return function(all_cookies) {
+		console.log("APPU DEBUG: Detecting login cookies for: " + domain);
 		var login_state_cookies = {};
 		login_state_cookies.username = pre_login_cookies[domain].username;
 		login_state_cookies.cookies = {};
@@ -336,6 +350,7 @@ function detect_login_cookies(domain) {
 			login_state_cookies.cookies[cookie_key] = {};
 			login_state_cookies.cookies[cookie_key].cookie_class = 'during';
 			login_state_cookies.cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
+			login_state_cookies.cookies[cookie_key].current_state = 'present';
 		    }
 		}
 
@@ -393,48 +408,72 @@ function cookie_change_detected(change_info) {
     var cookie_path = change_info.cookie.path;
     var cookie_key = cookie_domain + cookie_path + ":" + cookie_name;
     
+    if (cookie_name == 'SID' &&
+	cookie_domain == '.google.com' &&
+	change_info.removed == false) {
+	console.log("Here here: Special debug for GOOGLE SID: " + change_info.removed);
+    }
+
     var pvadcs = pii_vault.aggregate_data.session_cookie_store;
     
     if (pvadcs[domain]) {
-	if ('cookies' in pvadcs[domain] && 
-	    cookie_key in pvadcs[domain].cookies) {
-	    var cookie_class = pvadcs[domain].cookies[cookie_key].cookie_class;
-	    //No need to do anything if its just a 'before' cookie
-	    if (cookie_class == 'during' || cookie_class == 'after') {
-		//This cookie was added as a result of login process or after login process
-		//No need to do anything if its cause if 'overwrite', it will be recreated shortly.
-		if (change_info.removed && 
-		    (change_info.cause == 'expired' || 
-		     change_info.cause == 'expired_overwrite' ||
-		     change_info.cause == 'explicit' ||
-		     change_info.cause == 'overwrite' ||
-		     change_info.cause == 'evicted')) {
-		    delete pvadcs[domain].cookies[cookie_key];
-		    flush_session_cookie_store();
-		    
-		    if (cookie_class == 'during') {
-			console.log("APPU DEBUG: Deleted a 'during' cookie: " + cookie_key + ", cause: " + change_info.cause);
-			//check_if_still_logged_in(domain);
-			print_appu_session_store_cookies(domain, 'during');
+	if (change_info.removed) {
+	    if ('cookies' in pvadcs[domain] && 
+		cookie_key in pvadcs[domain].cookies) {
+		var cookie_class = pvadcs[domain].cookies[cookie_key].cookie_class;
+		//No need to do anything if its just a 'before' cookie
+		if (cookie_class == 'during' || cookie_class == 'after') {
+		    //This cookie was added as a result of login process or after login process
+		    //No need to do anything if its cause if 'overwrite', it will be recreated shortly.
+		    if (change_info.cause == 'expired' || 
+			 change_info.cause == 'expired_overwrite' ||
+			 change_info.cause == 'explicit' ||
+			 change_info.cause == 'overwrite' ||
+			 change_info.cause == 'evicted') {
+			
+			if (cookie_class == 'during') {
+			    pvadcs[domain].cookies[cookie_key].current_state = 'absent';
+			    console.log("APPU DEBUG: Changed state of a 'during' cookie to 'absent': " + 
+					cookie_key + ", cause: " + change_info.cause);
+			    //check_if_still_logged_in(domain);
+			    print_appu_session_store_cookies(domain, 'during');
+			}
+			else {
+			    // No need to store other cookie classes. Save space.
+			    delete pvadcs[domain].cookies[cookie_key];
+			}
+			flush_session_cookie_store();
 		    }
-		}
-		else if (change_info.removed && change_info.cause != 'overwrite') {
-		    console.log("APPU Error: Cookie removed with unknown cause: " + change_info.cause);
+		    else {
+			console.log("APPU Error: Cookie removed with unknown cause: " + change_info.cause);
+		    }
 		}
 	    }
 	}
 	else {
 	    if ('cookies' in pvadcs[domain] && 
 		(change_info.cause == 'expired_overwrite' ||
+		 change_info.cause == 'explicit' ||
 		 change_info.cause == 'overwrite')) {
 		//This cookie was not present during login
 		var hashed_cookie_val = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(change_info.cookie.value));
-		console.log("APPU DEBUG: (" + domain + 
+
+		if (cookie_key in pvadcs[domain].cookies &&
+		    pvadcs[domain].cookies[cookie_key].cookie_class == 'during') {
+			pvadcs[domain].cookies[cookie_key].current_state = 'changed';
+			pvadcs[domain].cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
+			console.log("APPU DEBUG: Changed state of a 'during' cookie to 'changed': " + 
+				    cookie_key + ", cause: " + change_info.cause);
+			print_appu_session_store_cookies(domain, 'during');
+		}
+		else {
+		    console.log("APPU DEBUG: (" + domain + 
 			    ") Creating a new cookie with class 'after': " + cookie_key);
-		
-		pvadcs[domain].cookies[cookie_key] = {};
-		pvadcs[domain].cookies[cookie_key].cookie_class = 'after';
-		pvadcs[domain].cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
+		    
+		    pvadcs[domain].cookies[cookie_key] = {};
+		    pvadcs[domain].cookies[cookie_key].cookie_class = 'after';
+		    pvadcs[domain].cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
+		}
 		flush_session_cookie_store();
 	    }
 	}
@@ -459,3 +498,39 @@ function get_logged_in_username(domain) {
     return [username_identifier, username_length];
 }
 
+
+function delete_cookies_from_HTTP_request(details) {
+    console.log("Here here");
+    for (var i = 0; i < details.requestHeaders.length; i++) {
+	if (details.requestHeaders[i].name == "Cookie") {
+	    details.requestHeaders.splice(i, 1);
+	    break;
+	}
+    }
+    return {requestHeaders: details.requestHeaders};
+}
+
+// Open a tab to check if a cookie is an account cookie
+function open_cookie_slave_tab(domain) {
+    //Just some link so that appu content script runs on it.
+    var default_url = 'http://live.com';
+   
+    create_properties = { 
+	url: default_url, 
+	active: false 
+    };
+
+    //Create a new tab. Once its ready, send message to process the template.
+    chrome.tabs.create(create_properties, function slave_tab_callback(tab) {
+	    var filter = {};
+	    
+	    console.log("Here here: Created a new tab: " + tab.id);
+	    chrome.webRequest.onBeforeSendHeaders.addListener(delete_cookies_from_HTTP_request,
+							  {
+							      "tabId": tab.id,
+								  "urls": ["<all_urls>"]
+								  },
+							  ["blocking", "requestHeaders"]);
+	    cookie_investigating_tabs[tab.id] = domain;
+	});
+}

@@ -638,6 +638,15 @@ function is_blacklisted(response) {
 	    check_pending_warnings();
 	}
 
+	if ($("input:password").length > 0) {
+	    // This means there could possibly an attempt to login.
+	    // Hence record the current set of cookies.
+	    var message = {};
+	    message.type = "record_prelogin_cookies";
+	    message.domain = document.domain;
+	    chrome.extension.sendMessage("", message);
+	}
+
 	//Register for password input type element. 
 	$('body').on('focusout', 'input:password', check_passwd_reuse);
 	$('body').on('keydown', 'input:password', check_for_enter);
@@ -870,6 +879,9 @@ function is_status_active(response) {
 
 	$('#appu-template-process').dialog("open");
     }
+    else if(response.status == "investigate_cookies") {
+	window.location = response.url;
+    }
     else {
 	console.log("Appu: Extension is currently disabled");
     }
@@ -938,6 +950,43 @@ function window_unfocused(eo) {
     }
 }
 
+function check_if_username_present(usernames) {
+    var present_usernames = {};
+    console.log("Here here: Detecting usernames");
+    usernames.forEach(function(value, index, array) {
+	    $(":Contains('" + value + "'):visible").filter(function() { 
+		    var text = $.trim($(this).text()).toLowerCase();
+		    var tagName = this.tagName;
+
+		    if ($(this).children().length > 0) {
+			return;
+		    }
+		    
+		    if (text == undefined || text == "") {
+			return;
+		    }
+		    
+		    var pos = $(this).offset();
+		    if (pos.top > 100 && pos.left > 100) {
+			return;
+		    }
+		    if (!(value in present_usernames)) {
+			present_usernames[value] = 1;
+		    }
+		    else {
+			present_usernames[value] += 1;
+		    }
+		});
+	});
+    
+    if (Object.keys(present_usernames).length > 0) {
+	var message = {};
+	message.type = "usernames_detected";
+	message.domain = document.domain;
+	message.present_usernames = present_usernames;
+	chrome.extension.sendMessage("", message);
+    }
+}
 
 //Case insensitive "contains" .. from stackoverflow with thanks
 //http://stackoverflow.com/questions/2196641/how-do-i-make-jquery-contains-case-insensitive-including-jquery-1-8
@@ -1388,6 +1437,10 @@ if (document.URL.match(/.pdf$/) == null) {
 	    }
 	    else if (message.type == "get-permission-to-fetch-pi") {
 		get_permission_to_fetch_pi(message.site, send_response);
+		return true;
+	    }
+	    else if (message.type == "check-if-username-present") {
+		check_if_username_present(message.usernames);
 		return true;
 	    }
 	    else if (message.type == "check_passwd_reuse") {

@@ -1548,3 +1548,38 @@ function get_idenfier_value(identifier) {
     }
     return [0, undefined];
 }
+
+
+function get_all_usernames() {
+    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+
+    var name_regexes = [
+			/username([0-9]+)/g,
+			/email([0-9]+)/g,
+			/name([0-9]+)/g,
+			/last-name([0-9]+)/g,
+			/first-name([0-9]+)/g,
+			];
+
+    var regex_username = /username([0-9]+)/g;
+    var regex_email = /email([0-9]+)/g;
+    var all_usernames = [];
+
+    for (var pi_values in vpfvi) {
+	var identifier = vpfvi[pi_values];
+	for (var j = 0; j < name_regexes.length; j++) {
+	    if (identifier.match(name_regexes[j])) {
+		var uname = pi_values;
+		if (uname.indexOf("@") != -1) {
+		    uname = uname.split("@")[0];
+		}
+		if (all_usernames.indexOf(uname) == -1 &&
+		    uname.length > 3) {
+		    all_usernames.push(uname);
+		}
+		break;
+	    }
+	}
+    }
+    return all_usernames;
+}

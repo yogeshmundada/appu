@@ -215,26 +215,26 @@ function initialize_report() {
 function initialize_aggregate_data() {
     var aggregate_data = {};
 
-    //This stores which sites are currently in the logged-in status.
-    //Since multiple users cannot sign into the same site without
-    //removing cookies for others, we can have only site-name as key
-    //instead of having username+sitename.
-    //(However, have to check how many users create chrome-profiles)
-    //Whenever a successful login event is triggered, we record
-    //what are the session cookies for this site.
-    //The structure will be:
+    // This stores which sites are currently in the logged-in status.
+    // Since multiple users cannot sign into the same site without
+    // removing cookies for others, we can have only site-name as key
+    // instead of having username+sitename.
+    // (However, have to check how many users create chrome-profiles)
+    // Whenever a successful login event is triggered, we record
+    // what are the session cookies for this site.
+    // cookie_key = domain + path + ":" + cookie_name
+    // The structure will be:
     // site_name : {
     //               username : 'john.doe',
     //               tot_http_requests_since_login : 0,
     //               tot_http_responses_since_login : 0,
     //               cookies : 
-    //                        'session_cookie_name_1':
+    //                        'session_cookie_key_1':
     //                               {
     //                                 cookie_class : 'before', 'during', or 'after', 
     //                                 hashed_cookie_value : sha1sum(actual_cookie_value),
-    //                                 cookie_scope: 'www.example.com'
-    //                                 cookie_path:  '/mypath'
     //                                 num_http_responses_cookie_unchanged: 
+    //                                 current_state: 'present', 'absent', 'changed'
     //                                 session_cookie : between 0 and 1.
     //                               }
     //              }
