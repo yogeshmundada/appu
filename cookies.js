@@ -150,6 +150,7 @@ function print_all_cookies(domain, event_name, cookie_attributes) {
 		    cookie_str += ", Secure: '" + all_cookies[i].secure + "'";
 		    cookie_str += ", HttpOnly: '" + all_cookies[i].httpOnly + "'";
 		    cookie_str += ", Session: '" + all_cookies[i].session + "'";
+		    cookie_str += ", Value: '" + all_cookies[i].value + "'";
 		}
 		else {
 		    for (var k = 0; k < cookie_attributes.length; k++) {
@@ -499,11 +500,11 @@ function get_logged_in_username(domain) {
 }
 
 
-function delete_cookies_from_HTTP_request(details) {
+function delete_all_cookies_from_HTTP_request(details) {
     console.log("Here here");
     for (var i = 0; i < details.requestHeaders.length; i++) {
 	if (details.requestHeaders[i].name == "Cookie") {
-	    details.requestHeaders.splice(i, 1);
+	    http_request_cookies = details.requestHeaders.splice(i, 1);
 	    break;
 	}
     }
@@ -511,7 +512,7 @@ function delete_cookies_from_HTTP_request(details) {
 }
 
 // Open a tab to check if a cookie is an account cookie
-function open_cookie_slave_tab(domain) {
+function open_cookie_slave_tab(domain, cookie_delete_function) {
     //Just some link so that appu content script runs on it.
     var default_url = 'http://live.com';
    
@@ -525,7 +526,7 @@ function open_cookie_slave_tab(domain) {
 	    var filter = {};
 	    
 	    console.log("Here here: Created a new tab: " + tab.id);
-	    chrome.webRequest.onBeforeSendHeaders.addListener(delete_cookies_from_HTTP_request,
+	    chrome.webRequest.onBeforeSendHeaders.addListener(cookie_delete_function,
 							  {
 							      "tabId": tab.id,
 								  "urls": ["<all_urls>"]
@@ -534,3 +535,86 @@ function open_cookie_slave_tab(domain) {
 	    cookie_investigating_tabs[tab.id] = domain;
 	});
 }
+
+
+function get_account_cookies(domain) {
+    var cs = pii_vault.aggregate_data.session_cookie_store[domain];
+    var account_cookies = {};
+
+    for (c in cs.cookies) {
+	if (cs.cookies[c].cookie_class == 'during') {
+	    account_cookies[c] = cs.cookies[c].hashed_cookie_value; 
+	}
+    }
+
+    return account_cookies;
+}
+
+
+function detect_account_cookies(domain) {
+    // This returns an object with keys: domain + path + ":" + cookie_name and
+    // value as hashed cookie value. Because the HTTP requests only have cookie names
+    // and cookie names can be repeated often (as seen in google's case), there is no
+    // way to distinguish between cookies. That will have to be done using hashed values.
+    var account_cookies = get_account_cookies(domain);
+
+    var delete_selective_cookies_from_HTTP_request = (function (account_cookies) {
+	    var current_cookie_test_index = 0;
+	    var account_cookies_array = Object.keys(account_cookies);
+
+	    return function(details) {
+		var http_request_cookies = "";
+		var final_cookies = {};
+		var final_cookie_str = ""
+		for (var i = 0; i < details.requestHeaders.length; i++) {
+		    if (details.requestHeaders[i].name == "Cookie") {
+			http_request_cookies = details.requestHeaders.splice(i, 1);
+			break;
+		    }
+		}
+
+		if (http_request_cookies.length != 0) {
+		    var cookie_name_value = http_request_cookies.split(";");
+		    var delete_index = -1;
+
+		    for (var j = 0; j < cookie_name_value.length; j++) {
+			// Lets do non-greedy matching here because cookie values
+			// themselves can contain '='
+			var matched_entries = cookie_name_value[j].match(/(.+?)=(.+)/);
+			var c_name = matched_entries[1];
+			var hashed_c_value = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(matched_entries[2]));
+			var curr_test_cookie_name = account_cookies_array[current_cookie_test_index];
+			// To get only the cookie names. Ignore domain and path.
+			// Using pop() because what if the domain is like www.google.com:8080
+			if (c_name == curr_test_cookie_name.split(":").pop() &&
+			    hashed_c_value == account_cookies[curr_test_cookie_name]) {
+			    // We found the cookie that we want to suppress this time.
+			    delete_index = j;
+			    break;
+			}
+		    }
+
+		    if (delete_index != -1) {
+			var temp_array = cookie_name_value.splice(delete_index, 1);
+			console.log("APPU DEBUG: Suppressing cookie: " + account_cookie_array[current_cookie_test_index]);
+			final_cookie_str = temp_array.join("; "); 
+		    }
+		    else {
+			console.log("APPU DEBUG: No cookie found to suppress in this request");
+			final_cookie_str = cookie_name_value.join("; "); 
+		    }
+		    cookie_element = {
+			name: "Cookie",
+			value: final_cookie_str
+		    };
+		    details.requestHeaders.push(cookie_element);
+		}
+
+		current_cookie_test_index += 1;
+		return {requestHeaders: details.requestHeaders};
+	    }
+	})(account_cookies);
+
+    open_cookie_slave_tab(domain, delete_selective_cookies_from_HTTP_request);
+}
+
