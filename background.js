@@ -348,9 +348,28 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "usernames_detected") {
 	message.domain = get_domain(message.domain);
-	console.log("APPU DEBUG: On domain(" + message.domain + ") detected usernames:");
-	for (var uname in message.present_usernames) {
-	    console.log("APPU DEBUG: Username: " + uname + ", Frequency: " + message.present_usernames[uname]);
+	if (sender.tab.id in cookie_investigating_tabs) {
+	    console.log("APPU DEBUG: Cookie investigating result, cookie(" + message.domain + ") detected usernames: " + 
+			Object.keys(message.present_usernames).length);
+	    if (Object.keys(message.present_usernames).length > 0) {
+		cookie_investigating_tabs[sender.tab.id].update_cookie_status(true);
+	    }
+	    else {
+		cookie_investigating_tabs[sender.tab.id].update_cookie_status(false);
+	    }
+
+	    r.status = "investigate_cookies";
+	    r.command = "load_page";
+	    r.url = cookie_investigating_tabs[sender.tab.id].url;
+	    sendResponse(r);
+	    cookie_investigating_tabs[sender.tab.id].state = 'loading_page';
+	}
+	else {
+	    console.log("APPU DEBUG: On domain(" + message.domain + ") detected usernames: " + 
+			Object.keys(message.present_usernames).length);
+	    for (var uname in message.present_usernames) {
+		console.log("APPU DEBUG: Username: " + uname + ", Frequency: " + message.present_usernames[uname]);
+	    }
 	}
     }
     else if (message.type == "record_prelogin_cookies") {
@@ -441,10 +460,35 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	}
 	else if (sender.tab.id in cookie_investigating_tabs) {
-	    r.status = "investigate_cookies";
-	    r.url = cookie_investigating_tabs[sender.tab.id];
-	    sendResponse(r);
-	    delete cookie_investigating_tabs[sender.tab.id];
+	    if (cookie_investigating_tabs[sender.tab.id].state == 'testing') {
+		r.status = "investigate_cookies";
+		r.command = "load_page";
+		r.url = cookie_investigating_tabs[sender.tab.id].url;
+		sendResponse(r);
+		delete cookie_investigating_tabs[sender.tab.id];
+	    }
+	    else if (cookie_investigating_tabs[sender.tab.id].state == 'initial_load') {
+		r.status = "investigate_cookies";
+		r.command = "load_page";
+		r.url = cookie_investigating_tabs[sender.tab.id].url;
+		sendResponse(r);
+		cookie_investigating_tabs[sender.tab.id].state = 'loading_page';
+	    }
+	    else if (cookie_investigating_tabs[sender.tab.id].state == 'loading_page') {
+		var pi_usernames = get_all_usernames();
+		if (pi_usernames.length > 0) {
+		    console.log("APPU DEBUG: Sending command to detect usernames to cookie investigating tab");
+		    r.status = "investigate_cookies";
+		    r.command = "check_usernames";
+		    r.usernames = pi_usernames;
+		    sendResponse(r);
+		    cookie_investigating_tabs[sender.tab.id].state = 'checking_usernames';
+		}
+		else {
+		    console.log("APPU DEBUG: Terminating cookie investigating tab because not usernames to investigate from");
+		    terminate_cookie_investigating_tab(sender.tab.id);
+		}
+	    }
 	}
 	else {
 	    sendResponse(r);

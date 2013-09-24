@@ -99,7 +99,8 @@ function print_cookie_values(domain, cookie_names) {
 		    var cookie_name = all_cookies[i].name;
 		    var cookie_domain = all_cookies[i].domain;
 		    var cookie_path = all_cookies[i].path;
-		    var cookie_key = cookie_domain + cookie_path + ":" + cookie_name;
+		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
 		    var expiry_time = 'no-expiry-time';
 		    if ('expirationDate' in all_cookies[i]) {
 			var exp_seconds = all_cookies[i].expirationDate;
@@ -142,7 +143,8 @@ function print_all_cookies(domain, event_name, cookie_attributes) {
 		var cookie_name = all_cookies[i].name;
 		var cookie_domain = all_cookies[i].domain;
 		var cookie_path = all_cookies[i].path;
-		var cookie_key = cookie_domain + cookie_path + ":" + cookie_name;
+		var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+		var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
 
 		if (!cookie_attributes) {
 		    cookie_str += "Cookie Key: " + cookie_key;
@@ -243,7 +245,8 @@ function delete_all_except_account_cookies(domain) {
 		    var cookie_name = all_cookies[i].name;
 		    var cookie_domain = all_cookies[i].domain;
 		    var cookie_path = all_cookies[i].path;
-		    var cookie_key = cookie_domain + cookie_path + ":" + cookie_name;
+		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
 		    if (cookie_key in cs.cookies &&
 			cs.cookies[cookie_key].cookie_class == 'during') {
 			continue;
@@ -305,7 +308,8 @@ function record_prelogin_cookies(username, domain) {
 		    var cookie_name = all_cookies[i].name;
 		    var cookie_domain = all_cookies[i].domain;
 		    var cookie_path = all_cookies[i].path;
-		    var cookie_key = cookie_domain + cookie_path + ":" + cookie_name;
+		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
 		    pre_login_cookies[domain].username = username;
 		    pre_login_cookies[domain].cookies[cookie_key] = hashed_cookie_val;
 		}
@@ -333,7 +337,8 @@ function detect_login_cookies(domain) {
 		    var cookie_name = all_cookies[i].name;
 		    var cookie_domain = all_cookies[i].domain;
 		    var cookie_path = all_cookies[i].path;
-		    var cookie_key = cookie_domain + cookie_path + ":" + cookie_name;
+		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
 
 		    var hashed_cookie_val = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(all_cookies[i].value));
 		    if (cookie_key in pre_login_cookies[domain].cookies
@@ -407,7 +412,8 @@ function cookie_change_detected(change_info) {
     var cookie_name = change_info.cookie.name;
     var cookie_domain = change_info.cookie.domain;
     var cookie_path = change_info.cookie.path;
-    var cookie_key = cookie_domain + cookie_path + ":" + cookie_name;
+    var cookie_protocol = (change_info.cookie.secure) ? "https://" : "http://";
+    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
     
     if (cookie_name == 'SID' &&
 	cookie_domain == '.google.com' &&
@@ -501,7 +507,6 @@ function get_logged_in_username(domain) {
 
 
 function delete_all_cookies_from_HTTP_request(details) {
-    console.log("Here here");
     for (var i = 0; i < details.requestHeaders.length; i++) {
 	if (details.requestHeaders[i].name == "Cookie") {
 	    http_request_cookies = details.requestHeaders.splice(i, 1);
@@ -511,8 +516,17 @@ function delete_all_cookies_from_HTTP_request(details) {
     return {requestHeaders: details.requestHeaders};
 }
 
+function terminate_cookie_investigating_tab(tab_id) {
+    delete cookie_investigating_tabs[tab_id];
+    chrome.tabs.remove(tab_id);
+}
+
+
 // Open a tab to check if a cookie is an account cookie
-function open_cookie_slave_tab(domain, cookie_delete_function) {
+// If you are just testing to see how a page loads without sending any cookies,
+// run something like: 
+// open_cookie_slave_tab("http://mail.google.com/mail/dfd/sds?wrre", delete_all_cookies_from_HTTP_request, undefined, "testing")
+function open_cookie_slave_tab(url, cookie_delete_function, update_cookie_status, tab_state) {
     //Just some link so that appu content script runs on it.
     var default_url = 'http://live.com';
    
@@ -525,47 +539,146 @@ function open_cookie_slave_tab(domain, cookie_delete_function) {
     chrome.tabs.create(create_properties, function slave_tab_callback(tab) {
 	    var filter = {};
 	    
-	    console.log("Here here: Created a new tab: " + tab.id);
-	    chrome.webRequest.onBeforeSendHeaders.addListener(cookie_delete_function,
-							  {
-							      "tabId": tab.id,
-								  "urls": ["<all_urls>"]
-								  },
-							  ["blocking", "requestHeaders"]);
-	    cookie_investigating_tabs[tab.id] = domain;
+	    console.log("APPU DEBUG: Created a new tab to investigate cookies: " + tab.id);
+	    chrome.webRequest.onBeforeSendHeaders.addListener(cookie_delete_function, 
+							      {
+								  "tabId": tab.id,
+								      "urls": ["<all_urls>"]
+								      },
+							      ["blocking", "requestHeaders"]);
+	    cookie_investigating_tabs[tab.id] = {};
+	    cookie_investigating_tabs[tab.id].url = url;
+	    cookie_investigating_tabs[tab.id].state = tab_state;
+	    cookie_investigating_tabs[tab.id].update_cookie_status = update_cookie_status;
+	    // This is so that the tab can be terminated from this selecting cookie suppressing
+	    // once all cookies have been examined.
+	    cookie_delete_function.tab_id = tab.id;
 	});
 }
 
+// Each cookie URL is of the form : https://.mail.google.com/mail:ABCD
+// Each current URL is of the form : https://mail.google.com/mail/ere?565
+// This function basically make a check to see if a particular cookie
+// would get sent for a particular URL request. Returns T/F
+function is_subdomain(cookie_domain, current_domain) {
+    var protocol_matched = "yes";
+    cod_protocol = cookie_domain.split(":")[0];
+    cud_protocol = current_domain.split(":")[0];
+    
+    if (cod_protocol == "https" &&
+	cod_protocol != cud_protocol) {
+	return false;
+    }
 
-function get_account_cookies(domain) {
+    cod_hostname = cookie_domain.split("/")[2];
+    cud_hostname = current_domain.split("/")[2];
+
+    if (cod_hostname != cud_hostname &&
+	cod_hostname[0] != ".") {
+	return false;
+    }
+
+    if (cod_hostname != cud_hostname &&
+	cod_hostname[0] == ".") {
+	cod_hostname = cod_hostname.slice(1);
+	rev_cod_hostname = cod_hostname.split("").reverse().join("");
+	rev_cud_hostname = cud_hostname.split("").reverse().join("");
+	if (rev_cud_hostname.indexOf(rev_cod_hostname) != 0) {
+	    return false;
+	}
+    }
+    
+    cod_path = cookie_domain.split("/").slice(3).join("/").split(":")[0];
+    cud_path = current_domain.split("/").slice(3).join("/");
+
+    if (cud_path.indexOf(cod_path) != 0) {
+	return false;
+    }
+
+    return true;
+}
+
+// Returns cookies set during 'login' process.
+// If get_all is not defined or is 'true', it will return all cookies.
+// If get_all is 'false', it will return only cookies that will get sent
+// when 'current_url' is requested by the browser.
+function get_account_cookies(current_url, get_all) {
+    var domain = get_domain(current_url.split("/")[2]);
     var cs = pii_vault.aggregate_data.session_cookie_store[domain];
     var account_cookies = {};
 
+    if (get_all == undefined) {
+	get_all = true;
+    }
+
     for (c in cs.cookies) {
 	if (cs.cookies[c].cookie_class == 'during') {
-	    account_cookies[c] = cs.cookies[c].hashed_cookie_value; 
+	    if (!get_all) {
+		if (is_subdomain(c, current_url)) {
+		    account_cookies[c] = {};
+		    account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_value; 
+		}
+	    }
+	    else {
+		account_cookies[c] = {};
+		account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_value; 
+	    }
 	}
     }
 
     return account_cookies;
 }
 
-
-function detect_account_cookies(domain) {
+// Current URL of the form : http://ab.cderf.com/sdsdwer/rtr/sds?ere
+// First gets a list of all the cookies that will get sent for this url.
+// Then it will suppress each cookie one after the other and see which
+// cookies correspond to account cookies.
+function detect_account_cookies(current_url) {
     // This returns an object with keys: domain + path + ":" + cookie_name and
     // value as hashed cookie value. Because the HTTP requests only have cookie names
     // and cookie names can be repeated often (as seen in google's case), there is no
     // way to distinguish between cookies. That will have to be done using hashed values.
-    var account_cookies = get_account_cookies(domain);
+    var account_cookies = get_account_cookies(current_url, false);
 
-    var delete_selective_cookies_from_HTTP_request = (function (account_cookies) {
+    var delete_selective_cookies_from_HTTP_request, update_cookie_status = (function (account_cookies, url) {
 	    var current_cookie_test_index = 0;
 	    var account_cookies_array = Object.keys(account_cookies);
+	    var tot_cookies = Object.keys(account_cookies).length;
+	    var tot_execution = 0;
+	    var tab_id = 0;
 
-	    return function(details) {
+	    function update_cookie_status(is_an_account_cookie) {
+		account_cookies[account_cookies_array[current_cookie_test_index - 1]].account_cookie = is_an_account_cookie;
+	    }
+
+	    function final_result() {
+		console.log("APPU DEBUG: Finished testing account cookies for: " + url);
+		for (c in account_cookies) {
+		    console.log(c + ": " + (account_cookies[c].account_cookies ? "YES" : "NO"));
+		}
+	    }
+
+
+	    function http_request_callback(details) {
 		var http_request_cookies = "";
 		var final_cookies = {};
-		var final_cookie_str = ""
+		var final_cookie_str = "";
+		    
+		if (current_cookie_test_index == tot_cookies) {
+		    console.log("APPU DEBUG: All cookies for URL(" + url + ") have been tested. " + 
+				"Terminating cookie_investigating_tab");
+		    terminate_cookie_investigating_tab(this.tab_id);
+		    final_result();
+		}
+		if (tot_execution > tot_cookies) {
+		    // Intentionally checking for '>' than '>=' because the first time this function is
+		    // called, we load 'live.com' and not the intended URL.
+		    console.log("APPU DEBUG: Maximum number of times  URL(" + url + ") have been tested. " + 
+				"However, not all cookies are examined. Current test index: " + 
+				current_cookie_test_index);
+		    terminate_cookie_investigating_tab(this.tab_id);
+		}
+
 		for (var i = 0; i < details.requestHeaders.length; i++) {
 		    if (details.requestHeaders[i].name == "Cookie") {
 			http_request_cookies = details.requestHeaders.splice(i, 1);
@@ -587,7 +700,7 @@ function detect_account_cookies(domain) {
 			// To get only the cookie names. Ignore domain and path.
 			// Using pop() because what if the domain is like www.google.com:8080
 			if (c_name == curr_test_cookie_name.split(":").pop() &&
-			    hashed_c_value == account_cookies[curr_test_cookie_name]) {
+			    hashed_c_value == account_cookies[curr_test_cookie_name].hashed_value) {
 			    // We found the cookie that we want to suppress this time.
 			    delete_index = j;
 			    break;
@@ -611,10 +724,15 @@ function detect_account_cookies(domain) {
 		}
 
 		current_cookie_test_index += 1;
+		tot_execution += 1;
 		return {requestHeaders: details.requestHeaders};
 	    }
-	})(account_cookies);
+	    return http_request_callback, update_cookie_status;
+	})(account_cookies, current_url);
 
-    open_cookie_slave_tab(domain, delete_selective_cookies_from_HTTP_request);
+    open_cookie_slave_tab(current_url, delete_selective_cookies_from_HTTP_request, 
+			  update_cookie_status, "initial_load");
+
+    //
 }
 

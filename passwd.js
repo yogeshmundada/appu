@@ -880,10 +880,15 @@ function is_status_active(response) {
 	$('#appu-template-process').dialog("open");
     }
     else if(response.status == "investigate_cookies") {
-	window.location = response.url;
+	if (response.command == "load_page") {
+	    window.location = response.url;
+	}
+	else if (response.command == "check_usernames") {
+	    check_if_username_present(response.usernames);
+	}
     }
     else {
-	console.log("Appu: Extension is currently disabled");
+	console.log("APPU DEBUG: Extension is currently disabled");
     }
 }
 
@@ -979,13 +984,16 @@ function check_if_username_present(usernames) {
 		});
 	});
     
-    if (Object.keys(present_usernames).length > 0) {
-	var message = {};
-	message.type = "usernames_detected";
-	message.domain = document.domain;
-	message.present_usernames = present_usernames;
-	chrome.extension.sendMessage("", message);
-    }
+    // Even if no usernames detected, just send the message.
+    var message = {};
+    message.type = "usernames_detected";
+    message.domain = document.domain;
+    message.present_usernames = present_usernames;
+    chrome.extension.sendMessage("", message, function(response) {
+	    if (response.command == "load_page") {
+		window.location = response.url;
+	    }
+	});
 }
 
 //Case insensitive "contains" .. from stackoverflow with thanks
