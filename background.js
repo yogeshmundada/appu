@@ -228,6 +228,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    return;
 	}
     }
+
     if (message.type == "user_input") {
 	r = pii_log_user_input_type(message);
     }
@@ -296,20 +297,22 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
     }
     else if (message.type == "am_i_active") {
-	chrome.tabs.query( { active: true }, function(active_tabs) {
-	    var response_sent = false; 
-	    var r = {};
-	    for(var i = 0; i < active_tabs.length; i++) {
-		if (sender.tab.id == active_tabs[i].id) {
-		    r = { am_i_active: true};
-		    response_sent = true;
-		}
-	    }
-	    if (!response_sent) {
-		r = { am_i_active: false};
-	    }
-	    sendResponse(r);
-	});
+	chrome.tabs.query( { active: true }, (function(sender_tab_id, sendResponse) {
+		    return function(active_tabs) {
+			var response_sent = false; 
+			var r = {};
+			for(var i = 0; i < active_tabs.length; i++) {
+			    if (sender_tab_id == active_tabs[i].id) {
+				r = { am_i_active: true};
+				response_sent = true;
+			    }
+			}
+			if (!response_sent) {
+			    r = { am_i_active: false};
+			}
+			sendResponse(r);
+		    }
+		})(sender.tab.id, sendResponse));
 
 	if(pending_warnings[sender.tab.id] != undefined) {
 	    var p = pending_warnings[sender.tab.id];
@@ -325,25 +328,26 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	return true;
     }
     else if (message.type == "check_pending_warning") {
-	console.log("Here here: In check_pending_warning");
-	r = pii_check_pending_warning(message, sender);
-	r.id = sender.tab.id;
-	domain = r.domain;
-	sendResponse(r);
-	if (domain && r.event_type == "login_attempt") {
-	    //At this point in code, we have a SUCCESSFUL LOGIN event
-	    console.log("APPU DEBUG: LOGIN_COMPLETE for: " + get_domain(domain));
-	    //print_all_cookies(get_domain(domain), "LOGIN_COMPLETE");
-	    detect_login_cookies(get_domain(domain));
-	}
-
-	var pi_usernames = get_all_usernames();
-	if (pi_usernames.length > 0) {
-	console.log("Here here: Sending command to detect usernames");
-	    chrome.tabs.sendMessage(sender.tab.id, {
-		    'type' : "check-if-username-present",
-			'usernames' : pi_usernames,
-			});
+	if (sender.tab) {
+	    r = pii_check_pending_warning(message, sender);
+	    r.id = sender.tab.id;
+	    domain = r.domain;
+	    sendResponse(r);
+	    if (domain && r.event_type == "login_attempt") {
+		//At this point in code, we have a SUCCESSFUL LOGIN event
+		console.log("APPU DEBUG: LOGIN_COMPLETE for: " + get_domain(domain));
+		//print_all_cookies(get_domain(domain), "LOGIN_COMPLETE");
+		detect_login_cookies(get_domain(domain));
+	    }
+	    
+	    var pi_usernames = get_all_usernames();
+	    if (pi_usernames.length > 0) {
+		console.log("Here here: Sending command to detect usernames");
+		chrome.tabs.sendMessage(sender.tab.id, {
+			'type' : "check-if-username-present",
+			    'usernames' : pi_usernames,
+			    });
+	    }
 	}
     }
     else if (message.type == "usernames_detected") {
@@ -352,16 +356,19 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    console.log("APPU DEBUG: Cookie investigating result, cookie(" + message.domain + ") detected usernames: " + 
 			Object.keys(message.present_usernames).length);
 	    if (Object.keys(message.present_usernames).length > 0) {
-		cookie_investigating_tabs[sender.tab.id].update_cookie_status(true);
-	    }
-	    else {
 		cookie_investigating_tabs[sender.tab.id].update_cookie_status(false);
 	    }
+	    else {
+		cookie_investigating_tabs[sender.tab.id].update_cookie_status(true);
+	    }
 
+	    cookie_investigating_tabs[sender.tab.id].web_request_fully_fetched();
+	    var r = {};
 	    r.status = "investigate_cookies";
 	    r.command = "load_page";
 	    r.url = cookie_investigating_tabs[sender.tab.id].url;
 	    sendResponse(r);
+	    console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (usernames_detected)");
 	    cookie_investigating_tabs[sender.tab.id].state = 'loading_page';
 	}
 	else {
@@ -443,7 +450,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	r.show_monitor_icon = pii_vault.options.monitor_icon_setting;
 	r.lottery_setting = pii_vault.options.lottery_setting;
 
-	if (sender.tab.id in template_processing_tabs) {
+	if (sender.tab && sender.tab.id in template_processing_tabs) {
 	    if (template_processing_tabs[sender.tab.id] != "") { 
 //		console.log(sprintf("APPU DEBUG: Tab %s was sent a go-to url earlier", sender.tab.id));
 		var dummy_tab_id = sprintf('tab-%s', sender.tab.id);
@@ -459,12 +466,13 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		sendResponse(r);
 	    }
 	}
-	else if (sender.tab.id in cookie_investigating_tabs) {
+	else if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
 	    if (cookie_investigating_tabs[sender.tab.id].state == 'testing') {
 		r.status = "investigate_cookies";
 		r.command = "load_page";
 		r.url = cookie_investigating_tabs[sender.tab.id].url;
 		sendResponse(r);
+		console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (testing)");
 		delete cookie_investigating_tabs[sender.tab.id];
 	    }
 	    else if (cookie_investigating_tabs[sender.tab.id].state == 'initial_load') {
@@ -472,6 +480,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		r.command = "load_page";
 		r.url = cookie_investigating_tabs[sender.tab.id].url;
 		sendResponse(r);
+		console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (initial_load)");
 		cookie_investigating_tabs[sender.tab.id].state = 'loading_page';
 	    }
 	    else if (cookie_investigating_tabs[sender.tab.id].state == 'loading_page') {
@@ -515,7 +524,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	    flush_selective_entries("current_report", ["user_account_sites"]);
 
-	    if (sender.tab.id in pending_pi_fetch) { 
+	    if (sender.tab && sender.tab.id in pending_pi_fetch) { 
 		if (pending_pi_fetch[sender.tab.id] == domain) {
 		    console.log("APPU DEBUG: domain: " + domain + ", tab-id: " + sender.tab.id);
     		    check_if_pi_fetch_required(domain, sender.tab.id, sender.tab);		
@@ -528,12 +537,16 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
 	else if (message.value == 'no') {
 	    //add_domain_to_nuas(domain);
-	    pending_pi_fetch[sender.tab.id] = "";
+	    if (sender.tab) {
+		pending_pi_fetch[sender.tab.id] = "";
+	    }
 	    console.log("APPU DEBUG: NOT Signed in for site: " + get_domain(message.domain));
 	}
 	else if (message.value == 'unsure') {
 	    //add_domain_to_nuas(domain);
-	    pending_pi_fetch[sender.tab.id] = "";
+	    if (sender.tab) {
+		pending_pi_fetch[sender.tab.id] = "";
+	    }
 	    console.log("APPU DEBUG: Signed in status UNSURE: " + get_domain(message.domain));
 	}
 	else {

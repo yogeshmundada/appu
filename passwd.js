@@ -881,7 +881,8 @@ function is_status_active(response) {
     }
     else if(response.status == "investigate_cookies") {
 	if (response.command == "load_page") {
-	    window.location = response.url;
+	    console.log("Here here: Loading page again to investigate cookies");
+	    window.location.href = response.url;
 	}
 	else if (response.command == "check_usernames") {
 	    check_if_username_present(response.usernames);
@@ -991,7 +992,9 @@ function check_if_username_present(usernames) {
     message.present_usernames = present_usernames;
     chrome.extension.sendMessage("", message, function(response) {
 	    if (response.command == "load_page") {
-		window.location = response.url;
+		console.log("Here here: Loading page again to investigate cookies");
+		//window.location.href = response.url;
+		window.location.reload(true);
 	    }
 	});
 }
