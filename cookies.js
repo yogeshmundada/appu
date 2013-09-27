@@ -674,22 +674,41 @@ function detect_account_cookies(current_url, cookie_names) {
 	    var tot_execution = 0;
 	    var tab_id = 0;
 	    var am_i_done = false;
-
+	    var test_all_cookies = true;
+	    var account_cookies_set_correct = false;
+	    var my_domain = get_domain(url.split("/")[2]);
+	    
 	    function update_tab_id(my_tab_id) {
 		tab_id = my_tab_id;
 	    }
 
 	    function update_cookie_status(is_an_account_cookie) {
-		console.log("Here here: IS ACCOUNT COOKIE?(" + 
-			    account_cookies_array[current_cookie_test_index] + "): " + is_an_account_cookie);
-		account_cookies[account_cookies_array[current_cookie_test_index]].account_cookie = is_an_account_cookie;
+		if (!test_all_cookies) {
+		    console.log("Here here: IS ACCOUNT COOKIE?(" + 
+				account_cookies_array[current_cookie_test_index] + "): " + is_an_account_cookie);
+		    account_cookies[account_cookies_array[current_cookie_test_index]].account_cookie = is_an_account_cookie;
+		}
+		else {
+		    if (is_an_account_cookie) {
+			console.log("Here here: YES. Cookies set during account login process indeed contain account cookies");
+			account_cookies_set_correct = true;
+		    }
+		}
 	    }
 
 	    function final_result() {
 		am_i_done = true;
 		console.log("APPU DEBUG: Finished testing account cookies for: " + url);
+		if (account_cookies_set_correct) {
+		    print_appu_error("APPU DEBUG: Cookies with class 'during' indeed contain account cookies for: " + 
+				     my_domain);
+		}
+		else {
+		    print_appu_error("APPU Error: Cookies with class 'during' *DO NOT* contain account cookies for: " + 
+				     my_domain);
+		}
 		for (c in account_cookies) {
-		    console.log(c + ": " + (account_cookies[c].account_cookies ? "YES" : "NO"));
+		    console.log(c + ": " + (account_cookies[c].account_cookie ? "YES" : "NO"));
 		}
 	    }
 
@@ -699,10 +718,16 @@ function detect_account_cookies(current_url, cookie_names) {
 	    // Thus, someone else from outside will have to know that the webpage fetch
 	    // is complete and we should move to suppress next cookie.
 	    function web_request_fully_fetched() {
-		console.log("APPU DEBUG: Webpage fetch complete for: " + account_cookies_array[current_cookie_test_index]);
-		current_cookie_test_index += 1;
-		tot_execution += 1;
-		console.log("APPU DEBUG: New suppress cookie is: " + account_cookies_array[current_cookie_test_index]);
+		if (test_all_cookies) {
+		    test_all_cookies = false;
+		    console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
+		}
+		else {
+		    console.log("APPU DEBUG: Webpage fetch complete for: " + account_cookies_array[current_cookie_test_index]);
+		    current_cookie_test_index += 1;
+		    tot_execution += 1;
+		    console.log("APPU DEBUG: New suppress cookie is: " + account_cookies_array[current_cookie_test_index]);
+		}
 	    }
 
 	    function http_request_callback(details) {
@@ -719,13 +744,17 @@ function detect_account_cookies(current_url, cookie_names) {
 		}
 
 		//console.log("Here here: In HTTP request callback.");
-
 		if (current_cookie_test_index == tot_cookies) {
 		    console.log("APPU DEBUG: All cookies for URL(" + url + ") have been tested. " + 
 				"Terminating cookie_investigating_tab");
 		    terminate_cookie_investigating_tab(tab_id);
 		    final_result();
 		    return;
+		}
+
+		if (test_all_cookies) {
+		    // This is to verify that cookies set during login were indeed account cookies.
+		    return delete_all_cookies_from_HTTP_request(details);
 		}
 
 		if (tot_execution > tot_cookies) {
@@ -755,7 +784,7 @@ function detect_account_cookies(current_url, cookie_names) {
 		    for (var j = 0; j < cookie_name_value.length; j++) {
 			// Lets do non-greedy matching here because cookie values
 			// themselves can contain '='
-			var matched_entries = cookie_name_value[j].match(/(.+?)=(.+)/);
+			var matched_entries = cookie_name_value[j].match(/(.+?)=(.*)/);
 			var c_name = matched_entries[1].trim();
 			var hashed_c_value = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(matched_entries[2].trim()));
 			var curr_test_cookie_name = account_cookies_array[current_cookie_test_index];
