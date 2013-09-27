@@ -434,8 +434,8 @@ function cookie_change_detected(change_info) {
 			
 			if (cookie_class == 'during') {
 			    pvadcs[domain].cookies[cookie_key].current_state = 'absent';
-			    //console.log("APPU DEBUG: Changed state of a 'during' cookie to 'absent': " + 
-			    //		cookie_key + ", cause: " + change_info.cause);
+			    console.log("APPU DEBUG: Changed state of a 'during' cookie to 'absent': " + 
+			    		cookie_key + ", cause: " + change_info.cause);
 			    //check_if_still_logged_in(domain);
 			    //print_appu_session_store_cookies(domain, 'during');
 			}
@@ -463,13 +463,13 @@ function cookie_change_detected(change_info) {
 		    pvadcs[domain].cookies[cookie_key].cookie_class == 'during') {
 			pvadcs[domain].cookies[cookie_key].current_state = 'changed';
 			pvadcs[domain].cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
-			//console.log("APPU DEBUG: Changed state of a 'during' cookie to 'changed': " + 
-			//	    cookie_key + ", cause: " + change_info.cause);
+			console.log("APPU DEBUG: Changed state of a 'during' cookie to 'changed': " + 
+				    cookie_key + ", cause: " + change_info.cause);
 			//print_appu_session_store_cookies(domain, 'during');
 		}
 		else {
-		    //console.log("APPU DEBUG: (" + domain + 
-		    //	    ") Creating a new cookie with class 'after': " + cookie_key);
+		    console.log("APPU DEBUG: (" + domain + 
+		    	    ") Creating a new cookie with class 'after': " + cookie_key);
 		    
 		    pvadcs[domain].cookies[cookie_key] = {};
 		    pvadcs[domain].cookies[cookie_key].cookie_class = 'after';
@@ -520,6 +520,27 @@ function test_site_with_no_cookies(url) {
     open_cookie_slave_tab(url, delete_all_cookies_from_HTTP_request, undefined, undefined, undefined, "testing");
 }
 
+// This function deletes the SET COOKIE directive from HTTP responses to 
+// tab that investigates cookies. This is useful in cases where servers
+// detect that one of the account cookies is present and other is not.
+// Then the server tries to delete all the other account cookies. (seems like
+// security measure). This happens in the case of Facebook.
+// Since we do not want this to interfere between already established user sessions,
+// just ignore those commands. 
+function delete_set_cookie_from_HTTP_response(details) {
+    var final_rh = [];
+    if ("responseHeaders" in details) {
+	var rh = details.responseHeaders;
+	for (var i = 0; i < rh.length; i++) {
+	    if (rh[i].name != "set-cookie") {
+		final_rh.push(rh[i]);
+		continue;
+	    }
+	}
+    }
+    return {responseHeaders: final_rh};
+}
+
 // Open a tab to check if a cookie is an account cookie
 function open_cookie_slave_tab(url, cookie_delete_function, update_cookie_status, update_tab_id, 
 			       web_request_fully_fetched, tab_state) {
@@ -531,28 +552,38 @@ function open_cookie_slave_tab(url, cookie_delete_function, update_cookie_status
 	active: false 
     };
 
-    //Create a new tab. Once its ready, send message to process the template.
-    chrome.tabs.create(create_properties, (function(url, cookie_delete_function, update_cookie_status, update_tab_id, tab_state) {
-		return function slave_tab_callback(tab) {
-		    var filter = {};
-		    
-		    console.log("APPU DEBUG: Created a new tab to investigate cookies: " + tab.id);
-		    chrome.webRequest.onBeforeSendHeaders.addListener(cookie_delete_function, 
-								      {
-								  "tabId": tab.id,
-								      "urls": ["<all_urls>"]
-								      },
-								      ["blocking", "requestHeaders"]);
-		    cookie_investigating_tabs[tab.id] = {};
-		    cookie_investigating_tabs[tab.id].url = url;
-		    cookie_investigating_tabs[tab.id].state = tab_state;
-		    cookie_investigating_tabs[tab.id].update_cookie_status = update_cookie_status;
-		    cookie_investigating_tabs[tab.id].web_request_fully_fetched = web_request_fully_fetched;
-		    // This is so that the tab can be terminated from this selecting cookie suppressing
-		    // once all cookies have been examined.
-		    update_tab_id(tab.id);
-		}
-	    })(url, cookie_delete_function, update_cookie_status, update_tab_id, tab_state));
+    //Create a new tab.
+    chrome.tabs.create(create_properties, 
+		       (function(url, cookie_delete_function, update_cookie_status, update_tab_id, tab_state) {
+			   return function slave_tab_callback(tab) {
+			       var filter = {};
+			       
+			       console.log("APPU DEBUG: Created a new tab to investigate cookies: " + tab.id);
+			       chrome.webRequest.onBeforeSendHeaders.addListener(cookie_delete_function, 
+										 {
+										     "tabId": tab.id,
+											 "urls": ["<all_urls>"]
+											 },
+										 ["blocking", "requestHeaders"]);
+
+
+			       chrome.webRequest.onHeadersReceived.addListener(delete_set_cookie_from_HTTP_response, {
+				       "tabId": tab.id,
+					   "urls": ["<all_urls>"]
+					   },
+				   ["blocking", "responseHeaders"]);
+
+
+			       cookie_investigating_tabs[tab.id] = {};
+			       cookie_investigating_tabs[tab.id].url = url;
+			       cookie_investigating_tabs[tab.id].state = tab_state;
+			       cookie_investigating_tabs[tab.id].update_cookie_status = update_cookie_status;
+			       cookie_investigating_tabs[tab.id].web_request_fully_fetched = web_request_fully_fetched;
+			       // This is so that the tab can be terminated from this selecting cookie suppressing
+			       // once all cookies have been examined.
+			       update_tab_id(tab.id);
+			   }
+		       })(url, cookie_delete_function, update_cookie_status, update_tab_id, tab_state));
 }
 
 // Each cookie URL is of the form : https://.mail.google.com/mail:ABCD
@@ -706,6 +737,7 @@ function detect_account_cookies(current_url, cookie_names) {
 		else {
 		    print_appu_error("APPU Error: Cookies with class 'during' *DO NOT* contain account cookies for: " + 
 				     my_domain);
+		    terminate_cookie_investigating_tab(tab_id);
 		}
 		for (c in account_cookies) {
 		    console.log(c + ": " + (account_cookies[c].account_cookie ? "YES" : "NO"));
