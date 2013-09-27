@@ -297,35 +297,37 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
     }
     else if (message.type == "am_i_active") {
-	chrome.tabs.query( { active: true }, (function(sender_tab_id, sendResponse) {
-		    return function(active_tabs) {
-			var response_sent = false; 
-			var r = {};
-			for(var i = 0; i < active_tabs.length; i++) {
-			    if (sender_tab_id == active_tabs[i].id) {
-				r = { am_i_active: true};
-				response_sent = true;
+	if (sender.tab) {
+	    chrome.tabs.query( { active: true }, (function(sender_tab_id, sendResponse) {
+			return function(active_tabs) {
+			    var response_sent = false; 
+			    var r = {};
+			    for(var i = 0; i < active_tabs.length; i++) {
+				if (sender_tab_id == active_tabs[i].id) {
+				    r = { am_i_active: true};
+				    response_sent = true;
+				}
 			    }
+			    if (!response_sent) {
+				r = { am_i_active: false};
+			    }
+			    sendResponse(r);
 			}
-			if (!response_sent) {
-			    r = { am_i_active: false};
-			}
-			sendResponse(r);
-		    }
-		})(sender.tab.id, sendResponse));
-
-	if(pending_warnings[sender.tab.id] != undefined) {
-	    var p = pending_warnings[sender.tab.id];
-	    if (p.event_type == 'logout_attempt') {
-		//At this point in code, we have a SUCCESSFUL LOGOUT
-		pending_warnings[sender.tab.id] = undefined;
-		console.log("APPU DEBUG: LOGOUT_COMPLETE for: " + p.domain);
-		//print_all_cookies(p.domain, "LOGOUT_COMPLETE");
-		//cleanup_session_cookie_store(p.domain);
+		    })(sender.tab.id, sendResponse));
+	    
+	    if(pending_warnings[sender.tab.id] != undefined) {
+		var p = pending_warnings[sender.tab.id];
+		if (p.event_type == 'logout_attempt') {
+		    //At this point in code, we have a SUCCESSFUL LOGOUT
+		    pending_warnings[sender.tab.id] = undefined;
+		    console.log("APPU DEBUG: LOGOUT_COMPLETE for: " + p.domain);
+		    //print_all_cookies(p.domain, "LOGOUT_COMPLETE");
+		    //cleanup_session_cookie_store(p.domain);
+		}
 	    }
+	    
+	    return true;
 	}
-
-	return true;
     }
     else if (message.type == "check_pending_warning") {
 	if (sender.tab) {
