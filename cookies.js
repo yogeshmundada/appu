@@ -982,7 +982,14 @@ function detect_account_cookies(current_url, cookie_names) {
 		}
 	    }
 
-	    function http_request_callback(details) {
+
+	    // This function is different from replace_cookies_from_shadow_cookie_store().
+	    // This only deletes SELECTIVE cookies from HTTP request whereas the other function completely
+	    // deletes cookies and creates new set from its own shadow_cookie_store.
+	    // Thus, whatever cookies are returned as a result of executing this function are from
+	    // the actual cookie_store and reflects all the changes that are happening because of
+	    // user browsing the site simultaneously.
+	    function delete_cookies_from_HTTP_requests(details) {
 		var http_request_cookies = "";
 		var final_cookies = {};
 		var final_cookie_str = "";
@@ -1086,7 +1093,118 @@ function detect_account_cookies(current_url, cookie_names) {
 		return {requestHeaders: details.requestHeaders};
 	    }
 
-	    return [http_request_callback, update_cookie_status, update_tab_id, web_request_fully_fetched];
+	    // This function simply deletes 'Cookie' property from the HTTP request which is 
+	    // created by the browser from default cookie store. Instead, it uses shadow_cookie_store
+	    // for our "cookie-investigator-tab". When we want to test some specific cookie, we can
+	    // simply delete it from shadow_cookie_store. Mind though, sometimes, sites (for e.g. Google)
+	    // will check if other 'account cookies' are present and if so, will recreate the deleted cookie.
+	    // Once again, this recreation will happen in our shadow_cookie_store. But, we have to be careful 
+	    // and see if the value has been modified and if so, then carefully merge down the changes 
+	    // (In some cases like 'facebook', when it detects that one of the 'account' cookies is missing,
+	    //  it will simply reset other account cookies. Hence, in that case, merge to original cookie store
+	    //  does not make sense)
+	    // (I am not going to implement this merge unless it seems like sending old values screws up sessions).
+	    // In this case where server restores the deleted cookie, ultimately the Web page fetch would succeed
+	    // since the server resets the cookie. This is exactly what we want to test. What is the behavior of
+	    // the server when a particular cookie is missing.
+	    function replace_cookies_from_shadow_cookie_store(details) {
+		var original_http_request_cookies = undefined;
+		var final_cookies = {};
+		var final_cookie_str = "";
+
+		//console.log("Here here: (cookie_delete_function) RequestId: " + details.requestId);
+
+		for (var i = 0; i < details.requestHeaders.length; i++) {
+		    if (details.requestHeaders[i].name == "Referer") {
+			if (get_domain(details.requestHeaders[i].value.split("/")[2]) == 'live.com') {
+			    details.requestHeaders.splice(i, 1);
+			    break;
+			}
+		    }
+		}
+
+		if (am_i_done) {
+		    return {requestHeaders: details.requestHeaders};
+		}
+
+		if (cookie_investigating_tabs[tab_id].state == 'initial_load') {
+		    return {requestHeaders: details.requestHeaders};
+		}
+
+		//console.log("Here here: In HTTP request callback.");
+		if (current_cookie_test_index == tot_cookies) {
+		    console.log("APPU DEBUG: All cookies for URL(" + url + ") have been tested. " + 
+				"Terminating cookie_investigating_tab");
+		    terminate_cookie_investigating_tab(tab_id);
+		    final_result();
+		    return;
+		}
+
+		if (test_all_cookies) {
+		    // This is to verify that cookies set during login were indeed account cookies.
+		    return delete_all_cookies_from_HTTP_request(details);
+		}
+
+		if (tot_execution > tot_cookies) {
+		    // Intentionally checking for '>' than '>=' because the first time this function is
+		    // called, we load 'live.com' and not the intended URL.
+		    console.log("APPU DEBUG: Maximum number of times  URL(" + url + ") have been tested. " + 
+				"However, not all cookies are examined. Current test index: " + 
+				current_cookie_test_index);
+		    terminate_cookie_investigating_tab(tab_id);
+		    return;
+		}
+
+		for (var i = 0; i < details.requestHeaders.length; i++) {
+		    if (details.requestHeaders[i].name == "Cookie") {
+			original_http_request_cookies = details.requestHeaders.splice(i, 1);
+			break;
+		    }
+		}
+		
+		if (original_http_request_cookies) {
+		    var original_cookie_array = original_http_request_cookies[0].value.split(";");
+		    console.log("Here here: Number of cookies in original HTTP request: " + original_cookie_array.length);
+		}
+
+		var curr_time = (new Date()).getTime()/1000;
+		var is_secure = (details.url.split('/')[0] == 'https:') ? true : false;
+		var my_cookies = [];
+		
+		for (c in shadow_cookie_store) {
+		    var cookie_protocol = shadow_cookie_store[c].secure ? "https://" : "http://";
+		    var cookie_url = cookie_protocol + shadow_cookie_store[c].domain + shadow_cookie_store[c].path;
+		    var cookie_name_value = shadow_cookie_store[c].name + '=' + shadow_cookie_store[c].value;
+
+		    if (is_subdomain(cookie_url, details.url)) {
+			if (shadow_cookie_store[c].session) {
+			    my_cookies.push(cookie_name_value);
+			}
+			else if (shadow_cookie_store[c].expirationDate > curr_time) {
+			    my_cookies.push(cookie_name_value);
+			}
+		    }
+		}
+
+		console.log("Here here: Number of cookies constructed from my shadow_cookie_store: " + my_cookies.length);
+		var final_cookie_str = my_cookies.join("; "); 
+
+		cookie_element = {
+		    name: "Cookie",
+		    value: final_cookie_str
+		};
+
+		details.requestHeaders.push(cookie_element);
+		console.log("Here here: Going to return requestHeaders: " + JSON.stringify(details.requestHeaders));
+		return {requestHeaders: details.requestHeaders};
+	    }
+
+	    return [
+		    delete_cookies_from_HTTP_requests, 
+		    update_cookie_status, 
+		    update_tab_id, 
+		    web_request_fully_fetched
+		    ];
 	})(account_cookies, current_url, verify_all_cookies);
 
     open_cookie_slave_tab(current_url, 
@@ -1105,4 +1223,70 @@ function detect_account_cookies(current_url, cookie_names) {
 // Test all cookies:
 // detect_account_cookies("https://mail.google.com/mail/u/0/?shva=1#inbox")
 
+var test_shadow_cookie_store = {};
 
+function test_get_cookie_store_snapshot(cookie_store) {
+    var cb_cookies = (function(domain, cookie_store) {
+	    return function(all_cookies) {
+		for (var i = 0; i < all_cookies.length; i++) {
+		    var cookie_name = all_cookies[i].name;
+		    var cookie_domain = all_cookies[i].domain;
+		    var cookie_path = all_cookies[i].path;
+		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
+		    cookie_store[cookie_key] = all_cookies[i];
+		}
+	    }
+	})(domain, cookie_store);
+    
+    get_all_cookies(my_domain, cb_cookies);
+}
+
+function test_replace_cookies_from_shadow_cookie_store(details) {
+    var original_http_request_cookies = undefined;
+    var final_cookies = {};
+    var final_cookie_str = "";
+    
+    for (var i = 0; i < details.requestHeaders.length; i++) {
+	if (details.requestHeaders[i].name == "Cookie") {
+	    original_http_request_cookies = details.requestHeaders.splice(i, 1);
+	    break;
+	}
+    }
+    
+    if (original_http_request_cookies) {
+	var original_cookie_array = original_http_request_cookies[0].value.split(";");
+	console.log("Here here: Number of cookies in original HTTP request: " + original_cookie_array.length);
+    }
+    
+    var curr_time = (new Date()).getTime()/1000;
+    var is_secure = (details.url.split('/')[0] == 'https:') ? true : false;
+    var my_cookies = [];
+    
+    for (c in test_shadow_cookie_store) {
+	var cookie_protocol = test_shadow_cookie_store[c].secure ? "https://" : "http://";
+	var cookie_url = cookie_protocol + test_shadow_cookie_store[c].domain + test_shadow_cookie_store[c].path;
+	var cookie_name_value = test_shadow_cookie_store[c].name + '=' + test_shadow_cookie_store[c].value;
+	
+	if (is_subdomain(cookie_url, details.url)) {
+	    if (test_shadow_cookie_store[c].session) {
+		my_cookies.push(cookie_name_value);
+	    }
+	    else if (test_shadow_cookie_store[c].expirationDate > curr_time) {
+		my_cookies.push(cookie_name_value);
+	    }
+	}
+    }
+    
+    console.log("Here here: Number of cookies constructed from my test_shadow_cookie_store: " + my_cookies.length);
+    final_cookie_str = my_cookies.join("; "); 
+    
+    cookie_element = {
+	name: "Cookie",
+	value: final_cookie_str
+    };
+    
+    details.requestHeaders.push(cookie_element);
+    console.log("Here here: Going to return requestHeaders: " + JSON.stringify(details.requestHeaders));
+    return {requestHeaders: details.requestHeaders};
+}
