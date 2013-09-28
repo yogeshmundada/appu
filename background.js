@@ -913,3 +913,12 @@ function make_user_approved_always(site) {
 
 
 //chrome.webRequest.onAuthRequired.addListener(onauthrequired_cb, {urls: ["<all_urls>"]});
+
+// function print_all_response_headers(details) {
+//     console.log("Here here: " + JSON.stringify(details.responseHeaders));
+// }
+
+// chrome.webRequest.onHeadersReceived.addListener(print_all_response_headers, {
+// 	"urls": ["<all_urls>"]
+// 	    },
+//     ["blocking", "responseHeaders"]);
