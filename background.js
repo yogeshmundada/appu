@@ -137,7 +137,7 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
-// Total messages: 51
+// Total messages: 52
 // Messages that can't be ignored (even if disabled): 38
 // Message name, To be ignored when disabled
 // Messages sent by content-script:
@@ -152,13 +152,14 @@ chrome.cookies.onChanged.addListener(cookie_change_detected);
 // 9. "check_blacklist", yes
 // 10. "log_error", yes
 // 11. "record_prelogin_cookies", yes
-// 12. "usernames_detected", yes
-// 13. "remind_report_later", NO
-// 14. "close_report_reminder", NO
-// 15. "review_and_send_report", NO
-// 16. "am_i_active", NO
-// 17. "query_status", NO
-// 18. "clear_pending_warnings", NO
+// 12. "hello_appu", yes
+// 13. "usernames_detected", yes
+// 14. "remind_report_later", NO
+// 15. "close_report_reminder", NO
+// 16. "review_and_send_report", NO
+// 17. "am_i_active", NO
+// 18. "query_status", NO
+// 19. "clear_pending_warnings", NO
 
 // Messages sent by popup:
 // 1. "get-signin-status", NO
@@ -221,7 +222,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    "check_blacklist",
 	    "log_error",
 	    "record_prelogin_cookies",
-	    "usernames_detected"
+	    "usernames_detected",
+	    "hello_appu"
 	];
 
 	if (ignore_messages.indexOf(message.type) != -1 ) {
@@ -235,6 +237,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "log_error") {
 	var err_msg = message.error;
 	print_appu_error(err_msg);
+    }
+    else if (message.type == "hello_appu") {
+	console.log("APPU DEBUG: Received 'Hello Appu', Sender Tab ID: " + sender.tab.id);
     }
     else if (message.type == "clear_pending_warnings") {
 	//This message indicates that user has interacted with earlier warning in some way.
