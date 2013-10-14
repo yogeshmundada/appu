@@ -488,8 +488,8 @@ function cookie_change_detected(change_info) {
 			
 			if (cookie_class == 'during') {
 			    pvadcs[domain].cookies[cookie_key].current_state = 'absent';
-			    console.log("APPU DEBUG: Changed state of a 'during' cookie to 'absent': " + 
-			    		cookie_key + ", cause: " + change_info.cause);
+			    //console.log("APPU DEBUG: Changed state of a 'during' cookie to 'absent': " + 
+			    //		cookie_key + ", cause: " + change_info.cause);
 			    //check_if_still_logged_in(domain);
 			    //print_appu_session_store_cookies(domain, 'during');
 			}
@@ -517,13 +517,13 @@ function cookie_change_detected(change_info) {
 		    pvadcs[domain].cookies[cookie_key].cookie_class == 'during') {
 			pvadcs[domain].cookies[cookie_key].current_state = 'changed';
 			pvadcs[domain].cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
-			console.log("APPU DEBUG: Changed state of a 'during' cookie to 'changed': " + 
-				    cookie_key + ", cause: " + change_info.cause);
+// 			console.log("APPU DEBUG: Changed state of a 'during' cookie to 'changed': " + 
+// 				    cookie_key + ", cause: " + change_info.cause);
 			//print_appu_session_store_cookies(domain, 'during');
 		}
 		else {
-		    console.log("APPU DEBUG: (" + domain + 
-		    	    ") Creating a new cookie with class 'after': " + cookie_key);
+// 		    console.log("APPU DEBUG: (" + domain + 
+// 		    	    ") Creating a new cookie with class 'after': " + cookie_key);
 		    
 		    pvadcs[domain].cookies[cookie_key] = {};
 		    pvadcs[domain].cookies[cookie_key].cookie_class = 'after';
@@ -728,6 +728,9 @@ function open_cookie_slave_tab(url,
 			       update_tab_id, 
 			       web_request_fully_fetched, 
 			       http_response_cb,
+			       restore_shadow_cookie_store,
+			       verification_epoch_results,
+			       print_cookie_investigation_state,
 			       tab_state) {
     //Just some link so that appu content script runs on it.
     var default_url = 'http://live.com';
@@ -775,6 +778,11 @@ function open_cookie_slave_tab(url,
 			       cookie_investigating_tabs[tab.id].state = tab_state;
 			       cookie_investigating_tabs[tab.id].update_cookie_status = update_cookie_status;
 			       cookie_investigating_tabs[tab.id].web_request_fully_fetched = web_request_fully_fetched;
+			       cookie_investigating_tabs[tab.id].restore_shadow_cookie_store = restore_shadow_cookie_store;
+			       cookie_investigating_tabs[tab.id].verification_epoch_results = verification_epoch_results;
+			       cookie_investigating_tabs[tab.id].print_cookie_investigation_state = 
+				   print_cookie_investigation_state;
+		    
 			       // This is so that the tab can be terminated from this selecting cookie suppressing
 			       // once all cookies have been examined.
 			       update_tab_id(tab.id);
@@ -798,7 +806,10 @@ function detect_account_cookies(current_url, cookie_names) {
     // and cookie names can be repeated often (as seen in google's case), there is no
     // way to distinguish between cookies. That will have to be done using hashed values.
     var account_cookies = {};
+
     var verify_all_cookies = true;
+    var verify_all_cookie_sets = true;
+
     if (cookie_names == undefined) {
 	account_cookies = get_account_cookies(current_url, false);
     }
@@ -807,9 +818,16 @@ function detect_account_cookies(current_url, cookie_names) {
 	account_cookies = get_selective_account_cookies(current_url, cookie_names);
     }
 
-    var ret_functions = (function (account_cookies, url, verify_all_cookies) {
+    var ret_functions = (function (account_cookies, url, verify_all_cookies, verify_all_cookie_sets) {
 	    var current_cookie_test_index = 0;
 	    var account_cookies_array = Object.keys(account_cookies);
+	    account_cookies_array.sort();
+
+	    console.log("APPU DEBUG: Suspected account cookies:");
+	    for (var i = 0; i < account_cookies_array.length; i++) {
+		console.log(account_cookies_array[i]);
+	    }
+
 	    var tot_cookies = Object.keys(account_cookies).length;
 	    var tot_execution = 0;
 	    var tab_id = 0;
@@ -818,6 +836,9 @@ function detect_account_cookies(current_url, cookie_names) {
 	    var account_cookies_set_correct = false;
 	    var my_domain = get_domain(url.split("/")[2]);
 	    var orig_cookie_store = {};
+	    var verified_account_cookie_sets = [];
+
+	    //get_cookie_store_snapshot(orig_cookie_store);
 	    // This stores all the cookies for a domain at the start.
 	    // After that, any HTTP GET done in that tab sends cookies.
 	    // as per this cookie store.
@@ -825,8 +846,99 @@ function detect_account_cookies(current_url, cookie_names) {
 	    // store as well.
 	    // At the start of each new WebRequest (Not HTTP Get request), it
 	    // will be repopulated from the basic cookie-store.
-	    var shadow_cookie_store = undefined;
-	    get_cookie_store_snapshot(orig_cookie_store);
+	    var shadow_cookie_store = {};
+	    get_cookie_store_snapshot(shadow_cookie_store);
+
+	    var cookie_sets = [];
+
+
+	    function print_cookie_investigation_state() {
+		console.log("APPU DEBUG: COOKIE INVESTIGATION STATUS, Starting new epoch, state: " + 
+			    cookie_investigating_tabs[tab_id].state);
+		if (cookie_investigating_tabs[tab_id].state != 'verification_epoch') {
+		    if (test_all_cookies) {
+			console.log("APPU DEBUG: Checking if 'during' cookies are actually ACCOUNT COOKIES");
+		    }
+		    else {
+			if (cookie_investigating_tabs[tab_id].state != 'individual_cookie_test') {
+			    console.log("APPU DEBUG: Testing cookie: " + account_cookies_array[current_cookie_test_index]);
+			}
+		    }
+		}
+
+	    }
+
+	    function generate_cookie_sets() {
+		var num_sets = Math.pow(2, tot_cookies);
+		for (var i = 0; i < num_sets; i++) {
+		    var str_bin_i = i.toString(2);
+		    var bin_i = str_bin_i.split('');
+
+		    if (bin_i.length < tot_cookies) {
+			var insert_zeroes = (tot_cookies - bin_i.length);
+			for (var k = 0; k < insert_zeroes; k++) {
+			    bin_i.unshift("0");
+			}
+		    }
+		
+		    var total = 0;
+		    for (var j = 0; j < bin_i.length; j++) {
+			bin_i[j] = parseInt(bin_i[j]);
+			total += (bin_i[j]);
+		    }
+    
+		    if (total != 0 && 
+			total != 1 &&
+			total != tot_cookies) {
+			cookie_sets.push(bin_i);
+		    }
+		}
+
+		cookie_sets.sort(function(set1, set2) {
+			var tot1 = 0, tot2 = 0;
+			for (var i = 0; i < tot_cookies; i++) {
+			    tot1 += set1[i];
+			    tot2 += set2[i];
+			}
+			if (tot1 < tot2) {
+			    return -1;
+			}
+			else if (tot1 > tot2) {
+			    return 1;
+			}
+			else {
+			    return 0;
+			}
+		    });
+	    }
+
+
+	    function prune_cookie_sets(vcs) {
+		// Accepts VERIFIED COOKIE SETS (i.e. cookies that are account cookies) 
+		// and prunes generated cookie_sets
+		var bin_rep = [];
+		for (var i = 0; i < account_cookies_array.length; i++) {
+		    if (vcs.indexOf(account_cookies_array[i]) != -1) {
+			bin_rep.push("1");
+		    }
+		    else {
+			bin_rep.push("0");
+		    }
+		}
+
+		var dec_rep = parseInt(bin_rep.join(""), 2);
+		var new_cookie_sets = [];
+		for (var i = 0; i < cookie_sets.length; i++) {
+		    var curr_num = parseInt(cookie_sets[i].join(""), 2);
+		    if ((curr_num & dec_rep) != dec_rep) {
+			// This will detect all super sets of VCS and
+			// will not add them to new cookie set
+			new_cookie_sets.push(cookie_sets[i]);			
+		    }
+		}
+		cookie_sets = new_cookie_sets;
+	    }
+
 
 	    function get_cookie_store_snapshot(cookie_store) {
 		var cb_cookies = (function(cookie_store) {
@@ -847,7 +959,8 @@ function detect_account_cookies(current_url, cookie_names) {
 
 
 	    function restore_shadow_cookie_store() {
-		shadow_cookie_store = $.extend(true, {}, orig_cookie_store);
+		//shadow_cookie_store = $.extend(true, {}, orig_cookie_store);
+		get_cookie_store_snapshot(shadow_cookie_store);
 	    }
 
 	    
@@ -856,17 +969,24 @@ function detect_account_cookies(current_url, cookie_names) {
 	    }
 
 
-	    function update_cookie_status(is_an_account_cookie) {
-		if (!test_all_cookies) {
-		    console.log("Here here: IS ACCOUNT COOKIE?(" + 
-				account_cookies_array[current_cookie_test_index] + "): " + is_an_account_cookie);
-		    account_cookies[account_cookies_array[current_cookie_test_index]].account_cookie = is_an_account_cookie;
-		}
-		else {
-		    if (is_an_account_cookie) {
+	    function verification_epoch_results(am_i_logged_in) {
+		console.log("APPU DEBUG: Verification Epoch, Is user still logged in? " + 
+			    (am_i_logged_in ? "YES" : "NO"));
+	    }
+
+
+	    function update_cookie_status(am_i_logged_in) {
+		if (test_all_cookies) {
+		    if (!am_i_logged_in) {
 			console.log("Here here: YES. Cookies set during account login process indeed contain account cookies");
 			account_cookies_set_correct = true;
 		    }
+		}
+		else {
+		    console.log("Here here: IS ACCOUNT COOKIE?(" + 
+				account_cookies_array[current_cookie_test_index] + "): " + !am_i_logged_in);
+		    account_cookies[account_cookies_array[current_cookie_test_index]].account_cookie = !am_i_logged_in;
+		    verified_account_cookie_sets.push(account_cookies_array[current_cookie_test_index]);
 		}
 	    }
 
@@ -898,12 +1018,13 @@ function detect_account_cookies(current_url, cookie_names) {
 	    // Thus, someone else from outside will have to know that the webpage fetch
 	    // is complete and we should move to suppress next cookie.
 	    function web_request_fully_fetched() {
-		restore_shadow_cookie_store();
-		if (test_all_cookies) {
+		//restore_shadow_cookie_store();
+		if (test_all_cookies &&
+		    cookie_investigating_tabs[tab_id].state != 'verification_epoch_check_usernames') {
 		    test_all_cookies = false;
 		    console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
 		}
-		else {
+		else if (cookie_investigating_tabs[tab_id].state == 'individual_cookie_test_check_usernames') {
 		    console.log("APPU DEBUG: Webpage fetch complete for: " + account_cookies_array[current_cookie_test_index]);
 		    current_cookie_test_index += 1;
 		    tot_execution += 1;
@@ -1004,12 +1125,13 @@ function detect_account_cookies(current_url, cookie_names) {
 					  ":" + 
 					  cookie_struct.name); 
 
-			console.log("Here here: Setting cookie in SHADOW_COOKIE_STORE: " + cookie_key);
+			//console.log("APPU DEBUG: Setting cookie in SHADOW_COOKIE_STORE: " + cookie_key);
 			shadow_cookie_store[cookie_key] = cookie_struct;
 		    }
 		}
 		return {responseHeaders: final_rh};
 	    }
+
 
 	    // This function is different from replace_cookies_from_shadow_cookie_store().
 	    // This only deletes SELECTIVE cookies from HTTP request whereas the other function completely
@@ -1121,6 +1243,7 @@ function detect_account_cookies(current_url, cookie_names) {
 		return {requestHeaders: details.requestHeaders};
 	    }
 
+
 	    // This function simply deletes 'Cookie' property from the HTTP request which is 
 	    // created by the browser from default cookie store. Instead, it uses shadow_cookie_store
 	    // for our "cookie-investigator-tab". When we want to test some specific cookie, we can
@@ -1157,7 +1280,7 @@ function detect_account_cookies(current_url, cookie_names) {
 		}
 
 		if (cookie_investigating_tabs[tab_id].state == 'initial_load') {
-		    restore_shadow_cookie_store();
+		    //restore_shadow_cookie_store();
 		    return {requestHeaders: details.requestHeaders};
 		}
 
@@ -1170,7 +1293,8 @@ function detect_account_cookies(current_url, cookie_names) {
 		    return;
 		}
 
-		if (test_all_cookies) {
+		if (test_all_cookies && 
+		    cookie_investigating_tabs[tab_id].state != 'verification_epoch') {
 		    // This is to verify that cookies set during login were indeed account cookies.
 		    return delete_all_cookies_from_HTTP_request(details);
 		}
@@ -1195,7 +1319,7 @@ function detect_account_cookies(current_url, cookie_names) {
 		var original_cookie_array = [];
 		if (original_http_request_cookies) {
 		    original_cookie_array = original_http_request_cookies[0].value.split(";");
-		    console.log("Here here: Number of cookies in original HTTP request: " + original_cookie_array.length);
+		    //console.log("Here here: Number of cookies in original HTTP request: " + original_cookie_array.length);
 		}
 
 		var curr_time = (new Date()).getTime()/1000;
@@ -1206,6 +1330,13 @@ function detect_account_cookies(current_url, cookie_names) {
 		    var cookie_protocol = shadow_cookie_store[c].secure ? "https://" : "http://";
 		    var cookie_url = cookie_protocol + shadow_cookie_store[c].domain + shadow_cookie_store[c].path;
 		    var cookie_name_value = shadow_cookie_store[c].name + '=' + shadow_cookie_store[c].value;
+		    var curr_test_cookie_name = account_cookies_array[current_cookie_test_index];
+
+		    if (cookie_investigating_tabs[tab_id].state == 'individual_cookie_test') {
+			if (curr_test_cookie_name == cookie_url + ':' + shadow_cookie_store[c].name) {
+			    continue;
+			}
+		    }
 
 		    if (is_subdomain(cookie_url, details.url)) {
 			if (shadow_cookie_store[c].session) {
@@ -1217,13 +1348,13 @@ function detect_account_cookies(current_url, cookie_names) {
 		    }
 		}
 
-		console.log("Here here: Original Cookies: " + 
-			    original_cookie_array.length +
-			    ", Length of shadow_cookie_store: " +
-			    Object.keys(shadow_cookie_store).length +
-			    ", Number of cookies constructed from my shadow_cookie_store: " + 
-			    my_cookies.length + 
-			    ", URL: " + details.url);
+// 		console.log("Here here: Original Cookies: " + 
+// 			    original_cookie_array.length +
+// 			    ", Length of shadow_cookie_store: " +
+// 			    Object.keys(shadow_cookie_store).length +
+// 			    ", Number of cookies constructed from my shadow_cookie_store: " + 
+// 			    my_cookies.length + 
+// 			    ", URL: " + details.url);
 
 		if (my_cookies.length == 0 &&
 		    my_domain == curr_domain) {
@@ -1248,9 +1379,12 @@ function detect_account_cookies(current_url, cookie_names) {
 		    update_cookie_status, 
 		    update_tab_id, 
 		    web_request_fully_fetched,
-		    handle_set_cookie_responses
+		    handle_set_cookie_responses,
+		    restore_shadow_cookie_store,
+		    verification_epoch_results,
+		    print_cookie_investigation_state
 		    ];
-	})(account_cookies, current_url, verify_all_cookies);
+	})(account_cookies, current_url, verify_all_cookies, verify_all_cookie_sets);
 
     open_cookie_slave_tab(current_url, 
 			  ret_functions[0], 
@@ -1258,6 +1392,9 @@ function detect_account_cookies(current_url, cookie_names) {
 			  ret_functions[2], 
 			  ret_functions[3], 
 			  ret_functions[4], 
+			  ret_functions[5], 
+			  ret_functions[6], 
+			  ret_functions[7], 
 			  "initial_load");
 }
 
@@ -1534,4 +1671,3 @@ function test_record_specific_tab_cookies(tab_id) {
 		},
 	["responseHeaders"]);
 }
-

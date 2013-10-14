@@ -362,21 +362,49 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	if (sender.tab.id in cookie_investigating_tabs) {
 	    console.log("APPU DEBUG: Cookie investigating result, cookie(" + message.domain + ") detected usernames: " + 
 			Object.keys(message.present_usernames).length);
+
+	    var am_i_logged_in = false;
 	    if (Object.keys(message.present_usernames).length > 0) {
-		cookie_investigating_tabs[sender.tab.id].update_cookie_status(false);
-	    }
-	    else {
-		cookie_investigating_tabs[sender.tab.id].update_cookie_status(true);
+		am_i_logged_in = true;
 	    }
 
-	    cookie_investigating_tabs[sender.tab.id].web_request_fully_fetched();
-	    var r = {};
-	    r.status = "investigate_cookies";
-	    r.command = "load_page";
-	    r.url = cookie_investigating_tabs[sender.tab.id].url;
-	    sendResponse(r);
-	    console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (usernames_detected)");
-	    cookie_investigating_tabs[sender.tab.id].state = 'loading_page';
+	    if (cookie_investigating_tabs[sender.tab.id].state == "verification_epoch_check_usernames") {
+		console.log("Here here: In verification epoch CHECK USERNAMES");
+		cookie_investigating_tabs[sender.tab.id].verification_epoch_results(am_i_logged_in);
+	    }
+	    else if (cookie_investigating_tabs[sender.tab.id].state == "individual_cookie_test_check_usernames") {
+		console.log("Here here: In individual cookie test CHECK USERNAMES");
+		cookie_investigating_tabs[sender.tab.id].update_cookie_status(am_i_logged_in);
+	    }
+
+	    cookie_investigating_tabs[sender.tab.id].restore_shadow_cookie_store();
+
+	    window.setTimeout((function(r, sendResponse, sender) {
+			return function() {
+			    cookie_investigating_tabs[sender.tab.id].web_request_fully_fetched();
+			    var r = {};
+			    r.status = "investigate_cookies";
+			    r.command = "load_page";
+			    r.url = cookie_investigating_tabs[sender.tab.id].url;
+			    sendResponse(r);
+			    if (cookie_investigating_tabs[sender.tab.id].state 
+				== "verification_epoch_check_usernames") {
+				cookie_investigating_tabs[sender.tab.id].state = 'individual_cookie_test';
+				console.log("APPU DEBUG: Sending page reload command to " +
+					    "COOKIE INVESTIGATOR (individual_cookie_test)");
+				cookie_investigating_tabs[sender.tab.id].print_cookie_investigation_state();
+			    }
+			    else if (cookie_investigating_tabs[sender.tab.id].state == 
+				     "individual_cookie_test_check_usernames") {
+				cookie_investigating_tabs[sender.tab.id].state = 'verification_epoch';
+				console.log("APPU DEBUG: Sending page reload command to " +
+					    "COOKIE INVESTIGATOR (verification_epoch)");
+				cookie_investigating_tabs[sender.tab.id].print_cookie_investigation_state();
+			    }
+			}
+		    })(r, sendResponse, sender), 0.1 * 1000);
+
+	    return true;
 	}
 	else {
 	    console.log("APPU DEBUG: On domain(" + message.domain + ") detected usernames: " + 
@@ -459,7 +487,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	if (sender.tab && sender.tab.id in template_processing_tabs) {
 	    if (template_processing_tabs[sender.tab.id] != "") { 
-//		console.log(sprintf("APPU DEBUG: Tab %s was sent a go-to url earlier", sender.tab.id));
+		//console.log(sprintf("APPU DEBUG: Tab %s was sent a go-to url earlier", sender.tab.id));
 		var dummy_tab_id = sprintf('tab-%s', sender.tab.id);
 		template_processing_tabs[sender.tab.id] = "";
 		//console.log("APPU DEBUG: YYY tabid: " + sender.tab.id + ", value: " + template_processing_tabs[sender.tab.id]);
@@ -483,14 +511,24 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		delete cookie_investigating_tabs[sender.tab.id];
 	    }
 	    else if (cookie_investigating_tabs[sender.tab.id].state == 'initial_load') {
-		r.status = "investigate_cookies";
-		r.command = "load_page";
-		r.url = cookie_investigating_tabs[sender.tab.id].url;
-		sendResponse(r);
-		console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (initial_load)");
-		cookie_investigating_tabs[sender.tab.id].state = 'loading_page';
+		console.log("Here here: In initial load");
+		cookie_investigating_tabs[sender.tab.id].restore_shadow_cookie_store();
+		window.setTimeout((function(r, sendResponse, sender) {
+			    return function() {
+				r.status = "investigate_cookies";
+				r.command = "load_page";
+				r.url = cookie_investigating_tabs[sender.tab.id].url;
+				sendResponse(r);
+				console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (initial_load)");
+				cookie_investigating_tabs[sender.tab.id].state = 'verification_epoch';
+				cookie_investigating_tabs[sender.tab.id].print_cookie_investigation_state();
+			    }
+			})(r, sendResponse, sender), 0.1 * 1000);
+		return true;
 	    }
-	    else if (cookie_investigating_tabs[sender.tab.id].state == 'loading_page') {
+	    else if (cookie_investigating_tabs[sender.tab.id].state == 'verification_epoch' ||
+		     cookie_investigating_tabs[sender.tab.id].state == 'individual_cookie_test') {
+		// We test here that user is still logged into the web application.
 		var pi_usernames = get_all_usernames();
 		if (pi_usernames.length > 0) {
 		    console.log("APPU DEBUG: Sending command to detect usernames to cookie investigating tab");
@@ -498,10 +536,18 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    r.command = "check_usernames";
 		    r.usernames = pi_usernames;
 		    sendResponse(r);
-		    cookie_investigating_tabs[sender.tab.id].state = 'checking_usernames';
+		    if (cookie_investigating_tabs[sender.tab.id].state == 'verification_epoch') {
+			console.log("Here here: In verification epoch");
+			cookie_investigating_tabs[sender.tab.id].state = 'verification_epoch_check_usernames';
+		    }
+		    else if (cookie_investigating_tabs[sender.tab.id].state == 'individual_cookie_test') {
+			console.log("Here here: In individual cookie test");
+			cookie_investigating_tabs[sender.tab.id].state = 'individual_cookie_test_check_usernames';
+		    }
 		}
 		else {
-		    console.log("APPU DEBUG: Terminating cookie investigating tab because not usernames to investigate from");
+		    console.log("APPU DEBUG: Terminating cookie investigating tab " + 
+				"because not usernames to investigate from");
 		    terminate_cookie_investigating_tab(sender.tab.id);
 		}
 	    }

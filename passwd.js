@@ -965,7 +965,14 @@ function check_if_username_present(usernames) {
 		    var tagName = this.tagName;
 
 		    if ($(this).children().length > 0) {
-			return;
+			if ($(this).children().length == 1 &&
+			    $(this).children()[0].tagName == "BR") {
+			    // ad-hoc for georgia tech, need to generalize
+			    // pass
+			}
+			else {
+			    return;
+			}
 		    }
 		    
 		    if (text == undefined || text == "") {
