@@ -360,6 +360,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "usernames_detected") {
 	message.domain = get_domain(message.domain);
 	if (sender.tab.id in cookie_investigating_tabs) {
+	    var cit = cookie_investigating_tabs[sender.tab.id];
 	    console.log("APPU DEBUG: Cookie investigating result, cookie(" + message.domain + ") detected usernames: " + 
 			Object.keys(message.present_usernames).length);
 
@@ -368,39 +369,26 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		am_i_logged_in = true;
 	    }
 
-	    if (cookie_investigating_tabs[sender.tab.id].state == "verification_epoch_check_usernames") {
-		cookie_investigating_tabs[sender.tab.id].verification_epoch_results(am_i_logged_in);
-	    }
-	    else if (cookie_investigating_tabs[sender.tab.id].state == "individual_cookie_test_check_usernames") {
-		cookie_investigating_tabs[sender.tab.id].update_cookie_status(am_i_logged_in);
-	    }
-	    else if (cookie_investigating_tabs[sender.tab.id].state == "cookie_set_test_check_usernames") {
-		cookie_investigating_tabs[sender.tab.id].update_cookie_status(am_i_logged_in);
-	    }
-
-	    cookie_investigating_tabs[sender.tab.id].restore_shadow_cookie_store();
+	    cit.login_test_results(am_i_logged_in);
+	    cit.restore_shadow_cookie_store();
 
 	    window.setTimeout((function(r, sendResponse, sender) {
 			return function() {
-			    cookie_investigating_tabs[sender.tab.id].web_request_fully_fetched();
-			    var r = {};
-			    r.status = "investigate_cookies";
-			    r.command = "load_page";
-			    r.url = cookie_investigating_tabs[sender.tab.id].url;
-			    sendResponse(r);
-			    if (cookie_investigating_tabs[sender.tab.id].state 
-				== "verification_epoch_check_usernames") {
-				cookie_investigating_tabs[sender.tab.id].state = 'individual_cookie_test';
+			    var cit = cookie_investigating_tabs[sender.tab.id];
+			    cit.web_request_fully_fetched();
+
+			    var next_state = cit.get_next_state();
+			    if (next_state != "st_terminate") {
 				console.log("APPU DEBUG: Sending page reload command to " +
-					    "COOKIE INVESTIGATOR (individual_cookie_test)");
-				cookie_investigating_tabs[sender.tab.id].print_cookie_investigation_state();
-			    }
-			    else if (cookie_investigating_tabs[sender.tab.id].state == 
-				     "individual_cookie_test_check_usernames") {
-				cookie_investigating_tabs[sender.tab.id].state = 'verification_epoch';
-				console.log("APPU DEBUG: Sending page reload command to " +
-					    "COOKIE INVESTIGATOR (verification_epoch)");
-				cookie_investigating_tabs[sender.tab.id].print_cookie_investigation_state();
+					    "COOKIE INVESTIGATOR (" + next_state + ")");
+				cit.print_cookie_investigation_state();
+				
+				var r = {
+				    status: "investigate_cookies",
+				    command: "load_page",
+				    url: cit.url
+				};
+				sendResponse(r);
 			    }
 			}
 		    })(r, sendResponse, sender), 0.1 * 1000);
@@ -503,49 +491,50 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	}
 	else if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
-	    if (cookie_investigating_tabs[sender.tab.id].state == 'testing') {
+	    var cit = cookie_investigating_tabs[sender.tab.id];
+
+	    if (cit.get_state() == 'st_testing') {
 		r.status = "investigate_cookies";
 		r.command = "load_page";
-		r.url = cookie_investigating_tabs[sender.tab.id].url;
+		r.url = cit.url;
 		sendResponse(r);
 		console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (testing)");
 		delete cookie_investigating_tabs[sender.tab.id];
 	    }
-	    else if (cookie_investigating_tabs[sender.tab.id].state == 'initial_load') {
-		cookie_investigating_tabs[sender.tab.id].restore_shadow_cookie_store();
+	    else if (cit.get_state() == 'st_initial_load') {
+		cit.restore_shadow_cookie_store();
 		window.setTimeout((function(r, sendResponse, sender) {
 			    return function() {
+				var cit = cookie_investigating_tabs[sender.tab.id];
+				var next_state = cit.get_next_state();
 				r.status = "investigate_cookies";
 				r.command = "load_page";
 				r.url = cookie_investigating_tabs[sender.tab.id].url;
 				sendResponse(r);
-				console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (initial_load)");
-				cookie_investigating_tabs[sender.tab.id].state = 'verification_epoch';
-				cookie_investigating_tabs[sender.tab.id].print_cookie_investigation_state();
+				console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (" + 
+					    next_state + ")");
+				cit.print_cookie_investigation_state();
 			    }
 			})(r, sendResponse, sender), 0.1 * 1000);
 		return true;
 	    }
-	    else if (cookie_investigating_tabs[sender.tab.id].state == 'verification_epoch' ||
-		     cookie_investigating_tabs[sender.tab.id].state == 'individual_cookie_test') {
+	    else if (cit.get_state() == 'st_verification_epoch' ||
+		     cit.get_state() == 'st_individual_cookie_test') {
 		// We test here that user is still logged into the web application.
 		var pi_usernames = get_all_usernames();
 		if (pi_usernames.length > 0) {
+		    var cit = cookie_investigating_tabs[sender.tab.id];
+		    var next_state = cit.get_next_state();
+
 		    console.log("APPU DEBUG: Sending command to detect usernames to cookie investigating tab");
 		    r.status = "investigate_cookies";
 		    r.command = "check_usernames";
 		    r.usernames = pi_usernames;
 		    sendResponse(r);
-		    if (cookie_investigating_tabs[sender.tab.id].state == 'verification_epoch') {
-			cookie_investigating_tabs[sender.tab.id].state = 'verification_epoch_check_usernames';
-		    }
-		    else if (cookie_investigating_tabs[sender.tab.id].state == 'individual_cookie_test') {
-			cookie_investigating_tabs[sender.tab.id].state = 'individual_cookie_test_check_usernames';
-		    }
 		}
 		else {
 		    console.log("APPU DEBUG: Terminating cookie investigating tab " + 
-				"because not usernames to investigate from");
+				"because no usernames to investigate from");
 		    terminate_cookie_investigating_tab(sender.tab.id);
 		}
 	    }
