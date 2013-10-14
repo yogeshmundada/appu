@@ -369,11 +369,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 
 	    if (cookie_investigating_tabs[sender.tab.id].state == "verification_epoch_check_usernames") {
-		console.log("Here here: In verification epoch CHECK USERNAMES");
 		cookie_investigating_tabs[sender.tab.id].verification_epoch_results(am_i_logged_in);
 	    }
 	    else if (cookie_investigating_tabs[sender.tab.id].state == "individual_cookie_test_check_usernames") {
-		console.log("Here here: In individual cookie test CHECK USERNAMES");
+		cookie_investigating_tabs[sender.tab.id].update_cookie_status(am_i_logged_in);
+	    }
+	    else if (cookie_investigating_tabs[sender.tab.id].state == "cookie_set_test_check_usernames") {
 		cookie_investigating_tabs[sender.tab.id].update_cookie_status(am_i_logged_in);
 	    }
 
@@ -511,7 +512,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		delete cookie_investigating_tabs[sender.tab.id];
 	    }
 	    else if (cookie_investigating_tabs[sender.tab.id].state == 'initial_load') {
-		console.log("Here here: In initial load");
 		cookie_investigating_tabs[sender.tab.id].restore_shadow_cookie_store();
 		window.setTimeout((function(r, sendResponse, sender) {
 			    return function() {
@@ -537,11 +537,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    r.usernames = pi_usernames;
 		    sendResponse(r);
 		    if (cookie_investigating_tabs[sender.tab.id].state == 'verification_epoch') {
-			console.log("Here here: In verification epoch");
 			cookie_investigating_tabs[sender.tab.id].state = 'verification_epoch_check_usernames';
 		    }
 		    else if (cookie_investigating_tabs[sender.tab.id].state == 'individual_cookie_test') {
-			console.log("Here here: In individual cookie test");
 			cookie_investigating_tabs[sender.tab.id].state = 'individual_cookie_test_check_usernames';
 		    }
 		}
