@@ -369,19 +369,17 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		am_i_logged_in = true;
 	    }
 
-	    cit.login_test_results(am_i_logged_in);
-	    cit.restore_shadow_cookie_store();
+	    var next_state = cit.web_request_fully_fetched(am_i_logged_in);
 
-	    window.setTimeout((function(r, sendResponse, sender) {
-			return function() {
-			    var cit = cookie_investigating_tabs[sender.tab.id];
-			    cit.web_request_fully_fetched();
+	    if (next_state != "st_terminate") {
+		// The actual command to cookie-investigating-tabs is sent after some
+		// delay so that shadow_cookie_store actually gets populated 
+		// (its async call to populate it)
+		window.setTimeout((function(r, sendResponse, sender, next_state) {
+			    return function() {
+				var cit = cookie_investigating_tabs[sender.tab.id];
 
-			    var next_state = cit.goto_next_state();
-			    if (next_state != "st_terminate") {
-				console.log("APPU DEBUG: Sending page reload command to " +
-					    "COOKIE INVESTIGATOR (" + next_state + ")");
-				cit.print_cookie_investigation_state();
+				console.log("APPU DEBUG: COOKIE INVESTIGATOR STATE(" + next_state + ")");
 				
 				var r = {
 				    status: "investigate_cookies",
@@ -389,9 +387,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 				    url: cit.url
 				};
 				sendResponse(r);
-			    }
 			}
-		    })(r, sendResponse, sender), 0.1 * 1000);
+			})(r, sendResponse, sender, next_state), 0.1 * 1000);
+	    }
 
 	    return true;
 	}
@@ -494,42 +492,56 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
 
 	    if (cit.get_state() == 'st_testing') {
-		r.status = "investigate_cookies";
-		r.command = "load_page";
-		r.url = cit.url;
+		var r = {
+		    status : "investigate_cookies",
+		    command : "load_page",
+		    url : cit.url
+		}
+
 		sendResponse(r);
 		console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (testing)");
 		delete cookie_investigating_tabs[sender.tab.id];
 	    }
-	    else if (cit.get_state() == 'st_initial_load') {
-		cit.restore_shadow_cookie_store();
-		window.setTimeout((function(r, sendResponse, sender) {
-			    return function() {
+	    else if (cit.get_state() == 'st_cookie_test_start') {
+		var next_state = cit.web_request_fully_fetched();
+
+		if (next_state != "st_terminate") {
+		    // The actual command to cookie-investigating-tabs is sent after some
+		    // delay so that shadow_cookie_store actually gets populated 
+		    // (its async call to populate it)
+		    window.setTimeout((function(r, sendResponse, sender, next_state) {
+				return function() {
 				var cit = cookie_investigating_tabs[sender.tab.id];
-				var next_state = cit.goto_next_state();
-				r.status = "investigate_cookies";
-				r.command = "load_page";
-				r.url = cookie_investigating_tabs[sender.tab.id].url;
+				
+				var r = {
+				    status : "investigate_cookies",
+				    command : "load_page",
+				    url : cit.url
+				}
+
 				sendResponse(r);
 				console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (" + 
 					    next_state + ")");
 				cit.print_cookie_investigation_state();
-			    }
-			})(r, sendResponse, sender), 0.1 * 1000);
+				}
+			    })(r, sendResponse, sender, next_state), 0.1 * 1000);
+		}
+
 		return true;
 	    }
 	    else if (cit.get_state() == 'st_verification_epoch' ||
-		     cit.get_state() == 'st_individual_cookie_test') {
+		     cit.get_state() == 'st_single_cookie_test') {
 		// We test here that user is still logged into the web application.
 		var pi_usernames = get_all_usernames();
 		if (pi_usernames.length > 0) {
 		    var cit = cookie_investigating_tabs[sender.tab.id];
-		    var next_state = cit.goto_next_state();
 
 		    console.log("APPU DEBUG: Sending command to detect usernames to cookie investigating tab");
-		    r.status = "investigate_cookies";
-		    r.command = "check_usernames";
-		    r.usernames = pi_usernames;
+		    var r = {
+			status : "investigate_cookies",
+			command : "check_usernames",
+			usernames : pi_usernames
+		    }
 		    sendResponse(r);
 		}
 		else {
