@@ -377,7 +377,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 			    var cit = cookie_investigating_tabs[sender.tab.id];
 			    cit.web_request_fully_fetched();
 
-			    var next_state = cit.get_next_state();
+			    var next_state = cit.goto_next_state();
 			    if (next_state != "st_terminate") {
 				console.log("APPU DEBUG: Sending page reload command to " +
 					    "COOKIE INVESTIGATOR (" + next_state + ")");
@@ -506,7 +506,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		window.setTimeout((function(r, sendResponse, sender) {
 			    return function() {
 				var cit = cookie_investigating_tabs[sender.tab.id];
-				var next_state = cit.get_next_state();
+				var next_state = cit.goto_next_state();
 				r.status = "investigate_cookies";
 				r.command = "load_page";
 				r.url = cookie_investigating_tabs[sender.tab.id].url;
@@ -524,7 +524,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		var pi_usernames = get_all_usernames();
 		if (pi_usernames.length > 0) {
 		    var cit = cookie_investigating_tabs[sender.tab.id];
-		    var next_state = cit.get_next_state();
+		    var next_state = cit.goto_next_state();
 
 		    console.log("APPU DEBUG: Sending command to detect usernames to cookie investigating tab");
 		    r.status = "investigate_cookies";
