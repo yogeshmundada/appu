@@ -776,7 +776,7 @@ function open_cookie_slave_tab(url,
 			       //   ["responseHeaders"]);
 
 			       cookie_investigating_tabs[tab.id] = {};
-			       cookie_investigating_tabs[tab.id].reload_timeout = undefined;
+			       cookie_investigating_tabs[tab.id].reload_interval = undefined;
 			       cookie_investigating_tabs[tab.id].url = url;
 			       cookie_investigating_tabs[tab.id].web_request_fully_fetched = web_request_fully_fetched;
 			       cookie_investigating_tabs[tab.id].print_cookie_investigation_state = 
@@ -873,7 +873,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 
     
     function generate_random_cookieset_index() {
-	return ((Math.random() * cookiesets.length * 100) % cookiesets.length);
+	return (Math.ceil((Math.random() * cookiesets.length * 100)) % cookiesets.length);
     }
 
 
@@ -1163,23 +1163,25 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     
     
     function final_result() {
-	console.log("APPU DEBUG: Finished testing account cookies for: " + url);
+	if (!has_error_occurred) {
+	    console.log("APPU DEBUG: Finished testing account cookies for: " + url);
 	
-	if (bool_account_cookies_set_correct) {
-	    print_appu_error("APPU DEBUG: Cookies with class 'during' indeed contain account cookies for: " + 
-			     my_domain);
-	}
-	else {
-	    print_appu_error("APPU Error: Cookies with class 'during' *DO NOT* contain account cookies for: " + 
-			     my_domain);
-	}
+	    if (bool_account_cookies_set_correct) {
+		print_appu_error("APPU DEBUG: Cookies with class 'during' indeed contain account cookies for: " + 
+				 my_domain);
+	    }
+	    else {
+		print_appu_error("APPU Error: Cookies with class 'during' *DO NOT* contain account cookies for: " + 
+				 my_domain);
+	    }
 	
-	for (c in account_cookies) {
-	    console.log(c + ": " + (account_cookies[c].account_cookie ? "YES" : "NO"));
+	    for (c in account_cookies) {
+		console.log(c + ": " + (account_cookies[c].account_cookie ? "YES" : "NO"));
+	    }
+	    
+	    terminate_cookie_investigating_tab(tab_id);
+	    window.clearTimeout(shut_tab_forcefully);
 	}
-
-	terminate_cookie_investigating_tab(tab_id);
-	window.clearTimeout(shut_tab_forcefully);
     }
     
     
