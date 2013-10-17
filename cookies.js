@@ -729,7 +729,7 @@ function open_cookie_slave_tab(url,
 			       web_request_fully_fetched,
 			       print_cookie_investigation_state,
 			       get_state,
-			       cookie_investigation_error) {
+			       report_error) {
     //Just some link so that appu content script runs on it.
     var default_url = 'http://live.com';
    
@@ -747,7 +747,7 @@ function open_cookie_slave_tab(url,
 				 web_request_fully_fetched,
 				 print_cookie_investigation_state,
 				 get_state,
-				 cookie_investigation_error) {
+				 report_error) {
 			   return function slave_tab_callback(tab) {
 			       var filter = {};
 			       
@@ -776,12 +776,13 @@ function open_cookie_slave_tab(url,
 			       //   ["responseHeaders"]);
 
 			       cookie_investigating_tabs[tab.id] = {};
+			       cookie_investigating_tabs[tab.id].reload_timeout = undefined;
 			       cookie_investigating_tabs[tab.id].url = url;
 			       cookie_investigating_tabs[tab.id].web_request_fully_fetched = web_request_fully_fetched;
 			       cookie_investigating_tabs[tab.id].print_cookie_investigation_state = 
 				   print_cookie_investigation_state;
 			       cookie_investigating_tabs[tab.id].get_state = get_state; 
-			       cookie_investigating_tabs[tab.id].cookie_investigation_error = cookie_investigation_error; 
+			       cookie_investigating_tabs[tab.id].report_error = report_error; 
 		    
 			       // This is so that the tab can be terminated from this selecting cookie suppressing
 			       // once all cookies have been examined.
@@ -794,7 +795,7 @@ function open_cookie_slave_tab(url,
 			  web_request_fully_fetched,
 			  print_cookie_investigation_state,
 			  get_state,
-			  cookie_investigation_error));
+			  report_error));
 }
 
 
@@ -802,6 +803,7 @@ function open_cookie_slave_tab(url,
 // cookie investigation.
 // Perhaps this is better done as a class, but for now, its a closure.
 function cookie_investigator(account_cookies, url, cookiesets_config) {
+    var my_url = url;
     // All cookies test basically sends a request to the URL by blocking all
     // cookies with 'during' class. This verifies that at least
     // a subset of 'during' class cookies are actually account-cookies.
@@ -862,6 +864,9 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     var cookiesets = [];
     var current_cookiesets_test_index = -1;
     var disabled_cookies = [];
+
+    var has_error_occurred = false;
+    var shut_tab_forcefully = undefined;
 
     generate_cookiesets();
     console.log("APPU DEBUG: Number of generated cookie-sets: " + cookiesets.length);
@@ -992,6 +997,10 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     
     function update_tab_id(my_tab_id) {
 	tab_id = my_tab_id;
+	shut_tab_forcefully = window.setTimeout(function() {
+		console.log("APPU DEBUG: In forceful shutdown for COOKIE-INVESTIGATOR-TAB: " + my_url);
+		report_error("hard-timeout");
+	    }, 300 * 1000);
     }
     
     
@@ -1168,11 +1177,13 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	for (c in account_cookies) {
 	    console.log(c + ": " + (account_cookies[c].account_cookie ? "YES" : "NO"));
 	}
+
 	terminate_cookie_investigating_tab(tab_id);
+	window.clearTimeout(shut_tab_forcefully);
     }
     
     
-    function cookie_investigation_error(reason) {
+    function report_error(reason) {
 	// This function will take care of all the major errors that would hamper 
 	// cookie testing. 
 	// Error conditions to be taken care of:
@@ -1182,6 +1193,12 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	// 4. Hard timeout occurs for cookie investigation.
 	// 5. User closes the tab.
 	// 6. If current_cookie_test_index == -1
+	// 7. Max webpage reload attempts has reached (site or net is slow).
+	if (reason == "hard-timeout") {
+	    console.log("APPU DEBUG: Closing cookie-investigator tab due to hard-timeout");
+	}
+	has_error_occurred = true;
+	final_result();
     }
 
 
@@ -1560,7 +1577,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    web_request_fully_fetched,
 	    print_cookie_investigation_state,
 	    get_state,
-	    cookie_investigation_error
+	    report_error
 	    ];
 }
 
@@ -1576,7 +1593,7 @@ function detect_account_cookies(current_url, cookie_names, cookiesets_verificati
     // way to distinguish between cookies. That will have to be done using hashed values.
     var account_cookies = {};
 
-    var cookiesets_config = "none";
+    var cookiesets_config = "random";
 
     if (cookiesets_verification_config != undefined) {
 	// Possible values are: "none", "random", "all"

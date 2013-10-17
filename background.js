@@ -387,6 +387,19 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 				    url: cit.url
 				};
 				sendResponse(r);
+
+				cit.reload_timeout = window.setTimeout((function(tab_id) {
+					    return function() {
+						var cit = cookie_investigating_tabs[tab_id];
+						console.log("APPU DEBUG: Cookie Investigator Tab, page-load timeout, " + 
+							    "Sending reload for: " +
+							    cit.url);
+						chrome.tabs.reload(tab_id, {
+							bypassCache: true
+						    });
+					    }
+					})(sender.tab.id), 15 * 1000);
+
 			}
 			})(r, sendResponse, sender, next_state), 0.1 * 1000);
 	    }
@@ -491,6 +504,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	else if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
 
+	    if (cit.reload_timeout != undefined) {
+		window.clearTimeout(cit.reload_timeout);
+		cit.reload_timeout = undefined;
+	    }
+
 	    if (cit.get_state() == 'st_testing') {
 		var r = {
 		    status : "investigate_cookies",
@@ -520,6 +538,19 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 				}
 
 				sendResponse(r);
+
+				cit.reload_timeout = window.setTimeout((function(tab_id) {
+					    return function() {
+						var cit = cookie_investigating_tabs[tab_id];
+						console.log("APPU DEBUG: Cookie Investigator Tab, page-load timeout, " + 
+							    "Sending reload for: " +
+							    cit.url);
+						chrome.tabs.reload(tab_id, {
+							bypassCache: true
+						    });
+					    }
+					})(sender.tab.id), 15 * 1000);
+
 				console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (" + 
 					    next_state + ")");
 				cit.print_cookie_investigation_state();
