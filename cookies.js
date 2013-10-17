@@ -1164,9 +1164,10 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     
     function final_result() {
 	if (!has_error_occurred) {
-	    console.log("APPU DEBUG: Finished testing account cookies for: " + url);
-	
-	    if (bool_account_cookies_set_correct) {
+	    console.log("------ FINAL RESULT ------");
+	    console.log("APPU DEBUG: Cookies investigated for URL: " + my_url);
+
+       	    if (bool_account_cookies_set_correct) {
 		print_appu_error("APPU DEBUG: Cookies with class 'during' indeed contain account cookies for: " + 
 				 my_domain);
 	    }
@@ -1175,8 +1176,16 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 				 my_domain);
 	    }
 	
+	    console.log("APPU DEBUG: Finished testing account cookies for: " + url);
 	    for (c in account_cookies) {
 		console.log(c + ": " + (account_cookies[c].account_cookie ? "YES" : "NO"));
+	    }
+
+	    console.log("APPU DEBUG: Following are all the account cookiesets:");
+	    for (var j = 0; j < verified_account_cookiesets.length; j++) {
+		console.log("Numboer of cookies: " + verified_account_cookiesets[i].length +
+			    ", CookieSet: " +
+			    JSON.stringify(verified_account_cookiesets[i]));
 	    }
 	    
 	    terminate_cookie_investigating_tab(tab_id);
@@ -1231,7 +1240,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    console.log("APPU DEBUG: New suppress cookie is: " + account_cookies_array[current_cookie_test_index]);
 	}
 	else if (my_state == "st_cookiesets_test") {
-	    console.log("APPU DEBUG: Webpage fetch complete for: " + cookiesets[current_cookiesets_test_index]);
+	    console.log("APPU DEBUG: Webpage fetch complete for: " + JSON.stringify(disabled_cookies));
 
 	    current_cookiesets_test_attempts += 1;
 	    cookiesets.splice(current_cookiesets_test_index, 1);
@@ -1245,7 +1254,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 
 	    console.log("----------------------------------------");
 	    disabled_cookies = get_disabled_cookies_in_a_set(cookiesets[current_cookiesets_test_index]);
-	    console.log("APPU DEBUG: New suppress cookieset is: " + cookiesets[current_cookiesets_test_index]);
+	    console.log("APPU DEBUG: New suppress cookieset is: " + JSON.stringify(disabled_cookies));
 	}
 
 	// Goto next state and return the value as well
