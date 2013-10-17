@@ -529,8 +529,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 		return true;
 	    }
-	    else if (cit.get_state() == 'st_verification_epoch' ||
-		     cit.get_state() == 'st_single_cookie_test') {
+	    else if (cit.get_state() == 'st_allcookies_test'    ||
+		     cit.get_state() == 'st_verification_epoch' ||
+		     cit.get_state() == 'st_single_cookie_test' ||
+		     cit.get_state() == 'st_cookiesets_test') {
 		// We test here that user is still logged into the web application.
 		var pi_usernames = get_all_usernames();
 		if (pi_usernames.length > 0) {
