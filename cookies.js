@@ -1498,9 +1498,17 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    var cookie_url = cookie_protocol + shadow_cookie_store[c].domain + shadow_cookie_store[c].path;
 	    var cookie_name_value = shadow_cookie_store[c].name + '=' + shadow_cookie_store[c].value;
 	    var curr_test_cookie_name = account_cookies_array[current_cookie_test_index];
-	    
+	    var shadow_cookie_name = cookie_url + ':' + shadow_cookie_store[c].name;
+
 	    if (my_state == 'st_single_cookie_test') {
-		if (curr_test_cookie_name == cookie_url + ':' + shadow_cookie_store[c].name) {
+		if (curr_test_cookie_name == shadow_cookie_name) {
+		    continue;
+		}
+	    }
+	    else if (my_state == 'st_cookiesets_test') {
+		// If the cookie is in the set of disabled-cookie-sets in this 
+		// iteration, then ignore it.
+		if (disabled_cookies.indexOf(shadow_cookie_name) != -1) {
 		    continue;
 		}
 	    }
