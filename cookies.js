@@ -1166,6 +1166,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	// 3. Verification epoch says that user is no longer logged-in.
 	// 4. Hard timeout occurs for cookie investigation.
 	// 5. User closes the tab.
+	// 6. If current_cookie_test_index == -1
     }
 
 
