@@ -574,7 +574,7 @@ function terminate_cookie_investigating_tab(tab_id) {
 
 // URL should be: "http://mail.google.com/mail/"
 function test_site_with_no_cookies(url) {
-    open_cookie_slave_tab(url, delete_all_cookies_from_HTTP_request, undefined, undefined, undefined);
+    open_cookie_slave_tab(url, delete_all_cookies_from_HTTP_request);
 }
 
 
@@ -752,19 +752,22 @@ function open_cookie_slave_tab(url,
 			       var filter = {};
 			       
 			       console.log("APPU DEBUG: Created a new tab to investigate cookies: " + tab.id);
-			       chrome.webRequest.onBeforeSendHeaders.addListener(http_request_cb, 
-										 {
-										     "tabId": tab.id,
-											 "urls": ["<all_urls>"]
-											 },
-										 ["blocking", "requestHeaders"]);
+			       if (http_request_cb) {
+				   chrome.webRequest.onBeforeSendHeaders.addListener(http_request_cb, 
+										     {
+											 "tabId": tab.id,
+											     "urls": ["<all_urls>"]
+											     },
+										     ["blocking", "requestHeaders"]);
+			       }
 
-			       chrome.webRequest.onHeadersReceived.addListener(http_response_cb, {
-				       "tabId": tab.id,
-					   "urls": ["<all_urls>"]
-					   },
-				   ["blocking", "responseHeaders"]);
-
+			       if (http_response_cb) {
+				   chrome.webRequest.onHeadersReceived.addListener(http_response_cb, {
+					   "tabId": tab.id,
+					       "urls": ["<all_urls>"]
+					       },
+				       ["blocking", "responseHeaders"]);
+			       }
 
 			       // chrome.webRequest.onBeforeRedirect.addListener(print_redirect_information, {
 			       //       "tabId": tab.id,
@@ -862,10 +865,12 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 
     generate_cookiesets();
     console.log("APPU DEBUG: Number of generated cookie-sets: " + cookiesets.length);
+
     
     function generate_random_cookieset_index() {
 	return ((Math.random() * cookiesets.length * 100) % cookiesets.length);
     }
+
 
     function print_cookie_investigation_state() {
 	console.log("APPU DEBUG: COOKIE INVESTIGATION STATUS: " + my_state);
@@ -1062,14 +1067,17 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     // If bool_side_effect is false or undefined, then it will just return what
     // would be the next state. 
     // If bool_side_effect is true then it will set and return the next state
-    function next_state(bool_bool_side_effect) {
+    function next_state(bool_side_effect) {
 	var rs = "";
 
 	if (bool_side_effect == undefined) {
 	    bool_side_effect = true;
 	}
 
-	if (my_state == "st_verification_epoch") {
+	if (my_state == "st_testing") {
+	    rs = "st_terminate";
+	}
+	else if (my_state == "st_verification_epoch") {
 	    if (!is_allcookies_test_done) {
 		rs = "st_allcookies_test";
 	    }
@@ -1107,7 +1115,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    }
 	}
 
-	if (rs == "st_terminate") {
+	if (my_state == "st_terminate") {
 	    final_result();
 	}
 
@@ -1118,17 +1126,24 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     function is_cookie_testing_done() {
 	if (current_cookie_test_index >= tot_cookies) {
 	    if (cookiesets_config == 'none') {
+		console.log("APPU DEBUG: All single-cookies have been tested AND no cookie-sets " +
+			    "testing required. COOKIE-INVESTIGATION: DONE");
 		return true;
 	    }
 	    else {
 		// If no cookiesets to test then obviously we are done.
 		if (cookiesets.length == 0) {
+		    console.log("APPU DEBUG: All single-cookies have been tested AND all cookie-sets " +
+				"are tested. COOKIE-INVESTIGATION: DONE");
 		    return true;
 		}
 
 		// If max-test-attempts done for 'random' then we are done.
 		if (cookiesets_config == 'random' &&
 		    current_cookiesets_test_attempts >= max_rand_cookiesets_test_attempts) {
+		    console.log("APPU DEBUG: All single-cookies have been tested AND maximum random cookiesets(" + 
+				max_rand_cookiesets_test_attempts + ") " +
+				"are tested. COOKIE-INVESTIGATION: DONE");
 		    return true;
 		}
 		return false;
@@ -1179,7 +1194,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	restore_shadow_cookie_store();
 	tot_execution += 1;
 
-	if (my_state != "st_cookie_test_start") {
+	if (my_state != "st_cookie_test_start" &&
+	    my_state != "st_testing") {
 	    login_test_results(am_i_logged_in);
 	}
 
@@ -1187,10 +1203,12 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	if (my_state == 'st_allcookies_test') {
 	    is_allcookies_test_done = true;
 	    console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
+	    console.log("----------------------------------------");
 	}
 	else if (my_state == 'st_single_cookie_test') {
 	    console.log("APPU DEBUG: Webpage fetch complete for: " + account_cookies_array[current_cookie_test_index]);
 	    current_cookie_test_index += 1;
+	    console.log("----------------------------------------");
 	    console.log("APPU DEBUG: New suppress cookie is: " + account_cookies_array[current_cookie_test_index]);
 	}
 	else if (my_state == "st_cookiesets_test") {
@@ -1206,6 +1224,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		current_cookiesets_test_index = 0;
 	    }
 
+	    console.log("----------------------------------------");
 	    disabled_cookies = get_disabled_cookies_in_a_set(cookiesets[current_cookiesets_test_index]);
 	    console.log("APPU DEBUG: New suppress cookieset is: " + cookiesets[current_cookiesets_test_index]);
 	}
@@ -1442,7 +1461,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	var final_cookie_str = "";
 	var curr_domain = get_domain(details.url.split("/")[2]);
 	
-	if (my_state == 'st_cookie_test_start') {
+	if (my_state == 'st_cookie_test_start' ||
+	    my_state == 'st_testing') {
 	    return {requestHeaders: details.requestHeaders};
 	}
 	
@@ -1454,27 +1474,10 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		}
 	    }
 	}
-	
-	if (current_cookie_test_index >= tot_cookies) {
-	    console.log("APPU DEBUG: All cookies for URL(" + url + ") have been tested. " + 
-			"Terminating cookie_investigating_tab");
-	    final_result();
-	    return;
-	}
-	
+		
 	if (my_state == "st_allcookies_test") {
 	    // This is to verify that cookies set during login were indeed account cookies.
 	    return delete_all_cookies_from_HTTP_request(details);
-	}
-	
-	if (tot_execution > tot_cookies) {
-	    // Intentionally checking for '>' than '>=' because the first time this function is
-	    // called, we load 'live.com' and not the intended URL.
-	    console.log("APPU DEBUG: Maximum number of times  URL(" + url + ") have been tested. " + 
-			"However, not all cookies are examined. Current test index: " + 
-			current_cookie_test_index);
-	    terminate_cookie_investigating_tab(tab_id);
-	    return;
 	}
 	
 	for (var i = 0; i < details.requestHeaders.length; i++) {
@@ -1580,7 +1583,6 @@ function detect_account_cookies(current_url, cookie_names, cookiesets_verificati
 	cookiesets_config = cookiesets_verification_config;
     }
 
-
     if (cookie_names == undefined) {
 	account_cookies = get_account_cookies(current_url, false);
     }
@@ -1597,10 +1599,7 @@ function detect_account_cookies(current_url, cookie_names, cookiesets_verificati
 			  ret_functions[3], 
 			  ret_functions[4], 
 			  ret_functions[5], 
-			  ret_functions[6], 
-			  ret_functions[7], 
-			  ret_functions[8], 
-			  ret_functions[9]);
+			  ret_functions[6]);
 }
 
 
