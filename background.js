@@ -498,7 +498,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		delete cookie_investigating_tabs[sender.tab.id];
 	    }
 	    else if (cit.get_state() == 'st_cookie_test_start') {
-		load_page_for_cookie_investigation(tab_id, undefined, true)
+		load_page_for_cookie_investigation(sender.tab.id, undefined, true)
 		return true;
 	    }
 	    else if (cit.get_state() == 'st_allcookies_block_test'     ||
@@ -508,7 +508,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		     cit.get_state() == 'st_single_cookie_test'        ||
 		     cit.get_state() == 'st_cookiesets_test') {
 		// We test here that user is still logged into the web application.
-		check_usernames_for_cookie_investigation(tab_id);
+		check_usernames_for_cookie_investigation(sender.tab.id);
 	    }
 	}
 	else {

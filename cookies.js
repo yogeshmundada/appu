@@ -728,7 +728,7 @@ function check_usernames_for_cookie_investigation(tab_id) {
 	var cit = cookie_investigating_tabs[tab_id];
 	console.log("APPU DEBUG: Sending command to detect usernames to cookie investigating tab");
 	
-	chrome.tabs.sendMessage(sender.tab.id, {
+	chrome.tabs.sendMessage(tab_id, {
 		type: "investigate_cookies",
 		    command: "check_usernames",
 		    usernames : pi_usernames
@@ -777,7 +777,10 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
 					else {
 					    // Just check if there is any username present.
 					    // If so, no need to wait for page to fully reload.
+					    if (cit.get_state() != "st_cookie_test_start" &&
+						cit.get_state() != "st_testing") {
 					    check_usernames_for_cookie_investigation(tab_id);
+					    }
 					}
 					
 					cit.num_pageload_timeouts += 1;
@@ -1063,7 +1066,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     function get_cookie_store_snapshot(cookie_store) {
 	var cb_cookies = (function(cookie_store) {
 		return function(all_cookies) {
-		    var cs = pii_vault.aggregate_data.session_cookie_store[domain];
+		    var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
 		    for (var i = 0; i < all_cookies.length; i++) {
 			var cookie_name = all_cookies[i].name;
 			var cookie_domain = all_cookies[i].domain;
@@ -1209,16 +1212,19 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	return my_state;
     }
     
+
     // Will only tell what would be next state after current state.
     function get_next_state() {
 	return next_state(false);
     }
+
 
     // Will tell what would be next state after current state AND
     // also goto that state.
     function goto_next_state() {
 	return next_state(true);
     }
+
 
     // If bool_side_effect is false or undefined, then it will just return what
     // would be the next state. 
