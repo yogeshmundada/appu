@@ -729,7 +729,7 @@ function open_cookie_slave_tab(url,
 			       web_request_fully_fetched,
 			       print_cookie_investigation_state,
 			       get_state,
-			       report_error) {
+			       report_fatal_error) {
     //Just some link so that appu content script runs on it.
     var default_url = 'http://live.com';
    
@@ -747,7 +747,7 @@ function open_cookie_slave_tab(url,
 				 web_request_fully_fetched,
 				 print_cookie_investigation_state,
 				 get_state,
-				 report_error) {
+				 report_fatal_error) {
 			   return function slave_tab_callback(tab) {
 			       var filter = {};
 			       
@@ -778,11 +778,13 @@ function open_cookie_slave_tab(url,
 			       cookie_investigating_tabs[tab.id] = {};
 			       cookie_investigating_tabs[tab.id].reload_interval = undefined;
 			       cookie_investigating_tabs[tab.id].url = url;
+			       cookie_investigating_tabs[tab.id].num_pageload_timeouts = 0;
+			       cookie_investigating_tabs[tab.id].page_load_success = false;
 			       cookie_investigating_tabs[tab.id].web_request_fully_fetched = web_request_fully_fetched;
 			       cookie_investigating_tabs[tab.id].print_cookie_investigation_state = 
 				   print_cookie_investigation_state;
 			       cookie_investigating_tabs[tab.id].get_state = get_state; 
-			       cookie_investigating_tabs[tab.id].report_error = report_error; 
+			       cookie_investigating_tabs[tab.id].report_fatal_error = report_fatal_error; 
 		    
 			       // This is so that the tab can be terminated from this selecting cookie suppressing
 			       // once all cookies have been examined.
@@ -795,7 +797,7 @@ function open_cookie_slave_tab(url,
 			  web_request_fully_fetched,
 			  print_cookie_investigation_state,
 			  get_state,
-			  report_error));
+			  report_fatal_error));
 }
 
 
@@ -823,9 +825,9 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     var tot_execution = 0;
     var tab_id = 0;
 
-    var bool_all_account_cookies_in_default_store = false;
-    var bool_all_account_cookies_in_during_cookies = false;
-    var bool_account_cookies_not_in_nonduring_cookies = false;
+    var bool_all_account_cookies_in_default_store = undefined;
+    var bool_account_cookies_in_during_cookies = undefined;
+    var bool_account_cookies_not_in_nonduring_cookies = undefined;
 
     var my_domain = get_domain(url.split("/")[2]);
     var orig_cookie_store = {};
@@ -1048,7 +1050,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	tab_id = my_tab_id;
 	shut_tab_forcefully = window.setTimeout(function() {
 		console.log("APPU DEBUG: In forceful shutdown for COOKIE-INVESTIGATOR-TAB: " + my_url);
-		report_error("hard-timeout");
+		report_fatal_error("hard-timeout");
 	    }, 300 * 1000);
     }
     
@@ -1069,18 +1071,18 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    else {
 		console.log("APPU DEBUG: VERIFIED, ACCOUNT-COOKIES are *NOT* present in default-cookie-store");
 		bool_all_account_cookies_in_default_store = false;
-		report_error("account-cookies are not in default-cookie-store OR usernames are not present");
+		report_fatal_error("account-cookies are not in default-cookie-store OR usernames are not present");
 	    }
 	}
 	else if (my_state == "st_during_cookies_pass_test") {
 	    if (am_i_logged_in) {
 		console.log("APPU DEBUG: ACCOUNT-COOKIES are present in 'DURING' cookies");
-		bool_all_account_cookies_in_during_cookies = true;
+		bool_account_cookies_in_during_cookies = true;
 	    }
 	    else {
 		console.log("APPU DEBUG: Not all ACCOUNT-COOKIES are present in 'DURING' cookies");
-		bool_all_account_cookies_in_during_cookies = false;
-		report_error("not all account-cookies in 'during' cookies");
+		bool_account_cookies_in_during_cookies = false;
+		report_fatal_error("not all account-cookies in 'during' cookies");
 	    }
 	}
 	else if (my_state == "st_during_cookies_block_test") {
@@ -1091,7 +1093,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    else {
 		console.log("APPU DEBUG: ACCOUNT-COOKIES are present in non-'DURING' cookies");
 		bool_account_cookies_not_in_nonduring_cookies = false;
-		report_error("account cookies in non-'during' cookies");
+		report_fatal_error("account cookies in non-'during' cookies");
 	    }
 	}
 	else {
@@ -1250,12 +1252,22 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    console.log("------ FINAL RESULT ------");
 	    console.log("APPU DEBUG: Cookies investigated for URL: " + my_url);
 
-       	    if (bool_account_cookies_set_correct) {
-		print_appu_error("APPU DEBUG: Cookies with class 'during' indeed contain account cookies for: " + 
+       	    if (bool_all_account_cookies_in_default_store) {
+		print_appu_error("APPU DEBUG: All account-cookies present in the default-cookie-store: " + 
 				 my_domain);
 	    }
 	    else {
-		print_appu_error("APPU Error: Cookies with class 'during' *DO NOT* contain account cookies for: " + 
+		print_appu_error("APPU Error: All account-cookies are *NOT* present in the default-cookie-store: " + 
+				 my_domain);
+	    }
+
+       	    if (bool_account_cookies_in_during_cookies &&
+		bool_account_cookies_not_in_nonduring_cookies) {
+		print_appu_error("APPU DEBUG: All account-cookies present *ONLY* in the 'DURING' cookies" + 
+				 my_domain);
+	    }
+	    else {
+		print_appu_error("APPU DEBUG: Not all account-cookies present in the 'DURING' cookies" + 
 				 my_domain);
 	    }
 	
@@ -1277,7 +1289,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     }
     
     
-    function report_error(reason) {
+    function report_fatal_error(reason) {
 	// This function will take care of all the major errors that would hamper 
 	// cookie testing. 
 	// Error conditions to be taken care of:
@@ -1320,7 +1332,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
 	    }
 	    else {
-		report_error("all-account-cookies-in-default-store test not finished");
+		report_fatal_error("all-account-cookies-in-default-store test not finished");
 	    }
 	    console.log("----------------------------------------");
 	}
@@ -1330,7 +1342,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL 'DURING' PASS");
 	    }
 	    else {
-		report_error("all-during-cookies-pass test not finished");
+		report_fatal_error("all-during-cookies-pass test not finished");
 	    }
 	    console.log("----------------------------------------");
 	}
@@ -1340,18 +1352,29 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
 	    }
 	    else {
-		report_error("all-during-cookies-block test not finished");
+		report_fatal_error("all-during-cookies-block test not finished");
 	    }
 	    console.log("----------------------------------------");
 	}
 	else if (my_state == 'st_single_cookie_test') {
-	    console.log("APPU DEBUG: Webpage fetch complete for: " + account_cookies_array[current_cookie_test_index]);
+	    if (test_finished) {
+		console.log("APPU DEBUG: Webpage fetch complete for: " + account_cookies_array[current_cookie_test_index]);
+	    }
+	    else {
+		console.log("APPU DEBUG: Webpage fetch failed for: " + account_cookies_array[current_cookie_test_index]);
+	    }
+
 	    current_cookie_test_index += 1;
 	    console.log("----------------------------------------");
 	    console.log("APPU DEBUG: New suppress cookie is: " + account_cookies_array[current_cookie_test_index]);
 	}
 	else if (my_state == "st_cookiesets_test") {
-	    console.log("APPU DEBUG: Webpage fetch complete for: " + JSON.stringify(disabled_cookies));
+	    if (test_finished) {
+		console.log("APPU DEBUG: Webpage fetch complete for: " + JSON.stringify(disabled_cookies));
+	    }
+	    else {
+		console.log("APPU DEBUG: Webpage fetch failed for: " + JSON.stringify(disabled_cookies));
+	    }
 
 	    current_cookiesets_test_attempts += 1;
 	    cookiesets.splice(current_cookiesets_test_index, 1);
@@ -1690,7 +1713,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    web_request_fully_fetched,
 	    print_cookie_investigation_state,
 	    get_state,
-	    report_error
+	    report_fatal_error
 	    ];
 }
 

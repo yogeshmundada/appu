@@ -376,7 +376,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		am_i_logged_in = true;
 	    }
 
-	    var next_state = cit.web_request_fully_fetched(am_i_logged_in);
+	    var next_state = cit.web_request_fully_fetched(am_i_logged_in, true);
 
 	    if (next_state != "st_terminate") {
 		// The actual command to cookie-investigating-tabs is sent after some
@@ -395,8 +395,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 				};
 				sendResponse(r);
 
+				cit.num_pageload_timeouts = 0;
+				cit.page_load_success = false;
 				console.log("APPU DEBUG: Setting reload-interval for: " + sender.tab.id);
-				cit.reload_interval = window.setInterval((function(tab_id) {
+				cit.pageload_timeout = window.setInterval((function(tab_id) {
 					    return function() {
 						var cit = cookie_investigating_tabs[tab_id];
 						console.log("APPU DEBUG: ERROR, Cookie Investigator Tab, page-load timeout, " + 
@@ -405,6 +407,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 						chrome.tabs.reload(tab_id, {
 							bypassCache: true
 							    });
+						cit.num_pageload_timeouts += 1;
 					    }
 					})(sender.tab.id), 30 * 1000);
 
@@ -512,10 +515,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	else if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
 
-	    if (cit.reload_interval != undefined) {
+	    cit.page_load_success = true;
+	    if (cit.pageload_timeout != undefined) {
 		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id);
-		window.clearInterval(cit.reload_interval);
-		cit.reload_interval = undefined;
+		window.clearInterval(cit.pageload_timeout);
+		cit.pageload_timeout = undefined;
 	    }
 
 	    if (cit.get_state() == 'st_testing') {
@@ -526,11 +530,13 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		}
 
 		sendResponse(r);
+		cit.page_load_success = false;
+
 		console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (testing)");
 		delete cookie_investigating_tabs[sender.tab.id];
 	    }
 	    else if (cit.get_state() == 'st_cookie_test_start') {
-		var next_state = cit.web_request_fully_fetched();
+		var next_state = cit.web_request_fully_fetched(undefined, true);
 
 		if (next_state != "st_terminate") {
 		    // The actual command to cookie-investigating-tabs is sent after some
@@ -548,8 +554,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 				sendResponse(r);
 
+				cit.num_pageload_timeouts = 0;
+				cit.page_load_success = false;
 				console.log("APPU DEBUG: Setting reload-interval for: " + sender.tab.id);
-				cit.reload_interval = window.setInterval((function(tab_id) {
+				cit.pageload_timeout = window.setInterval((function(tab_id) {
 					    return function() {
 						var cit = cookie_investigating_tabs[tab_id];
 						console.log("APPU DEBUG: ERROR, Cookie Investigator Tab, page-load timeout, " + 
@@ -558,6 +566,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 						chrome.tabs.reload(tab_id, {
 							bypassCache: true
 						    });
+						cit.num_pageload_timeouts += 1;
 					    }
 					})(sender.tab.id), 30 * 1000);
 
