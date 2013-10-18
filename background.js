@@ -137,7 +137,7 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
-// Total messages: 52
+// Total messages: 53
 // Messages that can't be ignored (even if disabled): 38
 // Message name, To be ignored when disabled
 // Messages sent by content-script:
@@ -153,13 +153,14 @@ chrome.cookies.onChanged.addListener(cookie_change_detected);
 // 10. "log_error", yes
 // 11. "record_prelogin_cookies", yes
 // 12. "hello_appu", yes
-// 13. "usernames_detected", yes
-// 14. "remind_report_later", NO
-// 15. "close_report_reminder", NO
-// 16. "review_and_send_report", NO
-// 17. "am_i_active", NO
-// 18. "query_status", NO
-// 19. "clear_pending_warnings", NO
+// 13. "content_script_started", yes
+// 14. "usernames_detected", yes
+// 15. "remind_report_later", NO
+// 16. "close_report_reminder", NO
+// 17. "review_and_send_report", NO
+// 18. "am_i_active", NO
+// 19. "query_status", NO
+// 20. "clear_pending_warnings", NO
 
 // Messages sent by popup:
 // 1. "get-signin-status", NO
@@ -223,7 +224,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    "log_error",
 	    "record_prelogin_cookies",
 	    "usernames_detected",
-	    "hello_appu"
+	    "hello_appu",
+	    "content_script_started"
 	];
 
 	if (ignore_messages.indexOf(message.type) != -1 ) {
@@ -233,6 +235,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
     if (message.type == "user_input") {
 	r = pii_log_user_input_type(message);
+    }
+    else if (message.type == "content_script_started") {
+	if (sender.tab) {
+	    console.log("APPU DEBUG: Content script is started on: " + sender.tab.id);
+	}
     }
     else if (message.type == "log_error") {
 	var err_msg = message.error;
@@ -399,7 +406,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 							bypassCache: true
 							    });
 					    }
-					})(sender.tab.id), 15 * 1000);
+					})(sender.tab.id), 30 * 1000);
 
 			}
 			})(r, sendResponse, sender, next_state), 0.1 * 1000);
@@ -552,7 +559,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 							bypassCache: true
 						    });
 					    }
-					})(sender.tab.id), 15 * 1000);
+					})(sender.tab.id), 30 * 1000);
 
 				console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (" + 
 					    next_state + ")");
@@ -563,9 +570,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 		return true;
 	    }
-	    else if (cit.get_state() == 'st_allcookies_test'    ||
-		     cit.get_state() == 'st_verification_epoch' ||
-		     cit.get_state() == 'st_single_cookie_test' ||
+	    else if (cit.get_state() == 'st_allcookies_block_test'  ||
+		     cit.get_state() == 'st_verification_epoch'     ||
+		     cit.get_state() == 'st_single_cookie_test'     ||
 		     cit.get_state() == 'st_cookiesets_test') {
 		// We test here that user is still logged into the web application.
 		var pi_usernames = get_all_usernames();

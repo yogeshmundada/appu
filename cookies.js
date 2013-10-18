@@ -829,8 +829,20 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     // "st_cookie_test_start"                      : Loading some default webpage so that Appu content script runs.
     // "st_verification_epoch"                     : Reloading site page without suppressing any cookies.
     //                                             : After reloading site page, checks if user is logged-in.
-    // "st_allcookies_test"                        : Reloading site page with suppressing a single cookie each time.
+    // "st_allcookies_block_test"                  : Reload the site page. Start with empty shadow-cookie-store.
     //                                               After reloading site page, tests if user is still logged-in. 
+    //                                               If user is not, that verifies that some of the cookies set
+    //                                               are actually "ACCOUNT-COOKIES".
+    // "st_during_cookies_pass_test"               : Reloading site page with passing only all 'DURING' cookies.
+    //                                               Starts with a shadow-cookie-store and copy only 'DURING' cookies
+    //                                               to it. During webpage fetch, other cookies may get set in the
+    //                                               shadow-cookie-store. After loading, check if usernames are present.
+    // "st_during_cookies_block_test"              : Reloading site page by suppressing all 'DURING' cookies.
+    //                                               After reloading site page, tests if user is still logged-in. 
+    //
+    //  Both 'st_during_cookies_pass_test' & 'st_during_cookies_block_test' will confirm that actual "ACCOUNT-COOKIES"
+    //  are subset of 'DURING' cookies *ONLY*. This is expected, otherwise we are detecting 'DURING' cookies incorrectly.
+    //
     // "st_single_cookie_test"                     : Reloading site page with suppressing a single cookie each time.
     //                                               After reloading site page, tests if user is still logged-in. 
     // "st_cookiesets_test"                        : Reloading site page by suppressing a cookie-set each time.
@@ -970,16 +982,44 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	cookiesets = new_cookiesets;
     }
     
-    
+
     function get_cookie_store_snapshot(cookie_store) {
 	var cb_cookies = (function(cookie_store) {
 		return function(all_cookies) {
+		    var cs = pii_vault.aggregate_data.session_cookie_store[domain];
 		    for (var i = 0; i < all_cookies.length; i++) {
 			var cookie_name = all_cookies[i].name;
 			var cookie_domain = all_cookies[i].domain;
 			var cookie_path = all_cookies[i].path;
 			var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
 			var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
+			
+			if (my_state == "st_during_cookies_pass_test") {
+			    if (cs.cookies[cookie_key].cookie_class != 'during') {
+				// We only want 'DURING' cookies in this epoch
+				continue;
+			    }
+			}
+			else if (my_state == "st_during_cookies_block_test") {
+			    if (cs.cookies[cookie_key].cookie_class == 'during') {
+				// We do *NOT* want any 'DURING' cookies in this epoch
+				continue;
+			    }
+			}
+			else if (my_state == 'st_single_cookie_test') {
+			    var curr_test_cookie_name = account_cookies_array[current_cookie_test_index];
+			    if (curr_test_cookie_name == cookie_key) {
+				continue;
+			    }
+			}
+			else if (my_state == 'st_cookiesets_test') {
+			    // If the cookie is in the set of disabled-cookie-sets in this 
+			    // iteration, then ignore it.
+			    if (disabled_cookies.indexOf(cookie_key) != -1) {
+				continue;
+			    }
+			}
+
 			cookie_store[cookie_key] = all_cookies[i];
 		    }
 		}
@@ -991,7 +1031,10 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 
     function restore_shadow_cookie_store() {
 	//shadow_cookie_store = $.extend(true, {}, orig_cookie_store);
-	get_cookie_store_snapshot(shadow_cookie_store);
+	shadow_cookie_store = {};
+	if (my_state != "st_allcookies_block_test") {
+	    get_cookie_store_snapshot(shadow_cookie_store);
+	}
     }
     
     
@@ -1012,7 +1055,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     
     
     function update_cookie_status(am_i_logged_in) {
-	if (my_state == "st_allcookies_test") {
+	if (my_state == "st_allcookies_block_test") {
 	    if (!am_i_logged_in) {
 		console.log("APPU DEBUG: VERIFIED, 'during' cookies contain account_cookies");
 		bool_account_cookies_set_correct = true;
@@ -1088,7 +1131,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	}
 	else if (my_state == "st_verification_epoch") {
 	    if (!is_allcookies_test_done) {
-		rs = "st_allcookies_test";
+		rs = "st_allcookies_block_test";
 	    }
 	    else if (current_cookie_test_index < tot_cookies) {
 		rs = "st_single_cookie_test";
@@ -1103,7 +1146,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    }
 	}
 	else if (my_state == "st_cookie_test_start"  ||
-		 my_state == "st_allcookies_test"    ||
+		 my_state == "st_allcookies_block_test"    ||
 		 my_state == "st_single_cookie_test" ||
 		 my_state == "st_cookiesets_test") {
 	    rs = "st_verification_epoch";
@@ -1111,8 +1154,9 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 
 	if (bool_side_effect) {
 	    my_state = rs;
-	    if (my_state == "st_cookiesets_test" &&
-		current_cookiesets_test_index == -1) {
+	    if (my_state == "st_cookiesets_test" && current_cookiesets_test_index == -1) {
+		// This is just to initialize. After this, this functionality will be taken care of
+		// in web_request_fully_fetched()
 		if (cookiesets_config == "random") {
 		    current_cookiesets_test_index = generate_random_cookieset_index();
 		}
@@ -1218,19 +1262,23 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     // For all those GET requests, same cookie must be blocked.
     // Thus, someone else from outside will have to know that the webpage fetch
     // is complete and we should move to suppress next cookie.
-    function web_request_fully_fetched(am_i_logged_in) {
-	restore_shadow_cookie_store();
+    function web_request_fully_fetched(am_i_logged_in, test_finished) {
 	tot_execution += 1;
 
 	if (my_state != "st_cookie_test_start" &&
 	    my_state != "st_testing") {
-	    login_test_results(am_i_logged_in);
+	    login_test_results(am_i_logged_in, test_finished);
 	}
 
 	// Code to for setting initial values for next epoch.
-	if (my_state == 'st_allcookies_test') {
-	    is_allcookies_test_done = true;
-	    console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
+	if (my_state == 'st_allcookies_block_test') {
+	    if (test_finished) {
+		is_allcookies_test_done = true;
+		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
+	    }
+	    else {
+		report_error("all-during-cookies-test failed");
+	    }
 	    console.log("----------------------------------------");
 	}
 	else if (my_state == 'st_single_cookie_test') {
@@ -1257,8 +1305,11 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    console.log("APPU DEBUG: New suppress cookieset is: " + JSON.stringify(disabled_cookies));
 	}
 
-	// Goto next state and return the value as well
-	return goto_next_state();
+	// Goto next state, restore_shadow_cookie_store() as per the requirements of new current state
+	// and return the current state.
+	var curr_state = goto_next_state();
+	restore_shadow_cookie_store();
+	return curr_state;
     }
     
     
@@ -1397,7 +1448,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    return;
 	}
 	
-	if (my_state == "st_allcookies_test") {
+	if (my_state == "st_allcookies_block_test") {
 	    // This is to verify that cookies set during login were indeed account cookies.
 	    return delete_all_cookies_from_HTTP_request(details);
 	}
@@ -1469,10 +1520,16 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     }
     
     
-    // This function simply deletes 'Cookie' property from the HTTP request which is 
-    // created by the browser from default cookie store. Instead, it uses shadow_cookie_store
-    // for our "cookie-investigator-tab". When we want to test some specific cookie, we can
-    // simply delete it from shadow_cookie_store. Mind though, sometimes, sites (for e.g. Google)
+    // This function simply deletes the entire 'Cookie' property from the HTTP request which is 
+    // created by the browser from "default cookie store". Instead, it uses shadow_cookie_store
+    // for our "cookie-investigator-tab". Depending on the cookie investigation state, the shadow-cookie-store
+    // is populated by omitting certain cookie(s). This has added advantage that if a certain cookie is not
+    // present but others are, then the server might set is in the first HTTP response. 
+    // We will in turn set it in the shadow_cookie_store. 
+    // Hence, the deleted cookie will be available for next HTTP request even if
+    // we deleted it at the start in the shadow_cookie_store. If this is not done, then the webpage fetch
+    // hangs for sites (because a single web page fech request consists of a lot of HTTP requests).
+    // Sometimes, sites (for e.g. Google)
     // will check if other 'account cookies' are present and if so, will recreate the deleted cookie.
     // Once again, this recreation will happen in our shadow_cookie_store. But, we have to be careful 
     // and see if the value has been modified and if so, then carefully merge down the changes 
@@ -1502,12 +1559,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		}
 	    }
 	}
-		
-	if (my_state == "st_allcookies_test") {
-	    // This is to verify that cookies set during login were indeed account cookies.
-	    return delete_all_cookies_from_HTTP_request(details);
-	}
-	
+			
 	for (var i = 0; i < details.requestHeaders.length; i++) {
 	    if (details.requestHeaders[i].name == "Cookie") {
 		original_http_request_cookies = details.requestHeaders.splice(i, 1);
@@ -1531,19 +1583,6 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    var cookie_name_value = shadow_cookie_store[c].name + '=' + shadow_cookie_store[c].value;
 	    var curr_test_cookie_name = account_cookies_array[current_cookie_test_index];
 	    var shadow_cookie_name = cookie_url + ':' + shadow_cookie_store[c].name;
-
-	    if (my_state == 'st_single_cookie_test') {
-		if (curr_test_cookie_name == shadow_cookie_name) {
-		    continue;
-		}
-	    }
-	    else if (my_state == 'st_cookiesets_test') {
-		// If the cookie is in the set of disabled-cookie-sets in this 
-		// iteration, then ignore it.
-		if (disabled_cookies.indexOf(shadow_cookie_name) != -1) {
-		    continue;
-		}
-	    }
 	    
 	    if (is_subdomain(cookie_url, details.url)) {
 		if (shadow_cookie_store[c].session) {
@@ -1642,7 +1681,7 @@ function detect_account_cookies(current_url, cookie_names, cookiesets_verificati
 // only returns those cookies and their values.
 // Useful when one wants to test only one or two cookies.
 
-// Testing shadow cookie store.
+// Testing shadow-cookie-store.
 // test_get_cookie_store_snapshot('facebook.com', test_shadow_cookie_store); test_specific_tab(1305); test_record_specific_tab_cookies(1305)
 
 var test_shadow_cookie_store = {};

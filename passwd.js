@@ -1188,7 +1188,7 @@ function detect_if_user_logged_in() {
 	message.value = 'yes';
 	message.domain = document.domain;
 	chrome.extension.sendMessage("", message);
-	console.log("APPU DEBUG: Sending message that I am signed in");
+	console.log("APPU DEBUG: Sending SignIn status: YES");
 	am_i_logged_in = true;
 
 	$(signout_elements).on('click.monitor_explicit_logouts', monitor_explicit_logouts);
@@ -1200,7 +1200,7 @@ function detect_if_user_logged_in() {
 	message.value = 'no';
 	message.domain = document.domain;
 	chrome.extension.sendMessage("", message);
-	console.log("APPU DEBUG: Sending message that I am *NOT* signed in");
+	console.log("APPU DEBUG: Sending SignIn status: NO");
     }
     else {
 	var message = {};
@@ -1208,7 +1208,7 @@ function detect_if_user_logged_in() {
 	message.value = 'unsure';
 	message.domain = document.domain;
 	chrome.extension.sendMessage("", message);
-	console.log("APPU DEBUG: Sending message that SignIn status is *UNSURE*");
+	console.log("APPU DEBUG: Sending SignIn status: UNSURE");
     }
 }
 
@@ -1316,8 +1316,16 @@ if (document.URL.match(/.pdf$/) == null) {
     $(window).on("focus", window_focused);
     $(window).on("blur", window_unfocused);
 
+    var message = {
+	type : "content_script_started",
+	url : document.domain
+    }
+    chrome.extension.sendMessage("", message);
+
     $(document).ready(function() {
 	    store_pwd_elements();
+	    
+	    console.log("Here here: Sending 'query_status' message");
 
 	    var message = {};
 	    message.type = "query_status";
