@@ -808,6 +808,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     // cookies with 'during' class. This verifies that at least
     // a subset of 'during' class cookies are actually account-cookies.
     var is_allcookies_test_done = false;
+    var is_during_cookies_pass_test_done = false;
+    var is_during_cookies_block_test_done = false;
     var current_cookie_test_index = 0;
     var account_cookies_array = Object.keys(account_cookies);
     account_cookies_array.sort();
@@ -820,7 +822,11 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     var tot_cookies = Object.keys(account_cookies).length;
     var tot_execution = 0;
     var tab_id = 0;
-    var bool_account_cookies_set_correct = false;
+
+    var bool_all_account_cookies_in_default_store = false;
+    var bool_all_account_cookies_in_during_cookies = false;
+    var bool_account_cookies_not_in_nonduring_cookies = false;
+
     var my_domain = get_domain(url.split("/")[2]);
     var orig_cookie_store = {};
     
@@ -1057,8 +1063,35 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     function update_cookie_status(am_i_logged_in) {
 	if (my_state == "st_allcookies_block_test") {
 	    if (!am_i_logged_in) {
-		console.log("APPU DEBUG: VERIFIED, 'during' cookies contain account_cookies");
-		bool_account_cookies_set_correct = true;
+		console.log("APPU DEBUG: VERIFIED, ACCOUNT-COOKIES are present in default-cookie-store");
+		bool_all_account_cookies_in_default_store = true;
+	    }
+	    else {
+		console.log("APPU DEBUG: VERIFIED, ACCOUNT-COOKIES are *NOT* present in default-cookie-store");
+		bool_all_account_cookies_in_default_store = false;
+		report_error("account-cookies are not in default-cookie-store OR usernames are not present");
+	    }
+	}
+	else if (my_state == "st_during_cookies_pass_test") {
+	    if (am_i_logged_in) {
+		console.log("APPU DEBUG: ACCOUNT-COOKIES are present in 'DURING' cookies");
+		bool_all_account_cookies_in_during_cookies = true;
+	    }
+	    else {
+		console.log("APPU DEBUG: Not all ACCOUNT-COOKIES are present in 'DURING' cookies");
+		bool_all_account_cookies_in_during_cookies = false;
+		report_error("not all account-cookies in 'during' cookies");
+	    }
+	}
+	else if (my_state == "st_during_cookies_block_test") {
+	    if (!am_i_logged_in) {
+		console.log("APPU DEBUG: ACCOUNT-COOKIES are *NOT* present in non-'DURING' cookies");
+		bool_account_cookies_not_in_nonduring_cookies = true;
+	    }
+	    else {
+		console.log("APPU DEBUG: ACCOUNT-COOKIES are present in non-'DURING' cookies");
+		bool_account_cookies_not_in_nonduring_cookies = false;
+		report_error("account cookies in non-'during' cookies");
 	    }
 	}
 	else {
@@ -1126,28 +1159,34 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    bool_side_effect = true;
 	}
 
-	if (my_state == "st_testing") {
+	if (is_cookie_testing_done()) {
+	    rs = "st_terminate";
+	}
+	else if (my_state == "st_testing") {
 	    rs = "st_terminate";
 	}
 	else if (my_state == "st_verification_epoch") {
 	    if (!is_allcookies_test_done) {
 		rs = "st_allcookies_block_test";
 	    }
+	    else if (!is_during_cookies_pass_test_done) {
+		rs = "st_during_cookies_pass_test";
+	    }
+	    else if (!is_during_cookies_block_test_done) {
+		rs = "st_during_cookies_block_test";
+	    }
 	    else if (current_cookie_test_index < tot_cookies) {
 		rs = "st_single_cookie_test";
 	    }
 	    else if (current_cookie_test_index >= tot_cookies) {
-		if (is_cookie_testing_done()) {
-		    rs = "st_terminate";
-		}
-		else {
-		    rs = "st_cookiesets_test";
-		}
+		rs = "st_cookiesets_test";
 	    }
 	}
-	else if (my_state == "st_cookie_test_start"  ||
-		 my_state == "st_allcookies_block_test"    ||
-		 my_state == "st_single_cookie_test" ||
+	else if (my_state == "st_cookie_test_start"         ||
+		 my_state == "st_allcookies_block_test"     ||
+		 my_state == "st_during_cookies_pass_test"  ||
+		 my_state == "st_during_cookies_block_test" ||
+		 my_state == "st_single_cookie_test"        ||
 		 my_state == "st_cookiesets_test") {
 	    rs = "st_verification_epoch";
 	}
@@ -1265,6 +1304,10 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     function web_request_fully_fetched(am_i_logged_in, test_finished) {
 	tot_execution += 1;
 
+	if (test_finished == undefined) {
+	    test_finished = false;
+	}
+
 	if (my_state != "st_cookie_test_start" &&
 	    my_state != "st_testing") {
 	    login_test_results(am_i_logged_in, test_finished);
@@ -1277,7 +1320,27 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
 	    }
 	    else {
-		report_error("all-during-cookies-test failed");
+		report_error("all-account-cookies-in-default-store test not finished");
+	    }
+	    console.log("----------------------------------------");
+	}
+	else if (my_state == 'st_during_cookies_pass_test') {
+	    if (test_finished) {
+		is_during_cookies_pass_test_done = true;
+		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL 'DURING' PASS");
+	    }
+	    else {
+		report_error("all-during-cookies-pass test not finished");
+	    }
+	    console.log("----------------------------------------");
+	}
+	else if (my_state == 'st_during_cookies_block_test') {
+	    if (test_finished) {
+		is_allcookies_test_done = true;
+		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
+	    }
+	    else {
+		report_error("all-during-cookies-block test not finished");
 	    }
 	    console.log("----------------------------------------");
 	}
