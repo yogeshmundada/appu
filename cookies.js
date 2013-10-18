@@ -747,11 +747,12 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
     var cit = cookie_investigating_tabs[tab_id];
     var next_state = cit.web_request_fully_fetched(am_i_logged_in, test_done);
     
+
     if (next_state != "st_terminate") {
 	// The actual command to cookie-investigating-tabs is sent after some
 	// delay so that shadow_cookie_store actually gets populated 
 	// (its async call to populate it)
-	window.setTimeout((function(tab_id) {
+	restore_shadow_cookie_store((function(tab_id) {
 		    return function() {
 			var cit = cookie_investigating_tabs[tab_id];
 			console.log("APPU DEBUG: COOKIE INVESTIGATOR STATE(" + cit.get_state() + ")");
@@ -787,7 +788,7 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
 				    }
 				})(tab_id), 30 * 1000);
 		    }
-		})(tab_id), 0.1 * 1000);
+		})(tab_id));
     }
 }
 
@@ -947,8 +948,6 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     // At the start of each new WebRequest (Not HTTP Get request), it
     // will be repopulated from the basic cookie-store.
     var shadow_cookie_store = {};
-    get_cookie_store_snapshot(shadow_cookie_store);
-    //get_cookie_store_snapshot(orig_cookie_store);
     
     var verified_account_cookiesets = [];
     var max_rand_cookiesets_test_attempts = 3;
@@ -1063,8 +1062,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     }
     
 
-    function get_cookie_store_snapshot(cookie_store) {
-	var cb_cookies = (function(cookie_store) {
+    function get_cookie_store_snapshot(cookie_store, cb_shadow_restored) {
+	var cb_cookies = (function(cookie_store, cb_shadow_restored) {
 		return function(all_cookies) {
 		    var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
 		    for (var i = 0; i < all_cookies.length; i++) {
@@ -1102,18 +1101,22 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 
 			cookie_store[cookie_key] = all_cookies[i];
 		    }
+		    cb_shadow_restored();
 		}
-	    })(cookie_store);
+	    })(cookie_store, cb_shadow_restored);
 	
 	get_all_cookies(my_domain, cb_cookies);
     }
     
 
-    function restore_shadow_cookie_store() {
+    function restore_shadow_cookie_store(cb_shadow_restored) {
 	//shadow_cookie_store = $.extend(true, {}, orig_cookie_store);
 	shadow_cookie_store = {};
 	if (my_state != "st_allcookies_block_test") {
-	    get_cookie_store_snapshot(shadow_cookie_store);
+	    get_cookie_store_snapshot(shadow_cookie_store, cb_shadow_restored);
+	}
+	else {
+	    cb_shadow_restored();
 	}
     }
     
@@ -1432,8 +1435,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	}
 	else if (my_state == 'st_during_cookies_block_test') {
 	    if (test_finished) {
-		is_allcookies_test_done = true;
-		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
+		is_during_cookies_block_test_done = true;
+		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL 'DURING' BLOCK");
 	    }
 	    else {
 		report_fatal_error("all-during-cookies-block test not finished");
@@ -1475,11 +1478,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    console.log("APPU DEBUG: New suppress cookieset is: " + JSON.stringify(disabled_cookies));
 	}
 
-	// Goto next state, restore_shadow_cookie_store() as per the requirements of new current state
-	// and return the current state.
-	var curr_state = goto_next_state();
-	restore_shadow_cookie_store();
-	return curr_state;
+	// Goto next state, and return the next state.
+	return goto_next_state();
     }
     
     
