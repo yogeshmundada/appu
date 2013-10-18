@@ -755,7 +755,7 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
 		    return function() {
 			var cit = cookie_investigating_tabs[tab_id];
 			console.log("APPU DEBUG: COOKIE INVESTIGATOR STATE(" + cit.get_state() + ")");
-
+			
 			chrome.tabs.sendMessage(tab_id, {
 				type: "investigate_cookies",
 				    command: "load_page",
@@ -1389,12 +1389,16 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	}
 
 	if (my_state != "st_cookie_test_start" &&
-	    my_state != "st_testing") {
-	    login_test_results(am_i_logged_in, test_finished);
+	    my_state != "st_testing" && 
+	    test_finished) {
+	    login_test_results(am_i_logged_in);
 	}
 
 	// Code to for setting initial values for next epoch.
-	if (my_state == 'st_allcookies_block_test') {
+	if (my_state == 'st_verification_epoch') {
+	    report_fatal_error("verification test not finished");
+	}
+	else if (my_state == 'st_allcookies_block_test') {
 	    if (test_finished) {
 		is_allcookies_test_done = true;
 		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
