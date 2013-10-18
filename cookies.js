@@ -721,6 +721,74 @@ function get_selective_account_cookies(current_url, cookie_names) {
 }
 
 
+function check_usernames_for_cookie_investigation(tab_id) {
+    var pi_usernames = get_all_usernames();
+
+    if (pi_usernames.length > 0) {
+	var cit = cookie_investigating_tabs[tab_id];
+	console.log("APPU DEBUG: Sending command to detect usernames to cookie investigating tab");
+	
+	chrome.tabs.sendMessage(sender.tab.id, {
+		type: "investigate_cookies",
+		    command: "check_usernames",
+		    usernames : pi_usernames
+		    });
+    }
+    else {
+	console.log("APPU DEBUG: Terminating cookie investigating tab " + 
+		    "because no usernames to investigate from");
+	report_fatal_error("No usernames present for cookie-investigation");
+    }
+}
+
+
+// Loads a webpage to investigate cookies.
+function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
+    var cit = cookie_investigating_tabs[tab_id];
+    var next_state = cit.web_request_fully_fetched(am_i_logged_in, test_done);
+    
+    if (next_state != "st_terminate") {
+	// The actual command to cookie-investigating-tabs is sent after some
+	// delay so that shadow_cookie_store actually gets populated 
+	// (its async call to populate it)
+	window.setTimeout((function(tab_id) {
+		    return function() {
+			var cit = cookie_investigating_tabs[tab_id];
+			console.log("APPU DEBUG: COOKIE INVESTIGATOR STATE(" + cit.get_state() + ")");
+
+			chrome.tabs.sendMessage(tab_id, {
+				type: "investigate_cookies",
+				    command: "load_page",
+				    url: cit.url
+				    });
+			
+			cit.num_pageload_timeouts = 0;
+			cit.page_load_success = false;
+
+			console.log("APPU DEBUG: Setting reload-interval for: " + tab_id);
+
+			cit.pageload_timeout = window.setInterval((function(tab_id) {
+				    return function() {
+					var cit = cookie_investigating_tabs[tab_id];
+					if (cit.num_pageload_timeouts > 2) {
+					    window.clearInterval(cit.pageload_timeout);
+					    load_page_for_cookie_investigation(tab_id, undefined, false);
+					}
+					else {
+					    // Just check if there is any username present.
+					    // If so, no need to wait for page to fully reload.
+					    check_usernames_for_cookie_investigation(tab_id);
+					}
+					
+					cit.num_pageload_timeouts += 1;
+				    }
+				})(tab_id), 30 * 1000);
+		    }
+		})(tab_id), 0.1 * 1000);
+    }
+}
+
+
 // Open a tab to check if a cookie is an account cookie
 function open_cookie_slave_tab(url, 
 			       http_request_cb,

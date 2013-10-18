@@ -879,15 +879,6 @@ function is_status_active(response) {
 
 	$('#appu-template-process').dialog("open");
     }
-    else if(response.status == "investigate_cookies") {
-	if (response.command == "load_page") {
-	    console.log("Here here: Loading page again to investigate cookies");
-	    window.location.href = response.url;
-	}
-	else if (response.command == "check_usernames") {
-	    check_if_username_present(response.usernames);
-	}
-    }
     else {
 	console.log("APPU DEBUG: Extension is currently disabled");
     }
@@ -1468,6 +1459,15 @@ if (document.URL.match(/.pdf$/) == null) {
 	    else if (message.type == "check-if-username-present") {
 		check_if_username_present(message.usernames);
 		return true;
+	    }
+	    else if(message.type == "investigate_cookies") {
+		if (message.command == "load_page") {
+		    console.log("Here here: Loading page to investigate cookies");
+		    window.location.href = message.url;
+		}
+		else if (message.command == "check_usernames") {
+		    check_if_username_present(message.usernames);
+		}
 	    }
 	    else if (message.type == "check_passwd_reuse") {
 	    }

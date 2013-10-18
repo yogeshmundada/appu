@@ -370,50 +370,13 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
 	    console.log("APPU DEBUG: Cookie investigating result, cookie(" + message.domain + ") detected usernames: " + 
 			Object.keys(message.present_usernames).length);
-
+	    
 	    var am_i_logged_in = false;
 	    if (Object.keys(message.present_usernames).length > 0) {
 		am_i_logged_in = true;
 	    }
-
-	    var next_state = cit.web_request_fully_fetched(am_i_logged_in, true);
-
-	    if (next_state != "st_terminate") {
-		// The actual command to cookie-investigating-tabs is sent after some
-		// delay so that shadow_cookie_store actually gets populated 
-		// (its async call to populate it)
-		window.setTimeout((function(r, sendResponse, sender, next_state) {
-			    return function() {
-				var cit = cookie_investigating_tabs[sender.tab.id];
-
-				console.log("APPU DEBUG: COOKIE INVESTIGATOR STATE(" + next_state + ")");
-				
-				var r = {
-				    status: "investigate_cookies",
-				    command: "load_page",
-				    url: cit.url
-				};
-				sendResponse(r);
-
-				cit.num_pageload_timeouts = 0;
-				cit.page_load_success = false;
-				console.log("APPU DEBUG: Setting reload-interval for: " + sender.tab.id);
-				cit.pageload_timeout = window.setInterval((function(tab_id) {
-					    return function() {
-						var cit = cookie_investigating_tabs[tab_id];
-						console.log("APPU DEBUG: ERROR, Cookie Investigator Tab, page-load timeout, " + 
-							    "Sending reload for: " +
-							    cit.url);
-						chrome.tabs.reload(tab_id, {
-							bypassCache: true
-							    });
-						cit.num_pageload_timeouts += 1;
-					    }
-					})(sender.tab.id), 30 * 1000);
-
-			}
-			})(r, sendResponse, sender, next_state), 0.1 * 1000);
-	    }
+	    
+	    load_page_for_cookie_investigation(sender.tab.id, am_i_logged_in, cit.page_load_success);
 
 	    return true;
 	}
@@ -523,84 +486,29 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 
 	    if (cit.get_state() == 'st_testing') {
-		var r = {
-		    status : "investigate_cookies",
-		    command : "load_page",
-		    url : cit.url
-		}
+		chrome.tabs.sendMessage(sender.tab.id, {
+			type: "investigate_cookies",
+			    command: "load_page",
+			    url: cit.url
+			    });
 
-		sendResponse(r);
 		cit.page_load_success = false;
 
 		console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (testing)");
 		delete cookie_investigating_tabs[sender.tab.id];
 	    }
 	    else if (cit.get_state() == 'st_cookie_test_start') {
-		var next_state = cit.web_request_fully_fetched(undefined, true);
-
-		if (next_state != "st_terminate") {
-		    // The actual command to cookie-investigating-tabs is sent after some
-		    // delay so that shadow_cookie_store actually gets populated 
-		    // (its async call to populate it)
-		    window.setTimeout((function(r, sendResponse, sender, next_state) {
-				return function() {
-				var cit = cookie_investigating_tabs[sender.tab.id];
-				
-				var r = {
-				    status : "investigate_cookies",
-				    command : "load_page",
-				    url : cit.url
-				}
-
-				sendResponse(r);
-
-				cit.num_pageload_timeouts = 0;
-				cit.page_load_success = false;
-				console.log("APPU DEBUG: Setting reload-interval for: " + sender.tab.id);
-				cit.pageload_timeout = window.setInterval((function(tab_id) {
-					    return function() {
-						var cit = cookie_investigating_tabs[tab_id];
-						console.log("APPU DEBUG: ERROR, Cookie Investigator Tab, page-load timeout, " + 
-							    "Sending reload for: " +
-							    cit.url);
-						chrome.tabs.reload(tab_id, {
-							bypassCache: true
-						    });
-						cit.num_pageload_timeouts += 1;
-					    }
-					})(sender.tab.id), 30 * 1000);
-
-				console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (" + 
-					    next_state + ")");
-				cit.print_cookie_investigation_state();
-				}
-			    })(r, sendResponse, sender, next_state), 0.1 * 1000);
-		}
-
+		load_page_for_cookie_investigation(tab_id, undefined, true)
 		return true;
 	    }
-	    else if (cit.get_state() == 'st_allcookies_block_test'  ||
-		     cit.get_state() == 'st_verification_epoch'     ||
-		     cit.get_state() == 'st_single_cookie_test'     ||
+	    else if (cit.get_state() == 'st_allcookies_block_test'     ||
+		     cit.get_state() == 'st_during_cookies_pass_test'  ||
+		     cit.get_state() == 'st_during_cookies_block_test' ||
+		     cit.get_state() == 'st_verification_epoch'        ||
+		     cit.get_state() == 'st_single_cookie_test'        ||
 		     cit.get_state() == 'st_cookiesets_test') {
 		// We test here that user is still logged into the web application.
-		var pi_usernames = get_all_usernames();
-		if (pi_usernames.length > 0) {
-		    var cit = cookie_investigating_tabs[sender.tab.id];
-
-		    console.log("APPU DEBUG: Sending command to detect usernames to cookie investigating tab");
-		    var r = {
-			status : "investigate_cookies",
-			command : "check_usernames",
-			usernames : pi_usernames
-		    }
-		    sendResponse(r);
-		}
-		else {
-		    console.log("APPU DEBUG: Terminating cookie investigating tab " + 
-				"because no usernames to investigate from");
-		    terminate_cookie_investigating_tab(sender.tab.id);
-		}
+		check_usernames_for_cookie_investigation(tab_id);
 	    }
 	}
 	else {
