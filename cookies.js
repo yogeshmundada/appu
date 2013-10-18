@@ -880,9 +880,10 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     var is_allcookies_test_done = false;
     var is_during_cookies_pass_test_done = false;
     var is_during_cookies_block_test_done = false;
+
     var current_cookie_test_index = 0;
     var account_cookies_array = Object.keys(account_cookies);
-    account_cookies_array.sort();
+    //account_cookies_array.sort();
     
     console.log("APPU DEBUG: Suspected account cookies:");
     for (var i = 0; i < account_cookies_array.length; i++) {
@@ -1396,7 +1397,12 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 
 	// Code to for setting initial values for next epoch.
 	if (my_state == 'st_verification_epoch') {
-	    report_fatal_error("verification test not finished");
+	    if (!test_finished) {
+		report_fatal_error("verification test not finished");
+	    }
+	    else {
+		console.log("*******");
+	    }
 	}
 	else if (my_state == 'st_allcookies_block_test') {
 	    if (test_finished) {
