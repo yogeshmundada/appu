@@ -1259,16 +1259,6 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	}
     }
 
-    
-    function login_test_results(am_i_logged_in) {
-	if (my_state == "st_verification_epoch") {
-	    verification_epoch_results(am_i_logged_in);
-	}
-	else {
-	    update_cookie_status(am_i_logged_in);
-	}
-    }
-    
 
     function set_state(curr_state) {
 	my_state = curr_state;
@@ -1457,7 +1447,6 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     // is complete and we should move to suppress next cookie.
     function web_request_fully_fetched(am_i_logged_in, page_load_success) {
 	tot_execution += 1;
-	page_load_success = page_load_success || false;
 
 	// Code to for setting initial values for next epoch.
 	if (my_state == 'st_verification_epoch') {
@@ -1466,23 +1455,29 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		    // EXPECTED branch
 		    // Either page loaded successfully and usernames found OR
 		    // page not loaded successfully (but content script ran) and usernames are found
+		    console.log("APPU DEBUG: EXPECTED: User is logged-in for test 'st_verification_epoch'");
 		    verification_epoch_results(am_i_logged_in);
 		}
 		else {
 		    if (page_load_success) {
-			// SERIOUS error branch (user probably initiated log out)
-			report_fatal_error("Verification epoch: Page loaded successfully, but no usernames found");
+			// SERIOUS error branch (User probably initiated log out or our testing messed up user-session)
+			console.log("APPU Error: NOT EXPECTED: User is NOT logged-in for test 'st_verification_epoch'");
+			report_fatal_error("Verification-epoch-page-load-no-usernames");
 		    }
 		    else {
-			// LESS SERIOUS error branch (network lag?)
+			// LESS SERIOUS error branch (Network lag?)
 			// page not loaded properly.
-			report_fatal_error("Verification epoch: Page *NOT* loaded and no usernames found");
+			console.log("APPU Error: NOT EXPECTED: User is NOT logged-in, page not loaded" +
+				    " for test 'st_verification_epoch'");
+			report_fatal_error("Verification-epoch-no-page-load-no-usernames");
 		    }
 		}
 	    }
 	    else {
-		// SERIOUS error branch (user name detection test never carried out)
-		report_fatal_error("Verification epoch: Username detection test never done, page_load: " + page_load_success);
+		// SERIOUS error branch (User name detection test never carried out)
+		console.log("APPU Error: NOT EXPECTED: Username detection test never " + 
+			    "carried out for 'st_verification_epoch'");
+		report_fatal_error("Verification-epoch-no-username-detection-test: Page load: " + page_load_success);
 	    }
 	    console.log("*******");
 	}
@@ -1491,68 +1486,127 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		if (am_i_logged_in) {
 		    // SERIOUS error branch: When starting with no cookies, user should not be logged-in
 		    //                       Critical error in Appu code.
-		    report_fatal_error("Start-with-no-cookies: Usernames detected");
+		    console.log("APPU Error: NOT EXPECTED: Usernames detected for 'st_start_with_no_cookies'");
+		    report_fatal_error("Start-with-no-cookies-usernames-found");
 		}
 		else {
 		    if (page_load_success) {
 			// EXPECTED branch: User should not be logged-in after page is loaded
+			console.log("APPU DEBUG: EXPECTED: Usernames NOT detected for 'st_start_with_no_cookies'");
 			update_cookie_status(am_i_logged_in);
 			is_allcookies_test_done = true;
-			console.log("APPU DEBUG: EXPECTED: User is not logged-in for test 'start-with-no-cookies'");
 		    }
 		    else {
-			// LESS SERIOUS error branch: No point in proceeding if page does not get loaded while starting with empty 
-			// shadow_cookie_store
-			report_fatal_error("All-account-cookies-in-default-store-block: test not finished");
+			// LESS SERIOUS error branch: No point in proceeding if page does 
+			// not get loaded while starting with empty shadow_cookie_store
+			console.log("APPU Error: NOT EXPECTED: Usernames NOT detected, page NOT loaded " +
+				    "for 'st_start_with_no_cookies'");
+			report_fatal_error("Start-with-no-cookies-no-usernames-no-page-load");
+		    }
+		}
+	    }
+	    else {
+		// SERIOUS error branch (User name detection test never carried out)
+		console.log("APPU Error: NOT EXPECTED: Username detection test never " + 
+			    "carried out for 'st_start_with_no_cookies'");
+		report_fatal_error("Start-with-no-cookies-no-username-detection-test: Page load: " + page_load_success);
+	    }
+	    console.log("----------------------------------------");
+	}
+	else if (my_state == 'st_during_cookies_pass_test') {
+	    if (am_i_logged_in != undefined) {
+		if (am_i_logged_in) {
+		    // EXPECTED branch
+		    console.log("APPU DEBUG: EXPECTED: Usernames detected for 'st_during_cookies_pass_test'");
+		    update_cookie_status(am_i_logged_in);
+		    is_during_cookies_pass_test_done = true;
+		}
+		else {
+		    if (page_load_success) {
+			// SERIOUS error branch (Usernames not detected even if page loaded, we could
+			// be detecting 'DURING' cookies incorrectly)
+			console.log("APPU Error: NOT EXPECTED: Usernames NOT detected " + 
+				    "for 'st_during_cookies_pass_test'");
+			report_fatal_error("During-cookies-pass-no-usernames-page-loaded");
+		    }
+		    else {
+			// SERIOUS error branch (Usernames not detected, page NOT loaded, test
+			// unconclusive. Could be a network issue)
+			console.log("APPU Error: NOT EXPECTED: Usernames NOT detected, page NOT loaded " + 
+				    "for 'st_during_cookies_pass_test'");
+			report_fatal_error("During-cookies-pass-no-usernames-no-page-load");
 		    }
 		}
 	    }
 	    else {
 		// SERIOUS error branch (user name detection test never carried out)
-		report_fatal_error("Start-with-no-cookies: Username detection test never done, page_load: " + page_load_success);
-	    }
-	    console.log("----------------------------------------");
-	}
-	else if (my_state == 'st_during_cookies_pass_test') {
-	    if (am_i_logged_in) {
-		update_cookie_status(am_i_logged_in);
-		is_during_cookies_pass_test_done = true;
-		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL 'DURING' PASS");
-	    }
-	    else {
-		if (page_load_success) {
-		    report_fatal_error("All-during-cookies-pass: Page loaded, but no usernames");
-		}
-		else {
-		    report_fatal_error("All-during-cookies-pass: Page *NOT* loaded and no usernames");
-		}
+		console.log("APPU Error: NOT EXPECTED: Username detection test never " + 
+			    "carried out for 'st_during_cookies_pass_test'");
+		report_fatal_error("During-cookies-pass-no-username-detection-test: Page load: " + page_load_success);
 	    }
 	    console.log("----------------------------------------");
 	}
 	else if (my_state == 'st_during_cookies_block_test') {
-	    if (am_i_logged_in) {
-		report_fatal_error("All-during-cookies-block: 'DURING' cookies blocked, still usernames found");
-	    }
-	    else {
-		if (page_load_success) {
-		    update_cookie_status(am_i_logged_in);
-		    is_during_cookies_block_test_done = true;
-		    console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL 'DURING' BLOCK");
+	    if (am_i_logged_in != undefined) {
+		if (am_i_logged_in) {
+		    // SERIOUS error branch (Usernames found even when all 'DURING' cookies blocked.
+		    // This means we are not detecting them correctly)
+		    console.log("APPU Error: NOT EXPECTED: Usernames found " + 
+				"for 'st_during_cookies_block_test', Page load: " + page_load_success);
+		    report_fatal_error("During-cookies-block-usernames-found: Page load: " + page_load_success);
 		}
 		else {
-		    // No point in proceeding if page is not loaded when starting with 
-		    // shadow_cookie_store populated without 'DURING' cookies
-		    report_fatal_error("all-during-cookies-block test not finished");
+		    if (page_load_success) {
+			// EXPECTED branch
+			console.log("APPU DEBUG: EXPECTED: Usernames NOT detected for 'st_during_cookies_block_test'");
+			update_cookie_status(am_i_logged_in);
+			is_during_cookies_block_test_done = true;
+		    }
+		    else {
+			// LESS SERIOUS error branch (Usernames NOT found when all 'DURING' cookies blocked.
+			// But page is not fully loaded (network lag?). Test is inconclusive and we better stop further
+			// testing.)
+			console.log("APPU Error: NOT EXPECTED: Usernames NOT detected, Page NOT loaded " + 
+				"for 'st_during_cookies_block_test'");
+			report_fatal_error("During-cookies-block-no-usernames-no-page-load");
+		    }
 		}
 	    }
+	    else {
+		// SERIOUS error branch (user name detection test never carried out)
+		console.log("APPU Error: NOT EXPECTED: Username detection test never " + 
+			    "carried out for 'st_during_cookies_block_test'");
+		report_fatal_error("During-cookies-block-no-username-detection-test: Page load: " + page_load_success);
+	    }
+
 	    console.log("----------------------------------------");
 	}
 	else if (my_state == 'st_single_cookie_test') {
-	    if (page_load_success) {
-		console.log("APPU DEBUG: Webpage fetch complete for: " + account_cookies_array[current_cookie_test_index]);
+	    if (am_i_logged_in != undefined) {
+		if (page_load_success) {
+		    // EXPECTED branch
+		    console.log("APPU DEBUG: EXPECTED: Usernames detection test done, page loaded, for 'st_single_cookie_test'");
+		    update_cookie_status(am_i_logged_in);
+		}
+		else {
+		    if (am_i_logged_in) {
+			// EXPECTED branch
+			console.log("APPU DEBUG: EXPECTED: Usernames are detected, page is not loaded, " + 
+				    " for 'st_single_cookie_test'");
+			update_cookie_status(am_i_logged_in);
+		    }
+		    else {
+			// INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
+			console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded as well " + 
+				    " for 'st_single_cookie_test'");
+		    }
+		}
 	    }
 	    else {
-		console.log("APPU DEBUG: Webpage fetch failed for: " + account_cookies_array[current_cookie_test_index]);
+		// NON-SERIOUS error branch (user name detection test never carried out)
+		// But no need to stop testing 
+		console.log("APPU DEBUG: NON-SERIOUS: Username detection test never " + 
+			    "carried out for 'st_single_cookie_test', Page load: " + page_load_success);
 	    }
 
 	    current_cookie_test_index += 1;
@@ -1560,11 +1614,31 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    console.log("APPU DEBUG: New suppress cookie is: " + account_cookies_array[current_cookie_test_index]);
 	}
 	else if (my_state == "st_cookiesets_test") {
-	    if (page_load_success) {
-		console.log("APPU DEBUG: Webpage fetch complete for: " + JSON.stringify(disabled_cookies));
+	    if (am_i_logged_in != undefined) {
+		if (page_load_success) {
+		    // EXPECTED branch
+		    console.log("APPU DEBUG: EXPECTED: Usernames detection test done, page loaded, for 'st_cookiesets_test'");
+		    update_cookie_status(am_i_logged_in);
+		}
+		else {
+		    if (am_i_logged_in) {
+			// EXPECTED branch
+			console.log("APPU DEBUG: EXPECTED: Usernames are detected, page is not loaded, " + 
+				    " for 'st_cookiesets_test'");
+			update_cookie_status(am_i_logged_in);
+		    }
+		    else {
+			// INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
+			console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded as well " + 
+				    " for 'st_cookiesets_test'");
+		    }
+		}
 	    }
 	    else {
-		console.log("APPU DEBUG: Webpage fetch failed for: " + JSON.stringify(disabled_cookies));
+		// NON-SERIOUS error branch (user name detection test never carried out)
+		// But no need to stop testing 
+		console.log("APPU DEBUG: NON-SERIOUS: Username detection test never " + 
+			    "carried out for 'st_cookiesets_test', Page load: " + page_load_success);
 	    }
 
 	    current_cookiesets_test_attempts += 1;
@@ -1574,6 +1648,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 		current_cookiesets_test_index = generate_random_cookieset_index();
 	    }
 	    else if (cookiesets_config == "all") {
+		// If we are testing "all" cookies, always start from the beginning,
+		// Will avoid unnecessary testing due to pruning SUPERSETS.
 		current_cookiesets_test_index = 0;
 	    }
 
