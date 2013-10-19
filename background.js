@@ -379,7 +379,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    if (Object.keys(message.present_usernames).length > 0) {
 		am_i_logged_in = true;
 	    }
-	    
+
+	    if (cit.pageload_timeout != undefined) {
+		window.clearInterval(cit.pageload_timeout);
+		cit.pageload_timeout = undefined;
+	    }
 	    
 	    load_page_for_cookie_investigation(sender.tab.id, am_i_logged_in, cit.page_load_success);
 

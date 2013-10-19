@@ -785,7 +785,10 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, page_load_su
 					    if (cit.content_script_started) {
 						console.log("APPU DEBUG: Page load timeout(>2), " + 
 							    "content script started, username detection test never worked");
-						window.clearInterval(cit.pageload_timeout);
+						if (cit.pageload_timeout != undefined) {
+						    window.clearInterval(cit.pageload_timeout);
+						    cit.pageload_timeout = undefined;
+						}
 						load_page_for_cookie_investigation(tab_id, undefined, false);
 					    }
 					    else {
@@ -1434,6 +1437,12 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	// 5. User closes the tab.
 	// 6. If current_cookie_test_index == -1
 	// 7. Max webpage reload attempts has reached (site or net is slow).
+
+	var cit = cookie_investigating_tabs[my_tab_id];
+	if (cit.pageload_timeout != undefined) {
+	    cit.pageload_timeout = undefined;
+	    window.clearInterval(cit.pageload_timeout);
+	}
 	console.log("APPU Error: ERROR during cookie investigation, reason: " + reason);
 	has_error_occurred = true;
 	final_result();
