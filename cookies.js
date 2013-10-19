@@ -726,8 +726,13 @@ function check_usernames_for_cookie_investigation(tab_id) {
 
     if (pi_usernames.length > 0) {
 	var cit = cookie_investigating_tabs[tab_id];
-	console.log("APPU DEBUG: Sending command to detect usernames to cookie investigating tab");
-	
+	if (cit.page_load_success) {
+	    console.log("APPU DEBUG: Page properly loaded. Sending command to detect usernames to cookie investigating tab");
+	}
+	else {
+	    console.log("APPU Error: Page load timeout. Sending command to detect usernames to cookie investigating tab anyway");
+	}
+
 	chrome.tabs.sendMessage(tab_id, {
 		type: "investigate_cookies",
 		    command: "check_usernames",
@@ -743,10 +748,9 @@ function check_usernames_for_cookie_investigation(tab_id) {
 
 
 // Loads a webpage to investigate cookies.
-function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
+function load_page_for_cookie_investigation(tab_id, am_i_logged_in, page_load_success) {
     var cit = cookie_investigating_tabs[tab_id];
-    var next_state = cit.web_request_fully_fetched(am_i_logged_in, test_done);
-    
+    var next_state = cit.web_request_fully_fetched(am_i_logged_in, page_load_success);
 
     if (next_state != "st_terminate") {
 	// The actual command to cookie-investigating-tabs is sent after some
@@ -758,7 +762,7 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
 			var cit = cookie_investigating_tabs[tab_id];
 
 			console.log("Here here: ZZZZZZZZZZZZZZZZZZ DONE backing-up restoring shadow_cookie_store: " +
-				    Object.keys(cit.shadow_cookie_store).length);
+				    Object.keys(cit.get_shadow_cookie_store()).length);
 
 			console.log("APPU DEBUG: COOKIE INVESTIGATOR STATE(" + cit.get_state() + ")");
 			
@@ -770,6 +774,7 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
 			
 			cit.num_pageload_timeouts = 0;
 			cit.page_load_success = false;
+			cit.content_script_started = false;
 
 			console.log("APPU DEBUG: Setting reload-interval for: " + tab_id);
 
@@ -777,15 +782,27 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
 				    return function() {
 					var cit = cookie_investigating_tabs[tab_id];
 					if (cit.num_pageload_timeouts > 2) {
-					    window.clearInterval(cit.pageload_timeout);
-					    load_page_for_cookie_investigation(tab_id, undefined, false);
+					    if (cit.content_script_started) {
+						console.log("APPU DEBUG: Page load timeout(>2), " + 
+							    "content script started, username detection test never worked");
+						window.clearInterval(cit.pageload_timeout);
+						load_page_for_cookie_investigation(tab_id, undefined, false);
+					    }
+					    else {
+						console.log("APPU Error: Page load timeout(>2) and no content script, " + 
+							    "may be network error");
+						cit.report_fatal_error("Page-load-timeout-max-no-content-script");
+					    }
 					}
 					else {
 					    // Just check if there is any username present.
 					    // If so, no need to wait for page to fully reload.
 					    if (cit.get_state() != "st_cookie_test_start" &&
-						cit.get_state() != "st_testing") {
-					    check_usernames_for_cookie_investigation(tab_id);
+						cit.get_state() != "st_testing" &&
+						cit.content_script_started) {
+						console.log("APPU DEBUG: Page load timeout, " + 
+							    "content script started, firing username detection test");
+						check_usernames_for_cookie_investigation(tab_id);
 					    }
 					}
 					
@@ -893,32 +910,68 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     
     // Various states possible:
     // "st_testing"                                : Just simple testing
-    // "st_cookie_test_start"                      : Loading some default webpage so that Appu content script runs.
-    // "st_verification_epoch"                     : Reloading site page without suppressing any cookies.
-    //                                             : After reloading site page, checks if user is logged-in.
-    // "st_allcookies_block_test"                  : Reload the site page. Start with empty shadow-cookie-store.
-    //                                               After reloading site page, tests if user is still logged-in. 
-    //                                               If user is not, that verifies that some of the cookies set
-    //                                               are actually "ACCOUNT-COOKIES".
-    // "st_during_cookies_pass_test"               : Reloading site page with passing only all 'DURING' cookies.
-    //                                               Starts with a shadow-cookie-store and copy only 'DURING' cookies
-    //                                               to it. During webpage fetch, other cookies may get set in the
-    //                                               shadow-cookie-store. After loading, check if usernames are present.
-    // "st_during_cookies_block_test"              : Reloading site page by suppressing all 'DURING' cookies.
-    //                                               After reloading site page, tests if user is still logged-in. 
+    // "st_cookie_test_start"                      : Loading some default webpage so that Appu content-script runs and
+    //                                               accepts commands.
+    // "st_verification_epoch"                     : Reload site page. Start with shadow_cookie_store that is
+    //                                               exact copy of default_cookie_store.
+    //                                               Test the page for usernames after page load.
+    //                                               If usernames found, user is logged-in (EXPECTED)
+    //                                               Otherwise:
+    //                                                   1. We do not have this user's username in PI database.
+    //                                                   2. User initiated logout in the middle of our testing.
+    //                                                      (Confirm this using other methods like user-click
+    //                                                       monitoring OR if URL had "logout" somewhere)
+    //                                                   3. Finally, our testing messed up with user-session. 
+    //                                               At runtime, we can't distinguish between 1, 2 and 3.
+    //                                               So assume the worse(#3) and STOP TESTING this site further.
+    // "st_start_with_no_cookies"                  : Reload the site page. Start with empty shadow-cookie-store.
+    //                                               After reloading site page, test if usernames are found. 
+    //                                               If no usernames are found, that is the expected behavior.
+    //                                               Otherwise, critical error in Appu code since it is letting
+    //                                               default_cookie_store cookies to pass. STOP TESTING.
+    // "st_during_cookies_pass_test"               : Reload site page. Start with shadow_cookie_store that is 
+    //                                               populated with only 'DURING' cookies as detected by Appu.
+    //                                               Test the page for usernames after page load.
+    //                                               If usernames found, user is logged-in (EXPECTED)
+    //                                               Otherwise it means we have not detected 'DURING' 
+    //                                               cookies properly. STOP TESTING
+    // "st_during_cookies_block_test"              : Reload site page. Start with shadow_cookie_store that is 
+    //                                               populated without any 'DURING' cookies as detected by Appu.
+    //                                               Test the page for usernames after page load.
+    //                                               If no usernames found, user is logged-out (EXPECTED)
+    //                                               Otherwise, it means we have not detected 'DURING' 
+    //                                               cookies properly. STOP TESTING.
     //
     //  Both 'st_during_cookies_pass_test' & 'st_during_cookies_block_test' will confirm that actual "ACCOUNT-COOKIES"
     //  are subset of 'DURING' cookies *ONLY*. This is expected, otherwise we are detecting 'DURING' cookies incorrectly.
     //
-    // "st_single_cookie_test"                     : Reloading site page with suppressing a single cookie each time.
-    //                                               After reloading site page, tests if user is still logged-in. 
-    // "st_cookiesets_test"                        : Reloading site page by suppressing a cookie-set each time.
-    //                                               So if in all there are 'n' cookies, then there are 
-    //                                               '2^n - (n+1)' cookie sets. Here '(n+1)' is subtracted for
-    //                                               'n' cookiesets each with one cookie and '1' cookie set for all
-    //                                               cookies. We have separate test states for these cases.
-    //                                               After reloading site page, testing if user is still logged-in. 
+    // "st_single_cookie_test"                     : Reload site page. Start with shadow_cookie_store that is 
+    //                                               populated with default_cookie_store except one cookie getting tested.
+    //                                               Test the page for usernames after page load.
+    //                                               If no usernames found, user is logged-out and mark that cookie as
+    //                                               'ACCOUNT-COOKIE'.
+    //                                               Otherwise, it means that that cookie is not 'ACCOUNT-COOKIE' OR
+    //                                               other cookies are sufficient to regenerate this cookie
+    //                                               (looking at you Google)
+    // "st_cookiesets_test"                        : Cookiesets are created by systematically omitting some of the
+    //                                               'DURING' cookies. So, if we have detected 'N' 'DURING' cookies,
+    //                                               then there are '2^N - (N+1)' cookie sets. Here '(n+1)' is subtracted for
+    //                                               'N' cookiesets each with one cookie (already tested in 
+    //                                               "st_single_cookie_test") and '1' cookie set for all
+    //                                               cookies (already tested in "st_during_cookies_block_test").
+    //                                               Reload site page. Start with shadow_cookie_store that is 
+    //                                               populated with default_cookie_store except cookies from cookieset 
+    //                                               currently getting tested. To avoid explosion in cookiesets to be
+    //                                               tested, do max-random-attempts.
+    //                                               Test the page for usernames after page load.
+    //                                               If no usernames found, user is logged-out and mark that cookieset as
+    //                                               'ACCOUNT-COOKIE'.
+    //                                               Otherwise, it means that that cookieset is not 'ACCOUNT-COOKIE' OR
+    //                                               other cookies are sufficient to regenerate this cookie.
+    //                                               This test is done only for sites like 'Google' and might not be 
+    //                                               performed always.
     // "st_terminate"                              : Everything is done or error occurred. So just terminate.
+
 
     // At the start, to activate Appu content script, we need to load some webpage successfully
     // This state does that. At the moment just loading 'live.com'.
@@ -960,10 +1013,11 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     
 
     function init_cookie_investigation() {
-	var cit = cookie_investigating_tabs[tab.id];
+	var cit = cookie_investigating_tabs[my_tab_id];
 	cit.url = my_url;
 	cit.num_pageload_timeouts = 0;
 	cit.page_load_success = false;
+	cit.content_script_started = false;
 
 	cit.reload_interval = undefined;
 	cit.web_request_fully_fetched = web_request_fully_fetched;
@@ -971,6 +1025,12 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	cit.get_state = get_state; 
 	cit.restore_shadow_cookie_store = restore_shadow_cookie_store; 
 	cit.report_fatal_error = report_fatal_error; 
+	cit.get_shadow_cookie_store = get_shadow_cookie_store;
+    }
+
+
+    function get_shadow_cookie_store() {
+	return shadow_cookie_store;
     }
     
     function generate_cookiesets() {
@@ -1101,6 +1161,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 
 			cookie_store[cookie_key] = all_cookies[i];
 		    }
+		    console.log("Here here: BBBBBBBBBBBB Restored shadow cookie store: " + Object.keys(cookie_store).length);
 		    cb_shadow_restored();
 		}
 	    })(cookie_store, cb_shadow_restored);
@@ -1112,7 +1173,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     function restore_shadow_cookie_store(cb_shadow_restored) {
 	//shadow_cookie_store = $.extend(true, {}, orig_cookie_store);
 	shadow_cookie_store = {};
-	if (my_state != "st_allcookies_block_test") {
+	if (my_state != "st_start_with_no_cookies") {
 	    get_cookie_store_snapshot(shadow_cookie_store, cb_shadow_restored);
 	}
 	else {
@@ -1141,7 +1202,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     
     
     function update_cookie_status(am_i_logged_in) {
-	if (my_state == "st_allcookies_block_test") {
+	if (my_state == "st_start_with_no_cookies") {
 	    if (!am_i_logged_in) {
 		console.log("APPU DEBUG: VERIFIED, ACCOUNT-COOKIES are present in default-cookie-store");
 		bool_all_account_cookies_in_default_store = true;
@@ -1250,7 +1311,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	}
 	else if (my_state == "st_verification_epoch") {
 	    if (!is_allcookies_test_done) {
-		rs = "st_allcookies_block_test";
+		rs = "st_start_with_no_cookies";
 	    }
 	    else if (!is_during_cookies_pass_test_done) {
 		rs = "st_during_cookies_pass_test";
@@ -1266,7 +1327,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    }
 	}
 	else if (my_state == "st_cookie_test_start"         ||
-		 my_state == "st_allcookies_block_test"     ||
+		 my_state == "st_start_with_no_cookies"     ||
 		 my_state == "st_during_cookies_pass_test"  ||
 		 my_state == "st_during_cookies_block_test" ||
 		 my_state == "st_single_cookie_test"        ||
@@ -1277,7 +1338,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	if (bool_side_effect) {
 	    my_state = rs;
 	    if (my_state == "st_cookiesets_test" && current_cookiesets_test_index == -1) {
-		// This is just to initialize. After this, this functionality will be taken care of
+		// This is just to initialize for the very first time. 
+		// After this time, properly calculating this value will be done 
 		// in web_request_fully_fetched()
 		if (cookiesets_config == "random") {
 		    current_cookiesets_test_index = generate_random_cookieset_index();
@@ -1393,60 +1455,100 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     // For all those GET requests, same cookie must be blocked.
     // Thus, someone else from outside will have to know that the webpage fetch
     // is complete and we should move to suppress next cookie.
-    function web_request_fully_fetched(am_i_logged_in, test_finished) {
+    function web_request_fully_fetched(am_i_logged_in, page_load_success) {
 	tot_execution += 1;
-
-	if (test_finished == undefined) {
-	    test_finished = false;
-	}
-
-	if (my_state != "st_cookie_test_start" &&
-	    my_state != "st_testing" && 
-	    test_finished) {
-	    login_test_results(am_i_logged_in);
-	}
+	page_load_success = page_load_success || false;
 
 	// Code to for setting initial values for next epoch.
 	if (my_state == 'st_verification_epoch') {
-	    if (!test_finished) {
-		report_fatal_error("verification test not finished");
+	    if (am_i_logged_in != undefined) {
+		if (am_i_logged_in) {
+		    // EXPECTED branch
+		    // Either page loaded successfully and usernames found OR
+		    // page not loaded successfully (but content script ran) and usernames are found
+		    verification_epoch_results(am_i_logged_in);
+		}
+		else {
+		    if (page_load_success) {
+			// SERIOUS error branch (user probably initiated log out)
+			report_fatal_error("Verification epoch: Page loaded successfully, but no usernames found");
+		    }
+		    else {
+			// LESS SERIOUS error branch (network lag?)
+			// page not loaded properly.
+			report_fatal_error("Verification epoch: Page *NOT* loaded and no usernames found");
+		    }
+		}
 	    }
 	    else {
-		console.log("*******");
+		// SERIOUS error branch (user name detection test never carried out)
+		report_fatal_error("Verification epoch: Username detection test never done, page_load: " + page_load_success);
 	    }
+	    console.log("*******");
 	}
-	else if (my_state == 'st_allcookies_block_test') {
-	    if (test_finished) {
-		is_allcookies_test_done = true;
-		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL COOKIES");
+	else if (my_state == 'st_start_with_no_cookies') {
+	    if (am_i_logged_in != undefined) {
+		if (am_i_logged_in) {
+		    // SERIOUS error branch: When starting with no cookies, user should not be logged-in
+		    //                       Critical error in Appu code.
+		    report_fatal_error("Start-with-no-cookies: Usernames detected");
+		}
+		else {
+		    if (page_load_success) {
+			// EXPECTED branch: User should not be logged-in after page is loaded
+			update_cookie_status(am_i_logged_in);
+			is_allcookies_test_done = true;
+			console.log("APPU DEBUG: EXPECTED: User is not logged-in for test 'start-with-no-cookies'");
+		    }
+		    else {
+			// LESS SERIOUS error branch: No point in proceeding if page does not get loaded while starting with empty 
+			// shadow_cookie_store
+			report_fatal_error("All-account-cookies-in-default-store-block: test not finished");
+		    }
+		}
 	    }
 	    else {
-		report_fatal_error("all-account-cookies-in-default-store test not finished");
+		// SERIOUS error branch (user name detection test never carried out)
+		report_fatal_error("Start-with-no-cookies: Username detection test never done, page_load: " + page_load_success);
 	    }
 	    console.log("----------------------------------------");
 	}
 	else if (my_state == 'st_during_cookies_pass_test') {
-	    if (test_finished) {
+	    if (am_i_logged_in) {
+		update_cookie_status(am_i_logged_in);
 		is_during_cookies_pass_test_done = true;
 		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL 'DURING' PASS");
 	    }
 	    else {
-		report_fatal_error("all-during-cookies-pass test not finished");
+		if (page_load_success) {
+		    report_fatal_error("All-during-cookies-pass: Page loaded, but no usernames");
+		}
+		else {
+		    report_fatal_error("All-during-cookies-pass: Page *NOT* loaded and no usernames");
+		}
 	    }
 	    console.log("----------------------------------------");
 	}
 	else if (my_state == 'st_during_cookies_block_test') {
-	    if (test_finished) {
-		is_during_cookies_block_test_done = true;
-		console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL 'DURING' BLOCK");
+	    if (am_i_logged_in) {
+		report_fatal_error("All-during-cookies-block: 'DURING' cookies blocked, still usernames found");
 	    }
 	    else {
-		report_fatal_error("all-during-cookies-block test not finished");
+		if (page_load_success) {
+		    update_cookie_status(am_i_logged_in);
+		    is_during_cookies_block_test_done = true;
+		    console.log("APPU DEBUG: Webpage fetch complete for TESTING ALL 'DURING' BLOCK");
+		}
+		else {
+		    // No point in proceeding if page is not loaded when starting with 
+		    // shadow_cookie_store populated without 'DURING' cookies
+		    report_fatal_error("all-during-cookies-block test not finished");
+		}
 	    }
 	    console.log("----------------------------------------");
 	}
 	else if (my_state == 'st_single_cookie_test') {
-	    if (test_finished) {
+	    if (page_load_success) {
 		console.log("APPU DEBUG: Webpage fetch complete for: " + account_cookies_array[current_cookie_test_index]);
 	    }
 	    else {
@@ -1458,7 +1560,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    console.log("APPU DEBUG: New suppress cookie is: " + account_cookies_array[current_cookie_test_index]);
 	}
 	else if (my_state == "st_cookiesets_test") {
-	    if (test_finished) {
+	    if (page_load_success) {
 		console.log("APPU DEBUG: Webpage fetch complete for: " + JSON.stringify(disabled_cookies));
 	    }
 	    else {
@@ -1620,7 +1722,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    return;
 	}
 	
-	if (my_state == "st_allcookies_block_test") {
+	if (my_state == "st_start_with_no_cookies") {
 	    // This is to verify that cookies set during login were indeed account cookies.
 	    return delete_all_cookies_from_HTTP_request(details);
 	}
@@ -1782,7 +1884,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	
 	if (my_cookies.length == 0 &&
 	    my_domain == curr_domain) {
-	    if (my_state != "st_allcookies_block_test") {
+	    if (my_state != "st_start_with_no_cookies") {
 		console.log("Here here: URL: " + details.url);
 		console.log("Here here: Shadow Cookie Store: " + JSON.stringify(shadow_cookie_store));
 		//console.log("Here here: URL: " + details.url);

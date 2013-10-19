@@ -239,6 +239,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "content_script_started") {
 	if (sender.tab) {
 	    console.log("APPU DEBUG: Content script is started on: " + sender.tab.id);
+	    if (sender.tab.id in cookie_investigating_tabs) {
+		cookie_investigating_tabs[sender.tab.id].content_script_started = true;
+	    } 
 	}
     }
     else if (message.type == "log_error") {
@@ -368,13 +371,15 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	message.domain = get_domain(message.domain);
 	if (sender.tab.id in cookie_investigating_tabs) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
-	    console.log("APPU DEBUG: Cookie investigating result, cookie(" + message.domain + ") detected usernames: " + 
+	    console.log("APPU DEBUG: Cookie investigating result, (page_load_success: " + cit.page_load_success
+			+ ")cookie(" + message.domain + ") detected usernames: " + 
 			Object.keys(message.present_usernames).length);
 	    
 	    var am_i_logged_in = false;
 	    if (Object.keys(message.present_usernames).length > 0) {
 		am_i_logged_in = true;
 	    }
+	    
 	    
 	    load_page_for_cookie_investigation(sender.tab.id, am_i_logged_in, cit.page_load_success);
 
@@ -501,7 +506,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		load_page_for_cookie_investigation(sender.tab.id, undefined, true)
 		return true;
 	    }
-	    else if (cit.get_state() == 'st_allcookies_block_test'     ||
+	    else if (cit.get_state() == 'st_start_with_no_cookies'     ||
 		     cit.get_state() == 'st_during_cookies_pass_test'  ||
 		     cit.get_state() == 'st_during_cookies_block_test' ||
 		     cit.get_state() == 'st_verification_epoch'        ||
