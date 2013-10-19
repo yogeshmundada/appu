@@ -752,9 +752,14 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, test_done) {
 	// The actual command to cookie-investigating-tabs is sent after some
 	// delay so that shadow_cookie_store actually gets populated 
 	// (its async call to populate it)
-	restore_shadow_cookie_store((function(tab_id) {
+	console.log("Here here: ZZZZZZZZZZZZZZZZZZ Attempting for restoring shadow_cookie_store");
+	cit.restore_shadow_cookie_store((function(tab_id) {
 		    return function() {
 			var cit = cookie_investigating_tabs[tab_id];
+
+			console.log("Here here: ZZZZZZZZZZZZZZZZZZ DONE backing-up restoring shadow_cookie_store: " +
+				    Object.keys(cit.shadow_cookie_store).length);
+
 			console.log("APPU DEBUG: COOKIE INVESTIGATOR STATE(" + cit.get_state() + ")");
 			
 			chrome.tabs.sendMessage(tab_id, {
@@ -798,10 +803,7 @@ function open_cookie_slave_tab(url,
 			       http_request_cb,
 			       http_response_cb,
 			       update_tab_id, 
-			       web_request_fully_fetched,
-			       print_cookie_investigation_state,
-			       get_state,
-			       report_fatal_error) {
+			       init_cookie_investigation) {
     //Just some link so that appu content script runs on it.
     var default_url = 'http://live.com';
    
@@ -816,10 +818,7 @@ function open_cookie_slave_tab(url,
 				 http_request_cb,
 				 http_response_cb,
 				 update_tab_id, 
-				 web_request_fully_fetched,
-				 print_cookie_investigation_state,
-				 get_state,
-				 report_fatal_error) {
+				 init_cookie_investigation) {
 			   return function slave_tab_callback(tab) {
 			       var filter = {};
 			       
@@ -848,28 +847,15 @@ function open_cookie_slave_tab(url,
 			       //   ["responseHeaders"]);
 
 			       cookie_investigating_tabs[tab.id] = {};
-			       cookie_investigating_tabs[tab.id].reload_interval = undefined;
-			       cookie_investigating_tabs[tab.id].url = url;
-			       cookie_investigating_tabs[tab.id].num_pageload_timeouts = 0;
-			       cookie_investigating_tabs[tab.id].page_load_success = false;
-			       cookie_investigating_tabs[tab.id].web_request_fully_fetched = web_request_fully_fetched;
-			       cookie_investigating_tabs[tab.id].print_cookie_investigation_state = 
-				   print_cookie_investigation_state;
-			       cookie_investigating_tabs[tab.id].get_state = get_state; 
-			       cookie_investigating_tabs[tab.id].report_fatal_error = report_fatal_error; 
 		    
-			       // This is so that the tab can be terminated from this selecting cookie suppressing
-			       // once all cookies have been examined.
 			       update_tab_id(tab.id);
+			       init_cookie_investigation();
 			   }
 		       })(url, 
 			  http_request_cb,
 			  http_response_cb,
 			  update_tab_id, 
-			  web_request_fully_fetched,
-			  print_cookie_investigation_state,
-			  get_state,
-			  report_fatal_error));
+			  init_cookie_investigation));
 }
 
 
@@ -896,7 +882,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     
     var tot_cookies = Object.keys(account_cookies).length;
     var tot_execution = 0;
-    var tab_id = 0;
+    var my_tab_id = undefined;
 
     var bool_all_account_cookies_in_default_store = undefined;
     var bool_account_cookies_in_during_cookies = undefined;
@@ -972,6 +958,20 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	console.log("APPU DEBUG: COOKIE INVESTIGATION STATUS: " + my_state);
     }
     
+
+    function init_cookie_investigation() {
+	var cit = cookie_investigating_tabs[tab.id];
+	cit.url = my_url;
+	cit.num_pageload_timeouts = 0;
+	cit.page_load_success = false;
+
+	cit.reload_interval = undefined;
+	cit.web_request_fully_fetched = web_request_fully_fetched;
+	cit.print_cookie_investigation_state = print_cookie_investigation_state;
+	cit.get_state = get_state; 
+	cit.restore_shadow_cookie_store = restore_shadow_cookie_store; 
+	cit.report_fatal_error = report_fatal_error; 
+    }
     
     function generate_cookiesets() {
 	var num_sets = Math.pow(2, tot_cookies);
@@ -1121,8 +1121,11 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
     }
     
     
-    function update_tab_id(my_tab_id) {
-	tab_id = my_tab_id;
+    function update_tab_id(tab_id) {
+	my_tab_id = tab_id;
+
+	cookie_investigating_tabs[my_tab_id].shadow_cookie_store = shadow_cookie_store;
+
 	shut_tab_forcefully = window.setTimeout(function() {
 		console.log("APPU DEBUG: In forceful shutdown for COOKIE-INVESTIGATOR-TAB: " + my_url);
 		report_fatal_error("hard-timeout");
@@ -1177,7 +1180,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 			    account_cookies_array[current_cookie_test_index] + "): " + !am_i_logged_in);
 		account_cookies[account_cookies_array[current_cookie_test_index]].account_cookie = !am_i_logged_in;
 		if (!am_i_logged_in) {
-		    verified_account_cookiesets.push(account_cookies_array[current_cookie_test_index]);
+		    verified_account_cookiesets.push([account_cookies_array[current_cookie_test_index]]);
 		    prune_cookiesets(verified_account_cookiesets[verified_account_cookiesets.length - 1]);
 		    console.log("APPU DEBUG: Number of cookie-sets after pruning: " + cookiesets.length);
 		}
@@ -1356,14 +1359,15 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 
 	    console.log("APPU DEBUG: Following are all the account cookiesets:");
 	    for (var j = 0; j < verified_account_cookiesets.length; j++) {
-		console.log("Numboer of cookies: " + verified_account_cookiesets[i].length +
+		console.log("Numboer of cookies: " + verified_account_cookiesets[j].length +
 			    ", CookieSet: " +
-			    JSON.stringify(verified_account_cookiesets[i]));
+			    JSON.stringify(verified_account_cookiesets[j]));
 	    }
 	    
-	    terminate_cookie_investigating_tab(tab_id);
-	    window.clearTimeout(shut_tab_forcefully);
 	}
+
+	terminate_cookie_investigating_tab(my_tab_id);
+	window.clearTimeout(shut_tab_forcefully);
     }
     
     
@@ -1378,9 +1382,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	// 5. User closes the tab.
 	// 6. If current_cookie_test_index == -1
 	// 7. Max webpage reload attempts has reached (site or net is slow).
-	if (reason == "hard-timeout") {
-	    console.log("APPU DEBUG: Closing cookie-investigator tab due to hard-timeout");
-	}
+	console.log("APPU Error: ERROR during cookie investigation, reason: " + reason);
 	has_error_occurred = true;
 	final_result();
     }
@@ -1613,7 +1615,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	if (current_cookie_test_index >= tot_cookies) {
 	    console.log("APPU DEBUG: All cookies for URL(" + url + ") have been tested. " + 
 			"Terminating cookie_investigating_tab");
-	    terminate_cookie_investigating_tab(tab_id);
+	    terminate_cookie_investigating_tab(my_tab_id);
 	    final_result();
 	    return;
 	}
@@ -1629,7 +1631,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    console.log("APPU DEBUG: Maximum number of times  URL(" + url + ") have been tested. " + 
 			"However, not all cookies are examined. Current test index: " + 
 			current_cookie_test_index);
-	    terminate_cookie_investigating_tab(tab_id);
+	    terminate_cookie_investigating_tab(my_tab_id);
 	    return;
 	}
 	
@@ -1753,6 +1755,12 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    var cookie_name_value = shadow_cookie_store[c].name + '=' + shadow_cookie_store[c].value;
 	    var curr_test_cookie_name = account_cookies_array[current_cookie_test_index];
 	    var shadow_cookie_name = cookie_url + ':' + shadow_cookie_store[c].name;
+
+	    if (shadow_cookie_name == "http://.facebook.com/:p" ||
+		shadow_cookie_name == "http://.facebook.com/:fr" ) {
+		console.log("Here here: Suppressing 'p' OR 'fr', MUHAHAHAHAHAHAHAHA");
+		continue;
+	    }
 	    
 	    if (is_subdomain(cookie_url, details.url)) {
 		if (shadow_cookie_store[c].session) {
@@ -1774,9 +1782,11 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	
 	if (my_cookies.length == 0 &&
 	    my_domain == curr_domain) {
-	    console.log("Here here: URL: " + details.url);
-	    console.log("Here here: Shadow Cookie Store: " + JSON.stringify(shadow_cookie_store));
-	    //console.log("Here here: URL: " + details.url);
+	    if (my_state != "st_allcookies_block_test") {
+		console.log("Here here: URL: " + details.url);
+		console.log("Here here: Shadow Cookie Store: " + JSON.stringify(shadow_cookie_store));
+		//console.log("Here here: URL: " + details.url);
+	    }
 	}
 	var final_cookie_str = my_cookies.join("; "); 
 	
@@ -1794,10 +1804,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config) {
 	    replace_cookies_from_shadow_cookie_store,
 	    handle_set_cookie_responses,
 	    update_tab_id, 
-	    web_request_fully_fetched,
-	    print_cookie_investigation_state,
-	    get_state,
-	    report_fatal_error
+	    init_cookie_investigation
 	    ];
 }
 
