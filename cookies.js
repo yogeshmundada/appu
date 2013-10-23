@@ -572,6 +572,7 @@ function delete_all_cookies_from_HTTP_request(details) {
 
 
 function terminate_cookie_investigating_tab(tab_id) {
+    console.log("APPU DEBUG: Closing cookie-investigation tab: " + tab_id);
     delete cookie_investigating_tabs[tab_id];
     chrome.tabs.remove(tab_id);
 }
@@ -800,7 +801,7 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, page_load_su
 				url: cit.url,
 				    active: false,
 				    highlighted: false,
-				    pinned: true
+				    //pinned: true
 				    });
 
 			cit.bool_state_in_progress = true;
