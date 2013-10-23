@@ -1140,7 +1140,9 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 	return disabled_cookies;
     }
 
-    
+
+    //vcs is an array of cookies. 
+    //each cookie is of the form: https://abcde.com/my_path:cookie_name
     function prune_cookiesets(vcs) {
 	// Accepts VERIFIED COOKIE SETS (i.e. cookies that are account cookies) 
 	// and prunes generated cookiesets
@@ -1403,7 +1405,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 	    my_state = rs;
 
 	    console.log("APPU DEBUG: Total cookies tried: " + tot_cookies_tried +
-			", total cookiesets tried: " + tot_cookiesets_tried);
+			", total cookiesets tried: " + tot_cookiesets_tried +
+			", remaining cookiesets: " + cookiesets.length);
 
 	    if (my_state == "st_cookiesets_test" && current_cookiesets_test_index == -1) {
 		// This is just to initialize for the very first time. 
@@ -1489,9 +1492,10 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 
 	    console.log("APPU DEBUG: Following are all the account cookiesets:");
 	    for (var j = 0; j < verified_account_cookiesets.length; j++) {
-		console.log("Number of cookies: " + verified_account_cookiesets[j].length +
+		var cs_names = get_disabled_cookies_in_a_set(verified_account_cookiesets[j]);
+		console.log("Number of cookies: " + cs_names.length +
 			    ", CookieSet: " +
-			    JSON.stringify(get_disabled_cookies_in_a_set(verified_account_cookiesets[j])));
+			    JSON.stringify(cs_names));
 	    }
 	
 	    console.log("APPU DEBUG: Pending cookiesets: " + cookiesets.length);
