@@ -18,11 +18,12 @@ function onauthrequired_cb(details, my_callback) {
 
 
 // This is just a test function
+// prints "set-cookie" commands in a HTTP Response.
 function cb_headers_received(details) {
     if ("responseHeaders" in details) {
 	var rh = details.responseHeaders;
 	for (var i = 0; i < rh.length; i++) {
-	    if (rh[i].name != "set-cookie") {
+	    if (rh[i].name.toLowerCase() != "set-cookie") {
 		continue;
 	    }
 	    console.log("APPU DEBUG: Response Header Name: " + rh[i].name);
@@ -382,9 +383,13 @@ function detect_login_cookies(domain) {
 		login_state_cookies.cookies = {};
 
 		for (var i = 0; i < all_cookies.length; i++) {
-		    if (all_cookies[i].domain[0] != '.') {
-			continue;
-		    }
+		    // Following is not necessarily true.
+		    // For e.g. "github.com" does not set
+		    // their account-cookies to "https://.github.com" but
+		    // rather "https://github.com"
+		    //   if (all_cookies[i].domain[0] != '.') {
+		    //  	continue;
+		    //   }
 
 		    var cookie_name = all_cookies[i].name;
 		    var cookie_domain = all_cookies[i].domain;
@@ -782,18 +787,21 @@ function load_page_for_cookie_investigation(tab_id, am_i_logged_in, page_load_su
 // 					});
 // 			}
 // 			else {
-// 			    console.log("APPU DEBUG: Forcing PAGE-RELOAD: " + cit.url);
+// 			    console.log("APPU DEBUG: Forcing PAGE-LOAD: " + cit.url);
 // 			    chrome.tabs.update(tab_id, {
-// 				    url: cit.url
+// 				    url: cit.url,
+// 					active: false,
+// 					highlighted: false,
+// 					pinned: true
 // 					});
 // 			}
 
-
-			console.log("APPU DEBUG: Forcing PAGE-LOAD: " + cit.url);
 			chrome.tabs.update(tab_id, {
-				url: cit.url
+				url: cit.url,
+				    active: false,
+				    highlighted: false,
+				    pinned: true
 				    });
-
 
 			cit.bool_state_in_progress = true;
 			cit.num_pageload_timeouts = 0;
