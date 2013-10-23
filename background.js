@@ -510,6 +510,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		delete cookie_investigating_tabs[sender.tab.id];
 	    }
 	    else if (cit.get_state() == 'st_cookie_test_start') {
+		console.log("----------------------------------------");
 		load_page_for_cookie_investigation(sender.tab.id, undefined, true)
 		return true;
 	    }

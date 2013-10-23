@@ -875,8 +875,7 @@ function open_cookie_slave_tab(url,
 				 init_cookie_investigation) {
 			   return function slave_tab_callback(tab) {
 			       var filter = {};
-			       
-			       console.log("APPU DEBUG: Created a new tab to investigate cookies: " + tab.id);
+
 			       if (http_request_cb) {
 				   chrome.webRequest.onBeforeSendHeaders.addListener(http_request_cb, 
 										     {
@@ -903,7 +902,17 @@ function open_cookie_slave_tab(url,
 			       cookie_investigating_tabs[tab.id] = {};
 		    
 			       update_tab_id(tab.id);
+
+			       console.log("----------------------------------------");
+			       console.log("APPU DEBUG: Starting cookie investigation for: " + url);
+			       console.log("APPU DEBUG: Created a new tab to investigate cookies: " + tab.id);
+
 			       init_cookie_investigation();
+
+			       console.log("APPU DEBUG: COOKIE INVESTIGATOR STATE(" + 
+					   cookie_investigating_tabs[tab.id].get_state() + ")");
+
+			       cookie_investigating_tabs[tab.id].print_cookie_array();
 			   }
 		       })(url, 
 			  http_request_cb,
@@ -1072,6 +1081,15 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 	cit.restore_shadow_cookie_store = restore_shadow_cookie_store; 
 	cit.report_fatal_error = report_fatal_error; 
 	cit.get_shadow_cookie_store = get_shadow_cookie_store;
+	cit.print_cookie_array = print_cookie_array;
+    }
+
+    
+    function print_cookie_array() {
+	console.log("APPU DEBUG: Following cookies and their combinations would be tested");
+	for (var i = 0; i < account_cookies_array.length; i++) {
+	    console.log(account_cookies_array[i]);
+	}
     }
 
 
@@ -1353,9 +1371,13 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
     // Will tell what would be next state after current state AND
     // also goto that state.
     function goto_next_state() {
-	var cit = cookie_investigating_tabs[my_tab_id];
-	cit.bool_state_in_progress = false;
-	return next_state(true);
+	if (!has_error_occurred) {
+	    var cit = cookie_investigating_tabs[my_tab_id];
+	    cit.bool_state_in_progress = false;
+	    return next_state(true);
+	}
+
+	return "st_terminate";
     }
 
 
@@ -1404,9 +1426,13 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 	if (bool_side_effect) {
 	    my_state = rs;
 
-	    console.log("APPU DEBUG: Total cookies tried: " + tot_cookies_tried +
-			", total cookiesets tried: " + tot_cookiesets_tried +
-			", remaining cookiesets: " + cookiesets.length);
+	    console.log("APPU DEBUG: " + 
+			"Cookies remaining to be tested: " + (account_cookies_array.length - current_cookie_test_index) +
+			", Total cookies tested: " + tot_cookies_tried);
+
+	    console.log("APPU DEBUG: " +
+			"Cookiesets remaining to be tested: " + cookiesets.length +
+			", Total cookiesets tested: " + tot_cookiesets_tried);
 
 	    if (my_state == "st_cookiesets_test" && current_cookiesets_test_index == -1) {
 		// This is just to initialize for the very first time. 
