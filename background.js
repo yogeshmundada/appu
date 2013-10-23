@@ -381,6 +381,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 
 	    if (cit.pageload_timeout != undefined) {
+		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
+			+ ", Interval-ID: " + cit.pageload_timeout);
 		window.clearInterval(cit.pageload_timeout);
 		cit.pageload_timeout = undefined;
 	    }
@@ -489,7 +491,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	    cit.page_load_success = true;
 	    if (cit.pageload_timeout != undefined) {
-		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id);
+		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
+			+ ", Interval-ID: " + cit.pageload_timeout);
 		window.clearInterval(cit.pageload_timeout);
 		cit.pageload_timeout = undefined;
 	    }

@@ -1464,6 +1464,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		if (message.command == "load_page") {
 		    console.log("Here here: Loading page to investigate cookies");
 		    window.location.href = message.url;
+		    window.location.reload(true);
 		}
 		else if (message.command == "check_usernames") {
 		    check_if_username_present(message.usernames);
