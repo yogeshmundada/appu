@@ -982,12 +982,14 @@ function check_if_username_present(usernames) {
 		    }
 		});
 	});
-    
+
     // Even if no usernames detected, just send the message.
     var message = {};
     message.type = "usernames_detected";
     message.domain = document.domain;
     message.present_usernames = present_usernames;
+    message.num_password_boxes = $("input:password:visible").length;
+
     chrome.extension.sendMessage("", message, function(response) {
 	    if (response.command == "load_page") {
 		console.log("Here here: Loading page again to investigate cookies");

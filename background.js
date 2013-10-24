@@ -376,6 +376,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 			Object.keys(message.present_usernames).length);
 	    
 	    var am_i_logged_in = false;
+	    var num_pwd_boxes = message.num_password_boxes;
+
 	    if (Object.keys(message.present_usernames).length > 0) {
 		am_i_logged_in = true;
 	    }
@@ -387,7 +389,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		cit.pageload_timeout = undefined;
 	    }
 	    
-	    load_page_for_cookie_investigation(sender.tab.id, am_i_logged_in, cit.page_load_success);
+	    load_page_for_cookie_investigation(sender.tab.id, am_i_logged_in, num_pwd_boxes, cit.page_load_success);
 	}
 	else {
 	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected: " + 
@@ -509,7 +511,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	    else if (cit.get_state() == 'st_cookie_test_start') {
 		console.log("----------------------------------------");
-		load_page_for_cookie_investigation(sender.tab.id, undefined, true)
+		load_page_for_cookie_investigation(sender.tab.id, undefined, undefined, true)
 	    }
 	    else if (cit.get_state() == 'st_start_with_no_cookies'     ||
 		     cit.get_state() == 'st_during_cookies_pass_test'  ||
