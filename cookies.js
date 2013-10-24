@@ -41,6 +41,13 @@ function cb_headers_received(details) {
 }
 
 
+function print_expiry_date(exp_seconds) {
+    var d = new Date(0); 
+    d.setUTCSeconds(exp_seconds);
+    console.log("APPU DEBUG: Expiry date for(" + exp_seconds + "): " + d);
+}
+
+
 function get_all_cookies(domain, handle_cookies) {
     if(!handle_cookies) {
 	    console.log("APPU DEBUG: handle_cookies() is undefined");
@@ -1334,7 +1341,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 		var res_arr = cookiesets.splice(current_cookiesets_test_index, 1);
 
 		if (!am_i_logged_in) {
-		    verified_account_cookiesets.push(res_arr[0]);
+		    verified_account_cookiesets.push(disabled_cookies);
 		    prune_cookiesets(disabled_cookies);
 		    console.log("APPU DEBUG: Number of cookie-sets after pruning: " + cookiesets.length);
 		}
@@ -1527,7 +1534,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 
 	    console.log("APPU DEBUG: Following are all the account cookiesets:");
 	    for (var j = 0; j < verified_account_cookiesets.length; j++) {
-		var cs_names = get_disabled_cookies_in_a_set(verified_account_cookiesets[j]);
+		var cs_names = verified_account_cookiesets[j];
 		console.log("Number of cookies: " + cs_names.length +
 			    ", CookieSet: " +
 			    JSON.stringify(cs_names));
