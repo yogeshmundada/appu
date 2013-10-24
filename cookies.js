@@ -1854,7 +1854,7 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 	var final_rh = [];
 	var rh = details.responseHeaders;
 	for (var i = 0; i < rh.length; i++) {
-	    if (rh[i].name != "set-cookie") {
+	    if (rh[i].name.toLowerCase() != "set-cookie") {
 		final_rh.push(rh[i]);
 	    }
 	    else {
@@ -2250,7 +2250,7 @@ function test_handle_set_cookie_responses(details) {
     var final_rh = [];
     var rh = details.responseHeaders;
     for (var i = 0; i < rh.length; i++) {
-	if (rh[i].name != "set-cookie") {
+	if (rh[i].name.toLowerCase() != "set-cookie") {
 	    final_rh.push(rh[i]);
 	}
 	else {
