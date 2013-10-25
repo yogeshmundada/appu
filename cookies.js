@@ -292,8 +292,51 @@ function delete_cookies(domain, cookies) {
 }
 
 
-// Test function to delete all cookies except account cookies
-function delete_all_except_account_cookies(domain) {
+// Delete all cookies except the cookies in this array. For testing purpose.
+function delete_all_except_selected_cookies(domain, selected_cookies) {
+    if (selected_cookies.length == 0) {
+	console.log("APPU DEBUG: selected_cookies array is not populated. Doing nothing.");
+	return;
+    }
+
+    var cb_cookies = (function(selected_cookies) {
+	    return function(all_cookies) {
+		console.log("APPU DEBUG: Total cookies: " + all_cookies.length);
+		console.log("APPU DEBUG: Total cookies to be deleted: " + 
+			    (all_cookies.length - selected_cookies.length));
+
+		var total_cookies_deleted = [];
+		for (var i = 0; i < all_cookies.length; i++) {
+		    if (selected_cookies.indexOf(all_cookies[i].name) != -1) {
+			continue;
+		    }
+
+		    var protocol = "";
+		    if (all_cookies[i].secure) {
+			protocol = "https://";
+		    }
+		    else {
+			protocol = "http://";
+		    }
+		    var url = protocol + all_cookies[i].domain + all_cookies[i].path;
+		    chrome.cookies.remove({
+			    "url": url, 
+				"name": all_cookies[i].name});			
+		    total_cookies_deleted.push(url);
+		}
+		console.log("APPU DEBUG: Deleted cookies number: " + total_cookies_deleted.length);
+	    }
+	})(selected_cookies);
+    
+    chrome.cookies.getAll({
+	    'domain' : domain,
+		},
+	cb_cookies);
+}
+
+
+// Test function to delete all cookies except SUSPECTED account cookies
+function delete_all_except_during_cookies(domain) {
     chrome.cookies.getAll({
 	    'domain' : domain,
 		},
@@ -1022,11 +1065,12 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
     //                                               Otherwise, it means that that cookie is not 'ACCOUNT-COOKIE' OR
     //                                               other cookies are sufficient to regenerate this cookie
     //                                               (looking at you Google)
-    // "st_non_accountcookies_test"                : If there are account-cookies discovered in the step above, then
+    // "st_non_accountcookies_block_test"          : If there are account-cookies discovered in the step above, then
     //                                               test login by omitting all the cookies that are account-cookies and
     //                                               only letting rest of the 'DURING' cookies pass. 
     //                                               If it is seen that the account is not logged in, then one can
     //                                               easily avoid the entire "st_cookiesets_test".
+    //                                               If there are no account-cookies discovered, then skip this test.
     // "st_cookiesets_test"                        : Cookiesets are created by systematically omitting some of the
     //                                               'DURING' cookies. So, if we have detected 'N' 'DURING' cookies,
     //                                               then there are '2^N - (N+1)' cookie sets. Here '(n+1)' is subtracted for
@@ -1061,7 +1105,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
     // At the start of each new WebRequest (Not HTTP Get request), it
     // will be repopulated from the basic cookie-store.
     var shadow_cookie_store = {};
-    
+
+    var bool_non_accountcookies_test_done = false;
     var verified_account_cookiesets = [];
     var verified_restricted_cookiesets = [];
     var max_rand_cookiesets_test_attempts = 3;
@@ -1240,6 +1285,23 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 				    continue;
 				}
 			    }
+			    else if (my_state == 'st_non_accountcookies_block_test') {
+				var bool_match = false;
+				for (var k = 0; k < verified_account_cookiesets.length; k++) {
+				    if (JSON.stringify(verified_account_cookiesets[k]) == 
+					JSON.stringify([cookie_key])) {
+					bool_match = true;
+					break;
+				    }
+				}
+
+				if (bool_match == false) {
+				    // Only populate account-cookies discovered so far.
+				    // So that if any combination of other 'DURING' cookies
+				    // is required for logged-in status, that will be discovered.
+				    continue;
+				}
+			    }
 			    else if (my_state == 'st_cookiesets_test') {
 				// If the cookie is in the set of disabled-cookie-sets in this 
 				// iteration, then ignore it.
@@ -1348,6 +1410,16 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 		current_cookie_test_index += 1;
 		tot_cookies_tried += 1;
 	    }
+	    else if (my_state == "st_non_accountcookies_block_test") {
+		console.log("APPU DEBUG: ARE THERE ACCOUNT-COOKIESETS BESIDES ACCOUNT-COOKIES?: " + 
+			    !am_i_logged_in);
+
+		if (am_i_logged_in) {
+		    // User is still logged in. That means the other 'DURING' cookies or
+		    // their combination does not matter. We can skip cookieset testing.
+		    cookiesets = [];
+		}
+	    }
 	    else if (my_state == "st_cookiesets_test") {
 		console.log("APPU DEBUG: IS ACCOUNT COOKIE-SET?(" + 
 			    JSON.stringify(disabled_cookies) + 
@@ -1449,7 +1521,15 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 		rs = "st_single_cookie_test";
 	    }
 	    else if (current_cookie_test_index >= tot_cookies) {
-		rs = "st_cookiesets_test";
+		if (!bool_non_accountcookies_test_done && 
+		    verified_account_cookiesets.length > 0) {
+		    bool_non_accountcookies_test_done = true;
+		    rs = "st_non_accountcookies_block_test";
+		}
+		else {
+		    bool_non_accountcookies_test_done = true;
+		    rs = "st_cookiesets_test";
+		}
 	    }
 	}
 	else if (my_state == "st_cookie_test_start"         ||
@@ -1457,7 +1537,8 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 		 my_state == "st_during_cookies_pass_test"  ||
 		 my_state == "st_during_cookies_block_test" ||
 		 my_state == "st_single_cookie_test"        ||
-		 my_state == "st_cookiesets_test") {
+		 my_state == "st_cookiesets_test"           ||
+		 my_state == "st_non_accountcookies_block_test") {
 	    rs = "st_verification_epoch";
 	}
 
@@ -1807,7 +1888,44 @@ function cookie_investigator(account_cookies, url, cookiesets_config, config_for
 	    }
 
 	    console.log("----------------------------------------");
-	    console.log("APPU DEBUG: New suppress cookie is: " + account_cookies_array[current_cookie_test_index]);
+	    if (current_cookie_test_index < account_cookies_array.length) {
+		console.log("APPU DEBUG: New suppress cookie is: " + 
+			    account_cookies_array[current_cookie_test_index]);
+	    }
+	}
+	else if (my_state == "st_non_accountcookies_block_test") {
+	    if (am_i_logged_in != undefined) {
+		if (page_load_success) {
+		    // EXPECTED branch
+		    console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames detection test " + 
+				"done, page loaded, num-pwd-boxes: " + num_pwd_boxes + 
+				", for 'st_non_accountcookies_block_test'");
+		    update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+		}
+		else {
+		    if (am_i_logged_in) {
+			// EXPECTED branch
+			console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames are detected, page is not loaded, " + 
+				    "num-pwd-boxes: " + num_pwd_boxes + 
+				    ", for 'st_non_accountcookies_block_test'");
+			update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+		    }
+		    else {
+			// INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
+			console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded" + 
+				    ", num-pwd-boxes: " + num_pwd_boxes + 
+				    ", for 'st_non_accountcookies_block_test'");
+		    }
+		}
+	    }
+	    else {
+		// SERIOUS error branch (user name detection test never carried out)
+		console.log("APPU Error: NOT EXPECTED: Username detection test never " + 
+			    "carried out for 'st_non_accountcookies_block_test'");
+		report_fatal_error("Non-accountcookies-block-no-username-detection-test: Page load: " + page_load_success);
+	    }
+
+	    console.log("----------------------------------------");
 	}
 	else if (my_state == "st_cookiesets_test") {
 	    if (am_i_logged_in != undefined) {

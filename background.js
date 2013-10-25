@@ -513,11 +513,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		console.log("----------------------------------------");
 		load_page_for_cookie_investigation(sender.tab.id, undefined, undefined, true)
 	    }
-	    else if (cit.get_state() == 'st_start_with_no_cookies'     ||
-		     cit.get_state() == 'st_during_cookies_pass_test'  ||
-		     cit.get_state() == 'st_during_cookies_block_test' ||
-		     cit.get_state() == 'st_verification_epoch'        ||
-		     cit.get_state() == 'st_single_cookie_test'        ||
+	    else if (cit.get_state() == 'st_start_with_no_cookies'         ||
+		     cit.get_state() == 'st_during_cookies_pass_test'      ||
+		     cit.get_state() == 'st_during_cookies_block_test'     ||
+		     cit.get_state() == 'st_verification_epoch'            ||
+		     cit.get_state() == 'st_single_cookie_test'            ||
+		     cit.get_state() == 'st_non_accountcookies_block_test' ||
 		     cit.get_state() == 'st_cookiesets_test') {
 		// We test here that user is still logged into the web application.
 		check_usernames_for_cookie_investigation(sender.tab.id);
