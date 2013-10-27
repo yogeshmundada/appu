@@ -240,7 +240,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	if (sender.tab) {
 	    console.log("APPU DEBUG: Content script is started on: " + sender.tab.id);
 	    if (sender.tab.id in cookie_investigating_tabs) {
-		cookie_investigating_tabs[sender.tab.id].content_script_started = true;
+		var cit = cookie_investigating_tabs[sender.tab.id];
+		if (!cit.content_script_started) {
+		    cit.content_script_started = true;
+		}
 	    } 
 	}
     }
@@ -389,7 +392,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		cit.pageload_timeout = undefined;
 	    }
 	    
-	    load_page_for_cookie_investigation(sender.tab.id, am_i_logged_in, num_pwd_boxes, cit.page_load_success);
+	    process_last_epoch_and_start_new_epoch(sender.tab.id, am_i_logged_in, num_pwd_boxes, cit.page_load_success);
 	}
 	else {
 	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected: " + 
@@ -488,6 +491,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
 	else if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
+	    if (cit.page_load_success) {
+		console.log("Here here: EEEEEEEEEE Returning since we have already processed this epoch");
+		return;
+	    }
 
 	    cit.page_load_success = true;
 	    if (cit.pageload_timeout != undefined) {
@@ -511,7 +518,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	    else if (cit.get_state() == 'st_cookie_test_start') {
 		console.log("----------------------------------------");
-		load_page_for_cookie_investigation(sender.tab.id, undefined, undefined, true)
+		process_last_epoch_and_start_new_epoch(sender.tab.id, undefined, undefined, true)
 	    }
 	    else if (cit.get_state() == 'st_start_with_no_cookies'         ||
 		     cit.get_state() == 'st_during_cookies_pass_test'      ||

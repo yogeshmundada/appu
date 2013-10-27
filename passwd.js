@@ -1314,6 +1314,7 @@ if (document.URL.match(/.pdf$/) == null) {
 	url : document.domain
     }
     chrome.extension.sendMessage("", message);
+    console.log("APPU DEBUG: Sending message 'content_script_started' to the background page.");
 
     $(document).ready(function() {
 	    store_pwd_elements();
