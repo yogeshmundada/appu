@@ -730,21 +730,21 @@ function is_subdomain(cookie_domain, current_domain) {
 
 
 // Returns cookies set during 'login' process.
-// If get_all is not defined or is 'true', it will return all cookies.
-// If get_all is 'false', it will return only cookies that will get sent
+// If get_all_cookies is not defined or is 'true', it will return all 'DURING' cookies.
+// If get_all_cookies is 'false', it will return only cookies that will get sent
 // when 'current_url' is requested by the browser.
-function get_account_cookies(current_url, get_all) {
+function get_account_cookies(current_url, get_all_during_cookies) {
     var domain = get_domain(current_url.split("/")[2]);
     var cs = pii_vault.aggregate_data.session_cookie_store[domain];
     var account_cookies = {};
 
-    if (get_all == undefined) {
-	get_all = true;
+    if (get_all_during_cookies == undefined) {
+	get_all_during_cookies = true;
     }
 
     for (c in cs.cookies) {
 	if (cs.cookies[c].cookie_class == 'during') {
-	    if (!get_all) {
+	    if (!get_all_during_cookies) {
 		if (is_subdomain(c, current_url)) {
 		    account_cookies[c] = {};
 		    account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_value; 
@@ -1078,7 +1078,7 @@ function cookie_investigator(account_cookies,
     //                                               Otherwise, it means that that cookie is not 'ACCOUNT-COOKIE' OR
     //                                               other cookies are sufficient to regenerate this cookie
     //                                               (looking at you Google)
-    // "st_non_accountcookies_block_test"          : If there are account-cookies discovered in the step above, then
+    // "st_non_accountcookies_block_test"          : If there are account-cookies discovered in the states so far, then
     //                                               test login by omitting all the cookies that are account-cookies and
     //                                               only letting rest of the 'DURING' cookies pass. 
     //                                               If it is seen that the account is not logged in, then one can
@@ -1184,9 +1184,81 @@ function cookie_investigator(account_cookies,
     function get_shadow_cookie_store() {
 	return shadow_cookie_store;
     }
+
+
+    // set1 is a decimal number like 44
+    // set2 is a decimal number like 60
+    // Here 44 is subset of 60
+    // if set1 is subset of set2 then return 1
+    // if set2 is subset of set1 then return 2
+    // if none is subset of other then return 0
+    // if error return -1
+    function is_a_subset(set1, set2) {
+	if (set1 == 0 || set2 == 0) {
+	    return -1;
+	}
+
+	if ((set1 & set2) != set1) {
+	    return 1;
+	}
+
+	if ((set1 & set2) != set2) {
+	    return 2;
+	}
+
+	return 0;
+    }
+
+
+    function convert_cookies_to_binary(cookieset) {
+	var bin_cookieset = "";
+
+	for (var i = 0; i <= account_cookies_array.length; i++) {
+	    var index = cookieset.indexOf(account_cookies_array[i]);
+	    if (index == -1) {
+		bin_cookieset += "0"; 
+	    }
+	    else {
+		bin_cookieset += "1";
+	    }
+	}
+	return parseInt(bin_cookieset, 2);
+    }
+
+
+    function generate_cookiesets_with_X_ones(x) {
+	var my_cookiesets = [];
+	var num_sets = Math.pow(2, tot_cookies);
+	
+	for (var i = 0; i < num_sets; i++) {
+	    var str_bin_i = i.toString(2);
+	    var bin_i = str_bin_i.split('');
+	    
+	    if (bin_i.length < tot_cookies) {
+		var insert_zeroes = (tot_cookies - bin_i.length);
+		for (var k = 0; k < insert_zeroes; k++) {
+		    bin_i.unshift("0");
+		}
+	    }
+	    
+	    var total = 0;
+	    for (var j = 0; j < bin_i.length; j++) {
+		bin_i[j] = parseInt(bin_i[j]);
+		total += (bin_i[j]);
+	    }
+	    
+	    if (total == x) {
+		my_cookiesets.push(bin_i);
+	    }
+	}
+	
+	return my_cookiesets;
+    }
+
     
     function generate_cookiesets() {
 	var num_sets = Math.pow(2, tot_cookies);
+	
 	for (var i = 0; i < num_sets; i++) {
 	    var str_bin_i = i.toString(2);
 	    var bin_i = str_bin_i.split('');
@@ -1210,7 +1282,7 @@ function cookie_investigator(account_cookies,
 		cookiesets.push(bin_i);
 	    }
 	}
-
+	
 	// Sorts cookiesets such that all sets containing minimum ONEs are
 	// at the start. This way, if all the sets are sequentially tested
 	// and one of the sets turns out to be an account-cookie-set then
@@ -1357,8 +1429,11 @@ function cookie_investigator(account_cookies,
 		    console.log("APPU DEBUG: Restored shadow_cookie_store length: " + 
 				Object.keys(cookie_store).length + 
 				", On-disk cookie-store length: " + all_cookies.length);
-		    console.log("APPU DEBUG: Disabled cookies in this epoch: " + 
-				JSON.stringify(disabled_cookies));
+
+		    if (my_state != "st_verification_epoch") {
+			console.log("APPU DEBUG: Disabled cookies in this epoch: " + 
+				    JSON.stringify(disabled_cookies));
+		    }
 
 		    original_shadow_cookie_store = $.extend(true, {}, shadow_cookie_store);
 
@@ -2328,9 +2403,15 @@ function cookie_investigator(account_cookies,
 	    if (is_subdomain(cookie_url, details.url)) {
 		if (shadow_cookie_store[c].session) {
 		    my_cookies.push(cookie_name_value);
+		    if (shadow_cookie_name == "https://accounts.google.com/:LSID") {
+			console.log("Here here: DDDDDDDDDDDDDDDDDDDDDDDDDDDDDD, Sending LSID for URL: " + details.url);
+		    }
 		}
 		else if (shadow_cookie_store[c].expirationDate > curr_time) {
 		    my_cookies.push(cookie_name_value);
+		    if (shadow_cookie_name == "https://accounts.google.com/:LSID") {
+			console.log("Here here: DDDDDDDDDDDDDDDDDDDDDDDDDDDDDD, Sending LSID for URL: " + details.url);
+		    }
 		}
 	    }
 	}
@@ -2413,7 +2494,7 @@ function detect_account_cookies(current_url,
 
     if (cookie_names == undefined) {
 	// Gets all 'DURING' cookies
-	account_cookies = get_account_cookies(current_url, false);
+	account_cookies = get_account_cookies(current_url, true);
     }
     else {
 	account_cookies = get_selective_account_cookies(current_url, cookie_names);
