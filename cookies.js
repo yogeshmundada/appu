@@ -1122,6 +1122,8 @@ function cookie_investigator(account_cookies,
 
     var bool_non_accountcookies_test_done = false;
     var verified_account_cookiesets = [];
+    var verified_decimal_account_cookiesets = [];
+
     var verified_restricted_cookiesets = [];
     var max_rand_cookiesets_test_attempts = 3;
     var current_cookiesets_test_attempts = 0;
@@ -1248,7 +1250,20 @@ function cookie_investigator(account_cookies,
 	    }
 	    
 	    if (total == x) {
-		my_cookiesets.push(bin_i);
+		// Only push this set if it is not a superset of already
+		// verified cookieset.
+		var bool_is_a_superset = false;
+		for (var k = 0; k < verified_decimal_account_cookiesets.length; k++) {
+		    var tmp = is_a_subset(verified_decimal_account_cookiesets[k], i);
+		    if (tmp == 1) {
+			bool_is_a_superset = true;
+			break;
+		    }
+		}
+
+		if (!bool_is_a_superset) {
+		    my_cookiesets.push(bin_i);
+		}
 	    }
 	}
 	
