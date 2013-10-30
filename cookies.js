@@ -1144,8 +1144,8 @@ function cookie_investigator(account_cookies,
     var verified_non_account_super_cookiesets = [];
     var verified_decimal_non_account_super_cookiesets = [];
 
-
     var verified_restricted_cookiesets = [];
+
     var current_cookiesets_test_attempts = 0;
     var cookiesets = [];
     var current_cookiesets_test_index = -1;
@@ -1285,6 +1285,134 @@ function cookie_investigator(account_cookies,
     }
 
 
+    // Adds the element "cs" to the set "cookiesets" iff
+    // "cs" is already not present in "cookiesets".
+    // "cs" : ["http://abc.com/:cookie1", "https://abc.com/:cookie2"]
+    // "cookiesets" : array of cookieset like "cs"
+    // "decimal_cookiesets" : representation of "cookiesets" as per "suspected_account_cookies_array"
+    function add_to_set(cs, cookiesets, decimal_cookiesets, suspected_account_cookies_array) {
+	var rc = convert_cookie_array_to_cookieset(cs, suspected_account_cookies_array);
+	var dec_num = rc.dec_num;
+	if (decimal_cookiesets.indexOf(dec_num) == -1) {
+	    cookiesets.push(cs);
+	    decimal_cookiesets.push(dec_num);
+	    return 1;
+	}
+	return 0;
+    }
+
+
+    // Adds the element "cs" to the set "cookiesets" iff
+    //  "cs" is already not present in "cookiesets" AND
+    //  no member of "cookiesets" is subset of "cs"
+    // If there "cs" is added to "cookiesets" and if there are
+    //  some supersets present then they are deleted.
+    //
+    // "cs" : ["http://abc.com/:cookie1", "https://abc.com/:cookie2"]
+    // "cookiesets" : array of cookieset like "cs"
+    // "decimal_cookiesets" : representation of "cookiesets" as per "suspected_account_cookies_array"
+    function add_to_set_if_no_subset_member(cs, 
+					    cookiesets, 
+					    decimal_cookiesets, 
+					    suspected_account_cookies_array,
+					    decimal_cs) {
+	var conv_cs = undefined; 
+	var dec_cs = undefined;
+	
+	if (decimal_cs == undefined) {
+	    conv_cs = convert_cookie_array_to_cookieset(cs, suspected_account_cookies_array);
+	    dec_cs = conv_cs.dec_num;
+	}
+	else {
+	    dec_cs = decimal_cs;
+	}
+
+	var subset_found = false;
+	var superset_indexes = [];
+
+	for (var k = 0; k < decimal_cookiesets.length; k++) {
+	    var curr_dec_num = decimal_cookiesets[k];
+	    var rc = find_subset_relationship(dec_cs, curr_dec_num);
+	    if (rc == 2) {
+		// curr_dec_num is subset of dec_cs
+		subset_found = true;
+	    }
+	    else if (rc == 1) {
+		superset_indexes.push(k);
+	    }
+	}
+
+	if (!subset_found) {
+	    // First delete all supersets
+	    for (var i = 0; i < superset_indexes.length; i++) {
+		var index_to_delete = superset_indexes[i];
+		decimal_cookiesets.splice(index_to_delete, 1);		
+		cookiesets.splice(index_to_delete, 1);		
+	    }
+
+	    cookiesets.push(cs);
+	    decimal_cookiesets.push(dec_num);
+	    return 1;
+	}
+	return 0;
+    }
+
+
+    // Adds the element "cs" to the set "cookiesets" iff
+    //  "cs" is already not present in "cookiesets" AND
+    //  no member of "cookiesets" is superset of "cs"
+    // If there are subsets present, then delete them.
+    //
+    // "cs" : ["http://abc.com/:cookie1", "https://abc.com/:cookie2"]
+    // "cookiesets" : array of cookieset like "cs"
+    // "decimal_cookiesets" : representation of "cookiesets" as per "suspected_account_cookies_array"
+    function add_to_set_if_no_superset_member(cs, 
+					      cookiesets, 
+					      decimal_cookiesets, 
+					      suspected_account_cookies_array,
+					      decimal_cs) {
+	var conv_cs = undefined;
+	var dec_cs = undefined;
+
+	if (decimal_cs == undefined) {
+	    conv_cs = convert_cookie_array_to_cookieset(cs, suspected_account_cookies_array);
+	    dec_cs = conv_cs.dec_num;
+	}
+	else {
+	    dec_cs = decimal_cs;
+	}
+
+	var superset_found = false;
+	var subset_indexes = [];
+
+	for (var k = 0; k < decimal_cookiesets.length; k++) {
+	    var curr_dec_num = decimal_cookiesets[k];
+	    var rc = find_subset_relationship(dec_cs, curr_dec_num);
+	    if (rc == 1) {
+		// curr_dec_num is superset of dec_cs
+		superset_found = true;
+	    }
+	    else if (rc == 2) {
+		subset_indexes.push(k);
+	    }
+	}
+
+	if (!superset_found) {
+	    // First delete all subsets
+	    for (var i = 0; i < subset_indexes.length; i++) {
+		var index_to_delete = subset_indexes[i];
+		decimal_cookiesets.splice(index_to_delete, 1);		
+		cookiesets.splice(index_to_delete, 1);		
+	    }
+
+	    cookiesets.push(cs);
+	    decimal_cookiesets.push(dec_num);
+	    return 1;
+	}
+	return 0;
+    }
+
+
     // Returns super cookiesets which are:
     //     1. Have maximum '1's but are not tested so far.
     //     2. Are not supersets of verified account-cookiesets.
@@ -1366,45 +1494,29 @@ function cookie_investigator(account_cookies,
 	    // First check which members discovered in previous iterations are
 	    //  either: subsets of this member in which case delete them
 	    //  or: supersets of this member in which case do not add it.
-	    var curr_subsets_in_super_cookiesets = [];
-
-	    // 'add', 'do-not-add'
-	    var result = 'add';
+	    add_to_set_if_no_superset_member(undefined, 
+					     [], 
+					     my_decimal_super_cookiesets, 
+					     undefined,
+					     curr_cookieset_decimal);
 	    
-	    for (var k = 0; k < my_decimal_super_cookiesets.length; k++) {
-		var test_cookieset_decimal = my_decimal_super_cookiesets[k];
-		var rc = find_subset_relationship(curr_cookieset_decimal, test_cookieset_decimal);
-		if (rc == 0) {
-		    // Variables curr_cookieset_decimal and test_cookieset_decimal are not subsets of 
-		    // each other. 
-		    // Add curr_cookieset_decimal to my_decimal_super_cookiesets
-		    continue;
-		}
-		else if (rc == 1) {
-		    // Variable curr_cookieset_decimal is a subset of test_cookieset_decimal.
-		    // No need to do anything and just move to next cookieset.
-		    result = 'do-not-add';
-		}
-		else if (rc == 2) {
-		    // Variable curr_cookieset_decimal is a superset of test_cookieset_decimal.
-		    // Need to delete test_cookieset_decimal from my_decimal_super_cookiesets and
-		    //  add curr_cookieset_decimal to my_decimal_super_cookiesets.
-		    // Push the index that would be deleted.
-		    curr_subsets_in_super_cookiesets.push(k);
-		}
-	    }
-
-	    if (curr_subsets_in_super_cookiesets.length > 0) {
-		for (var k = 0; k < curr_subsets_in_super_cookiesets.length; k++) {
-		    my_decimal_super_cookiesets.splice(k, 1);
-		}
-	    }
-	    
-	    if (result == 'add') {
-		my_decimal_super_cookiesets.push(curr_cookieset_decimal);
-	    }
 	}
 	
+	for (var k = 0; k < my_decimal_super_cookiesets.length; k++) {
+	    var curr_dec_cs = my_decimal_super_cookiesets[k];
+	    var str_bin_cs = curr_dec_cs.toString(2);
+	    var bin_cs = str_bin_cs.split('');
+	    
+	    if (bin_cs.length < tot_cookies) {
+		var insert_zeroes = (tot_cookies - bin_cs.length);
+		for (var k = 0; k < insert_zeroes; k++) {
+		    bin_cs.unshift("0");
+		}
+	    }
+	    
+	    my_super_cookiesets.push(bin_cs);
+	}
+
 	return {
 	    decimal_cookiesets: my_decimal_super_cookiesets,
 		cookiesets: my_super_cookiesets
@@ -1961,7 +2073,8 @@ function cookie_investigator(account_cookies,
 	    my_state = rs;
 
 	    console.log("APPU DEBUG: " + 
-			"Cookies remaining to be tested: " + (suspected_account_cookies_array.length - current_cookie_test_index) +
+			"Cookies remaining to be tested: " + 
+			(suspected_account_cookies_array.length - current_cookie_test_index) +
 			", Total cookies tested: " + tot_cookies_tried);
 
 	    console.log("APPU DEBUG: " +
@@ -2522,7 +2635,6 @@ function cookie_investigator(account_cookies,
 	    return {requestHeaders: details.requestHeaders};
 	}
 	
-	//console.log("Here here: In HTTP request callback.");
 	if (current_cookie_test_index >= tot_cookies) {
 	    console.log("APPU DEBUG: All cookies for URL(" + url + ") have been tested. " + 
 			"Terminating cookie_investigating_tab");
@@ -2554,7 +2666,8 @@ function cookie_investigator(account_cookies,
 	}
 	
 	if (http_request_cookies.length != 0) {
-	    console.log("Here here: Going to suppress(if present): " + suspected_account_cookies_array[current_cookie_test_index]);
+	    console.log("Here here: Going to suppress(if present): " +
+			suspected_account_cookies_array[current_cookie_test_index]);
 	    //console.log("Here here: Cookies found in HTTP request");
 	    var cookie_name_value = http_request_cookies[0].value.split(";");
 	    var delete_index = -1;
@@ -2667,18 +2780,6 @@ function cookie_investigator(account_cookies,
 	    var curr_test_cookie_name = suspected_account_cookies_array[current_cookie_test_index];
 	    var shadow_cookie_name = cookie_url + ':' + shadow_cookie_store[c].name;
 
-// 	    if (shadow_cookie_name == "http://.facebook.com/:p" ||
-// 		shadow_cookie_name == "http://.facebook.com/:fr" ) {
-// 		var rt = Math.ceil((Math.random() * 100)) % 30;
-// 		if (rt == 23) {
-// 		    console.log("Here here: RANDOM, Cancelling Request 'p' OR 'fr', QQQQQQQQQQQQQQQ");
-// 		    return {cancel: true};
-// 		}
-		
-// 		console.log("Here here: Suppressing 'p' OR 'fr', MUHAHAHAHAHAHAHAHA");
-// 		continue;
-// 	    }
-	    
 	    if (is_subdomain(cookie_url, details.url)) {
 		if (shadow_cookie_store[c].session) {
 		    my_cookies.push(cookie_name_value);
