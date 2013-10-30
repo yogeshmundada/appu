@@ -271,6 +271,10 @@ function is_a_superset(decimal_set1, decimal_set2) {
 
 
 function is_a_setmember_subset(decimal_element, decimal_set) {
+    if(decimal_set.indexOf(decimal_element) != -1) {
+	return true;
+    }
+
     for (var k = 0; k < decimal_set.length; k++) {
 	var rc = find_subset_relationship(decimal_element, decimal_set[k]);
 	if (rc == 2) {
@@ -283,6 +287,10 @@ function is_a_setmember_subset(decimal_element, decimal_set) {
 
 
 function is_a_setmember_superset(decimal_element, decimal_set) {
+    if(decimal_set.indexOf(decimal_element) != -1) {
+	return true;
+    }
+
     for (var k = 0; k < decimal_set.length; k++) {
 	var rc = find_subset_relationship(decimal_element, decimal_set[k]);
 	if (rc == 1) {
@@ -480,24 +488,16 @@ function generate_super_cookiesets(url,
 				   verified_strict_account_decimal_cookiesets,
 				   verified_account_super_decimal_cookiesets,
 				   verified_non_account_super_decimal_cookiesets) {
-    var my_decimal_super_cookiesets = [];
-    var my_super_cookiesets = [];
+    var my_super_decimal_cookiesets = [];
+    var my_super_binary_cookiesets = [];
     var rc = true;
     var num_sets = Math.pow(2, tot_cookies);
 
     for (var i = 0; i < num_sets; i++) {
-	var curr_cookieset_decimal = i;
-	var str_bin_i = curr_cookieset_decimal.toString(2);
-	var bin_i = str_bin_i.split('');
-
-	if (bin_i.length < tot_cookies) {
-	    var insert_zeroes = (tot_cookies - bin_i.length);
-	    for (var k = 0; k < insert_zeroes; k++) {
-		bin_i.unshift("0");
-	    }
-	}
+	var dec_cookieset = i;
+	var bin_cookieset = decimal_to_binary_array(dec_cookieset, tot_cookies);
 	    
-	rc = is_a_setmember_subset(curr_cookieset_decimal, 
+	rc = is_a_setmember_subset(dec_cookieset, 
 				   verified_strict_account_decimal_cookiesets);
 	if (rc) {
 	    // Suppressing these cookies will cause session to be logged-out anyway.
@@ -505,7 +505,7 @@ function generate_super_cookiesets(url,
 	    continue;
 	}
 
-	rc = is_a_setmember_superset(curr_cookieset_decimal, 
+	rc = is_a_setmember_superset(dec_cookieset, 
 				     verified_non_account_super_decimal_cookiesets);
 	if (rc) {
 	    // Suppressing these cookies will cause session to be logged-in.
@@ -513,7 +513,7 @@ function generate_super_cookiesets(url,
 	    continue;
 	}
 
-	rc = is_a_member_of_set(curr_cookieset_decimal, 
+	rc = is_a_member_of_set(dec_cookieset, 
 				verified_account_super_decimal_cookiesets);
 	if (rc) {
 	    // This has been already tested and known to be accountcookie-superset.
@@ -521,7 +521,7 @@ function generate_super_cookiesets(url,
 	    continue;
 	}
 
-	rc = is_a_setmember_subset(curr_cookieset_decimal, 
+	rc = is_a_setmember_subset(dec_cookieset, 
 				   verified_account_super_decimal_cookiesets);
 	if (rc) {
 	    // Suppressing these cookies will cause session to be logged-out because
@@ -536,30 +536,19 @@ function generate_super_cookiesets(url,
 	//  or: supersets of this member in which case do not add it.
 	add_to_set_if_no_superset_member(undefined, 
 					 [], 
-					 my_decimal_super_cookiesets, 
+					 my_super_decimal_cookiesets, 
 					 undefined,
-					 curr_cookieset_decimal);
-	    
+					 dec_cookieset);
     }
 	
-    for (var k = 0; k < my_decimal_super_cookiesets.length; k++) {
-	var curr_dec_cs = my_decimal_super_cookiesets[k];
-	var str_bin_cs = curr_dec_cs.toString(2);
-	var bin_cs = str_bin_cs.split('');
-	    
-	if (bin_cs.length < tot_cookies) {
-	    var insert_zeroes = (tot_cookies - bin_cs.length);
-	    for (var k = 0; k < insert_zeroes; k++) {
-		bin_cs.unshift("0");
-	    }
-	}
-	    
-	my_super_cookiesets.push(bin_cs);
+    for (var k = 0; k < my_super_decimal_cookiesets.length; k++) {
+	var binary_cookieset = decimal_to_binary_array(my_super_decimal_cookiesets[k], tot_cookies);
+	my_super_binary_cookiesets.push(binary_cookieset);
     }
 
     return {
-	decimal_super_cookiesets: my_decimal_super_cookiesets,
-	binary_super_cookiesets: my_super_cookiesets
+	decimal_super_cookiesets: my_super_decimal_cookiesets,
+	binary_super_cookiesets: my_super_binary_cookiesets
 	    };
 }
 
@@ -572,69 +561,31 @@ function generate_super_cookiesets(url,
 //                                        "http://abc.com:cookie4", 
 //                                        "http://abc.com:cookie5"]
 // Returns:
-//  binary_cookieset_string: "01101"
-//  binary_cookieset_array: ["0", "1", "1", "0", "1"]
-//  decimal_cookieset: 13
-function convert_decimal_cookiesets_to_cookie_array(decimal_cookiesets,
-						    suspected_account_cookies_array) {
-    var binary_cookieset_array = [];
-    var bin_cookieset_str = "";
-    var bin_cookieset_arr = [];
-
-    for (var i = 0; i <= suspected_account_cookies_array.length; i++) {
-	var index = cookie_array.indexOf(suspected_account_cookies_array[i]);
-	if (index == -1) {
-	    bin_cookieset_str = "0" + bin_cookieset_str; 
-	    bin_cookieset_arr.unshift("0");
-	}
-	else {
-	    bin_cookieset_str = "1" + bin_cookieset_str;
-	    bin_cookieset_arr.unshift("1");
-	}
-    }
-
-    return {
-	binary_cookieset_string: bin_cookieset_str,
-	    binary_cookieset_array: bin_cookieset_arr,
-	    decimal_cookieset: parseInt(bin_cookieset_str, 2)
-	    }
-}
-
-
-// Accepts a cookieset, something like: ["http://abc.com:cookie5", "http://abc.com:cookie2", 
-//                                       "http://abc.com:cookie3"]
-// Refers to suspected_account_cookies_array like: ["http://abc.com:cookie1", 
-//                                        "http://abc.com:cookie2", 
-//                                        "http://abc.com:cookie3", 
-//                                        "http://abc.com:cookie4", 
-//                                        "http://abc.com:cookie5"]
-// Returns:
-//  binary_cookieset: ["0", "1", "1", "0", "1"]
+//  binary_cookieset: [0, 1, 1, 0, 1]
 //  decimal_cookieset: 13
 function convert_cookie_array_to_binary_cookieset(cookie_array, suspected_account_cookies_array) {
-    var bin_cookieset_str = "";
-    var bin_cookieset_arr = [];
+    var my_bin_cookieset = [];
+    var my_dec_cookieset = 0;
 
-    for (var i = 0; i <= suspected_account_cookies_array.length; i++) {
+    for (var i = 0; i < suspected_account_cookies_array.length; i++) {
 	var index = cookie_array.indexOf(suspected_account_cookies_array[i]);
 	if (index == -1) {
-	    bin_cookieset_str = "0" + bin_cookieset_str; 
-	    bin_cookieset_arr.unshift("0");
+	    my_bin_cookieset.unshift(0);
 	}
 	else {
-	    bin_cookieset_str = "1" + bin_cookieset_str;
-	    bin_cookieset_arr.unshift("1");
+	    my_bin_cookieset.unshift(1);
 	}
     }
 
+    my_dec_cookieset = binary_array_to_decimal(my_bin_cookieset);
     return {
-	binary_cookieset_array: bin_cookieset_arr,
-	    decimal_cookieset: parseInt(bin_cookieset_str, 2)
+	binary_cookieset: my_bin_cookieset,
+	    decimal_cookieset: my_dec_cookieset
 	    }
 }
 
 
-// Accepts a cookieset representation as a binary array: ["0", "1", "1", "0", "1"]
+// Accepts a binary-cookieset: [0, 1, 1, 0, 1]
 //    AND
 // suspected_account_cookies_array like: ["http://abc.com:cookie1", 
 //                              "http://abc.com:cookie2", 
@@ -643,13 +594,13 @@ function convert_cookie_array_to_binary_cookieset(cookie_array, suspected_accoun
 //                              "http://abc.com:cookie5"]
 // Returns a cookie_array like: ["http://abc.com:cookie5", "http://abc.com:cookie2", 
 //                               "http://abc.com:cookie3"]
-function convert_binary_cookieset_to_cookie_array(binary_cookieset_array, suspected_account_cookies_array) {
+function convert_binary_cookieset_to_cookie_array(binary_cookieset, suspected_account_cookies_array) {
     // Need to reverse it due to little endianness.
-    cookieset.reverse();
+    binary_cookieset.reverse();
     var cookie_array = [];
 	
-    for (var i = 0; i <= binary_cookieset_array.length; i++) {
-	if (binary_cookieset_array[i] == '1') {
+    for (var i = 0; i < binary_cookieset.length; i++) {
+	if (binary_cookieset[i] == 1) {
 	    cookie_array.push(suspected_account_cookies_array[i]);
 	}
     }
@@ -684,19 +635,10 @@ function generate_binary_cookiesets_with_X_number_of_cookies_to_be_dropped(url,
 	
     for (var i = 0; i < num_sets; i++) {
 	var dec_cookieset = i;
-	var bin_cookieset_str = dec_cookieset.toString(2);
-	var bin_cookieset = bin_cookieset_str.split('');
-	    
-	if (bin_cookieset.length < tot_cookies) {
-	    var insert_zeroes = (tot_cookies - bin_cookieset.length);
-	    for (var k = 0; k < insert_zeroes; k++) {
-		bin_cookieset.unshift("0");
-	    }
-	}
+	var bin_cookieset = decimal_to_binary_array(dec_cookieset, tot_cookies);
 	    
 	var total = 0;
 	for (var j = 0; j < bin_cookieset.length; j++) {
-	    bin_cookieset[j] = parseInt(bin_cookieset[j]);
 	    total += (bin_cookieset[j]);
 	}
 	    
@@ -886,22 +828,32 @@ function generate_binary_cookiesets(url, tot_cookies) {
 // Variable verified_cookie_array[] is an array of cookies that is verified to be an account-cookieset.
 // Each cookie in the array is of the form: https://abcde.com/my_path:cookie_name
 // This will remove all supersets of verified_cookie_array from cookieset
-function prune_binary_cookiesets(verified_cookie_array, suspected_account_cookies_array, cookiesets) {
-    var rc = convert_cookie_array_to_binary_cookieset_array(verified_cookie_array, suspected_account_cookies_array);
-    var verified_cookieset = rc.binary_cookieset_array;
+function prune_binary_cookiesets(verified_cookie_array, 
+				 suspected_account_cookies_array, 
+				 binary_cookiesets) {
+    var rc = convert_cookie_array_to_binary_cookieset(verified_cookie_array, suspected_account_cookies_array);
+    var verified_binary_cookieset = rc.binary_cookieset;
     var verified_decimal_cookieset = rc.decimal_cookieset;
 
-    var new_cookiesets = [];
-    for (var i = 0; i < cookiesets.length; i++) {
-	var curr_decimal_cookieset = parseInt(cookiesets[i].join(""), 2);
-	rc = is_a_superset(curr_decimal_cookieset, verified_decimal_cookieset);
+    var new_binary_cookiesets = [];
+    var new_decimal_cookiesets = [];
+
+    for (var i = 0; i < binary_cookiesets.length; i++) {
+	var decimal_cookieset = binary_array_to_decimal(binary_cookiesets[i]);
+	rc = is_a_superset(decimal_cookieset, verified_decimal_cookieset);
+
 	if (!rc) {
 	    // Only add curr_decimal_cookieset if it is not a superset of 
 	    // verified_decimal_cookieset. If it is a superset then no point in testing.
-	    new_cookiesets.push(cookiesets[i]);			
+	    new_binary_cookiesets.push(binary_cookiesets[i]);			
+	    new_decimal_cookiesets.push(decimal_cookieset);			
 	}
     }
-    return new_cookiesets;
+
+    return {
+	binary_cookiesets: new_binary_cookiesets,
+	    decimal_cookiesets: new_decimal_cookiesets,
+	    }   
 }
 
 // **** Functions to generate, manipulate cookiesets - END
