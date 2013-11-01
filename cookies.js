@@ -1735,7 +1735,18 @@ function cookie_investigator(account_cookies,
     //                                               by blocking the cookies. If user is found to be logged-in even after
     //                                               blocking a particular GUB, then we are saved from the effort of testing
     //                                               all the subsets of that GUB since user will still be logged-in for those
-    //                                               subsets. This test is conducted after each cookieset block test epoch.
+    //                                               subsets. If we find that the user is logged-in even after blocking each
+    //                                               GUB then we are done. No need to continue testing any more and we have
+    //                                               exhaustively verified all the cookiesets.
+    //                                               However, if we find that the user is logged-out for at least one GUB then
+    //                                               we need to find subset of that GUB to find a stricter cookiesets subset.
+    //                                               Obviously, a very first GUB is all '1's that is block all cookies and 
+    //                                               it is tested in the "state st_during_cookies_block_test".
+    //                                               Also, for most of the web applications which have only single-cookies as
+    //                                               account cookies, the number of GUBs would be equal to one at the end of
+    //                                               testing all single cookies and most likely we will find that blocking that
+    //                                               single GUB would not affect user session and our testing will stop there.
+    //                                               This test is conducted after each cookieset block test epoch.
     // "st_cookiesets_test"                        : Cookiesets are created by systematically omitting some of the
     //                                               'DURING' cookies. So, if we have detected 'N' 'DURING' cookies,
     //                                               then there are '2^N - (N+1)' cookie sets. Here '(n+1)' is subtracted for
