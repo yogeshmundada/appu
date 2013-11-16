@@ -238,7 +238,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "content_script_started") {
 	if (sender.tab) {
-	    console.log("APPU DEBUG: Content script is started on: " + sender.tab.id);
+	    // console.log("APPU DEBUG: Content script is started on: " + sender.tab.id);
 	    if (sender.tab.id in cookie_investigating_tabs) {
 		var cit = cookie_investigating_tabs[sender.tab.id];
 		if (!cit.content_script_started) {
@@ -498,8 +498,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	    cit.page_load_success = true;
 	    if (cit.pageload_timeout != undefined) {
-		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
-			+ ", Interval-ID: " + cit.pageload_timeout);
+// 		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
+// 			+ ", Interval-ID: " + cit.pageload_timeout);
 		window.clearInterval(cit.pageload_timeout);
 		cit.pageload_timeout = undefined;
 	    }
@@ -524,9 +524,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		     cit.get_state() == 'st_during_cookies_pass_test'      ||
 		     cit.get_state() == 'st_during_cookies_block_test'     ||
 		     cit.get_state() == 'st_verification_epoch'            ||
-		     cit.get_state() == 'st_single_cookie_test'            ||
-		     cit.get_state() == 'st_non_accountcookies_block_test' ||
-		     cit.get_state() == 'st_cookiesets_test') {
+		     cit.get_state() == 'st_cookiesets_block_test'         ||
+		     cit.get_state() == 'st_gub_cookiesets_block_test') {
 		// We test here that user is still logged into the web application.
 		check_usernames_for_cookie_investigation(sender.tab.id);
 	    }
