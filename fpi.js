@@ -1494,9 +1494,11 @@ function delete_all_fetched_pi(force_permission) {
 // Checks if the username has identifier associated with it.
 // If there is, it returns the identifier.
 // Otherwise, creates an identifier for that username and returns it.
-function get_username_identifier(username) {
+function get_username_identifier(username, bool_add_if_not_present) {
     var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
     var username_identifier_prefix = "";
+
+    bool_add_if_not_present = (bool_add_if_not_present == undefined) ? false: bool_add_if_not_present;
 
     if (username.indexOf("@") == -1) {
 	username_identifier_prefix = "username";
@@ -1509,7 +1511,7 @@ function get_username_identifier(username) {
     if (username in vpfvi) {
 	username_identifier = vpfvi[username];
     }
-    else {
+    else if (bool_add_if_not_present) {
 	var j = 1;
 	var identifier_array = Object.keys(vpfvi).map(function(key){
 		return vpfvi[key];
@@ -1524,8 +1526,8 @@ function get_username_identifier(username) {
 	    j++;
 	}
 	vpfvi[username] = username_identifier;
+	flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
     }
-    flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
     return username_identifier;
 }
 
@@ -1550,7 +1552,9 @@ function get_idenfier_value(identifier) {
 }
 
 
-function get_all_usernames() {
+function get_all_usernames(bool_include_full_email) {
+    bool_include_full_email = (bool_include_full_email == undefined) ? false : bool_include_full_email;
+
     var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
 
     var name_regexes = [
@@ -1561,17 +1565,22 @@ function get_all_usernames() {
 			/first-name([0-9]+)/g,
 			];
 
-    var regex_username = /username([0-9]+)/g;
-    var regex_email = /email([0-9]+)/g;
     var all_usernames = [];
 
     for (var pi_values in vpfvi) {
 	var identifier = vpfvi[pi_values];
 	for (var j = 0; j < name_regexes.length; j++) {
 	    if (identifier.match(name_regexes[j])) {
+		var complete_uname = pi_values;
 		var uname = pi_values;
+
 		if (uname.indexOf("@") != -1) {
 		    uname = uname.split("@")[0];
+		    if (bool_include_full_email &&
+			name_regexes[j] == "/email([0-9]+)/g" &&
+			complete_uname.length > 3) {
+			all_usernames.push(complete_uname);
+		    }
 		}
 		if (all_usernames.indexOf(uname) == -1 &&
 		    uname.length > 3) {

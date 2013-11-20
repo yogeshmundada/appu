@@ -428,13 +428,13 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	var username_length = 0;
 	var reason = message.uname_results.reason;
 	if (message.uname_results.rc) {
-	    username = get_username_identifier(message.uname_results.username);
+	    username = get_username_identifier(message.uname_results.username, true);
 	    username_length = message.uname_results.username.length;
 	    console.log("APPU DEBUG: Domain: " + message.domain + ", Username: " 
 			+ message.uname_results.username + ", username_identifier: " + username);
 	}
 	else {
-	    username = get_username_identifier('');
+	    username = get_username_identifier('', true);
 	    username_length = 0;
 	    console.log("APPU DEBUG: Domain: " + message.domain + ", NO USERNAME FOUND, reason: " + reason 
 			+ ", username_identifier: " + username);
@@ -504,23 +504,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		cit.pageload_timeout = undefined;
 	    }
 
-	    if (cit.get_state() == 'st_testing') {
-		chrome.tabs.sendMessage(sender.tab.id, {
-			type: "investigate_cookies",
-			    command: "load_page",
-			    url: cit.url
-			    });
-
-		cit.page_load_success = false;
-
-		console.log("APPU DEBUG: Sending page reload command to COOKIE INVESTIGATOR (testing)");
-		delete cookie_investigating_tabs[sender.tab.id];
-	    }
-	    else if (cit.get_state() == 'st_cookie_test_start') {
+	    if (cit.get_state() == 'st_cookie_test_start') {
 		console.log("----------------------------------------");
 		process_last_epoch_and_start_new_epoch(sender.tab.id, undefined, undefined, true)
 	    }
-	    else if (cit.get_state() == 'st_start_with_no_cookies'         ||
+	    else if (cit.get_state() == 'st_testing'                       ||
+		     cit.get_state() == 'st_start_with_no_cookies'         ||
 		     cit.get_state() == 'st_during_cookies_pass_test'      ||
 		     cit.get_state() == 'st_during_cookies_block_test'     ||
 		     cit.get_state() == 'st_verification_epoch'            ||

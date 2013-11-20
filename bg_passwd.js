@@ -424,6 +424,11 @@ function pii_check_passwd_reuse(message, sender) {
 		r.dontbugme = "no";
 
 		var pwd_grp = pii_vault.password_hashes[hk].my_pwd_group;
+		if (pwd_grp == undefined) {
+		    delete pii_vault.password_hashes[hk];
+		    vault_write("password_hashes", pii_vault.password_hashes);
+		    continue;
+		}
 		var all_sites = pii_vault.aggregate_data.pwd_groups[pwd_grp].sites;
 		for (var i = 0; i < all_sites.length; i++) {
 		    var cs = all_sites[i];
