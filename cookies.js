@@ -710,9 +710,141 @@ function convert_binary_cookieset_to_cookie_array(binary_cookieset,
 	    cookie_array.push(suspected_account_cookies_array[i]);
 	}
     }
+    binary_cookieset.reverse();
     return cookie_array;
 }
 
+// Accepts a binary_cookieset like: [1, 1, 0, 0, 1, 0, 1, 0, 1]
+// x: number of last x bits to be set to 1
+// num_dd: First 'y' bits that are not to be disturbed.
+// In this case if x = 3 and num_dd = 2, then return value would be:
+// [1, 1, 0, 0, 0, 0, 1, 1, 1]
+function set_last_X_bits_to_one(x, num_dd, bin_cs) {
+    if ((x + num_dd) > bin_cs.length) {
+	console.log("APPU Error: (x(" + x + ") + num_dd(" + num_dd + ")) exceeds bin_cs.length(" + bin_cs.length + ")");
+	return -1;
+    }
+
+    for (var i = (bin_cs.length - 1); i >= 0; i--) {
+	if (x > 0) {
+	    bin_cs[i] = 1;
+	    x -= 1;
+	}
+	else if (i >= num_dd) {
+	    bin_cs[i] = 0;
+	}
+    }
+    return bin_cs
+}
+
+
+// Accpets a binary cookieset such as ['0', '1', '0', '0', '1']
+// Returns the next in the sequence ['0', '1', '0', '1', '0']
+function generate_binary_cookieset_X_next(curr_bin_cs) {
+    // This is Big endian.
+    // Most significan digit is stored at array index '0'.
+    var tot_ones_so_far = 0;
+
+    for (var i = curr_bin_cs.length - 1; i >= 0; i--) {
+	if (curr_bin_cs[i] == 1 &&
+	    (i-1) >= 0 &&
+	    curr_bin_cs[i-1] == 0) {
+
+	    curr_bin_cs[i] = 0;
+	    curr_bin_cs[i-1] = 1;
+	    var rc = set_last_X_bits_to_one(tot_ones_so_far, (i -1), curr_bin_cs);
+	    if (rc == -1) {
+		return null;
+	    }
+	    return curr_bin_cs;
+	}
+	tot_ones_so_far += 1;
+    }
+    return null;
+}
+
+
+// Returns binary_cookiesets & decimal_cookiesets which only have specific number of cookies marked.
+// For example is 'x' = 2, and tot_cookies = 3, then
+// [['0', '1', '1'], ['1', '0', '1'], ['1', '1', '0']] will get returned.
+// Marked cookies will be omitted while populating shadow_cookie_store.
+// If any of the cookies in the above set is a superset of already verified-account-cookieset OR
+//  if they are subset of already verified-non-account-cookiesets 
+//  then they will not be included in the array.
+//  Real name of the function:
+//  generate_binary_cookiesets_X() = generate_binary_cookiesets_with_X_number_of_cookies_to_be_dropped()
+function generate_binary_cookiesets_X_efficient(url, 
+				      x, 
+				      tot_cookies, 
+				      verified_strict_account_decimal_cookiesets,
+				      verified_non_account_super_decimal_cookiesets) {
+    var my_binary_cookiesets = [];
+    var my_decimal_cookiesets = [];
+    var tot_sets_equal_to_x = 0;
+    var curr_bin_cs = [];
+
+    var num_sets = Math.pow(2, tot_cookies);    
+    console.log("APPU DEBUG: Going to generate cookiesets(round=" + x + "), total cookiesets: " + num_sets);
+    
+    for (var i = 0; i < tot_cookies; i++) {
+	if (x > 0) {
+	    curr_bin_cs.unshift(1);
+	    x -= 1;
+	}
+	else {
+	    curr_bin_cs.unshift(0);
+	}
+    }
+    
+    my_binary_cookiesets.push(curr_bin_cs.slice(0));
+    my_decimal_cookiesets.push(binary_array_to_decimal(curr_bin_cs));
+    
+    tot_sets_equal_to_x = 1;
+    
+    while(generate_binary_cookieset_X_next(curr_bin_cs) != null) {
+	tot_sets_equal_to_x += 1;
+	var dec_cookieset = binary_array_to_decimal(curr_bin_cs);
+	var bin_cookieset = curr_bin_cs.slice(0);
+	// Only push this set iff 
+	//  it is not a superset of already verified account-cookieset OR
+	//  it is not a subset of already verified non-account-cookieset 
+	
+	rc = is_a_setmember_subset(dec_cookieset, 
+				   verified_strict_account_decimal_cookiesets);
+	if (rc) {
+	    // Suppressing these cookies will cause session to be logged-out anyway.
+	    // No point in testing.
+	    continue;
+	}
+	
+	rc = is_a_setmember_superset(dec_cookieset, 
+				     verified_non_account_super_decimal_cookiesets);
+	if (rc) {
+	    // Suppressing these cookies will not affect a session's logged-in status.
+	    // No point in testing.
+	    continue;
+	}
+	
+	my_binary_cookiesets.push(bin_cookieset);
+	my_decimal_cookiesets.push(dec_cookieset);
+    }
+    
+    var rc = check_if_binary_and_decimal_cookiesets_match(my_binary_cookiesets, 
+							  my_decimal_cookiesets);
+    
+    if (rc == -1) {
+	console.log("APPU Error: generate_binary_cookiesets_X() binary, decimal cookiesets do not match");
+	return -1;
+    }
+    
+    console.log("APPU DEBUG: Total sets where X(=" + x + ") cookies can be dropped: " + tot_sets_equal_to_x);
+    console.log("APPU DEBUG: Actual sets where X(=" + x + ") cookies would be dropped: " + my_binary_cookiesets.length);
+    
+    return {
+	binary_cookiesets: my_binary_cookiesets,
+	    decimal_cookiesets: my_decimal_cookiesets
+	    }
+}
 
 // Returns binary_cookiesets & decimal_cookiesets which only have specific number of cookies marked.
 // For example is 'x' = 2, and tot_cookies = 3, then
@@ -758,7 +890,6 @@ function generate_binary_cookiesets_X(url,
 	    // Only push this set iff 
 	    //  it is not a superset of already verified account-cookieset OR
 	    //  it is not a subset of already verified non-account-cookieset 
-	    var bool_add = true;
 
 	    rc = is_a_setmember_subset(dec_cookieset, 
 				       verified_strict_account_decimal_cookiesets);
@@ -1598,6 +1729,33 @@ function check_usernames_for_cookie_investigation(tab_id) {
     }
 }
 
+function print_ci_state(ci_state) {
+    console.log("APPU DEBUG: The object is: " + JSON.stringify(ci_state));
+}
+
+function offload_ci_state(url, ci_state) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    chrome.storage.local.set({url_wo_paramters: ci_state})
+}
+
+function load_ci_state(url, cb) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    var ci_state = chrome.storage.local.get(url_wo_paramters, cb)
+}
+
+function remove_ci_state(url) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    chrome.storage.local.remove(url_wo_paramters)
+}
+
+function clear_ci_state(url) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    chrome.storage.local.clear(url_wo_paramters)
+}
+
+function get_ci_state_storage_size(cb) {
+    return chrome.storage.local.getBytesInUse(null, cb);
+}
 
 // First processes results from current epoch.
 // If the next state is not "st_terminate" then populates
@@ -1654,6 +1812,9 @@ function process_last_epoch_and_start_new_epoch(tab_id, am_i_logged_in, num_pwd_
 				    highlighted: false,
 				    //pinned: true
 				    });
+
+			// Since we refreshed the URL, increment the epoch-id.
+			cit.increment_epoch_id();
 
 			cit.bool_state_in_progress = true;
 			cit.num_pageload_timeouts = 0;
@@ -1719,9 +1880,14 @@ function open_cookie_slave_tab(url,
 			       init_cookie_investigation) {
     //Just some link so that appu content script runs on it.
     var default_url = 'http://live.com';
+
+    var my_domain = get_domain(url.split("/")[2]);
+    if (my_domain == "live.com") {
+	default_url = 'http://google.com';
+    }
    
     create_properties = { 
-	url: url, 
+	url: default_url, 
 	active: false 
     };
 
@@ -1755,7 +1921,15 @@ function open_cookie_slave_tab(url,
 				       ["blocking", "responseHeaders"]);
 				   cookie_investigating_tabs[tab.id].http_response_cb = http_response_cb;
 			       }
-			       
+
+			       chrome.webRequest.onBeforeRedirect.addListener(print_redirect_information, {
+				       "tabId": tab.id,
+					   "urls": ["<all_urls>"]
+					   },
+				   ["responseHeaders"]);
+
+
+			       // print_redirect_information(details);       
 			       update_tab_id(tab.id);
 
 			       console.log("------------");
@@ -1775,7 +1949,6 @@ function open_cookie_slave_tab(url,
 			  update_tab_id, 
 			  init_cookie_investigation));
 }
-
 
 // Returns a cookie-investigator that maintains all the state and drives the
 // cookie investigation.
@@ -1854,6 +2027,7 @@ function cookie_investigator(account_cookies,
     //                                               If usernames found, user is logged-in (EXPECTED)
     //                                               Otherwise it means we have not detected 'DURING' 
     //                                               cookies properly. STOP TESTING
+    // "st_extend_during_cookies"                  : Add more cookies to 'DURING' set and see if user is logged-in.
     // "st_during_cookies_block_test"              : Reload site page. Start with shadow_cookie_store that is 
     //                                               populated without any 'DURING' cookies as detected by Appu.
     //                                               Test the page for usernames after page load.
@@ -1915,6 +2089,7 @@ function cookie_investigator(account_cookies,
     // At the start, to activate Appu content script, we need to load some webpage successfully
     // This state does that.
     var my_state = "st_cookie_test_start";
+    var bool_switch_to_testing = false;
 
     // This stores all the cookies for a domain at the start.
     // After that, any HTTP GET done in that tab sends cookies.
@@ -1931,6 +2106,9 @@ function cookie_investigator(account_cookies,
     // is not reducible further to a subset.
     var verified_strict_account_cookiesets_array = [];
     var verified_strict_account_decimal_cookiesets = [];
+
+    var verified_strict_login_cookiesets_array = [];
+    var enabled_cookies_array = [];
 
     // Super-Sets of cookies for which user's session is logged-out if
     // they are absent
@@ -1960,6 +2138,15 @@ function cookie_investigator(account_cookies,
     
     var has_error_occurred = false;
     var shut_tab_forcefully = undefined;
+
+    // Following is to correlate epoch-IDs with request-IDs.
+    // This way late responses would not overwrite current Epoch's
+    // shadow cookie table.
+    // (This was happening a lot in case of Google Calendar giving me wrong
+    //  results)
+    var epoch_id = 0;
+    var req_epch_table = {};
+
     
 //     var rc = generate_binary_cookiesets(my_url, tot_cookies);
 //     if (rc == -1) {
@@ -1975,18 +2162,18 @@ function cookie_investigator(account_cookies,
 	if (config_start_params.starting_state == "st_testing" &&
 	    config_start_params.cookies_array != undefined &&
 	    config_start_params.account_cookies_array != undefined) {
-	    my_state = "st_testing";
+	    bool_switch_to_testing = true;
 	    var cookies_pass_array = config_start_params.cookies_array;
 	    
 	    suspected_account_cookies_array = config_start_params.account_cookies_array;
 	    tot_cookies = suspected_account_cookies_array.length;
 
 	    for (var i = 0; i < cookies_pass_array.length; i++) {
-		var rc = convert_cookie_array_to_binary_cookieset(cookies_pass_array, 
+		var rc = convert_cookie_array_to_binary_cookieset(cookies_pass_array[i], 
 								  suspected_account_cookies_array, 
 								  true);
-		binary_cookiesets.push(rc.binary_cookiesets);
-		decimal_cookiesets.push(rc.decimal_cookiesets);
+		binary_cookiesets.push(rc.binary_cookieset);
+		decimal_cookiesets.push(rc.decimal_cookieset);
 	    }
 
 	    console.log("APPU DEBUG: Number of generated cookie-sets: " + binary_cookiesets.length);
@@ -2012,6 +2199,11 @@ function cookie_investigator(account_cookies,
     }
     
 
+    function increment_epoch_id() {
+	epoch_id += 1;
+    }
+
+
     function init_cookie_investigation() {
 	var cit = cookie_investigating_tabs[my_tab_id];
 	cit.url = my_url;
@@ -2023,6 +2215,7 @@ function cookie_investigator(account_cookies,
 
 	cit.reload_interval = undefined;
 
+	cit.increment_epoch_id = increment_epoch_id;
 	cit.increment_page_reloads = increment_page_reloads;
 	cit.web_request_fully_fetched = web_request_fully_fetched;
 	cit.print_cookie_investigation_state = print_cookie_investigation_state;
@@ -2062,6 +2255,7 @@ function cookie_investigator(account_cookies,
 			disabled_cookies = [];
 		    }
 
+		    enabled_cookies_array = [];
 		    for (var i = 0; i < all_cookies.length; i++) {
 			var cookie_name = all_cookies[i].name;
 			var cookie_domain = all_cookies[i].domain;
@@ -2073,6 +2267,10 @@ function cookie_investigator(account_cookies,
 			    if (suspected_account_cookies_array.indexOf(cookie_key) == -1) {
 				// We only want 'DURING' cookies in this epoch
 				// (suspected_account_cookies_array is populated with 'DURING' cookies in usual epoch)
+				disabled_cookies.push(cookie_key);
+				continue;
+			    }
+			    if (cs.cookies[cookie_key].cookie_class != "during") {
 				disabled_cookies.push(cookie_key);
 				continue;
 			    }
@@ -2091,11 +2289,21 @@ function cookie_investigator(account_cookies,
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
 				continue;
 			    }
+			    if (suspected_account_cookies_array.indexOf(cookie_key) == -1) {
+				continue;
+			    }
+			    if (suspected_account_cookies_array.indexOf(cookie_key) == undefined) {
+				continue;
+			    }
 			}
 			else if (my_state == 'st_cookiesets_block_test') {
 			    // If the cookie is in the set of disabled-cookie-sets in this 
 			    // iteration, then ignore it.
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
+				continue;
+			    }
+			    if (cs.cookies[cookie_key].cookie_class != "during") {
+				//disabled_cookies.push(cookie_key);
 				continue;
 			    }
 			}
@@ -2105,16 +2313,30 @@ function cookie_investigator(account_cookies,
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
 				continue;
 			    }
-			    if (cs.cookies.cookie_class != "during") {
+			    if (cs.cookies[cookie_key].cookie_class != "during") {
 				continue;
 			    }
+
+			    if (cookie_key != "https://www.google.com/calendar:CAL" &&
+				cookie_key != "http://.google.com/:HSID" &&
+				cookie_key != "https://.google.com/:SSID" &&
+				cookie_key != "http://.google.com/:SID") {
+				var here_here = 0;
+				//console.log("Here here: GUB cookie: " + cookie_key);
+			    }
+			    //console.log("Here here: GUB cookie: " + cookie_key);
 			}
 			
+			enabled_cookies_array.push(cookie_key);
 			cookie_store[cookie_key] = all_cookies[i];
 		    }
 		    console.log("APPU DEBUG: Populated shadow_cookie_store length: " + 
 				Object.keys(cookie_store).length + 
 				", On-disk cookie-store length: " + all_cookies.length);
+
+		    console.log("Here here: shadow_cookie_store: " + 
+				JSON.stringify(Object.keys(cookie_store)));
+
 
 		    if (my_state != "st_verification_epoch") {
 			console.log("APPU DEBUG: Disabled cookies in this epoch: " + 
@@ -2236,12 +2458,17 @@ function cookie_investigator(account_cookies,
 			    JSON.stringify(disabled_cookies) + 
 			    "): ");
 
-		console.log("APPU DEBUG: Are disabled cookies account-cookies?: " + 
-			    !am_i_logged_in);
+		console.log("APPU DEBUG: Are enabled cookies account-cookies?: " + 
+			    am_i_logged_in);
 
 		var enabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs, 
 									       suspected_account_cookies_array, 
 									       true);
+
+
+		if (am_i_logged_in) {
+		    verified_strict_account_cookiesets_array.push(enabled_cookies);
+		}
 
 		console.log("APPU DEBUG: Enabled cookies (" + 
 			    JSON.stringify(enabled_cookies) + 
@@ -2272,6 +2499,7 @@ function cookie_investigator(account_cookies,
 
 		if (!am_i_logged_in) {
 		    verified_strict_account_cookiesets_array.push(disabled_cookies);
+		    verified_strict_login_cookiesets_array.push(enabled_cookies_array);
 		    verified_strict_account_decimal_cookiesets.push(curr_decimal_cs);
 
 		    // Pruning is not really required after i started generating cookiesets per round.
@@ -2317,6 +2545,11 @@ function cookie_investigator(account_cookies,
 		tot_cookiesets_tested_this_round += 1;
 	    }
 	    else if (my_state == "st_gub_cookiesets_block_test") {
+
+		var enabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs, 
+									       suspected_account_cookies_array, 
+									       true);
+
 		if (am_i_logged_in) {
 		    console.log("APPU DEBUG: User is still logged-in after blocking GUB-COOKIE-SET");
 		    console.log("APPU DEBUG: We do NOT NEED to test any subsets of this GUB-COOKIE-SET: " + 
@@ -2486,6 +2719,10 @@ function cookie_investigator(account_cookies,
 	    }
 	    else if (!was_last_result_expected) {
 		rs = "st_terminate";
+	    }
+	    else if (my_state == "st_cookie_test_start" &&
+		     bool_switch_to_testing) {
+		rs = "st_testing";
 	    }
 	    else {
 		rs = "st_verification_epoch";
@@ -2665,6 +2902,8 @@ function cookie_investigator(account_cookies,
     
     
     function final_result() {
+	bool_is_cookie_testing_done = true;
+
 	if (!has_error_occurred) {
 	    console.log("------ FINAL RESULT ------");
 	    console.log("APPU DEBUG: Cookies investigated for URL: " + my_url);
@@ -2706,6 +2945,15 @@ function cookie_investigator(account_cookies,
 			verified_strict_account_cookiesets_array.length);
 	    for (var j = 0; j < verified_strict_account_cookiesets_array.length; j++) {
 		var cs_names = verified_strict_account_cookiesets_array[j];
+		console.log(j + ". Number of cookies: " + cs_names.length +
+			    ", CookieSet: " +
+			    JSON.stringify(cs_names));
+	    }
+
+	    console.log("APPU DEBUG: Number of account-login-cookiesets: " + 
+			verified_strict_login_cookiesets_array.length);
+	    for (var j = 0; j < verified_strict_login_cookiesets_array.length; j++) {
+		var cs_names = verified_strict_login_cookiesets_array[j];
 		console.log(j + ". Number of cookies: " + cs_names.length +
 			    ", CookieSet: " +
 			    JSON.stringify(cs_names));
@@ -2797,8 +3045,13 @@ function cookie_investigator(account_cookies,
 		rc = add_to_set(disabled_cookies, undefined, verified_account_super_decimal_cookiesets, 
 				suspected_account_cookies_array,
 				undefined);
-		
-		last_non_verification_state = "st_during_cookies_block_test";
+
+		if (bool_switch_to_testing) {
+		    last_non_verification_state = "st_testing";
+		}
+		else {
+		    last_non_verification_state = "st_during_cookies_block_test";
+		}
 	    }
 	}
 	else if (my_state == 'st_verification_epoch') {
@@ -2978,18 +3231,6 @@ function cookie_investigator(account_cookies,
 	    console.log("----------------");
 	}
 	else if (my_state == "st_testing") {
-	    if (!is_all_cookies_block_test_done) {
-		is_all_cookies_block_test_done = true;
-		is_suspected_account_cookies_pass_test_done = true;
-		is_suspected_account_cookies_block_test_done = true;
-
-		bool_are_all_account_cookies_in_default_store = true;
-		bool_are_account_cookies_in_during_cookies = true;
-		bool_are_account_cookies_not_in_nonduring_cookies = true;
-		
-		last_non_verification_state = "st_testing";
-	    }
-
 	    console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames detection test " + 
 			"done, page loaded, num-pwd-boxes: " + num_pwd_boxes + 
 			", for 'st_testing'");
@@ -3086,6 +3327,11 @@ function cookie_investigator(account_cookies,
     function handle_set_cookie_responses(details) {
 	var final_rh = [];
 	var rh = details.responseHeaders;
+
+	if (bool_is_cookie_testing_done) {
+	    return;
+	}
+
 	for (var i = 0; i < rh.length; i++) {
 	    if (rh[i].name.toLowerCase() != "set-cookie") {
 		final_rh.push(rh[i]);
@@ -3116,18 +3362,17 @@ function cookie_investigator(account_cookies,
 		
 		for (var j = 0; j < cookie_properties.length; j++) {
 		    var curr_property = cookie_properties[j].trim();
-		    if (curr_property.indexOf("Path") != -1 ||
-			curr_property.indexOf("path") != -1) {
+		    var curr_property_small = curr_property.toLowerCase();
+
+		    if (curr_property_small.indexOf("path") != -1) {
 			var matched_entries = curr_property.match(/(.+?)=(.*)/);
 			cookie_struct.path = matched_entries[2].trim();
 		    }
-		    else if (curr_property.indexOf("Expires") != -1 ||
-			     curr_property.indexOf("expires") != -1) {
+		    else if (curr_property_small.indexOf("expires") != -1) {
 			var matched_entries = curr_property.match(/(.+?)=(.*)/);
 			cookie_struct.expirationDate = (new Date(matched_entries[2].trim())).getTime()/1000;
 		    }
-		    else if (curr_property.indexOf("Max-Age") != -1 ||
-			     curr_property.indexOf("max-age") != -1) {
+		    else if (curr_property_small.indexOf("max-age") != -1) {
 			var matched_entries = curr_property.match(/(.+?)=(.*)/);
 			var max_age = matched_entries[2].trim();
 			if (max_age[0] == '-') {
@@ -3138,27 +3383,24 @@ function cookie_investigator(account_cookies,
 			}
 			cookie_struct.expirationDate = (new Date()).getTime()/1000 + parseInt(max_age, 10);
 		    }
-		    else if (curr_property.indexOf("Domain") != -1 ||
-			     curr_property.indexOf("domain") != -1) {
+		    else if (curr_property_small.indexOf("domain") != -1) {
 			var matched_entries = curr_property.match(/(.+?)=(.*)/);
 			cookie_struct.domain = matched_entries[2].trim();
 		    }
-		    else if (curr_property.indexOf("Secure") != -1 ||
-			     curr_property.indexOf("secure") != -1) {
+		    else if (curr_property_small.indexOf("secure") != -1) {
 			cookie_struct.secure = true;
 			cookie_protocol = "https://";
 		    }
-		    else if (curr_property.indexOf("HttpOnly") != -1 ||
-			     curr_property.indexOf("httponly") != -1) {
+		    else if (curr_property_small.indexOf("httponly") != -1) {
 			cookie_struct.httpOnly = true;
 		    }
-		    else if (curr_property.indexOf("Priority") != -1 ||
-			     curr_property.indexOf("priority") != -1) {
+		    else if (curr_property_small.indexOf("priority") != -1) {
 			// Do nothing
 			continue;
 		    }
 		    else {
-			console.log("APPU DEBUG: Error: Got a wrong cookie property: " + curr_property);
+			console.log("APPU DEBUG: Unexpected cookie property(" + curr_property +
+				    ") for cookie: " + cookie_struct.name);
 		    }
 		}
 		
@@ -3174,9 +3416,18 @@ function cookie_investigator(account_cookies,
 				  cookie_struct.path + 
 				  ":" + 
 				  cookie_struct.name); 
-		
-		//console.log("APPU DEBUG: Setting cookie in SHADOW_COOKIE_STORE: " + cookie_key);
-		shadow_cookie_store[cookie_key] = cookie_struct;
+
+
+		if (req_epch_table[details.requestid] == epoch_id) {
+		    // Write to shadow cookie table only IF this response corresponds
+		    // on HTTP request issued in this test epoch.
+		    if (cookie_key == "https://www.google.com/calendar:CAL") {
+			console.log("Here here: SETTING THE CAL COOKIE HURRRRRRRRRRRRRRRR: " + details.url);
+		    }
+
+		    //console.log("APPU DEBUG: Setting cookie in SHADOW_COOKIE_STORE: " + cookie_key);
+		    shadow_cookie_store[cookie_key] = cookie_struct;
+		}
 	    }
 	}
 	return {responseHeaders: final_rh};
@@ -3195,6 +3446,9 @@ function cookie_investigator(account_cookies,
 	var final_cookie_str = "";
 	
 	//console.log("Here here: (cookie_delete_function) RequestId: " + details.requestId);
+	if (bool_is_cookie_testing_done) {
+	    return;
+	}
 	
 	for (var i = 0; i < details.requestHeaders.length; i++) {
 	    if (details.requestHeaders[i].name == "Referer") {
@@ -3315,6 +3569,12 @@ function cookie_investigator(account_cookies,
 	var final_cookies = {};
 	var final_cookie_str = "";
 	var curr_domain = get_domain(details.url.split("/")[2]);
+
+	if (bool_is_cookie_testing_done) {
+	    return;
+	}
+
+	req_epch_table[details.requestid] = epoch_id;
 	
 	if (my_state == 'st_cookie_test_start') {
 	    return {requestHeaders: details.requestHeaders};
@@ -3346,11 +3606,22 @@ function cookie_investigator(account_cookies,
 	var is_secure = (details.url.split('/')[0] == 'https:') ? true : false;
 	var my_cookies = [];
 	
+	if (details.url == "https://www.google.com/calendar/render") {
+	    console.log("Here here");
+	}
+
+
 	for (c in shadow_cookie_store) {
 	    var cookie_protocol = shadow_cookie_store[c].secure ? "https://" : "http://";
 	    var cookie_url = cookie_protocol + shadow_cookie_store[c].domain + shadow_cookie_store[c].path;
 	    var cookie_name_value = shadow_cookie_store[c].name + '=' + shadow_cookie_store[c].value;
-	    var shadow_cookie_name = cookie_url + ':' + shadow_cookie_store[c].name;
+	    var shadow_cookie_name = cookie_url + ':' + shadow_cookie_store[c].name;	    
+
+
+	    if (c == "https://www.google.com/calendar:CAL") {
+		console.log("Here here: CAL COOKIE,  CAL COOKIE,  CAL COOKIE, CAL COOKIE, CAL COOKIE");
+	    }
+
 
 	    if (is_subdomain(cookie_url, details.url)) {
 		if (shadow_cookie_store[c].session) {
@@ -3361,6 +3632,9 @@ function cookie_investigator(account_cookies,
 		}
 	    }
 	}
+
+	console.log("Here here: Here here here: URL: " + details.url);
+	console.log("Here here: Cookiessssssssss:" + JSON.stringify(my_cookies));
 	
 	// console.log("APPU DEBUG: Original Cookies: " + 
 	//	    original_cookie_array.length +
@@ -3373,7 +3647,8 @@ function cookie_investigator(account_cookies,
 	if (my_cookies.length == 0 &&
 	    my_domain == curr_domain) {
 	    if (my_state != "st_start_with_no_cookies" &&
-		my_state != "st_gub_cookiesets_block_test") {
+		my_state != "st_gub_cookiesets_block_test" &&
+		my_state != "st_testing") {
 		var cit = cookie_investigating_tabs[my_tab_id];
 		if (cit.bool_state_in_progress) {
 		    console.log("APPU DEBUG: URL: " + details.url);
@@ -3441,8 +3716,6 @@ function detect_account_cookies(current_url,
 	config_cookiesets = opt_config_cookiesets;
     }
 
-    var config_start_params = (opt_start_params == undefined) ? {} : opt_start_params;
-
     if (cookie_names == undefined) {
 	// Gets all 'DURING' cookies and not just cookies matching this URL
 	account_cookies = get_account_cookies(current_url, false);
@@ -3450,6 +3723,8 @@ function detect_account_cookies(current_url,
     else {
 	account_cookies = get_selective_account_cookies(current_url, cookie_names);
     }
+
+    var config_start_params = opt_start_params;
 
     var ret_functions = cookie_investigator(account_cookies, 
 					    current_url, 
@@ -3487,6 +3762,283 @@ function detect_account_cookies(current_url,
 
 // Testing shadow-cookie-store.
 // test_get_cookie_store_snapshot('facebook.com', test_shadow_cookie_store); test_specific_tab(1305); test_record_specific_tab_cookies(1305)
+
+function test_gx_pair_cookies() {
+    var gx_cookie = "https://.mail.google.com/mail:GX";
+    var test_cookies = [];
+
+    var rc = get_domain_cookies("https://mail.google.com/");
+    var aca = Object.keys(rc);
+
+    detect_account_cookies("https://mail.google.com/mail/u/0/#inbox", 
+			   undefined, 
+			   "all", 
+			   10, undefined, 
+			   { starting_state : "st_testing", 
+				   cookies_array : ["https://.mail.google.com/mail:GX"], 
+				   account_cookies_array : aca });
+
+    return;
+
+    var cs = pii_vault.aggregate_data.session_cookie_store["google.com"];
+
+    for (c in cs.cookies) {
+	if (cs.cookies[c].current_state == 'absent') {
+	    // No point in testing for cookies that are not present in the 
+	    // default cookie-store.
+	    continue;
+	}
+
+	if (cs.cookies[c].cookie_class == 'during') {
+	    continue;
+	}
+	test_cookies.push([gx_cookie, c]);
+    }
+
+    return test_cookies;
+}
+
+
+function test_google_calendar_cookies() {
+//     var omit_cookie = [
+// 		       "https://mail.google.com/mail/u/0:GMAIL_AT",
+// 		       "http://mail.google.com/mail/u/0:gmailchat",
+// 		       "http://mail.google.com/mail/u/0:GMAIL_IMP",
+// 		       "https://mail.google.com/mail:S",
+// 		       "https://.mail.google.com/mail:GXSP",
+// 		       "https://.mail.google.com/mail:GX",
+// 		       "https://accounts.google.com/:GAPS",
+// 		       "http://.google.com/:NID",
+// 		       "https://accounts.google.com/:LSID",
+// 		       "http://.google.com/:APISID",
+// 		       "https://.google.com/:SAPISID",
+// 		       "https://apis.google.com/:BEAT",
+// 		       "https://plus.google.com/:OTZ"];
+
+    var omit_cookie = [
+		       "http://.google.com/:HSID",
+		       "https://.google.com/:SSID",
+		       "http://.google.com/:SID",
+		       // 		       "https://accounts.google.com/:LSID"
+		       ];
+
+    var test_cookies = [];
+
+    var rc = get_domain_cookies("https://mail.google.com/");
+    var aca = Object.keys(rc);
+
+    for (var i = 0; i < aca.length; i++) {
+	if (omit_cookie.indexOf(aca[i]) != -1) {
+	    test_cookies.push(aca[i]);
+	}
+    }
+
+
+    detect_account_cookies("https://www.google.com/calendar/render", 
+			   undefined, 
+			   "all", 
+			   10, undefined, 
+			   { starting_state : "st_testing", 
+				   cookies_array : [test_cookies], 
+				   account_cookies_array : aca });
+
+
+    return;
+}
+
+
+function test_asana_cookies() {
+    var omit_cookies = [
+			[
+			 "https://.app.asana.com/:auth_token",
+			 "https://.app.asana.com/:ticket"
+			 ],
+			];
+    
+    var test_cookies = [];
+
+    var rc = get_domain_cookies("https://app.asana.com/0/7751245000999/7751245000999");
+    var aca = Object.keys(rc);
+
+    for (var i = 0; i < aca.length; i++) {
+	if (omit_cookies.indexOf(aca[i]) != -1) {
+	    test_cookies.push(aca[i]);
+	}
+    }
+
+    detect_account_cookies("https://app.asana.com/0/7751245000999/7751245000999", 
+			   undefined, 
+			   "all", 
+			   10, undefined, 
+			   { starting_state : "st_testing", 
+				   cookies_array : [test_cookies], 
+				   account_cookies_array : aca });
+
+    return;
+}
+
+function test_gmail_cookies() {
+    var test_cookies = [
+			[
+			 "https://accounts.google.com/:LSID",
+			 ],
+			[
+			 "http://.google.com/:SID",
+			 ],
+			[
+			 "https://.google.com/:SSID",
+			 ],
+			[
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:SID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "https://.google.com/:SSID"
+			 ],
+			[
+			 "http://.google.com/:SID",
+			 "https://.google.com/:SSID",
+			 ],
+			[
+			 "http://.google.com/:SID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://.google.com/:SSID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:SID",
+			 "https://.google.com/:SSID",
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:SID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "https://.google.com/:SSID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "http://.google.com/:SID",
+			 "https://.google.com/:SSID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:SID",
+			 "https://.google.com/:SSID",
+			 "http://.google.com/:HSID"
+			 ],
+			];
+
+
+    var rc = get_domain_cookies("https://mail.google.com/");
+    var aca = Object.keys(rc);
+
+    detect_account_cookies("https://mail.google.com/mail/u/0/#inbox", 
+			   undefined, 
+			   "all", 
+			   10, undefined, 
+			   { starting_state : "st_testing", 
+				   cookies_array : test_cookies, 
+				   account_cookies_array : aca });
+
+    return;
+}
+
+function test_google_cookies() {
+    var test_cookies = [
+			[
+			 "https://accounts.google.com/:LSID",
+			 ],
+			[
+			 "http://.google.com/:SID",
+			 ],
+			[
+			 "https://.google.com/:SSID",
+			 ],
+			[
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:SID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "https://.google.com/:SSID"
+			 ],
+			[
+			 "http://.google.com/:SID",
+			 "https://.google.com/:SSID",
+			 ],
+			[
+			 "http://.google.com/:SID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://.google.com/:SSID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:SID",
+			 "https://.google.com/:SSID",
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:SID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "https://.google.com/:SSID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "http://.google.com/:SID",
+			 "https://.google.com/:SSID",
+			 "http://.google.com/:HSID"
+			 ],
+			[
+			 "https://accounts.google.com/:LSID",
+			 "http://.google.com/:SID",
+			 "https://.google.com/:SSID",
+			 "http://.google.com/:HSID"
+			 ],
+			];
+
+
+    var rc = get_domain_cookies("https://mail.google.com/");
+    var aca = Object.keys(rc);
+
+    detect_account_cookies("https://www.google.com/", 
+			   undefined, 
+			   "all", 
+			   10, undefined, 
+			   { starting_state : "st_testing", 
+				   cookies_array : test_cookies, 
+				   account_cookies_array : aca });
+
+    return;
+}
+
 
 var test_shadow_cookie_store = {};
 
