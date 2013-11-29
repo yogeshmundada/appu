@@ -752,13 +752,16 @@ function generate_binary_cookieset_X_next(curr_bin_cs) {
 
 	    curr_bin_cs[i] = 0;
 	    curr_bin_cs[i-1] = 1;
-	    var rc = set_last_X_bits_to_one(tot_ones_so_far, (i -1), curr_bin_cs);
+	    var rc = set_last_X_bits_to_one(tot_ones_so_far, i, curr_bin_cs);
 	    if (rc == -1) {
 		return null;
 	    }
 	    return curr_bin_cs;
 	}
-	tot_ones_so_far += 1;
+
+	if (curr_bin_cs[i] == 1) {
+	    tot_ones_so_far += 1;
+	}
     }
     return null;
 }
@@ -782,6 +785,7 @@ function generate_binary_cookiesets_X_efficient(url,
     var my_decimal_cookiesets = [];
     var tot_sets_equal_to_x = 0;
     var curr_bin_cs = [];
+    var orig_x = x;
 
     var num_sets = Math.pow(2, tot_cookies);    
     console.log("APPU DEBUG: Going to generate cookiesets(round=" + x + "), total cookiesets: " + num_sets);
@@ -837,8 +841,8 @@ function generate_binary_cookiesets_X_efficient(url,
 	return -1;
     }
     
-    console.log("APPU DEBUG: Total sets where X(=" + x + ") cookies can be dropped: " + tot_sets_equal_to_x);
-    console.log("APPU DEBUG: Actual sets where X(=" + x + ") cookies would be dropped: " + my_binary_cookiesets.length);
+    console.log("APPU DEBUG: Total sets where X(=" + orig_x + ") cookies can be dropped: " + tot_sets_equal_to_x);
+    console.log("APPU DEBUG: Actual sets where X(=" + orig_x + ") cookies would be dropped: " + my_binary_cookiesets.length);
     
     return {
 	binary_cookiesets: my_binary_cookiesets,
@@ -4285,4 +4289,15 @@ function test_record_specific_tab_cookies(tab_id) {
 		"urls": ["<all_urls>"]
 		},
 	["responseHeaders"]);
+}
+
+function test_compare_cookieset_generation(x, tot_cookies) {
+    var rc1 = generate_binary_cookiesets_X("zz", x, tot_cookies, [], []);
+    var rc2 = generate_binary_cookiesets_X_efficient("zz", x, tot_cookies, [], []);
+    if (JSON.stringify(rc1.binary_cookiesets) != JSON.stringify(rc2.binary_cookiesets)) {
+	console.log("APPU Error: Cookiesets generated efficiently do not match with exponential cookieset generation");
+    }
+    else {
+	console.log("APPU DEBUG: Success, cookiesets match");
+    }
 }
