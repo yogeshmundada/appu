@@ -100,7 +100,8 @@ function print_account_cookies(domain) {
     var account_cookies = [];
 
     for (c in cs.cookies) {
-	if (cs.cookies[c].cookie_class == 'during') {
+	if (cs.cookies[c].cookie_class == 'during' ||
+	    cs.cookies[c].is_part_of_account_cookieset == true) {
 	    account_cookies.push(c.split(":")[2]);
 	}
     }
@@ -1403,7 +1404,8 @@ function delete_all_except_suspected_account_cookies(domain) {
 		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
 		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
 		    if (cookie_key in cs.cookies &&
-			cs.cookies[cookie_key].cookie_class == 'during') {
+			(cs.cookies[cookie_key].cookie_class == 'during' ||
+			 cs.cookies[cookie_key].is_part_of_account_cookieset == true)) {
 			continue;
 		    }
 		    cookies_to_delete.push(cookie_name);
@@ -1509,12 +1511,15 @@ function detect_login_cookies(domain) {
 			login_state_cookies.cookies[cookie_key] = {};
 			login_state_cookies.cookies[cookie_key].cookie_class = 'before';
 			login_state_cookies.cookies[cookie_key].hashed_cookie_val = hashed_cookie_val;
+			login_state_cookies.cookies[cookie_key].is_part_of_account_cookieset = false;
+			login_state_cookies.cookies[cookie_key].current_state = 'present';
 		    }
 		    else {
 			// Cookie is newly created or got a new value written to it.
 			// Hence likely a login cookie
 			login_state_cookies.cookies[cookie_key] = {};
 			login_state_cookies.cookies[cookie_key].cookie_class = 'during';
+			login_state_cookies.cookies[cookie_key].is_part_of_account_cookieset = true;
 			login_state_cookies.cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
 			login_state_cookies.cookies[cookie_key].current_state = 'present';
 		    }
@@ -1584,8 +1589,11 @@ function cookie_change_detected(change_info) {
 	    if ('cookies' in pvadcs[domain] && 
 		cookie_key in pvadcs[domain].cookies) {
 		var cookie_class = pvadcs[domain].cookies[cookie_key].cookie_class;
+		var is_part_of_account_cookieset = pvadcs[domain].cookies[cookie_key].is_part_of_account_cookieset;
 		// No need to do anything if its just a 'before' cookie
-		if (cookie_class == 'during' || cookie_class == 'after') {
+		if (cookie_class == 'during' || 
+		    cookie_class == 'after'  ||
+		    is_part_of_account_cookieset == true) {
 		    // This cookie was added as a result of login process or after login process
 		    // No need to do anything if its cause if 'overwrite', it will be recreated shortly.
 		    if (change_info.cause == 'expired' || 
@@ -1594,7 +1602,8 @@ function cookie_change_detected(change_info) {
 			 change_info.cause == 'overwrite' ||
 			 change_info.cause == 'evicted') {
 			
-			if (cookie_class == 'during') {
+			if (cookie_class == 'during' ||
+			    is_part_of_account_cookieset == true) {
 			    pvadcs[domain].cookies[cookie_key].current_state = 'absent';
 			    // console.log("APPU DEBUG: Changed state of a 'during' cookie to 'absent': " + 
 			    //		cookie_key + ", cause: " + change_info.cause);
@@ -1620,9 +1629,11 @@ function cookie_change_detected(change_info) {
 		 change_info.cause == 'overwrite')) {
 		// This cookie was not present during login
 		var hashed_cookie_val = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(change_info.cookie.value));
+		var is_part_of_account_cookieset = pvadcs[domain].cookies[cookie_key].is_part_of_account_cookieset;
 
 		if (cookie_key in pvadcs[domain].cookies &&
-		    pvadcs[domain].cookies[cookie_key].cookie_class == 'during') {
+		    pvadcs[domain].cookies[cookie_key].cookie_class == 'during' ||
+		    is_part_of_account_cookieset == true) {
 			pvadcs[domain].cookies[cookie_key].current_state = 'changed';
 			pvadcs[domain].cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
 			// console.log("APPU DEBUG: Changed state of a 'during' cookie to 'changed': " + 
@@ -1632,9 +1643,15 @@ function cookie_change_detected(change_info) {
 		else {
 		    // console.log("APPU DEBUG: (" + domain + 
 		    // 	    ") Creating a new cookie with class 'after': " + cookie_key);
-		    
-		    pvadcs[domain].cookies[cookie_key] = {};
-		    pvadcs[domain].cookies[cookie_key].cookie_class = 'after';
+		    if (pvadcs[domain].cookies[cookie_key] == undefined) {
+			pvadcs[domain].cookies[cookie_key] = {};
+			pvadcs[domain].cookies[cookie_key].cookie_class = 'after';
+			pvadcs[domain].cookies[cookie_key].is_part_of_account_cookieset = false;
+		    }
+		    else {
+			pvadcs[domain].cookies[cookie_key].current_state = 'changed';
+		    }
+
 		    pvadcs[domain].cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
 		}
 		flush_session_cookie_store();
@@ -2137,8 +2154,10 @@ function cookie_investigator(account_cookies,
     // "st_testing"                                : Just simple testing state. You can pass your own
     //                                               cookieset combinations to it and it will test them
     //                                               and print the results.
+    //
     // "st_cookie_test_start"                      : Loading some default webpage so that Appu content-script runs and
     //                                               accepts commands.
+    //
     // "st_verification_epoch"                     : Reload site page. Start with shadow_cookie_store that is
     //                                               exact copy of default_cookie_store.
     //                                               Test the page for usernames after page load.
@@ -2151,18 +2170,20 @@ function cookie_investigator(account_cookies,
     //                                                   3. Finally, our testing messed up with user-session. 
     //                                               At runtime, we can't distinguish between 1, 2 and 3.
     //                                               So assume the worse(#3) and STOP TESTING this site further.
+    //
     // "st_start_with_no_cookies"                  : Reload the site page. Start with empty shadow-cookie-store.
     //                                               After reloading site page, test if usernames are found. 
     //                                               If no usernames are found, that is the expected behavior.
     //                                               Otherwise, critical error in Appu code since it is letting
     //                                               default_cookie_store cookies to pass. STOP TESTING.
+    //
     // "st_during_cookies_pass_test"               : Reload site page. Start with shadow_cookie_store that is 
     //                                               populated with only 'DURING' cookies as detected by Appu.
     //                                               Test the page for usernames after page load.
     //                                               If usernames found, user is logged-in (EXPECTED)
     //                                               Otherwise it means we have not detected 'DURING' 
     //                                               cookies properly. STOP TESTING
-    // "st_extend_during_cookies"                  : Add more cookies to 'DURING' set and see if user is logged-in.
+    //
     // "st_during_cookies_block_test"              : Reload site page. Start with shadow_cookie_store that is 
     //                                               populated without any 'DURING' cookies as detected by Appu.
     //                                               Test the page for usernames after page load.
@@ -2200,7 +2221,7 @@ function cookie_investigator(account_cookies,
     //                                               session and our testing will stop there.
     //                                               This test is conducted after each cookieset block test epoch.
     //
-    // "st_cookiesets_block_test"                  : Cookiesets are created by systematically omitting some of the
+    // "st_cookiesets_block_nonduring_and_disabled": Cookiesets are created by systematically omitting some of the
     //                                               'DURING' cookies. So, if we have detected 'N' 'DURING' cookies,
     //                                               then there are '2^N - 1' cookie sets. Here '1' is subtracted for
     //                                               for all cookies 
@@ -2218,6 +2239,10 @@ function cookie_investigator(account_cookies,
     //                                               other cookies are sufficient to regenerate this cookie.
     //                                               This test is done only for sites like 'Google' and might not be 
     //                                               performed always.
+    //
+    // "st_expand_suspected_account_cookies"       : Add more cookies to 'DURING' set and see if user is logged-in.
+    //                                               Remember that their class is not actually changed to 'during'.
+    //
     // "st_terminate"                              : Everything is done or error occurred. So just terminate.
 
     var last_non_verification_state = "";
@@ -2282,7 +2307,7 @@ function cookie_investigator(account_cookies,
     var epoch_id = 0;
     var req_epch_table = {};
 
-    var bool_st_cookiesets_block_test_done = false;
+    var bool_st_cookiesets_block_nonduring_and_disabled_done = false;
 
     // To store results until verification_epoch gives good to go
     var pending_am_i_logged_in = undefined;
@@ -2429,14 +2454,24 @@ function cookie_investigator(account_cookies,
 				continue;
 			    }
 			}
-			else if (my_state == 'st_cookiesets_block_test') {
+			else if (my_state == 'st_cookiesets_block_nonduring_and_disabled') {
 			    // If the cookie is in the set of disabled-cookie-sets in this 
 			    // iteration, then ignore it.
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
 				continue;
 			    }
-			    if (cs.cookies[cookie_key].cookie_class != "during") {
+			    // If cookie class is not 'during' and it is not part of 
+			    // account_cookieset then ignore it.
+			    if (cs.cookies[cookie_key].cookie_class != "during" &&
+				cs.cookies[cookie_key].is_part_of_account_cookieset != true) {
 				//disabled_cookies.push(cookie_key);
+				continue;
+			    }
+			}
+			else if (my_state == 'st_cookiesets_block_disabled') {
+			    // If the cookie is in the set of disabled-cookie-sets in this 
+			    // iteration, then ignore it.
+			    if (disabled_cookies.indexOf(cookie_key) != -1) {
 				continue;
 			    }
 			}
@@ -2467,9 +2502,8 @@ function cookie_investigator(account_cookies,
 				Object.keys(cookie_store).length + 
 				", On-disk cookie-store length: " + all_cookies.length);
 
-		    console.log("Here here: shadow_cookie_store: " + 
-				JSON.stringify(Object.keys(cookie_store)));
-
+// 		    console.log("Here here: shadow_cookie_store: " + 
+// 				JSON.stringify(Object.keys(cookie_store)));
 
 		    if (my_state != "st_verification_epoch") {
 			console.log("APPU DEBUG: Disabled cookies in this epoch: " + 
@@ -2548,7 +2582,7 @@ function cookie_investigator(account_cookies,
     // This means verification_epoch ran successfully and user is still logged-in.
     // So commit the last result.
     function commit_result() {
-	if (last_non_verification_state == "st_cookiesets_block_test") {
+	if (last_non_verification_state == "st_cookiesets_block_nonduring_and_disabled") {
 	    if (!pending_am_i_logged_in) {
 		verified_strict_account_cookiesets_array.push(pending_disabled_cookies);
 		verified_strict_login_cookiesets_array.push(pending_enabled_cookies_array);
@@ -2659,7 +2693,7 @@ function cookie_investigator(account_cookies,
 		curr_binary_cs = binary_cookiesets[current_cookiesets_test_index];
 		curr_decimal_cs = decimal_cookiesets[current_cookiesets_test_index];
 	    }
-	    else if (my_state == "st_cookiesets_block_test") {
+	    else if (my_state == "st_cookiesets_block_nonduring_and_disabled") {
 		console.log("APPU DEBUG: IS ACCOUNT COOKIE-SET?(" + 
 			    JSON.stringify(disabled_cookies) + 
 			    "): " + !am_i_logged_in);
@@ -2686,7 +2720,7 @@ function cookie_investigator(account_cookies,
 
 		if (rc == 0) {
 		    num_cookies_drop_for_round += 1;
-		    bool_st_cookiesets_block_test_done = true;
+		    bool_st_cookiesets_block_nonduring_and_disabled_done = true;
 		    curr_binary_cs = undefined;
 		    curr_decimal_cs = undefined;
 		}
@@ -2833,7 +2867,7 @@ function cookie_investigator(account_cookies,
 	else if (my_state == "st_verification_epoch") {
 	    if (was_last_result_expected) {
 		if (last_non_verification_state == "st_gub_cookiesets_block_test" ||
-		    last_non_verification_state == "st_cookiesets_block_test") {
+		    last_non_verification_state == "st_cookiesets_block_nonduring_and_disabled") {
 		    commit_result();
 		}
 
@@ -2848,19 +2882,19 @@ function cookie_investigator(account_cookies,
 		}
 		else {
 		    if ((last_non_verification_state == "st_during_cookies_block_test") ||
-			(last_non_verification_state == "st_cookiesets_block_test" && 
-			 bool_st_cookiesets_block_test_done == false) ||
+			(last_non_verification_state == "st_cookiesets_block_nonduring_and_disabled" && 
+			 bool_st_cookiesets_block_nonduring_and_disabled_done == false) ||
 			(last_non_verification_state == "st_gub_cookiesets_block_test" &&
 			 curr_binary_cs == undefined)) {
 			// State is cookiesets-testing if:
 			//   1. This is the very first time (indicated by last major state = "st_during_cookies_block_test")
 			//   2. We were already doing cookieset testing and went to verification state.
 			//   3. We were in GUB testing state but finished testing GUBs for this round.
-			rs = "st_cookiesets_block_test";
-			bool_st_cookiesets_block_test_done = false;
+			rs = "st_cookiesets_block_nonduring_and_disabled";
+			bool_st_cookiesets_block_nonduring_and_disabled_done = false;
 		    }
-		    else if ((last_non_verification_state == "st_cookiesets_block_test" && 
-			 bool_st_cookiesets_block_test_done == true) ||
+		    else if ((last_non_verification_state == "st_cookiesets_block_nonduring_and_disabled" && 
+			 bool_st_cookiesets_block_nonduring_and_disabled_done == true) ||
 			(last_non_verification_state == "st_gub_cookiesets_block_test" &&
 			 binary_cookiesets.length > 0)) {
 			// State is GUB-cookiesets testing if:
@@ -2886,7 +2920,7 @@ function cookie_investigator(account_cookies,
 		 my_state == "st_start_with_no_cookies"     ||
 		 my_state == "st_during_cookies_pass_test"  ||
 		 my_state == "st_during_cookies_block_test" ||
-		 my_state == "st_cookiesets_block_test"     ||
+		 my_state == "st_cookiesets_block_nonduring_and_disabled"     ||
 		 my_state == "st_gub_cookiesets_block_test") {
 	    if (!was_last_result_expected &&
 		my_state == "st_during_cookies_pass_test") {
@@ -2930,7 +2964,7 @@ function cookie_investigator(account_cookies,
 		console.log("APPU DEBUG: Shadow-cookie-store will be populated with " + 
 			    "all cookies from default cookie store except suspected account cookies");
 	    }
-	    else if (my_state == "st_cookiesets_block_test") {
+	    else if (my_state == "st_cookiesets_block_nonduring_and_disabled") {
 		console.log("APPU DEBUG: Shadow-cookie-store will be populated with " + 
 			    "all cookies from default cookie store except current cookieset cookies");
 	    }
@@ -2957,7 +2991,7 @@ function cookie_investigator(account_cookies,
 		disabled_cookies = convert_binary_cookieset_to_cookie_array(binary_cookiesets[current_cookiesets_test_index],
 									    suspected_account_cookies_array);
 	    }
-	    else if (my_state == "st_cookiesets_block_test" && curr_binary_cs == undefined) {
+	    else if (my_state == "st_cookiesets_block_nonduring_and_disabled" && curr_binary_cs == undefined) {
 		tot_cookiesets_tested_this_round = 0;
 		var rc = get_next_binary_cookieset_X(undefined, 
 						     num_cookies_drop_for_round, 
@@ -3410,13 +3444,13 @@ function cookie_investigator(account_cookies,
 
 	    console.log("----------------");
 	}
-	else if (my_state == "st_cookiesets_block_test") {
+	else if (my_state == "st_cookiesets_block_nonduring_and_disabled") {
 	    if (am_i_logged_in != undefined) {
 		if (page_load_success) {
 		    // EXPECTED branch
 		    console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames detection test " + 
 				"done, page loaded, num-pwd-boxes: " + num_pwd_boxes + 
-				", for 'st_cookiesets_block_test'");
+				", for 'st_cookiesets_block_nonduring_and_disabled'");
 		    are_disabled_cookies_regenerated();
 		    update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
 		    was_result_expected = true;
@@ -3426,7 +3460,7 @@ function cookie_investigator(account_cookies,
 			// EXPECTED branch
 			console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames are detected, page is not loaded, " + 
 				    "num-pwd-boxes: " + num_pwd_boxes + 
-				    ", for 'st_cookiesets_block_test'");
+				    ", for 'st_cookiesets_block_nonduring_and_disabled'");
 			are_disabled_cookies_regenerated();
 			update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
 			was_result_expected = true;
@@ -3435,7 +3469,7 @@ function cookie_investigator(account_cookies,
 			// INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
 			console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded" + 
 				    ", num-pwd-boxes: " + num_pwd_boxes + 
-				    ", for 'st_cookiesets_block_test'");
+				    ", for 'st_cookiesets_block_nonduring_and_disabled'");
 			was_result_expected = true;
 		    }
 		}
@@ -3444,7 +3478,7 @@ function cookie_investigator(account_cookies,
 		// NON-SERIOUS error branch (user name detection test never carried out)
 		// But no need to stop testing 
 		console.log("APPU DEBUG: NON-SERIOUS: Username detection test never " + 
-			    "carried out for 'st_cookiesets_block_test', Page load: " + page_load_success);
+			    "carried out for 'st_cookiesets_block_nonduring_and_disabled', Page load: " + page_load_success);
 		was_result_expected = true;
 	    }
 	    console.log("----------------");
@@ -3877,7 +3911,7 @@ function detect_account_cookies(current_url,
     config_forceshut = (opt_config_forceshut == undefined) ? 5 : opt_config_forceshut;
 
     if (opt_config_skip_initial_states != undefined) {
-    // opt_config_skip_initial_states will make it jump directly to "st_cookiesets_block_test"
+    // opt_config_skip_initial_states will make it jump directly to "st_cookiesets_block_nonduring_and_disabled"
 	config_skip_initial_states = opt_config_skip_initial_states;
     }
 
