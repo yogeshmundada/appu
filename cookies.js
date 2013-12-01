@@ -1,11 +1,19 @@
 
 
+// Most important concept:
+// Account cookieset: Absence of *ALL* cookies from account cookieset
+//                    causes the session to be logged-out.
+//                    However, presence does not necessarily mean 
+//                    user session is logged-in. That depends on 
+//                    other account cookiesetS.
+
+
 // 2^25 = 32MB.
 // Do not want to test more cookies than that.
 var MAX_COOKIE_TEST = 25;
 var MAX_RANDOM_COOKIESETS_TEST_ATTEMPTS = 3;
 
-// **** All functions that dump internal status - BEGIN
+// **** BEGIN - Dump internal status functions
 function onauthrequired_cb(details, my_callback) {
     console.log("APPU DEBUG: RequestID: " + details.requestId);
     console.log("APPU DEBUG: URL: " + details.url);
@@ -295,11 +303,11 @@ function print_sent_headers(details) {
 	console.log("Here here: Sent headers: " + JSON.stringify(details));
     }
 }
-// **** All functions that dump internal status - END
+// **** END - Dump internal status functions
 
 
 
-// **** Functions to generate, manipulate cookiesets - START
+// **** BEGIN - Cookiesets generation, manipulations functions
 
 // decimal_set1 is a decimal number like 44 (101100)
 // decimal_set2 is a decimal number like 60 (111100)
@@ -740,7 +748,7 @@ function set_last_X_bits_to_one(x, num_dd, bin_cs) {
 
 // Accpets a binary cookieset such as ['0', '1', '0', '0', '1']
 // Returns the next in the sequence ['0', '1', '0', '1', '0']
-function generate_binary_cookieset_X_next(curr_bin_cs) {
+function generate_next_binary_cookieset_X(curr_bin_cs) {
     // This is Big endian.
     // Most significan digit is stored at array index '0'.
     var tot_ones_so_far = 0;
@@ -766,6 +774,65 @@ function generate_binary_cookieset_X_next(curr_bin_cs) {
     return null;
 }
 
+// Return values:
+// 0: Means no more cookiesets can be generated for this round. Move to the next state.
+// 1: One complete round we could not generate any cookieset. Cookieset testing is over.
+// -1: Some error.
+// ELSE: object with binary and decimal cookiesets
+function get_next_binary_cookieset_X(curr_bin_cs, 
+				     x, 
+				     tot_cookies, 
+				     verified_strict_account_decimal_cookiesets,
+				     verified_non_account_super_decimal_cookiesets) {
+    var complete_round = false;
+
+    do {
+	if (curr_bin_cs == undefined ||
+	    curr_bin_cs == null) {
+	    curr_bin_cs = decimal_to_binary_array(0, tot_cookies);
+	    set_last_X_bits_to_one(x, 0, curr_bin_cs);    
+	    complete_round = true;
+	}
+	else {
+	    if (generate_next_binary_cookieset_X(curr_bin_cs) == null) {
+		if (complete_round == true) {
+		    return 1;
+		}
+		else {
+		    return 0;
+		}
+	    }
+	}
+	var dec_cookieset = binary_array_to_decimal(curr_bin_cs);
+	var bin_cookieset = curr_bin_cs.slice(0);
+
+	// Only push this set iff 
+	//  it is not a superset of already verified account-cookieset OR
+	//  it is not a subset of already verified non-account-cookieset 
+	rc = is_a_setmember_subset(dec_cookieset, 
+				   verified_strict_account_decimal_cookiesets);
+	if (rc) {
+	    // Suppressing these cookies will cause session to be logged-out anyway.
+	    // No point in testing.
+	    continue;
+	}
+	
+	rc = is_a_setmember_superset(dec_cookieset, 
+				     verified_non_account_super_decimal_cookiesets);
+	if (rc) {
+	    // Suppressing these cookies will not affect a session's logged-in status.
+	    // No point in testing.
+	    continue;
+	}
+
+	return {
+	    binary_cookieset: bin_cookieset,
+		decimal_cookieset: dec_cookieset
+		}
+    } while(1);
+    
+    return -1;
+}
 
 // Returns binary_cookiesets & decimal_cookiesets which only have specific number of cookies marked.
 // For example is 'x' = 2, and tot_cookies = 3, then
@@ -784,28 +851,20 @@ function generate_binary_cookiesets_X_efficient(url,
     var my_binary_cookiesets = [];
     var my_decimal_cookiesets = [];
     var tot_sets_equal_to_x = 0;
-    var curr_bin_cs = [];
+    var curr_bin_cs = decimal_to_binary_array(0, tot_cookies);
     var orig_x = x;
 
     var num_sets = Math.pow(2, tot_cookies);    
     console.log("APPU DEBUG: Going to generate cookiesets(round=" + x + "), total cookiesets: " + num_sets);
-    
-    for (var i = 0; i < tot_cookies; i++) {
-	if (x > 0) {
-	    curr_bin_cs.unshift(1);
-	    x -= 1;
-	}
-	else {
-	    curr_bin_cs.unshift(0);
-	}
-    }
+
+    set_last_X_bits_to_one(x, 0, curr_bin_cs);    
     
     my_binary_cookiesets.push(curr_bin_cs.slice(0));
     my_decimal_cookiesets.push(binary_array_to_decimal(curr_bin_cs));
     
     tot_sets_equal_to_x = 1;
     
-    while(generate_binary_cookieset_X_next(curr_bin_cs) != null) {
+    while(generate_next_binary_cookieset_X(curr_bin_cs) != null) {
 	tot_sets_equal_to_x += 1;
 	var dec_cookieset = binary_array_to_decimal(curr_bin_cs);
 	var bin_cookieset = curr_bin_cs.slice(0);
@@ -1114,7 +1173,47 @@ function prune_binary_cookiesets(verified_cookie_array,
 	    }   
 }
 
-// **** Functions to generate, manipulate cookiesets - END
+// **** END - Cookiesets generation, manipulations functions
+
+
+// **** BEGIN - Investigation state load/offload functions
+// This is to unlimitedStorage.
+function print_ci_state(ci_state) {
+    console.log("APPU DEBUG: The object is: " + JSON.stringify(ci_state));
+}
+
+function offload_ci_state(url, ci_state) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    chrome.storage.local.set({url_wo_paramters: ci_state})
+}
+
+function load_ci_state(url, cb) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    var ci_state = chrome.storage.local.get(url_wo_paramters, cb)
+}
+
+function remove_ci_state(url) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    chrome.storage.local.remove(url_wo_paramters)
+}
+
+function clear_ci_state(url) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    chrome.storage.local.clear(url_wo_paramters)
+}
+
+function get_ci_state_storage_size(cb) {
+    return chrome.storage.local.getBytesInUse(null, cb);
+}
+
+function check_ci_state(url) {
+
+}
+// **** END - Investigation state load/offload functions
+
+
+
+// **** BEGIN ---- Rest of the logic ----
 
 function cookie_backup(domain, backup_store) {
     var cb_cookies = (function(domain, backup_store) {
@@ -1663,6 +1762,7 @@ function get_account_cookies(current_url, bool_url_specific_cookies) {
     return account_cookies;
 }
 
+
 // Just like get_account_cookies() except you can also limit them to
 // cookies present in cookie_names
 function get_selective_account_cookies(current_url, cookie_names) {
@@ -1731,34 +1831,6 @@ function check_usernames_for_cookie_investigation(tab_id) {
 		    "because no usernames to investigate from");
 	report_fatal_error("No usernames present for cookie-investigation");
     }
-}
-
-function print_ci_state(ci_state) {
-    console.log("APPU DEBUG: The object is: " + JSON.stringify(ci_state));
-}
-
-function offload_ci_state(url, ci_state) {
-    var url_wo_paramters = url.replace(/\?.*/,'');
-    chrome.storage.local.set({url_wo_paramters: ci_state})
-}
-
-function load_ci_state(url, cb) {
-    var url_wo_paramters = url.replace(/\?.*/,'');
-    var ci_state = chrome.storage.local.get(url_wo_paramters, cb)
-}
-
-function remove_ci_state(url) {
-    var url_wo_paramters = url.replace(/\?.*/,'');
-    chrome.storage.local.remove(url_wo_paramters)
-}
-
-function clear_ci_state(url) {
-    var url_wo_paramters = url.replace(/\?.*/,'');
-    chrome.storage.local.clear(url_wo_paramters)
-}
-
-function get_ci_state_storage_size(cb) {
-    return chrome.storage.local.getBytesInUse(null, cb);
 }
 
 // First processes results from current epoch.
@@ -1882,9 +1954,11 @@ function open_cookie_slave_tab(url,
 			       http_response_cb,
 			       update_tab_id, 
 			       init_cookie_investigation) {
-    //Just some link so that appu content script runs on it.
+    // Just some link so that appu content script runs on it.
+    // I am purposely running some different site on this page 
+    // because if I run the actual URL that I am investigating
+    // cookie-store might get courrupted (epoch-ID is not set yet).
     var default_url = 'http://live.com';
-
     var my_domain = get_domain(url.split("/")[2]);
     if (my_domain == "live.com") {
 	default_url = 'http://google.com';
@@ -2151,17 +2225,8 @@ function cookie_investigator(account_cookies,
     var epoch_id = 0;
     var req_epch_table = {};
 
+    var bool_st_cookiesets_block_test_done = false;
     
-//     var rc = generate_binary_cookiesets(my_url, tot_cookies);
-//     if (rc == -1) {
-// 	return -1;
-//     }
-    
-//     binary_cookiesets = rc.binary_cookiesets;
-//     decimal_cookiesets = rc.decimal_cookiesets;
-//     console.log("APPU DEBUG: Number of generated cookie-sets: " + binary_cookiesets.length);
-
-
     if (config_start_params != undefined) {
 	if (config_start_params.starting_state == "st_testing" &&
 	    config_start_params.cookies_array != undefined &&
@@ -2496,24 +2561,12 @@ function cookie_investigator(account_cookies,
 			    JSON.stringify(disabled_cookies) + 
 			    "): " + !am_i_logged_in);
 
-		var res_arr = binary_cookiesets.splice(current_cookiesets_test_index, 1);
-		decimal_cookiesets.splice(current_cookiesets_test_index, 1);
-
-		console.log("APPU DEBUG: Cookiesets remaining to be tested: " + binary_cookiesets.length);
-
+		//update the status first.
 		if (!am_i_logged_in) {
 		    verified_strict_account_cookiesets_array.push(disabled_cookies);
 		    verified_strict_login_cookiesets_array.push(enabled_cookies_array);
 		    verified_strict_account_decimal_cookiesets.push(curr_decimal_cs);
 
-		    // Pruning is not really required after i started generating cookiesets per round.
-		    // But still, no harm done in calling. So keeping it.
-		    var rc = prune_binary_cookiesets(disabled_cookies, 
-						     suspected_account_cookies_array, 
-						     binary_cookiesets);
-		    binary_cookiesets = rc.binary_cookiesets;
-		    decimal_cookiesets = rc.decimal_cookiesets;
-		    console.log("APPU DEBUG: Number of cookie-sets after pruning: " + binary_cookiesets.length);
 		}
 		else {
 		    if (bool_pwd_box_present) {
@@ -2523,25 +2576,36 @@ function cookie_investigator(account_cookies,
 		    }
 		}
 
-		// Find the next cookieset to be tested.
-		if (binary_cookiesets.length > 0) {
-		    if (config_cookiesets == "random") {
-			current_cookiesets_test_index = generate_random_cookieset_index(binary_cookiesets.length);
-		    }
-		    else if (config_cookiesets == "all") {
-			// If we are testing "all" cookies, always start from the beginning,
-			// Will avoid unnecessary testing due to pruning SUPERSETS.
-			current_cookiesets_test_index = 0;
-		    }
-		    
-		    curr_binary_cs = binary_cookiesets[current_cookiesets_test_index];
-		    curr_decimal_cs = decimal_cookiesets[current_cookiesets_test_index];
+		var rc = get_next_binary_cookieset_X(curr_binary_cs, 
+						     num_cookies_drop_for_round, 
+						     tot_cookies, 
+						     verified_strict_account_decimal_cookiesets,
+						     verified_non_account_super_decimal_cookiesets);
 
-		    disabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs,
-										suspected_account_cookies_array);
+		if (rc == 0) {
+		    num_cookies_drop_for_round += 1;
+		    bool_st_cookiesets_block_test_done = true;
+		    curr_binary_cs = undefined;
+		    curr_decimal_cs = undefined;
+		}
+		else if (rc == 1) {
+		    bool_is_cookie_testing_done = true;
+		    console.log("APPU DEBUG: Cookieset testing successfully finished");
+		    curr_binary_cs = undefined;
+		    curr_decimal_cs = undefined;
+		}
+		else if (rc == -1) {
+		    console.log("APPU Error: Error occurred during generating current cookieset");
+		    has_error_occurred = true;
+		    curr_binary_cs = undefined;
+		    curr_decimal_cs = undefined;
 		}
 		else {
-		    num_cookies_drop_for_round += 1;
+		    curr_binary_cs = rc.binary_cookieset;
+		    curr_decimal_cs = rc.decimal_cookieset;
+		    disabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs,
+										suspected_account_cookies_array);
+		    console.log("APPU DEBUG: Next decimal cookieset: " + curr_decimal_cs);
 		}
 
 		current_cookiesets_test_attempts += 1;
@@ -2605,6 +2669,8 @@ function cookie_investigator(account_cookies,
 
 		    num_account_super_cookiesets_found = 0;
 		    num_non_account_super_cookiesets_found = 0;
+		    curr_binary_cs = undefined;
+		    curr_decimal_cs = undefined;
 		}
 
 		current_cookiesets_test_attempts += 1;
@@ -2678,17 +2744,18 @@ function cookie_investigator(account_cookies,
 		else {
 		    if ((last_non_verification_state == "st_during_cookies_block_test") ||
 			(last_non_verification_state == "st_cookiesets_block_test" && 
-			 binary_cookiesets.length > 0) ||
+			 bool_st_cookiesets_block_test_done == false) ||
 			(last_non_verification_state == "st_gub_cookiesets_block_test" &&
-			 binary_cookiesets.length == 0)) {
+			 curr_binary_cs == undefined)) {
 			// State is cookiesets-testing if:
 			//   1. This is the very first time (indicated by last major state = "st_during_cookies_block_test")
 			//   2. We were already doing cookieset testing and went to verification state.
 			//   3. We were in GUB testing state but finished testing GUBs for this round.
 			rs = "st_cookiesets_block_test";
+			bool_st_cookiesets_block_test_done = false;
 		    }
 		    else if ((last_non_verification_state == "st_cookiesets_block_test" && 
-			 binary_cookiesets.length == 0) ||
+			 bool_st_cookiesets_block_test_done == true) ||
 			(last_non_verification_state == "st_gub_cookiesets_block_test" &&
 			 binary_cookiesets.length > 0)) {
 			// State is GUB-cookiesets testing if:
@@ -2785,16 +2852,31 @@ function cookie_investigator(account_cookies,
 		disabled_cookies = convert_binary_cookieset_to_cookie_array(binary_cookiesets[current_cookiesets_test_index],
 									    suspected_account_cookies_array);
 	    }
-	    else if (my_state == "st_cookiesets_block_test" && binary_cookiesets.length == 0) {
+	    else if (my_state == "st_cookiesets_block_test" && curr_binary_cs == undefined) {
 		tot_cookiesets_tested_this_round = 0;
-		// We need to generate cookiesets for this round.
-		var rc = generate_binary_cookiesets_X(my_url, 
-						      num_cookies_drop_for_round, 
-						      tot_cookies, 
-						      verified_strict_account_decimal_cookiesets,
-						      verified_non_account_super_decimal_cookiesets);
-		
-		if (rc == -1) {
+		var rc = get_next_binary_cookieset_X(undefined, 
+						     num_cookies_drop_for_round, 
+						     tot_cookies, 
+						     verified_strict_account_decimal_cookiesets,
+						     verified_non_account_super_decimal_cookiesets);
+
+		if (rc == 0) {
+		    console.log("APPU Error: Was not expecting ZERO: " + num_cookies_drop_for_round
+				+ "(round = number of cookies to be dropped)");
+		    my_state = "st_terminate";
+		    rs = "st_terminate";
+		    report_fatal_error("cookiesets-generation-error-at-X=" + num_cookies_drop_for_round);
+		}
+		else if (rc == 1) {
+		    my_state = "st_terminate";
+		    rs = "st_terminate";
+		    console.log("APPU DEBUG: No cookiesets generated at round: " + num_cookies_drop_for_round +
+				", terminating");
+
+		    bool_is_cookie_testing_done = true;
+		    console.log("APPU DEBUG: Cookieset testing successfully finished");
+		}
+		else if (rc == -1) {
 		    console.log("APPU Error: Could not generate cookiesets for round: " + num_cookies_drop_for_round
 				+ "(round = number of cookies to be dropped)");
 		    my_state = "st_terminate";
@@ -2802,32 +2884,11 @@ function cookie_investigator(account_cookies,
 		    report_fatal_error("cookiesets-generation-error-at-X=" + num_cookies_drop_for_round);
 		}
 		else {
-		    binary_cookiesets = rc.binary_cookiesets;
-		    decimal_cookiesets = rc.decimal_cookiesets;
-		    if (binary_cookiesets.length == 0) {
-			my_state = "st_terminate";
-			rs = "st_terminate";
-			console.log("APPU DEBUG: No cookiesets generated at round: " + num_cookies_drop_for_round +
-				    ", terminating");
-		    }
-		    else {
-			// This is just to initialize for the very first time. 
-			// After this time, properly calculating this value will be done 
-			// in web_request_fully_fetched()
-			if (config_cookiesets == "random") {
-			    current_cookiesets_test_index = generate_random_cookieset_index(binary_cookiesets.length);
-			}
-			else if (config_cookiesets == "all") {
-			    current_cookiesets_test_index = 0;
-			}
-			
-			curr_binary_cs = binary_cookiesets[current_cookiesets_test_index];
-			curr_decimal_cs = decimal_cookiesets[current_cookiesets_test_index];
-			
-			disabled_cookies = convert_binary_cookieset_to_cookie_array(binary_cookiesets[current_cookiesets_test_index],
-										    suspected_account_cookies_array);
-
-		    }
+		    curr_binary_cs = rc.binary_cookieset;
+		    curr_decimal_cs = rc.decimal_cookieset;
+		    disabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs,
+										suspected_account_cookies_array);
+		    console.log("APPU DEBUG: Next decimal cookieset: " + curr_decimal_cs);
 		}
 	    }
 	    else if (my_state == "st_gub_cookiesets_block_test" && binary_cookiesets.length == 0) {
@@ -3623,7 +3684,7 @@ function cookie_investigator(account_cookies,
 
 
 	    if (c == "https://www.google.com/calendar:CAL") {
-		console.log("Here here: CAL COOKIE,  CAL COOKIE,  CAL COOKIE, CAL COOKIE, CAL COOKIE");
+		//console.log("Here here: CAL COOKIE,  CAL COOKIE,  CAL COOKIE, CAL COOKIE, CAL COOKIE");
 	    }
 
 
@@ -3637,8 +3698,8 @@ function cookie_investigator(account_cookies,
 	    }
 	}
 
-	console.log("Here here: Here here here: URL: " + details.url);
-	console.log("Here here: Cookiessssssssss:" + JSON.stringify(my_cookies));
+	//	console.log("Here here: Here here here: URL: " + details.url);
+	//      console.log("Here here: Cookiessssssssss:" + JSON.stringify(my_cookies));
 	
 	// console.log("APPU DEBUG: Original Cookies: " + 
 	//	    original_cookie_array.length +
