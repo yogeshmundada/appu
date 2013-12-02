@@ -102,7 +102,7 @@ function print_account_cookies(domain) {
     for (c in cs.cookies) {
 	if (cs.cookies[c].cookie_class == 'during' ||
 	    cs.cookies[c].is_part_of_account_cookieset == true) {
-	    account_cookies.push(c.split(":")[2]);
+	    account_cookies.push(c);
 	}
     }
 
@@ -117,38 +117,45 @@ function print_cookie_values(domain, cookie_names) {
     for(var j = 0; j < cookie_names.length; j++) {
 	chrome.cookies.getAll({
 		'domain' : domain,
-		    'name' : cookie_names[j]
+		    'name' : cookie_names[j].split(':')[2]
 		    }, 
-	    function (all_cookies) {
-		for (var i = 0; i < all_cookies.length; i++) {
-		    var cookie_name = all_cookies[i].name;
-		    var cookie_domain = all_cookies[i].domain;
-		    var cookie_path = all_cookies[i].path;
-		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
-		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
-		    var expiry_time = 'no-expiry-time';
-		    if ('expirationDate' in all_cookies[i]) {
-			var exp_seconds = all_cookies[i].expirationDate;
-			var d = new Date(0); 
-			d.setUTCSeconds(exp_seconds);
-			expiry_time = d;
+	    (function(search_cookie_name, index) {
+		return function (all_cookies) {
+		    for (var i = 0; i < all_cookies.length; i++) {
+			var cookie_name = all_cookies[i].name;
+			var cookie_domain = all_cookies[i].domain;
+			var cookie_path = all_cookies[i].path;
+			var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+			var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
+			
+			if (cookie_key != search_cookie_name) {
+			    continue;
+			}
+			
+			var expiry_time = 'no-expiry-time';
+			if ('expirationDate' in all_cookies[i]) {
+			    var exp_seconds = all_cookies[i].expirationDate;
+			    var d = new Date(0); 
+			    d.setUTCSeconds(exp_seconds);
+			    expiry_time = d;
+			}
+			else {
+			    expiry_time = 'browser-close';
+			}
+			
+			var msg = sprintf("APPU DEBUG: " + index + ". Cookie-key: '%30s', Expiration: '%s', HostOnly: '%s', " +
+					  "Secure: '%s', HttpOnly: '%s', Session: '%s', Value: '%s'",
+					  cookie_key,
+					  expiry_time,
+					  all_cookies[i].hostOnly,
+					  all_cookies[i].secure,
+					  all_cookies[i].httpOnly,
+					  all_cookies[i].session,
+					  all_cookies[i].value);
+			console.log(msg);
 		    }
-		    else {
-			expiry_time = 'browser-close';
-		    }
-
-		    var msg = sprintf("APPU DEBUG: Cookie-key: '%30s', Expiration: '%s', HostOnly: '%s', " +
-				      "Secure: '%s', HttpOnly: '%s', Session: '%s', Value: '%s'",
-				      cookie_key,
-				      expiry_time,
-				      all_cookies[i].hostOnly,
-				      all_cookies[i].secure,
-				      all_cookies[i].httpOnly,
-				      all_cookies[i].session,
-				      all_cookies[i].value);
-		    console.log(msg);
 		}
-	    });
+	    }(cookie_names[j], j+1)));
     }
 }
 
@@ -348,10 +355,19 @@ function count_all_cookies() {
 		}
 	    }
 
+	    var order_by_num_cookies = [];
 	    for (var site in per_site_cookie_count) {
-		console.log("APPU DEBUG: Site: " + site + ", Cookies: " + per_site_cookie_count[site]);
+		order_by_num_cookies.push([site, per_site_cookie_count[site]]);
 	    }
 
+	    order_by_num_cookies.sort(function(a, b) {return a[1] - b[1]});
+
+	    for (var i in order_by_num_cookies) {
+		console.log("APPU DEBUG: Site: " + order_by_num_cookies[i][0] + 
+			    ", Cookies: " + order_by_num_cookies[i][1]);
+	    }
+
+	    console.log("APPU DEBUG: ----------------------------------- ");
 	    console.log("APPU DEBUG: Total HostOnly Cookies: " + tot_hostonly);
 	    console.log("APPU DEBUG: Total HTTPOnly Cookies: " + tot_httponly);
 	    console.log("APPU DEBUG: Total Secure Cookies: " + tot_secure);
@@ -872,6 +888,7 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	if (rc) {
 	    // Suppressing these cookies will cause session to be logged-out anyway.
 	    // No point in testing.
+	    console.log("APPU DEBUG: Skipping decimal cookieset(subset of account-cookieset): " + dec_cookieset);
 	    continue;
 	}
 	
@@ -880,6 +897,7 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	if (rc) {
 	    // Suppressing these cookies will not affect a session's logged-in status.
 	    // No point in testing.
+	    console.log("APPU DEBUG: Skipping decimal cookieset(superset in non-account_cookiesets): " + dec_cookieset);
 	    continue;
 	}
 
@@ -1520,7 +1538,7 @@ function detect_login_cookies(domain) {
 			login_state_cookies.cookies[cookie_key] = {};
 			login_state_cookies.cookies[cookie_key].cookie_class = 'during';
 			login_state_cookies.cookies[cookie_key].is_part_of_account_cookieset = true;
-			login_state_cookies.cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
+			login_state_cookies.cookies[cookie_key].hashed_cookie_val = hashed_cookie_val;
 			login_state_cookies.cookies[cookie_key].current_state = 'present';
 		    }
 		}
@@ -1634,7 +1652,7 @@ function cookie_change_detected(change_info) {
 		    pvadcs[domain].cookies[cookie_key].cookie_class == 'during' ||
 		    is_part_of_account_cookieset == true) {
 			pvadcs[domain].cookies[cookie_key].current_state = 'changed';
-			pvadcs[domain].cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
+			pvadcs[domain].cookies[cookie_key].hashed_cookie_val = hashed_cookie_val;
 			// console.log("APPU DEBUG: Changed state of a 'during' cookie to 'changed': " + 
 			//	    cookie_key + ", cause: " + change_info.cause);
 			// print_appu_session_store_cookies(domain, 'during');
@@ -1651,7 +1669,7 @@ function cookie_change_detected(change_info) {
 			pvadcs[domain].cookies[cookie_key].current_state = 'changed';
 		    }
 
-		    pvadcs[domain].cookies[cookie_key].hashed_cookie_value = hashed_cookie_val;
+		    pvadcs[domain].cookies[cookie_key].hashed_cookie_val = hashed_cookie_val;
 		}
 		flush_session_cookie_store();
 	    }
@@ -1822,12 +1840,12 @@ function get_account_cookies(current_url, bool_url_specific_cookies) {
 	    if (bool_url_specific_cookies) {
 		if (is_subdomain(c, current_url)) {
 		    account_cookies[c] = {};
-		    account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_value; 
+		    account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
 		}
 	    }
 	    else {
 		account_cookies[c] = {};
-		account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_value; 
+		account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
 	    }
 	}
     }
@@ -1848,7 +1866,7 @@ function get_selective_account_cookies(current_url, cookie_names) {
 	    if (cs.cookies[c].cookie_class == 'during' &&
 		c.split(":")[2] == cookie_names[i]) {
 		account_cookies[c] = {};
-		account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_value; 
+		account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
 		break;
 	    }
 	}
@@ -1872,7 +1890,7 @@ function get_domain_cookies(current_url) {
 	}
 
 	account_cookies[c] = {};
-	account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_value; 
+	account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
     }
 
     return account_cookies;
@@ -2598,7 +2616,7 @@ function cookie_investigator(account_cookies,
 			verified_strict_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
 		    }
 		    else {
-			if (pending_bool_pwd_box_present) {
+			if (pending_bool_pwd_box_present[0]) {
 			    verified_restricted_binary_cookiesets.push(pending_disabled_cookies[0]);
 			    console.log("APPU DEBUG: Found restrictive cookieset: " + 
 					JSON.stringify(pending_disabled_cookies[0]));
@@ -2782,6 +2800,7 @@ function cookie_investigator(account_cookies,
 		num_non_account_super_cookiesets_found = 0;
 		curr_binary_cs = undefined;
 		curr_decimal_cs = undefined;
+		bool_st_gub_cookiesets_block_test_done = true;
 	    }
 	    
 	    current_cookiesets_test_attempts += 1;
@@ -2869,7 +2888,7 @@ function cookie_investigator(account_cookies,
 			//   3. We were in GUB testing state but finished testing GUBs for this round.
 			rs = "st_cookiesets_block_nonduring_and_disabled";
 			bool_st_cookiesets_block_test_done = false;
-			if (last_non_verification_state != "st_cookiesets_block_nonduring_and_disabled") {
+			if (last_non_verification_state != "st_cookiesets_block_disabled") {
 			    tot_cookiesets_tested_this_round = 0;
 			    curr_binary_cs = undefined;
 			}
@@ -2910,7 +2929,7 @@ function cookie_investigator(account_cookies,
 		rs = "st_terminate";
 	    }
 	}
-	else if (last_non_verification_state == "st_cookiesets_block_nonduring_and_disabled") {
+	else if (my_state == "st_cookiesets_block_nonduring_and_disabled") {
 	    if (!was_last_result_expected) {
 		rs = "st_terminate";
 	    }
@@ -2922,7 +2941,7 @@ function cookie_investigator(account_cookies,
 		 my_state == "st_start_with_no_cookies"         ||
 		 my_state == "st_during_cookies_pass_test"      ||
 		 my_state == "st_during_cookies_block_test"     ||
-		 my_state == "st_cookiesets_disabled"           ||
+		 my_state == "st_cookiesets_block_disabled"     ||
 		 my_state == "st_gub_cookiesets_block_test") {
 	    if (!was_last_result_expected &&
 		my_state == "st_during_cookies_pass_test") {

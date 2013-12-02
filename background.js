@@ -514,6 +514,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		     cit.get_state() == 'st_during_cookies_block_test'                ||
 		     cit.get_state() == 'st_verification_epoch'                       ||
 		     cit.get_state() == 'st_cookiesets_block_nonduring_and_disabled'  ||
+		     cit.get_state() == 'st_cookiesets_block_disabled'                ||
 		     cit.get_state() == 'st_gub_cookiesets_block_test') {
 		// We test here that user is still logged into the web application.
 		check_usernames_for_cookie_investigation(sender.tab.id);
