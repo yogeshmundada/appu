@@ -2712,7 +2712,7 @@ function cookie_investigator(account_cookies,
 	}
 	else if (my_state == "st_cookiesets_block_nonduring_and_disabled" ||
 		 my_state == "st_cookiesets_block_disabled") {
-	    console.log("APPU DEBUG: IS ACCOUNT COOKIE-SET?(" + 
+	    console.log("APPU DEBUG: (" + my_state + ")IS ACCOUNT COOKIE-SET?(" + 
 			JSON.stringify(disabled_cookies) + 
 			"): " + !am_i_logged_in);
 	    
