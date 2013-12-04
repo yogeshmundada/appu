@@ -2631,13 +2631,14 @@ function cookie_investigator(account_cookies,
 	}
 	else if (last_non_verification_state == "st_gub_cookiesets_block_test") {
 	    if (pending_am_i_logged_in != undefined &&
-		pending_am_i_logged_in) {
+		pending_am_i_logged_in == true) {
 		num_non_account_super_cookiesets_found += 1;
 		rc = add_to_set(pending_disabled_cookies, undefined, verified_non_account_super_decimal_cookiesets, 
 				undefined,
 				pending_curr_decimal_cs);
 	    }
-	    else {
+	    else if (pending_am_i_logged_in != undefined &&
+		     pending_am_i_logged_in == false) {
 		num_account_super_cookiesets_found += 1;
 		rc = add_to_set(pending_disabled_cookies, undefined, verified_account_super_decimal_cookiesets, 
 				undefined,
@@ -3447,11 +3448,21 @@ function cookie_investigator(account_cookies,
 			was_result_expected = true;
 		    }
 		    else {
-			// INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
-			console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded" + 
-				    ", num-pwd-boxes: " + num_pwd_boxes + 
-				    ", for '" + my_state + "'");
-			was_result_expected = true;
+			if (num_pwd_boxes > 0) {
+			    console.log("APPU DEBUG: NOT EXPECTED: Usernames are NOT detected, page is not loaded, " + 
+					"num-pwd-boxes: " + num_pwd_boxes + 
+					", for '" + my_state + "'");
+			    are_disabled_cookies_regenerated();
+			    update_cookie_status(false, (num_pwd_boxes > 0));
+			    was_result_expected = true;
+			}
+			else {
+			    // INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
+			    console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded" + 
+					", num-pwd-boxes: " + num_pwd_boxes + 
+					", for '" + my_state + "'");
+			    was_result_expected = true;
+			}
 		    }
 		}
 	    }
@@ -3486,11 +3497,21 @@ function cookie_investigator(account_cookies,
 			was_result_expected = true;
 		    }
 		    else {
-			// INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
-			console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded" + 
-				    ", num-pwd-boxes: " + num_pwd_boxes + 
-				    ", for 'st_gub_cookiesets_block_test'");
-			was_result_expected = true;
+			if (num_pwd_boxes > 0) {
+			    console.log("APPU DEBUG: NOT EXPECTED: Usernames are NOT detected, page is not loaded, " + 
+					"num-pwd-boxes: " + num_pwd_boxes + 
+					", for 'st_gub_cookiesets_block_test'");
+			    are_disabled_cookies_regenerated();
+			    update_cookie_status(false, (num_pwd_boxes > 0));
+			    was_result_expected = true;
+			}
+			else {
+			    // INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
+			    console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded" + 
+					", num-pwd-boxes: " + num_pwd_boxes + 
+					", for 'st_gub_cookiesets_block_test'");
+			    was_result_expected = true;
+			}
 		    }
 		}
 	    }
