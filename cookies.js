@@ -95,13 +95,18 @@ function print_appu_session_store_cookies(domain, cookie_class) {
 }
 
 
-function print_account_cookies(domain) {
+function print_account_cookies(domain, only_present) {
     var cs = pii_vault.aggregate_data.session_cookie_store[domain];
     var account_cookies = [];
 
+    only_present = (only_present == undefined) ? true : only_present;
+
     for (c in cs.cookies) {
 	if (cs.cookies[c].cookie_class == 'during' ||
-	    cs.cookies[c].is_part_of_account_cookieset == true) {
+	     cs.cookies[c].is_part_of_account_cookieset == true) {
+	    if (only_present && cs.cookies[c].current_state == "absent") {
+		continue;
+	    }
 	    account_cookies.push(c);
 	}
     }
@@ -114,111 +119,155 @@ function print_account_cookies(domain) {
 // We don't need to actually access the cookie values
 // in actual deployments
 function print_cookie_values(domain, cookie_names) {
-    for(var j = 0; j < cookie_names.length; j++) {
-	chrome.cookies.getAll({
-		'domain' : domain,
-		    'name' : cookie_names[j].split(':')[2]
-		    }, 
-	    (function(search_cookie_name, index) {
-		return function (all_cookies) {
-		    for (var i = 0; i < all_cookies.length; i++) {
-			var cookie_name = all_cookies[i].name;
-			var cookie_domain = all_cookies[i].domain;
-			var cookie_path = all_cookies[i].path;
-			var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
-			var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
-			
-			if (cookie_key != search_cookie_name) {
-			    continue;
-			}
-			
-			var expiry_time = 'no-expiry-time';
-			if ('expirationDate' in all_cookies[i]) {
-			    var exp_seconds = all_cookies[i].expirationDate;
-			    var d = new Date(0); 
-			    d.setUTCSeconds(exp_seconds);
-			    expiry_time = d;
-			}
-			else {
-			    expiry_time = 'browser-close';
-			}
-			
-			var msg = sprintf("APPU DEBUG: " + index + ". Cookie-key: '%30s', Expiration: '%s', HostOnly: '%s', " +
-					  "Secure: '%s', HttpOnly: '%s', Session: '%s', Value: '%s'",
-					  cookie_key,
-					  expiry_time,
-					  all_cookies[i].hostOnly,
-					  all_cookies[i].secure,
-					  all_cookies[i].httpOnly,
-					  all_cookies[i].session,
-					  all_cookies[i].value);
-			console.log(msg);
+    var all_done = [];
+    var cookie_info = {};
+    for (var j = 0; j < cookie_names.length; j++) {
+	all_done[j] = false;
+	cookie_info[cookie_names[j]] = undefined;
+    }
+    
+    chrome.cookies.getAll({
+	    'domain' : domain,
+		}, 
+	(function(cookie_names) {
+	    return function (all_cookies) {
+		for (var i = 0; i < all_cookies.length; i++) {
+		    var cookie_name = all_cookies[i].name;
+		    var cookie_domain = all_cookies[i].domain;
+		    var cookie_path = all_cookies[i].path;
+		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
+		    var search_index = cookie_names.indexOf(cookie_key);
+
+		    if (search_index == -1) {
+			continue;
+		    }
+		    else {
+			all_done[search_index] = true;
+		    }
+		    
+		    var expiry_time = 'no-expiry-time';
+		    if ('expirationDate' in all_cookies[i]) {
+			var exp_seconds = all_cookies[i].expirationDate;
+			var d = new Date(0); 
+			d.setUTCSeconds(exp_seconds);
+			expiry_time = d.toLocaleString();
+		    }
+		    else {
+			expiry_time = 'browser-close';
+		    }
+		    
+		    var msg = sprintf("Cookie-key: '%s', " + 
+				      "\n\tValue-Length: %3d, " +
+				      "HostOnly: '%s', " +
+				      "Secure: '%s', " + 
+				      "HttpOnly: '%s', " +
+				      "Session: '%s', " + 
+				      "Expiration: '%s', " + 
+				      "\n\tValue: '%s'",
+				      cookie_key,
+				      all_cookies[i].value.length,
+				      all_cookies[i].hostOnly,
+				      all_cookies[i].secure,
+				      all_cookies[i].httpOnly,
+				      all_cookies[i].session,
+				      expiry_time,
+				      all_cookies[i].value);
+		    cookie_info[cookie_key] = msg;
+		    if (all_done.indexOf(false) == -1) {
+			break;
 		    }
 		}
-	    }(cookie_names[j], j+1)));
-    }
+
+		var found_cookies = Object.keys(cookie_info);
+		console.log("*****************************");
+		console.log("APPU DEBUG: Printing all SUSPECTED-ACCOUNT-COOKIES for: " + domain);
+		for (var j = 0; j < found_cookies.length; j++) {
+		    if (cookie_info[found_cookies[j]] == undefined) {
+			continue;
+		    }
+		    console.log((j+1) + ". " + cookie_info[found_cookies[j]]);
+		}
+		console.log("*****************************");
+	    }
+	}(cookie_names)));
 }
 
 
 // All cookies related to a particular domain
-function print_all_cookies(domain, event_name, cookie_attributes) {
-    var cb_cookies = (function(domain, event_name) {
-	return function(all_cookies) {
-	    var tot_hostonly = 0;
-	    var tot_httponly = 0;
-	    var tot_secure = 0;
-	    var tot_session = 0;
-
-	    console.log("APPU DEBUG: Printing all cookies for (EVENT:" + event_name + "): " + domain);
-	    for (var i = 0; i < all_cookies.length; i++) {
-		var cookie_str = "";
-		var cookie_name = all_cookies[i].name;
-		var cookie_domain = all_cookies[i].domain;
-		var cookie_path = all_cookies[i].path;
-		var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
-		var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
-
-		if (!cookie_attributes) {
-		    cookie_str += "Cookie Key: " + cookie_key;
-		    cookie_str += ", HostOnly: '" + all_cookies[i].hostOnly + "'";
-		    cookie_str += ", Secure: '" + all_cookies[i].secure + "'";
-		    cookie_str += ", HttpOnly: '" + all_cookies[i].httpOnly + "'";
-		    cookie_str += ", Session: '" + all_cookies[i].session + "'";
-		    cookie_str += ", Value: '" + all_cookies[i].value + "'";
-		    cookie_str += ", Expiration: '" + all_cookies[i].expirationDate + "'";
-		}
-		else {
-		    for (var k = 0; k < cookie_attributes.length; k++) {
-			cookie_str += cookie_attributes[k] + " : " + all_cookies[i][cookie_attributes[k]];
-			cookie_str += ", ";
+function print_all_cookies(domain) {
+    var cb_cookies = (function(domain) {
+	    return function(all_cookies) {
+		var tot_hostonly = 0;
+		var tot_httponly = 0;
+		var tot_secure = 0;
+		var tot_session = 0;
+		
+		console.log("*****************************");
+		console.log("APPU DEBUG: Printing ALL cookies for: " + domain);
+		for (var i = 0; i < all_cookies.length; i++) {
+		    var cookie_str = "";
+		    var cookie_name = all_cookies[i].name;
+		    var cookie_domain = all_cookies[i].domain;
+		    var cookie_path = all_cookies[i].path;
+		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
+		    
+		    var expiry_time = 'no-expiry-time';
+		    if ('expirationDate' in all_cookies[i]) {
+			var exp_seconds = all_cookies[i].expirationDate;
+			var d = new Date(0); 
+			d.setUTCSeconds(exp_seconds);
+			expiry_time = d.toLocaleString();
 		    }
+		    else {
+			expiry_time = 'browser-close';
+		    }
+		    
+		    var msg = sprintf("Cookie-key: '%s', " + 
+				      "\n\tValue-Length: %3d, " + 
+				      "HostOnly: '%s', " +
+				      "Secure: '%s', " + 
+				      "HttpOnly: '%s', " +
+				      "Session: '%s', " + 
+				      "Expiration: '%s', " + 
+				      "\n\tValue: '%s'",
+				      cookie_key,
+				      all_cookies[i].value.length,
+				      all_cookies[i].hostOnly,
+				      all_cookies[i].secure,
+				      all_cookies[i].httpOnly,
+				      all_cookies[i].session,
+				      expiry_time,
+				      all_cookies[i].value);
+		    
+		    if (all_cookies[i].hostOnly) {
+			tot_hostonly += 1;
+		    }
+		    
+		    if (all_cookies[i].secure) {
+			tot_secure += 1;
+		    }
+		    
+		    if (all_cookies[i].httpOnly) {
+			tot_httponly += 1;
+		    }
+		    
+		    if (all_cookies[i].session) {
+			tot_session += 1;
+		    }
+		    
+		    console.log(i + ". " + msg);
 		}
-
-		if (all_cookies[i].hostOnly) {
-		    tot_hostonly += 1;
-		}
-
-		if (all_cookies[i].secure) {
-		    tot_secure += 1;
-		}
-
-		if (all_cookies[i].httpOnly) {
-		    tot_httponly += 1;
-		}
-
-		if (all_cookies[i].session) {
-		    tot_session += 1;
-		}
-
-		console.log("APPU DEBUG: " + cookie_str);
+		console.log("-----------------------------");
+		console.log("APPU DEBUG: Total HostOnly Cookies: " + tot_hostonly);
+		console.log("APPU DEBUG: Total HTTPOnly Cookies: " + tot_httponly);
+		console.log("APPU DEBUG: Total Secure Cookies: " + tot_secure);
+		console.log("APPU DEBUG: Total Session Cookies: " + tot_session);
+		console.log("APPU DEBUG: Total number of cookies: " + all_cookies.length);
+		console.log("*****************************");
 	    }
-	    console.log("APPU DEBUG: Total HostOnly Cookies: " + tot_hostonly);
-	    console.log("APPU DEBUG: Total HTTPOnly Cookies: " + tot_httponly);
-	    console.log("APPU DEBUG: Total Secure Cookies: " + tot_secure);
-	    console.log("APPU DEBUG: Total Session Cookies: " + tot_session);
-	    console.log("APPU DEBUG: Total number of cookies: " + all_cookies.length);
-	}
-	})(domain, event_name);
+	})(domain);
 
     get_all_cookies(domain, cb_cookies);
 }
@@ -1537,7 +1586,7 @@ function detect_login_cookies(domain) {
 			// Hence likely a login cookie
 			login_state_cookies.cookies[cookie_key] = {};
 			login_state_cookies.cookies[cookie_key].cookie_class = 'during';
-			login_state_cookies.cookies[cookie_key].is_part_of_account_cookieset = true;
+			login_state_cookies.cookies[cookie_key].is_part_of_account_cookieset = false;
 			login_state_cookies.cookies[cookie_key].hashed_cookie_val = hashed_cookie_val;
 			login_state_cookies.cookies[cookie_key].current_state = 'present';
 		    }
@@ -1836,7 +1885,8 @@ function get_account_cookies(current_url, bool_url_specific_cookies) {
 	    // default cookie-store.
 	    continue;
 	}
-	if (cs.cookies[c].cookie_class == 'during') {
+	if (cs.cookies[c].cookie_class == 'during' ||
+	    cs.cookies[c].is_part_of_account_cookieset == true) {
 	    if (bool_url_specific_cookies) {
 		if (is_subdomain(c, current_url)) {
 		    account_cookies[c] = {};
@@ -1851,6 +1901,29 @@ function get_account_cookies(current_url, bool_url_specific_cookies) {
     }
 
     return account_cookies;
+}
+
+
+// Returns cookies that are NOT suspected to be account cookies.
+function get_non_account_cookies(domain) {
+    var cs = pii_vault.aggregate_data.session_cookie_store[domain];
+    var non_account_cookies = {};
+
+    for (c in cs.cookies) {
+	if (cs.cookies[c].current_state == 'absent') {
+	    // No point in testing for cookies that are not present in the 
+	    // default cookie-store.
+	    continue;
+	}
+	if (cs.cookies[c].cookie_class != 'during' &&
+	    (cs.cookies[c].is_part_of_account_cookieset == false ||
+	     cs.cookies[c].is_part_of_account_cookieset == undefined)) {
+	    non_account_cookies[c] = {};
+	    non_account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
+	}
+    }
+
+    return non_account_cookies;
 }
 
 
@@ -2129,6 +2202,7 @@ function cookie_investigator(account_cookies,
 			     config_skip_initial_states,
 			     config_start_params) {
     var my_url = url;
+    var my_domain = get_domain(my_url.split("/")[2]);
 
     var bool_is_cookie_testing_done = false;
 
@@ -2310,7 +2384,6 @@ function cookie_investigator(account_cookies,
     var curr_binary_cs = undefined;
     var curr_decimal_cs = undefined;
     var current_cookiesets_test_index = -1;
-    
     var disabled_cookies = [];
     
     var has_error_occurred = false;
@@ -2333,7 +2406,20 @@ function cookie_investigator(account_cookies,
     var pending_enabled_cookies_array = undefined;
     var pending_curr_decimal_cs = undefined;
     var pending_bool_pwd_box_present = undefined;
-    
+
+    // For expand suspected account cookies state.
+    var curr_expand_state_binary_cs = undefined;
+    var curr_expand_state_decimal_cs = undefined;
+    var expand_state_disabled_cookies = [];
+    var expand_state_num_cookies_drop_for_round = 1;
+    var verified_strict_non_during_account_decimal_cookiesets = [];
+    var verified_non_during_non_account_super_decimal_cookiesets = [];
+    var bool_st_expand_suspected_account_cookies_done = false;
+    var bool_expand_state_initialized = false;
+    var non_during_suspected_account_cookies_array = [];    
+    var tot_non_during_cookies = 0;
+    var tot_expand_state_cookiesets_tested = 0;
+
     if (config_start_params != undefined) {
 	if (config_start_params.starting_state == "st_testing" &&
 	    config_start_params.cookies_array != undefined &&
@@ -2364,6 +2450,12 @@ function cookie_investigator(account_cookies,
     for (var i = 0; i < suspected_account_cookies_array.length; i++) {
 	console.log(suspected_account_cookies_array[i]);
     }
+
+
+    function reset_to_start_state() {
+
+    }
+
     
     function generate_random_cookieset_index(tot_cookiesets) {
 	return (Math.ceil((Math.random() * tot_cookiesets * 100)) % tot_cookiesets);
@@ -2383,6 +2475,7 @@ function cookie_investigator(account_cookies,
     function init_cookie_investigation() {
 	var cit = cookie_investigating_tabs[my_tab_id];
 	cit.url = my_url;
+	cit.domain = my_domain;
 	cit.num_pageload_timeouts = 0;
 	cit.page_load_success = false;
 	cit.content_script_started = false;
@@ -2504,7 +2597,8 @@ function cookie_investigator(account_cookies,
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
 				continue;
 			    }
-			    if (cs.cookies[cookie_key].cookie_class != "during") {
+			    if (cs.cookies[cookie_key].cookie_class != "during" &&
+				cs.cookies[cookie_key].is_part_of_account_cookieset != true) {
 				continue;
 			    }
 
@@ -2517,6 +2611,16 @@ function cookie_investigator(account_cookies,
 			    }
 			    //console.log("Here here: GUB cookie: " + cookie_key);
 			}
+			else if (my_state == 'st_expand_suspected_account_cookies') {
+			    // If the cookie is in the set of disabled-cookie-sets in this 
+			    // iteration, then ignore it.
+			    if (disabled_cookies.indexOf(cookie_key) != -1) {
+				continue;
+			    }
+			    if (expand_state_disabled_cookies.indexOf(cookie_key) != -1) {
+				continue;
+			    }
+			}
 			
 			enabled_cookies_array.push(cookie_key);
 			cookie_store[cookie_key] = all_cookies[i];
@@ -2525,10 +2629,11 @@ function cookie_investigator(account_cookies,
 				Object.keys(cookie_store).length + 
 				", On-disk cookie-store length: " + all_cookies.length);
 
-// 		    console.log("Here here: shadow_cookie_store: " + 
-// 				JSON.stringify(Object.keys(cookie_store)));
+		    //  console.log("Here here: shadow_cookie_store: " + 
+		    // 		     JSON.stringify(Object.keys(cookie_store)));
 
-		    if (my_state != "st_verification_epoch") {
+		    if (my_state != "st_verification_epoch" &&
+			my_state != "st_during_cookies_block_test") {
 			console.log("APPU DEBUG: Disabled cookies in this epoch: " + 
 				    JSON.stringify(disabled_cookies));
 		    }
@@ -2614,6 +2719,13 @@ function cookie_investigator(account_cookies,
 			verified_strict_account_cookiesets_array.push(pending_disabled_cookies[0]);
 			verified_strict_login_cookiesets_array.push(pending_enabled_cookies_array[0]);
 			verified_strict_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+
+			var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
+			var acct_cookies = pending_disabled_cookies[0];
+			for (var i = 0; i < acct_cookies.length; i++) {
+			    cs.cookies[acct_cookies[i]].is_part_of_account_cookieset = true;
+			}
+			flush_session_cookie_store();
 		    }
 		    else {
 			if (pending_bool_pwd_box_present[0]) {
@@ -2645,6 +2757,21 @@ function cookie_investigator(account_cookies,
 				pending_curr_decimal_cs);
 	    }
 	}
+	if (last_non_verification_state == "st_expand_suspected_account_cookies") {
+	    if (pending_am_i_logged_in != undefined) {
+		if (!pending_am_i_logged_in) {
+		    var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
+		    var acct_cookies = pending_disabled_cookies;
+
+		    for (var i = 0; i < acct_cookies.length; i++) {
+			cs.cookies[acct_cookies[i]].is_part_of_account_cookieset = true;
+		    }
+		    flush_session_cookie_store();
+		    return "reset_testing";
+		}
+	    }
+	}
+	return "continue_testing";
     }
 
     
@@ -2734,6 +2861,29 @@ function cookie_investigator(account_cookies,
 	    tot_cookiesets_tested += 1;
 	    tot_cookiesets_tested_this_round += 1;
 	}
+	else if (my_state == "st_expand_suspected_account_cookies") {
+	    console.log("APPU DEBUG: (" + my_state + ")IS ACCOUNT COOKIE-SET?(" + 
+			JSON.stringify(disabled_cookies) + 
+			"): " + !am_i_logged_in);
+	    
+	    pending_am_i_logged_in.push(am_i_logged_in);
+	    pending_disabled_cookies.push(expand_state_disabled_cookies);
+	    pending_enabled_cookies_array.push(enabled_cookies_array);
+	    pending_curr_decimal_cs.push(curr_expand_state_decimal_cs);
+	    pending_bool_pwd_box_present.push(bool_pwd_box_present);
+	    
+	    //update the status first.
+	    if (am_i_logged_in) {
+		if (bool_pwd_box_present) {
+		    console.log("APPU DEBUG: Found restrictive cookieset: " + 
+				JSON.stringify(expand_state_disabled_cookies));
+		}
+	    }
+
+	    current_cookiesets_test_attempts += 1;
+	    tot_expand_state_cookiesets_tested += 1;
+	    tot_cookiesets_tested_this_round += 1;
+	}
 	else if (my_state == "st_gub_cookiesets_block_test") {
 	    var enabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs, 
 									   suspected_account_cookies_array, 
@@ -2809,6 +2959,16 @@ function cookie_investigator(account_cookies,
 	return "st_terminate";
     }
 
+    // Following should initialize:
+    // non_during_suspected_account_cookies_array: All the non-during class cookies except those non-during 
+    //                                             cookies already suspected to be account cookies.
+    // tot_non_during_cookies                    : Length of above array
+    function initialize_expand_state_parameters() {
+	var non_during_cookies = get_non_account_cookies(my_domain);
+	non_during_suspected_account_cookies_array = Object.keys(non_during_cookies);
+	tot_non_during_cookies = non_during_suspected_account_cookies_array.length;
+    }
+    
 
     // Accepts next_state that would be set and checks if the test parameters
     // can be generated for that state.
@@ -2867,9 +3027,9 @@ function cookie_investigator(account_cookies,
 		return "finished"
 	    }
 	    else if (rc == -1) {
-		console.log("APPU Error: Could not generate cookiesets for round: " + num_cookies_drop_for_round
+		console.log("APPU Error: (" + state + ")Could not generate cookiesets for round: " + num_cookies_drop_for_round
 			    + "(round = number of cookies to be dropped)");
-		report_fatal_error("cookiesets-generation-error-at-X=" + num_cookies_drop_for_round);
+		report_fatal_error(state + "-cookiesets-generation-error-at-X=" + num_cookies_drop_for_round);
 		my_state = "st_terminate";
 		has_error_occurred = true;
 		return "error";
@@ -2928,7 +3088,64 @@ function cookie_investigator(account_cookies,
 										    suspected_account_cookies_array);
 	    return "success";
 	}
+	else if (state == "st_expand_suspected_account_cookies") {
+	    pending_am_i_logged_in = [];
+	    pending_disabled_cookies = [];
+	    pending_enabled_cookies_array = [];
+	    pending_curr_decimal_cs = [];
+	    pending_bool_pwd_box_present = [];
 
+	    if (last_non_verification_state != "st_expand_suspected_account_cookies") {
+		if (!bool_expand_state_initialized) {
+		    initialize_expand_state_parameters();
+		    bool_expand_state_initialized = true;
+		}
+		tot_cookiesets_tested_this_round = 0;
+		curr_expand_state_binary_cs = undefined;
+		curr_expand_state_decimal_cs = undefined;
+		expand_state_disabled_cookies = undefined;
+	    }
+
+	    var rc = get_next_binary_cookieset_X(curr_expand_state_binary_cs, 
+						 expand_state_num_cookies_drop_for_round, 
+						 tot_non_during_cookies, 
+						 verified_strict_non_during_account_decimal_cookiesets,
+						 verified_non_during_non_account_super_decimal_cookiesets);
+	    
+	    if (rc == 0) {
+		console.log("APPU DEBUG: Cookieset testing round finished for: " + 
+			    expand_state_num_cookies_drop_for_round);
+		expand_state_num_cookies_drop_for_round += 1;
+		curr_expand_state_binary_cs = undefined;
+		curr_expand_state_decimal_cs = undefined;
+		return "next_state";
+	    }
+	    else if (rc == 1) {
+		console.log("APPU DEBUG: Expand state testing is done. No more cookiesets generated for expanding.");
+		bool_st_expand_suspected_account_cookies_done = true;
+		return "expand_state_finished"
+	    }
+	    else if (rc == -1) {
+		console.log("APPU Error: (" + state + ")Could not generate cookiesets for round: " + 
+			    expand_state_num_cookies_drop_for_round
+			    + "(round = number of cookies to be dropped)");
+		report_fatal_error(state + "-cookiesets-generation-error-at-X=" + 
+				   expand_state_num_cookies_drop_for_round);
+		my_state = "st_terminate";
+		has_error_occurred = true;
+		return "error";
+	    }
+	    else {
+		bool_st_expand_suspected_account_cookies_done = false;
+		curr_expand_state_binary_cs = rc.binary_cookieset;
+		curr_expand_state_decimal_cs = rc.decimal_cookieset;
+		expand_state_disabled_cookies = 
+		    convert_binary_cookieset_to_cookie_array(curr_expand_state_binary_cs,
+							     non_during_suspected_account_cookies_array);
+		console.log("APPU DEBUG: Next decimal cookieset: " + curr_expand_state_decimal_cs);
+		return "success";
+	    }
+	}
 	return "error";
     }
 
@@ -3126,6 +3343,9 @@ function cookie_investigator(account_cookies,
 	    //	console.log(c + ": " + (account_cookies[c].account_cookie ? "YES" : "NO"));
 	    //}
 
+	    var cookie_aliases = {};
+	    var logout_equation = "";
+
 	    console.log("APPU DEBUG: Number of account-cookiesets: " + 
 			verified_strict_account_cookiesets_array.length);
 	    for (var j = 0; j < verified_strict_account_cookiesets_array.length; j++) {
@@ -3133,7 +3353,30 @@ function cookie_investigator(account_cookies,
 		console.log(j + ". Number of cookies: " + cs_names.length +
 			    ", CookieSet: " +
 			    JSON.stringify(cs_names));
+		if (logout_equation.length != 0) {
+		    logout_equation += " || ";
+		}
+
+		logout_equation += "(";
+		for (var u = 0; u < cs_names.length; u++) {
+		    var fields = cs_names[u].split(":");
+		    var cookie_alias = fields[fields.length - 1];
+		    cookie_aliases[cs_names[u]] = cookie_alias;
+		    if (u != 0) {
+			logout_equation += " && ";
+		    }
+		    logout_equation += "(~" + cookie_alias + ")" ;
+		}
+		logout_equation += ")";
 	    }
+
+	    var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
+	    cs.logout_equation = logout_equation;
+	    cs.cookie_aliases = cookie_aliases;
+	    flush_session_cookie_store();
+
+	    console.log("APPU DEBUG: Cookie-aliases: " + JSON.stringify(cookie_aliases));	    
+	    console.log("APPU DEBUG: Logout equation: " + logout_equation);
 
 	    console.log("APPU DEBUG: Number of account-login-cookiesets: " + 
 			verified_strict_login_cookiesets_array.length);
@@ -3426,7 +3669,8 @@ function cookie_investigator(account_cookies,
 	    console.log("----------------");
 	}
 	else if (my_state == "st_cookiesets_block_nonduring_and_disabled" ||
-		 my_state == "st_cookiesets_block_disabled") {
+		 my_state == "st_cookiesets_block_disabled" ||
+		 my_state == "st_expand_suspected_account_cookies") {
 	    if (am_i_logged_in != undefined) {
 		if (page_load_success) {
 		    // EXPECTED branch
