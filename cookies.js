@@ -2457,19 +2457,43 @@ function cookie_investigator(account_cookies,
     // Modify "verified_strict_account_decimal_cookiesets" to accomodate new cookies 
     // verified_strict_account_cookiesets_array
     function modify_vsadc() {
+	verified_strict_account_decimal_cookiesets = [];
 
+	for (var i = 0; i < verified_strict_account_cookiesets_array.length; i++) {
+	    rc = add_to_set(verified_strict_account_cookiesets_array[i], 
+			    undefined, 
+			    verified_strict_account_decimal_cookiesets, 
+			    suspected_account_cookies_array,
+			    undefined);
+	}
     }
     // Modify "verified_account_super_decimal_cookiesets" to accomodate inclusion of
     // new cookies.
     // verified_account_super_cookiesets_array
     function modify_vasdc() {
+	verified_account_super_decimal_cookiesets = [];
 
+	for (var i = 0; i < verified_account_super_cookiesets_array.length; i++) {
+	    rc = add_to_set(verified_account_super_cookiesets_array[i], 
+			    undefined, 
+			    verified_account_super_decimal_cookiesets, 
+			    suspected_account_cookies_array,
+			    undefined);
+	}
     }
     // Modify "verified_non_account_super_decimal_cookiesets" to accomodate inclusion
     // of new cookies.
     // verified_non_account_super_cookiesets_array
     function modify_vnasdc() {
+	verified_non_account_super_decimal_cookiesets = [];
 
+	for (var i = 0; i < verified_non_account_super_cookiesets_array.length; i++) {
+	    rc = add_to_set(verified_non_account_super_cookiesets_array[i], 
+			    undefined, 
+			    verified_non_account_super_decimal_cookiesets, 
+			    suspected_account_cookies_array,
+			    undefined);
+	}
     }
 
 
