@@ -1309,7 +1309,9 @@ function print_ci_state(ci_state) {
 
 function offload_ci_state(url, ci_state) {
     var url_wo_paramters = url.replace(/\?.*/,'');
-    chrome.storage.local.set({url_wo_paramters: ci_state})
+    var data = {};
+    data[url_wo_paramters] = ci_state;
+    chrome.storage.local.set(data);
 }
 
 function load_ci_state(url, cb) {
