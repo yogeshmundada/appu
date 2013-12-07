@@ -34,7 +34,6 @@
      "tabs",	
      "storage",	 
      "cookies",
-     "unlimitedStorage",
      "http://appu.gtnoise.net:5005/post_report",	 	 
      "webRequest",
      "webRequestBlocking",

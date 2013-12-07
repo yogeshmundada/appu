@@ -1331,8 +1331,9 @@ function get_ci_state_storage_size(cb) {
     return chrome.storage.local.getBytesInUse(null, cb);
 }
 
-function check_ci_state(url) {
-
+function check_ci_state(url, cb) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    chrome.storage.local.get(url_wo_paramters, cb)
 }
 // **** END - Investigation state load/offload functions
 
@@ -4003,8 +4004,10 @@ function cookie_investigator(account_cookies,
 			continue;
 		    }
 		    else {
-			console.log("APPU DEBUG: Unexpected cookie property(" + curr_property +
-				    ") for cookie: " + cookie_struct.name);
+			if (curr_property_small.indexOf("version") == -1) {
+			    console.log("APPU DEBUG: Unexpected cookie property(" + curr_property +
+					") for cookie: " + cookie_struct.name);
+			}
 		    }
 		}
 		
