@@ -1679,6 +1679,9 @@ function cookie_change_detected(change_info) {
 			}
 			else {
 			    // No need to store other cookie classes. Save space.
+			    if ("https://www.google.com/calendar:CAL" == cookie_key) {
+				console.log("Here here: found calendar cookie.");
+			    }
 			    delete pvadcs[domain].cookies[cookie_key];
 			}
 			flush_session_cookie_store();
@@ -1710,6 +1713,10 @@ function cookie_change_detected(change_info) {
 		    // console.log("APPU DEBUG: (" + domain + 
 		    // 	    ") Creating a new cookie with class 'after': " + cookie_key);
 		    if (pvadcs[domain].cookies[cookie_key] == undefined) {
+			if ("https://www.google.com/calendar:CAL" == cookie_key) {
+			    console.log("Here here: found calendar cookie.");
+			}
+
 			pvadcs[domain].cookies[cookie_key] = {};
 			pvadcs[domain].cookies[cookie_key].cookie_class = 'after';
 			pvadcs[domain].cookies[cookie_key].is_part_of_account_cookieset = false;
@@ -2733,9 +2740,16 @@ function cookie_investigator(account_cookies,
 		    // 		     JSON.stringify(Object.keys(cookie_store)));
 
 		    if (my_state != "st_verification_epoch" &&
-			my_state != "st_during_cookies_block_test") {
+			my_state != "st_during_cookies_block_test" &&
+			my_state != "st_expand_suspected_account_cookies") {
 			console.log("APPU DEBUG: Disabled cookies in this epoch: " + 
 				    JSON.stringify(disabled_cookies));
+		    }
+		    else if (my_state == "st_expand_suspected_account_cookies") {
+			console.log("APPU DEBUG: Main disabled cookies that caused to enter 'expand' state: " + 
+				    JSON.stringify(disabled_cookies));
+			console.log("APPU DEBUG: Disabled cookies getting tested: " + 
+				    JSON.stringify(expand_state_disabled_cookies));
 		    }
 
 		    original_shadow_cookie_store = $.extend(true, {}, shadow_cookie_store);
@@ -2838,8 +2852,7 @@ function cookie_investigator(account_cookies,
 		else {
 		    console.log("APPU DEBUG: It seems that some cookies are in non-DURING class. " +
 				"Switching to 'st_expand_suspected_account_cookies'");
-		    report_fatal_error("account-cookiesets-cookies-present-in-non-during-cookies: " +
-				       JSON.stringify(pending_disabled_cookies[0]));
+		    return "switch_to_expand";
 		}
 	    }
 	}
@@ -2865,14 +2878,13 @@ function cookie_investigator(account_cookies,
 	    if (pending_am_i_logged_in != undefined) {
 		if (!pending_am_i_logged_in) {
 		    var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
-		    var acct_cookies = pending_disabled_cookies;
+		    var acct_cookies = expand_state_disabled_cookies;
 
 		    for (var i = 0; i < acct_cookies.length; i++) {
 			cs.cookies[acct_cookies[i]].is_part_of_account_cookieset = true;
 		    }
 		    flush_session_cookie_store();
-		    console.log("APPU DEBUG: It seems that some cookies are in non-DURING class. " +
-				"Switching to 'st_expand_suspected_account_cookies'");
+		    console.log("APPU DEBUG: Detected account cookies in non-DURING cookies. Resetting to start state");
 		    reset_to_start_state(acct_cookies);
 		    return "reset_testing";
 		}
@@ -2970,15 +2982,15 @@ function cookie_investigator(account_cookies,
 	    tot_cookiesets_tested_this_round += 1;
 	}
 	else if (my_state == "st_expand_suspected_account_cookies") {
-	    console.log("APPU DEBUG: (" + my_state + ")IS ACCOUNT COOKIE-SET?(" + 
-			JSON.stringify(disabled_cookies) + 
+	    console.log("APPU DEBUG: (" + my_state + ")IS NON-DURING COOKIE-SET AN ACCOUNT COOKIE-SET?(" + 
+			JSON.stringify(expand_state_disabled_cookies) + 
 			"): " + !am_i_logged_in);
-	    
-	    pending_am_i_logged_in.push(am_i_logged_in);
-	    pending_disabled_cookies.push(expand_state_disabled_cookies);
-	    pending_enabled_cookies_array.push(enabled_cookies_array);
-	    pending_curr_decimal_cs.push(curr_expand_state_decimal_cs);
-	    pending_bool_pwd_box_present.push(bool_pwd_box_present);
+
+	    pending_am_i_logged_in = am_i_logged_in;
+	    pending_disabled_cookies = disabled_cookies;
+	    pending_enabled_cookies_array = enabled_cookies_array;
+	    pending_curr_decimal_cs = curr_decimal_cs;
+	    pending_bool_pwd_box_present = bool_pwd_box_present;
 	    
 	    //update the status first.
 	    if (am_i_logged_in) {
@@ -3261,14 +3273,16 @@ function cookie_investigator(account_cookies,
     function next_state(was_last_result_expected) {
 	var rc = -1;
 	var temp_state = my_state;
+	var crrc = -1;
 
 	was_last_result_expected = (was_last_result_expected == undefined) ? false : was_last_result_expected;
 
 	if (was_last_result_expected && 
 	    my_state == "st_verification_epoch" &&
 	    (last_non_verification_state == "st_gub_cookiesets_block_test" ||
-	     last_non_verification_state == "st_cookiesets_block_disabled")) {
-	    commit_result();
+	     last_non_verification_state == "st_cookiesets_block_disabled" ||
+	     last_non_verification_state == "st_expand_suspected_account_cookies")) {
+	    crrc = commit_result();
 	}
 
 	do {
@@ -3296,12 +3310,13 @@ function cookie_investigator(account_cookies,
 		    break;
 		}
 	    }   
-	    else if (my_state == "st_cookie_test_start"             ||
-		     my_state == "st_start_with_no_cookies"         ||
-		     my_state == "st_during_cookies_pass_test"      ||
-		     my_state == "st_during_cookies_block_test"     ||
-		     my_state == "st_cookiesets_block_disabled"     ||
-		     my_state == "st_gub_cookiesets_block_test") {
+	    else if (my_state == "st_cookie_test_start"                 ||
+		     my_state == "st_start_with_no_cookies"             ||
+		     my_state == "st_during_cookies_pass_test"          ||
+		     my_state == "st_during_cookies_block_test"         ||
+		     my_state == "st_cookiesets_block_disabled"         ||
+		     my_state == "st_gub_cookiesets_block_test"         ||
+		     my_state == "st_expand_suspected_account_cookies") {
 		my_state = "st_verification_epoch";
 		break;
 	    }
@@ -3316,6 +3331,36 @@ function cookie_investigator(account_cookies,
 	    else if (!is_suspected_account_cookies_block_test_done) {
 		my_state = "st_during_cookies_block_test";
 		break;
+	    }
+	    else if ((crrc == "switch_to_expand") ||
+		     ((my_state == "st_verification_epoch") && 
+		      (last_non_verification_state == "st_expand_suspected_account_cookies"))) {
+		rc = initialize_next_test_round_parameters("st_expand_suspected_account_cookies");
+
+
+		if (JSON.stringify(expand_state_disabled_cookies) == 
+		    JSON.stringify(["https://www.google.com/calendar:CAL"])) {
+		    console.log("Here here: should be true");
+		}
+
+		if (rc == "success") {
+		    my_state = "st_expand_suspected_account_cookies";
+		    break;
+		}
+		else if (rc == "expand_state_finished") {
+		    // Need to also add a check here if any new cookies were
+		    // added to suspected_account_cookies_array.
+		    // If not, then report and error and terminate.
+		    reset_to_start_state();
+		    continue;
+		}
+		else if (rc == "next_state") {
+		    continue;
+		}
+		else {
+		    my_state = "st_terminate";
+		    break;
+		}
 	    }
 	    else if ((my_state == "st_verification_epoch") && 
 		     ((last_non_verification_state == "st_during_cookies_block_test") ||
