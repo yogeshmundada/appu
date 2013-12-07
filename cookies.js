@@ -3510,7 +3510,7 @@ function cookie_investigator(account_cookies,
 		    logout_equation += " || ";
 		}
 
-		logout_equation += "(";
+		//logout_equation += "(";
 		for (var u = 0; u < cs_names.length; u++) {
 		    var fields = cs_names[u].split(":");
 		    var cookie_alias = fields[fields.length - 1];
@@ -3520,7 +3520,7 @@ function cookie_investigator(account_cookies,
 		    }
 		    logout_equation += "(~" + cookie_alias + ")" ;
 		}
-		logout_equation += ")";
+		//logout_equation += ")";
 	    }
 
 	    var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
