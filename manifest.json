@@ -33,6 +33,7 @@
   "permissions": [
      "tabs",	
      "storage",	 
+     "unlimitedStorage",
      "cookies",
      "http://appu.gtnoise.net:5005/post_report",	 	 
      "webRequest",

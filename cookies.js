@@ -131,6 +131,7 @@ function print_cookie_values(domain, cookie_names) {
 		}, 
 	(function(cookie_names) {
 	    return function (all_cookies) {
+		var cs = pii_vault.aggregate_data.session_cookie_store[domain];
 		for (var i = 0; i < all_cookies.length; i++) {
 		    var cookie_name = all_cookies[i].name;
 		    var cookie_domain = all_cookies[i].domain;
@@ -156,7 +157,7 @@ function print_cookie_values(domain, cookie_names) {
 		    else {
 			expiry_time = 'browser-close';
 		    }
-		    
+
 		    var msg = sprintf("Cookie-key: '%s', " + 
 				      "\n\tValue-Length: %3d, " +
 				      "HostOnly: '%s', " +
@@ -164,7 +165,8 @@ function print_cookie_values(domain, cookie_names) {
 				      "HttpOnly: '%s', " +
 				      "Session: '%s', " + 
 				      "Expiration: '%s', " + 
-				      "\n\tValue: '%s'",
+				      "\n\tValue: '%s', " +
+				      "Appu Class: '%s'",
 				      cookie_key,
 				      all_cookies[i].value.length,
 				      all_cookies[i].hostOnly,
@@ -172,7 +174,9 @@ function print_cookie_values(domain, cookie_names) {
 				      all_cookies[i].httpOnly,
 				      all_cookies[i].session,
 				      expiry_time,
-				      all_cookies[i].value);
+				      all_cookies[i].value,
+				      cs.cookies[cookie_key].cookie_class);
+
 		    cookie_info[cookie_key] = msg;
 		    if (all_done.indexOf(false) == -1) {
 			break;
@@ -906,6 +910,7 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 				     x, 
 				     tot_cookies, 
 				     verified_strict_account_decimal_cookiesets,
+				     verified_strict_non_account_decimal_cookiesets,
 				     verified_non_account_super_decimal_cookiesets) {
     var complete_round = false;
 
@@ -937,7 +942,20 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	if (rc) {
 	    // Suppressing these cookies will cause session to be logged-out anyway.
 	    // No point in testing.
-	    console.log("APPU DEBUG: Skipping decimal cookieset(subset of account-cookieset): " + dec_cookieset);
+	    console.log("APPU DEBUG: Skipping decimal cookieset(subset of account-cookieset): " + 
+			dec_cookieset);
+	    continue;
+	}
+
+	// Only push this set iff 
+	//  a set-member of verified non-account-cookieset
+	//  is not a superset (thus tested already and known to be non-account cookieset) 
+	rc = is_a_setmember_superset(dec_cookieset, 
+				     verified_strict_non_account_decimal_cookiesets);
+	if (rc) {
+	    // This has already been tested, no point in testing again.
+	    console.log("APPU DEBUG: Skipping decimal cookieset(superset in strict-non-account cookieset): " + 
+			dec_cookieset);
 	    continue;
 	}
 	
@@ -946,7 +964,8 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	if (rc) {
 	    // Suppressing these cookies will not affect a session's logged-in status.
 	    // No point in testing.
-	    console.log("APPU DEBUG: Skipping decimal cookieset(superset in non-account_cookiesets): " + dec_cookieset);
+	    console.log("APPU DEBUG: Skipping decimal cookieset(superset in non-account_cookiesets): " + 
+			dec_cookieset);
 	    continue;
 	}
 
@@ -1303,40 +1322,57 @@ function prune_binary_cookiesets(verified_cookie_array,
 
 // **** BEGIN - Investigation state load/offload functions
 // This is to unlimitedStorage.
-function print_ci_state(ci_state) {
-    console.log("APPU DEBUG: The object is: " + JSON.stringify(ci_state));
+
+function cb_print(msg) {
+    if (msg == undefined) {
+	msg = "APPU DEBUG: (localStorage callback)";
+    }
+    return function (rc) {
+        if (rc != undefined) {
+            msg += JSON.stringify(rc)
+		}
+        console.log(msg);
+    }
 }
 
 function offload_ci_state(url, ci_state) {
     var url_wo_paramters = url.replace(/\?.*/,'');
     var data = {};
+    console.log("APPU DEBUG: Offloading CI state for: " + url_wo_paramters);
     data[url_wo_paramters] = ci_state;
     chrome.storage.local.set(data);
 }
 
 function load_ci_state(url, cb) {
     var url_wo_paramters = url.replace(/\?.*/,'');
-    var ci_state = chrome.storage.local.get(url_wo_paramters, cb)
+    console.log("APPU DEBUG: Loading CI state for: " + url_wo_paramters);
+    var ci_state = chrome.storage.local.get(url_wo_paramters, cb);
+}
+
+function check_ci_state(url, cb) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    console.log("APPU DEBUG: Checking CI state for: " + url_wo_paramters);
+    chrome.storage.local.get(url_wo_paramters, cb);
 }
 
 function remove_ci_state(url) {
     var url_wo_paramters = url.replace(/\?.*/,'');
-    chrome.storage.local.remove(url_wo_paramters)
+    chrome.storage.local.remove(url_wo_paramters);
 }
 
 function clear_ci_state(url) {
     var url_wo_paramters = url.replace(/\?.*/,'');
-    chrome.storage.local.clear(url_wo_paramters)
+    chrome.storage.local.clear(url_wo_paramters);
+}
+
+function print_ci_state_size() {
+    get_ci_state_storage_size(cb_print("APPU DEBUG: (localStorage callback) Local Storage Size: "));
 }
 
 function get_ci_state_storage_size(cb) {
     return chrome.storage.local.getBytesInUse(null, cb);
 }
 
-function check_ci_state(url, cb) {
-    var url_wo_paramters = url.replace(/\?.*/,'');
-    chrome.storage.local.get(url_wo_paramters, cb)
-}
 // **** END - Investigation state load/offload functions
 
 
@@ -2081,7 +2117,7 @@ function process_last_epoch_and_start_new_epoch(tab_id, am_i_logged_in, num_pwd_
 					    return;
 					}
 
-					if (cit.num_pageload_timeouts > 2) {
+					if (cit.num_pageload_timeouts > 5) {
 					    if (cit.content_script_started) {
 						console.log("APPU DEBUG: Page load timeout(>2), " + 
 							    "content script started, username detection test never worked");
@@ -2371,6 +2407,9 @@ function cookie_investigator(account_cookies,
     var verified_strict_login_cookiesets_array = [];
     var enabled_cookies_array = [];
 
+    var verified_strict_non_account_cookiesets_array = [];
+    var verified_strict_non_account_decimal_cookiesets = [];
+
     // Super-Sets of cookies for which user's session is logged-out if
     // they are absent
     var verified_account_super_decimal_cookiesets = [];
@@ -2425,6 +2464,8 @@ function cookie_investigator(account_cookies,
     var expand_state_disabled_cookies = [];
     var expand_state_num_cookies_drop_for_round = 1;
     var verified_strict_non_during_account_decimal_cookiesets = [];
+    var verified_strict_non_during_non_account_decimal_cookiesets = [];
+    var verified_strict_non_during_non_account_decimal_cookiesets_array = [];
     var verified_non_during_non_account_super_decimal_cookiesets = [];
     var bool_st_expand_suspected_account_cookies_done = false;
     var bool_expand_state_initialized = false;
@@ -2473,6 +2514,20 @@ function cookie_investigator(account_cookies,
 	    rc = add_to_set(verified_strict_account_cookiesets_array[i], 
 			    undefined, 
 			    verified_strict_account_decimal_cookiesets, 
+			    suspected_account_cookies_array,
+			    undefined);
+	}
+    }
+
+    // Modify "verified_strict_non_account_decimal_cookiesets" to accomodate new cookies 
+    // verified_strict_non_account_cookiesets_array
+    function modify_vsnadc() {
+	verified_strict_non_account_decimal_cookiesets = [];
+
+	for (var i = 0; i < verified_strict_non_account_cookiesets_array.length; i++) {
+	    rc = add_to_set(verified_strict_non_account_cookiesets_array[i], 
+			    undefined, 
+			    verified_strict_non_account_decimal_cookiesets, 
 			    suspected_account_cookies_array,
 			    undefined);
 	}
@@ -2558,6 +2613,8 @@ function cookie_investigator(account_cookies,
 	expand_state_disabled_cookies = [];
 	expand_state_num_cookies_drop_for_round = 1;
 	verified_strict_non_during_account_decimal_cookiesets = [];
+	verified_strict_non_during_non_account_decimal_cookiesets = [];
+	verified_strict_non_during_non_account_decimal_cookiesets_array = [];
 	verified_non_during_non_account_super_decimal_cookiesets = [];
 	bool_st_expand_suspected_account_cookies_done = false;
 	bool_expand_state_initialized = false;
@@ -2673,12 +2730,12 @@ function cookie_investigator(account_cookies,
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
 				continue;
 			    }
-			    if (suspected_account_cookies_array.indexOf(cookie_key) == -1) {
-				continue;
-			    }
-			    if (suspected_account_cookies_array.indexOf(cookie_key) == undefined) {
-				continue;
-			    }
+// 			    if (suspected_account_cookies_array.indexOf(cookie_key) == -1) {
+// 				continue;
+// 			    }
+// 			    if (suspected_account_cookies_array.indexOf(cookie_key) == undefined) {
+// 				continue;
+// 			    }
 			}
 			else if (my_state == 'st_cookiesets_block_nonduring_and_disabled') {
 			    // If the cookie is in the set of disabled-cookie-sets in this 
@@ -2827,6 +2884,7 @@ function cookie_investigator(account_cookies,
     // This means verification_epoch ran successfully and user is still logged-in.
     // So commit the last result.
     function commit_result() {
+	var rs = "continue_testing";
 	if (last_non_verification_state == "st_cookiesets_block_disabled") {
 	    if (pending_am_i_logged_in[0] != undefined &&
 		pending_am_i_logged_in[1] != undefined) {
@@ -2834,8 +2892,9 @@ function cookie_investigator(account_cookies,
 		    if (pending_am_i_logged_in[0] != undefined &&
 			!pending_am_i_logged_in[0]) {
 			verified_strict_account_cookiesets_array.push(pending_disabled_cookies[0]);
-			verified_strict_login_cookiesets_array.push(pending_enabled_cookies_array[0]);
 			verified_strict_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+
+			verified_strict_login_cookiesets_array.push(pending_enabled_cookies_array[0]);
 
 			var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
 			var acct_cookies = pending_disabled_cookies[0];
@@ -2845,6 +2904,9 @@ function cookie_investigator(account_cookies,
 			flush_session_cookie_store();
 		    }
 		    else {
+			verified_strict_non_account_cookiesets_array.push(pending_disabled_cookies[0]);
+			verified_strict_non_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+
 			if (pending_bool_pwd_box_present[0]) {
 			    verified_restricted_cookiesets_array.push(pending_disabled_cookies[0]);
 			    console.log("APPU DEBUG: Found restrictive cookieset: " + 
@@ -2853,9 +2915,21 @@ function cookie_investigator(account_cookies,
 		    }
 		}
 		else {
-		    console.log("APPU DEBUG: It seems that some cookies are in non-DURING class. " +
-				"Switching to 'st_expand_suspected_account_cookies'");
-		    return "switch_to_expand";
+		    if (!pending_am_i_logged_in[0] && pending_am_i_logged_in[1]) {
+			// Disabling 'non-DURING' cookies caused session to be logged out.
+			// Hence some account cookies must be present in 'non-During' cookies.
+			console.log("APPU DEBUG: It seems that some cookies are in non-DURING class. " +
+				    "Switching to 'st_expand_suspected_account_cookies'");
+			rs = "switch_to_expand";
+		    }
+		    else {
+			// Disabling 'non-DURING' cookies caused session to be logged-in
+			// Enabling 'non-DURING' cookies caused session to be logged-out
+			// TOTALLY UNEXPECTED.
+			console.log("APPU Error: Totally not expected, terminating");
+			report_fatal_error("enable-non-during-causes-session-logout");
+			rs = "st_terminate";
+		    }
 		}
 	    }
 	}
@@ -2889,11 +2963,24 @@ function cookie_investigator(account_cookies,
 		    flush_session_cookie_store();
 		    console.log("APPU DEBUG: Detected account cookies in non-DURING cookies. Resetting to start state");
 		    reset_to_start_state(acct_cookies);
-		    return "reset_testing";
+		    rs = "reset_testing";
+		}
+		else {
+		    verified_strict_non_during_non_account_decimal_cookiesets_array.push(expand_state_disabled_cookies);
+		    verified_strict_non_during_non_account_decimal_cookiesets.push(pending_curr_decimal_cs);
 		}
 	    }
 	}
-	return "continue_testing";
+
+	offload_ci_state(my_url, {
+		"vsaca" : verified_strict_account_cookiesets_array,
+		    "vsnaca" : verified_strict_non_account_cookiesets_array,
+		    "vasca" : verified_account_super_cookiesets_array,
+		    "vnasca" : verified_non_account_super_cookiesets_array,
+		    "vsndnadca" : verified_strict_non_during_non_account_decimal_cookiesets_array
+		    });
+
+	return rs;
     }
 
     
@@ -3132,6 +3219,7 @@ function cookie_investigator(account_cookies,
 						 num_cookies_drop_for_round, 
 						 tot_cookies, 
 						 verified_strict_account_decimal_cookiesets,
+						 verified_strict_non_account_decimal_cookiesets,
 						 verified_non_account_super_decimal_cookiesets);
 	    
 	    if (rc == 0) {
@@ -3233,6 +3321,7 @@ function cookie_investigator(account_cookies,
 						 expand_state_num_cookies_drop_for_round, 
 						 tot_non_during_cookies, 
 						 verified_strict_non_during_account_decimal_cookiesets,
+						 verified_strict_non_during_non_account_decimal_cookiesets,
 						 verified_non_during_non_account_super_decimal_cookiesets);
 	    
 	    if (rc == 0) {
@@ -4455,6 +4544,52 @@ function test_google_calendar_cookies() {
     return;
 }
 
+function test_netflix_cookies() {
+//     var test_cookies = [
+// 			[
+// 			 'http://.netflix.com/:profilesNewUser',
+// 			 ],
+// 			];
+
+
+//     var rc = get_domain_cookies("http://movies.netflix.com/WiHome");
+//     var aca = Object.keys(rc);
+
+//     detect_account_cookies("http://movies.netflix.com/WiHome", 
+// 			   undefined, 
+// 			   "all", 
+// 			   10, undefined, 
+// 			   { starting_state : "st_testing", 
+// 				   cookies_array : test_cookies, 
+// 				   account_cookies_array : aca });
+
+//     return;
+
+    var omit_cookies = [
+			 'http://.netflix.com/:profilesNewUser',
+			];
+    
+    var test_cookies = [];
+
+    var rc = get_domain_cookies("http://movies.netflix.com/WiHome");
+    var aca = Object.keys(rc);
+
+    for (var i = 0; i < aca.length; i++) {
+	if (omit_cookies.indexOf(aca[i]) == -1) {
+	    test_cookies.push(aca[i]);
+	}
+    }
+
+    detect_account_cookies("http://movies.netflix.com/WiHome", 
+			   undefined, 
+			   "all", 
+			   10, undefined, 
+			   { starting_state : "st_testing", 
+				   cookies_array : [test_cookies], 
+				   account_cookies_array : aca });
+
+    return;
+}
 
 function test_asana_cookies() {
     var omit_cookies = [

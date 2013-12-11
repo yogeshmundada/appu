@@ -943,43 +943,43 @@ function make_user_approved_always(site) {
 // 	    },
 //     ["blocking", "responseHeaders"]);
 
-function print_result(msg) {
-    return function (rc) {
-        if (rc != undefined) {
-            msg += JSON.stringify(rc)
-		}
-        console.log(msg);
-    }
-}
+// function print_result(msg) {
+//     return function (rc) {
+//         if (rc != undefined) {
+//             msg += JSON.stringify(rc)
+// 		}
+//         console.log(msg);
+//     }
+// }
 
-chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
+// chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
 
-chrome.storage.local.set({"object1": {
-            "key1" : 23,
-                "key2" : "my_string1",
-                "key3" : {
-                "n1" : 1,
-                    "n2" : 2,
-		    }
-        }}, print_result("Storing object 1"));
+// chrome.storage.local.set({"object1": {
+//             "key1" : 23,
+//                 "key2" : "my_string1",
+//                 "key3" : {
+//                 "n1" : 1,
+//                     "n2" : 2,
+// 		    }
+//         }}, print_result("Storing object 1"));
 
-chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
-chrome.storage.local.get("object1", print_result("Getting object 1: "));
-chrome.storage.local.set({"object2": {
-            "key2" : 23,
-                "key3" : "my_string1",
-                "key4" : {
-                "n1" : 1,
-                    "n2" : 2,
-		    }
-        }}, print_result("Storing object 2"));
+// chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
+// chrome.storage.local.get("object1", print_result("Getting object 1: "));
+// chrome.storage.local.set({"object2": {
+//             "key2" : 23,
+//                 "key3" : "my_string1",
+//                 "key4" : {
+//                 "n1" : 1,
+//                     "n2" : 2,
+// 		    }
+//         }}, print_result("Storing object 2"));
 
-chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
-chrome.storage.local.get("object2", print_result("Getting object 2: "));
+// chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
+// chrome.storage.local.get("object2", print_result("Getting object 2: "));
 
-chrome.storage.local.get(null, print_result("Getting all objects: "));
+// chrome.storage.local.get(null, print_result("Getting all objects: "));
 
 
-chrome.storage.local.clear(print_result("Cleaning up local storage"));
-chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
+// chrome.storage.local.clear(print_result("Cleaning up local storage"));
+// chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
 
