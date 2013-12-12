@@ -174,7 +174,7 @@ function print_cookie_values(domain, cookie_names) {
 				      all_cookies[i].httpOnly,
 				      all_cookies[i].session,
 				      expiry_time,
-				      all_cookies[i].value,
+				      decodeURIComponent(all_cookies[i].value),
 				      cs.cookies[cookie_key].cookie_class);
 
 		    cookie_info[cookie_key] = msg;
@@ -243,7 +243,7 @@ function print_all_cookies(domain) {
 				      all_cookies[i].httpOnly,
 				      all_cookies[i].session,
 				      expiry_time,
-				      all_cookies[i].value);
+				      decodeURIComponent(all_cookies[i].value));
 		    
 		    if (all_cookies[i].hostOnly) {
 			tot_hostonly += 1;
