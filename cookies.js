@@ -956,6 +956,9 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	    // This has already been tested, no point in testing again.
 	    console.log("APPU DEBUG: Skipping decimal cookieset(superset in strict-non-account cookieset): " + 
 			dec_cookieset);
+	    // We are returning because of previous results.
+	    // So set complete_round to false.
+	    complete_round = false;
 	    continue;
 	}
 	
@@ -4642,7 +4645,10 @@ function test_netflix_cookies() {
 //     return;
 
     var omit_cookies = [
-			 'http://.netflix.com/:profilesNewUser',
+			//			'http://.netflix.com/:NetflixId',
+ 			 "http://.netflix.com/:profilesNewUser",
+ 			 "https://.netflix.com/:SecureNetflixId",
+// 			 "http://.netflix.com/:profilesNewSession"
 			];
     
     var test_cookies = [];
