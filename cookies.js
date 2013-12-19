@@ -698,8 +698,8 @@ function generate_super_cookiesets_efficient(url,
     
     do {
 	var dec_cookieset = binary_array_to_decimal(curr_bin_cs);
-	var bin_cookieset = curr_bin_cs;
-	
+	var bin_cookieset = curr_bin_cs;	
+
 	rc = is_a_setmember_subset(dec_cookieset, 
 				   verified_strict_account_decimal_cookiesets);
 	if (rc) {
@@ -1028,7 +1028,9 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 				     tot_cookies, 
 				     verified_strict_account_decimal_cookiesets,
 				     verified_strict_non_account_decimal_cookiesets,
-				     verified_non_account_super_decimal_cookiesets) {
+				     verified_non_account_super_decimal_cookiesets,
+				     state,
+				     skipped_sets) {
     var complete_round = false;
 
     do {
@@ -1059,8 +1061,11 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	if (rc) {
 	    // Suppressing these cookies will cause session to be logged-out anyway.
 	    // No point in testing.
-	    console.log("APPU DEBUG: Skipping decimal cookieset(subset of account-cookieset): " + 
-			dec_cookieset);
+	    // 	    console.log("APPU DEBUG: Skipping decimal cookieset(cookieset is subset of account-cookieset): " + 
+	    // 			dec_cookieset);
+	    if (state == "normal") {
+		skipped_sets.num_subset_in_account_cookiesets += 1;
+	    }
 	    continue;
 	}
 
@@ -1071,8 +1076,11 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 				     verified_strict_non_account_decimal_cookiesets);
 	if (rc) {
 	    // This has already been tested, no point in testing again.
-	    console.log("APPU DEBUG: Skipping decimal cookieset(superset in strict-non-account cookieset): " + 
-			dec_cookieset);
+	    //console.log("APPU DEBUG: Skipping decimal cookieset(superset in strict-non-account cookieset): " + 
+	    //	dec_cookieset);
+	    if (state == "normal") {
+		skipped_sets.num_superset_in_non_account_cookiesets += 1;
+	    }
 	    // We are returning because of previous results.
 	    // So set complete_round to false.
 	    complete_round = false;
@@ -1084,8 +1092,11 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	if (rc) {
 	    // Suppressing these cookies will not affect a session's logged-in status.
 	    // No point in testing.
-	    console.log("APPU DEBUG: Skipping decimal cookieset(superset in non-account_cookiesets): " + 
-			dec_cookieset);
+	    //console.log("APPU DEBUG: Skipping decimal cookieset(superset in non-account_cookiesets): " + 
+	    //	dec_cookieset);
+	    if (state == "normal") {
+		skipped_sets.num_superset_in_non_account_super_cookiesets += 1;
+	    }
 	    continue;
 	}
 
@@ -1108,7 +1119,8 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 					 tot_cookies, 
 					 verified_strict_account_decimal_cookiesets,
 					 verified_account_super_decimal_cookiesets,
-					 verified_non_account_super_decimal_cookiesets) {
+					 verified_non_account_super_decimal_cookiesets,
+					 skipped_sets) {
     var complete_round = false;
 
     do {
@@ -1135,6 +1147,10 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 	rc = is_a_setmember_subset(dec_cookieset, 
 				   verified_strict_account_decimal_cookiesets);
 	if (rc) {
+	    //console.log("APPU DEBUG: GUB Skipping decimal cookieset(subset in strict-account-cookiesets): " + 
+	    //	dec_cookieset);
+
+	    skipped_sets.num_gub_subset_in_account_cookiesets += 1;
 	    // Suppressing these cookies will cause session to be logged-out anyway.
 	    // No point in testing.
 	    continue;
@@ -1143,6 +1159,10 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 	rc = is_a_setmember_superset(dec_cookieset, 
 				     verified_non_account_super_decimal_cookiesets);
 	if (rc) {
+	    //console.log("APPU DEBUG: GUB Skipping decimal cookieset(superset in non-account-super-cookiesets): " + 
+	    //	dec_cookieset);
+
+	    skipped_sets.num_gub_superset_in_non_account_cookiesets += 1;
 	    // Suppressing these cookies will cause session to be logged-in.
 	    // No point in testing.
 	    continue;
@@ -1151,6 +1171,10 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 	rc = is_a_member_of_set(dec_cookieset, 
 				verified_account_super_decimal_cookiesets);
 	if (rc) {
+	    //console.log("APPU DEBUG: GUB Skipping decimal cookieset(already tested in account-super-cookiesets): " + 
+	    //	dec_cookieset);
+
+	    skipped_sets.num_gub_already_tested_in_account_super_cookiesets += 1;
 	    // This has been already tested and known to be accountcookie-superset.
 	    // No point in testing again.
 	    continue;
@@ -1159,6 +1183,10 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 	rc = is_a_setmember_subset(dec_cookieset, 
 				   verified_account_super_decimal_cookiesets);
 	if (rc) {
+	    //console.log("APPU DEBUG: GUB Skipping decimal cookieset(subset in account-super-cookiesets): " + 
+	    //	dec_cookieset);
+
+	    skipped_sets.num_gub_subset_in_account_super_cookiesets += 1;
 	    // Suppressing these cookies will cause session to be logged-out because
 	    // there is already a set in verified_account_super_decimal_cookiesets
 	    // that is subset of curr_cookieset_decimal.
@@ -1563,8 +1591,8 @@ function remove_ci_state(url) {
 }
 
 function clear_ci_state(url) {
-    var url_wo_paramters = url.replace(/\?.*/,'');
-    chrome.storage.local.clear(url_wo_paramters);
+//     var url_wo_paramters = url.replace(/\?.*/,'');
+//     chrome.storage.local.clear(url_wo_paramters);
 }
 
 function print_ci_state_size() {
@@ -2686,6 +2714,18 @@ function cookie_investigator(account_cookies,
     var tot_non_during_cookies = non_during_suspected_account_cookies_array.length;
     var tot_expand_state_cookiesets_tested = 0;
 
+    // For counting efficiency
+    var skipped_sets = {
+	num_subset_in_account_cookiesets : 0,
+	num_superset_in_non_account_cookiesets : 0,
+	num_superset_in_non_account_super_cookiesets : 0,
+	num_gub_subset_in_account_cookiesets : 0,
+	num_gub_superset_in_non_account_cookiesets : 0,
+	num_gub_already_tested_in_account_super_cookiesets : 0,
+	num_gub_subset_in_account_super_cookiesets : 0,
+    };
+
+
     if (config_start_params != undefined) {
 	if (config_start_params.starting_state == "st_testing") {
 	    if (config_start_params.cookies_array != undefined &&
@@ -3363,6 +3403,7 @@ function cookie_investigator(account_cookies,
 	    current_cookiesets_test_attempts += 1;
 	    tot_expand_state_cookiesets_tested += 1;
 	    tot_cookiesets_tested_this_round += 1;
+	    tot_cookiesets_tested += 1;
 	}
 	else if (my_state == "st_gub_cookiesets_block_test") {
 	    var enabled_cookies = convert_binary_cookieset_to_cookie_array(curr_gub_binary_cs, 
@@ -3372,7 +3413,7 @@ function cookie_investigator(account_cookies,
 	    pending_am_i_logged_in = am_i_logged_in;
 	    pending_disabled_cookies = disabled_cookies;
 	    pending_enabled_cookies_array = enabled_cookies_array;
-	    pending_curr_decimal_cs = curr_decimal_cs;
+	    pending_curr_decimal_cs = curr_gub_decimal_cs;
 	    pending_bool_pwd_box_present = bool_pwd_box_present;
 	    
 	    if (am_i_logged_in) {
@@ -3456,17 +3497,26 @@ function cookie_investigator(account_cookies,
 
 	    if (last_non_verification_state != "st_cookiesets_block_disabled") {
 		tot_cookiesets_tested_this_round = 0;
-		curr_binary_cs = undefined;
-		curr_decimal_cs = undefined;
+		//curr_binary_cs = undefined;
+		//curr_decimal_cs = undefined;
 		disabled_cookies = undefined;
 	    }
+
+// 	    if (tot_cookiesets_tested_this_round >= 10) {
+// 		console.log("APPU DEBUG: Tested " + tot_cookiesets_tested_this_round + 
+// 			    " cookiesets for this round, going to next state: ");
+// 		bool_st_cookiesets_block_test_done = true;
+// 		return "next_state";
+// 	    }
 
 	    var rc = get_next_binary_cookieset_X(curr_binary_cs, 
 						 num_cookies_drop_for_round, 
 						 tot_cookies, 
 						 verified_strict_account_decimal_cookiesets,
 						 verified_strict_non_account_decimal_cookiesets,
-						 verified_non_account_super_decimal_cookiesets);
+						 verified_non_account_super_decimal_cookiesets,
+						 "normal",
+						 skipped_sets);
 	    
 	    if (rc == 0) {
 		console.log("APPU DEBUG: Cookieset testing round finished for: " + num_cookies_drop_for_round);
@@ -3520,12 +3570,13 @@ function cookie_investigator(account_cookies,
 		return "next_state";
 	    }
 
-	    var rc = get_next_gub_binary_cookieset_X(curr_gub_bin_cs, 
+	    var rc = get_next_gub_binary_cookieset_X(curr_gub_binary_cs, 
 						     num_cookies_pass_for_round, 
 						     tot_cookies, 
 						     verified_strict_account_decimal_cookiesets,
 						     verified_account_super_decimal_cookiesets,
-						     verified_non_account_super_decimal_cookiesets);
+						     verified_non_account_super_decimal_cookiesets,
+						     skipped_sets);
 	    
 	    if (rc == 0) {
 		console.log("APPU DEBUG: GUB Cookieset testing round finished for: " + num_cookies_pass_for_round);
@@ -3583,7 +3634,9 @@ function cookie_investigator(account_cookies,
 						 tot_non_during_cookies, 
 						 verified_strict_non_during_account_decimal_cookiesets,
 						 verified_strict_non_during_non_account_decimal_cookiesets,
-						 verified_non_during_non_account_super_decimal_cookiesets);
+						 verified_non_during_non_account_super_decimal_cookiesets,
+						 "expand",
+						 skipped_sets);
 	    
 	    if (rc == 0) {
 		console.log("APPU DEBUG: Cookieset testing round finished for: " + 
@@ -3746,6 +3799,9 @@ function cookie_investigator(account_cookies,
 		    my_state = "st_gub_cookiesets_block_test";
 		    break;
 		}
+		else if (rc == "next_state") {
+		    continue;
+		}
 		else {
 		    my_state = "st_terminate";
 		    break;
@@ -3904,6 +3960,35 @@ function cookie_investigator(account_cookies,
 
 	    console.log("APPU DEBUG: Pending binary_cookiesets: " + binary_cookiesets.length);
 	    //remove_ci_state(my_url);
+
+	    console.log("APPU DEBUG: Number of skipped cookiesets (subset in account-cookiesets): " + 
+			skipped_sets.num_subset_in_account_cookiesets);
+	    console.log("APPU DEBUG: Number of skipped cookiesets (superset in non-account-cookiesets): " + 
+			skipped_sets.num_superset_in_non_account_cookiesets);
+	    console.log("APPU DEBUG: Number of skipped cookiesets (superset in non-account-super-cookiesets): " + 
+			skipped_sets.num_superset_in_non_account_super_cookiesets);
+
+	    console.log("APPU DEBUG: GUB Number of skipped cookiesets (subset in account-cookiesets): " + 
+			skipped_sets.num_gub_subset_in_account_cookiesets);
+	    console.log("APPU DEBUG: GUB Number of skipped cookiesets (superset in non-account-cookiesets): " + 
+			skipped_sets.num_gub_superset_in_non_account_cookiesets);
+	    console.log("APPU DEBUG: GUB Number of skipped cookiesets (already tested account-super-cookiesets): " + 
+			skipped_sets.num_gub_already_tested_in_account_super_cookiesets);
+	    console.log("APPU DEBUG: GUB Number of skipped cookiesets (subset in account-super-cookiesets): " + 
+			skipped_sets.num_gub_subset_in_account_super_cookiesets);
+
+	    var total_skipped_cookiesets = skipped_sets.num_subset_in_account_cookiesets +
+		skipped_sets.num_superset_in_non_account_cookiesets +
+		skipped_sets.num_superset_in_non_account_super_cookiesets +
+		skipped_sets.num_gub_subset_in_account_cookiesets +
+		skipped_sets.num_gub_superset_in_non_account_cookiesets +
+		skipped_sets.num_gub_already_tested_in_account_super_cookiesets +
+		skipped_sets.num_gub_subset_in_account_super_cookiesets;
+
+	    console.log("APPU DEBUG: Total skipped cookiesets: " + 
+			total_skipped_cookiesets);
+	    console.log("APPU DEBUG: Total tested cookiesets: " + 
+			tot_cookiesets_tested);
 	}
 
 	terminate_cookie_investigating_tab(my_tab_id);
