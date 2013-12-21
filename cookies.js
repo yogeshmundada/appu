@@ -2264,7 +2264,7 @@ function check_usernames_for_cookie_investigation(tab_id) {
 
     if (pi_usernames.length > 0) {
 	var cit = cookie_investigating_tabs[tab_id];
-	if (cit.page_load_success) {
+	if (cit.get_page_load_success()) {
 	    console.log("APPU DEBUG: Page properly loaded. Sending command to " + 
 			"detect usernames to cookie investigating tab");
 	}
@@ -2290,7 +2290,7 @@ function check_usernames_for_cookie_investigation(tab_id) {
 // If the next state is not "st_terminate" then populates
 // shadow_cookie_store correctly as per the requirements of current epoch
 // then proceeds to test current epoch.
-function process_last_epoch_and_start_new_epoch(tab_id, am_i_logged_in, num_pwd_boxes, page_load_success) {
+function process_last_epoch(tab_id, am_i_logged_in, num_pwd_boxes) {
     var cit = cookie_investigating_tabs[tab_id];
 
     if (cit.pageload_timeout != undefined) {
@@ -2302,7 +2302,7 @@ function process_last_epoch_and_start_new_epoch(tab_id, am_i_logged_in, num_pwd_
 
     cit.increment_page_reloads();
 
-    var next_state = cit.web_request_fully_fetched(am_i_logged_in, num_pwd_boxes, page_load_success);
+    var next_state = cit.web_request_fully_fetched(am_i_logged_in, num_pwd_boxes);
     if (next_state != "st_terminate") {
 	// Only send command to Cookie-Investigation-Tab after shadow_cookie_store for the
 	// tab is properly populated. Hence, sending a callback function to 
@@ -2335,6 +2335,10 @@ function process_last_epoch_and_start_new_epoch(tab_id, am_i_logged_in, num_pwd_
 // 					});
 // 			}
 
+
+			// Increment the epoch-id, before refreshing the page.
+			cit.increment_epoch_id();
+
 			chrome.tabs.update(tab_id, {
 				url: cit.url,
 				    active: false,
@@ -2342,12 +2346,11 @@ function process_last_epoch_and_start_new_epoch(tab_id, am_i_logged_in, num_pwd_
 				    //pinned: true
 				    });
 
-			// Since we refreshed the URL, increment the epoch-id.
-			cit.increment_epoch_id();
+			console.log("APPU DEBUG: Sent command to slave-tab for PAGE-REFRESH");
 
 			cit.bool_state_in_progress = true;
 			cit.num_pageload_timeouts = 0;
-			cit.page_load_success = false;
+			cit.set_page_load_success(false);
 			cit.content_script_started = false;
 
 			cit.pageload_timeout = window.setInterval((function(tab_id) {
@@ -2370,7 +2373,7 @@ function process_last_epoch_and_start_new_epoch(tab_id, am_i_logged_in, num_pwd_
 						    window.clearInterval(cit.pageload_timeout);
 						    cit.pageload_timeout = undefined;
 						}
-						process_last_epoch_and_start_new_epoch(tab_id, undefined, undefined, false);
+						process_last_epoch(tab_id, undefined, undefined);
 					    }
 					    else {
 						console.log("APPU Error: Page load timeout(>2) and no content script, " + 
@@ -2383,15 +2386,19 @@ function process_last_epoch_and_start_new_epoch(tab_id, am_i_logged_in, num_pwd_
 					    // If so, no need to wait for page to fully reload.
 					    if (cit.get_state() != "st_cookie_test_start" &&
 						cit.content_script_started) {
+						if (cit.get_state() == "st_verification_epoch") {
+						    console.log("Here here: Delete me");
+						}
 						console.log("APPU DEBUG: Page load timeout, " + 
 							    "content script started, firing username detection test");
+						console.log("Here here: Calling check_usernames_for_cookie_investigation()");
 						check_usernames_for_cookie_investigation(tab_id);
 					    }
 					}
 					
 					cit.num_pageload_timeouts += 1;
 				    }
-				})(tab_id), 10 * 1000);
+				})(tab_id), 20 * 1000);
 
 // 			console.log("APPU DEBUG: Setting reload-interval for: " + tab_id 
 // 				    + ", Interval-ID: " + cit.pageload_timeout);
@@ -2716,6 +2723,12 @@ function cookie_investigator(account_cookies,
     var pending_curr_decimal_cs = undefined;
     var pending_bool_pwd_box_present = undefined;
 
+    // To judge whether page load timeouts are due to network
+    // problems or abset cookies
+    var num_verification_page_load_attempts = 0;
+    var num_verification_page_load_success = 0;
+    var page_load_success = false;
+
     // For expand suspected account cookies state.
     var curr_expand_state_binary_cs = undefined;
     var curr_expand_state_decimal_cs = undefined;
@@ -2968,22 +2981,36 @@ function cookie_investigator(account_cookies,
 
     function increment_epoch_id() {
 	epoch_id += 1;
+	console.log("APPU DEBUG: Incremented EPOCH-ID: " + epoch_id);
     }
 
+    function get_epoch_id() {
+	return epoch_id;
+    }
+
+    function set_page_load_success(bool_page_load_success) {
+	page_load_success = bool_page_load_success;
+    }
+
+    function get_page_load_success() {
+	return page_load_success;
+    }
 
     function init_cookie_investigation() {
 	var cit = cookie_investigating_tabs[my_tab_id];
 	cit.url = my_url;
 	cit.domain = my_domain;
 	cit.num_pageload_timeouts = 0;
-	cit.page_load_success = false;
 	cit.content_script_started = false;
 
 	cit.bool_state_in_progress = false;
 
 	cit.reload_interval = undefined;
 
+	cit.set_page_load_success = set_page_load_success;
+	cit.get_page_load_success = get_page_load_success;
 	cit.increment_epoch_id = increment_epoch_id;
+	cit.get_epoch_id = get_epoch_id;
 	cit.increment_page_reloads = increment_page_reloads;
 	cit.web_request_fully_fetched = web_request_fully_fetched;
 	cit.print_cookie_investigation_state = print_cookie_investigation_state;
@@ -4061,7 +4088,7 @@ function cookie_investigator(account_cookies,
     // For all those GET requests, same cookie must be blocked.
     // Thus, someone else from outside will have to know that the webpage fetch
     // is complete and we should move to suppress next cookie.
-    function web_request_fully_fetched(am_i_logged_in, num_pwd_boxes, page_load_success) {
+    function web_request_fully_fetched(am_i_logged_in, num_pwd_boxes) {
 	var was_result_expected = false;
 	tot_execution += 1;
 
@@ -4113,6 +4140,12 @@ function cookie_investigator(account_cookies,
 	}
 	else if (my_state == 'st_verification_epoch') {
 	    if (am_i_logged_in != undefined) {
+
+		num_verification_page_load_attempts += 1;
+		if (page_load_success) {
+		    num_verification_page_load_success += 1;
+		}
+
 		if (am_i_logged_in) {
 		    if (num_pwd_boxes == 0) {
 			// EXPECTED branch

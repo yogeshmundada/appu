@@ -137,7 +137,7 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 chrome.cookies.onChanged.addListener(cookie_change_detected);
 
 // All messages handled by the background server
-// Total messages: 53
+// Total messages: 54
 // Messages that can't be ignored (even if disabled): 38
 // Message name, To be ignored when disabled
 // Messages sent by content-script:
@@ -155,12 +155,13 @@ chrome.cookies.onChanged.addListener(cookie_change_detected);
 // 12. "hello_appu", yes
 // 13. "content_script_started", yes
 // 14. "usernames_detected", yes
-// 15. "remind_report_later", NO
-// 16. "close_report_reminder", NO
-// 17. "review_and_send_report", NO
-// 18. "am_i_active", NO
-// 19. "query_status", NO
-// 20. "clear_pending_warnings", NO
+// 15. "page_is_loaded", yes
+// 16. "remind_report_later", NO
+// 17. "close_report_reminder", NO
+// 18. "review_and_send_report", NO
+// 19. "am_i_active", NO
+// 20. "query_status", NO
+// 21. "clear_pending_warnings", NO
 
 // Messages sent by popup:
 // 1. "get-signin-status", NO
@@ -225,7 +226,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    "record_prelogin_cookies",
 	    "usernames_detected",
 	    "hello_appu",
-	    "content_script_started"
+	    "content_script_started",
+	    "page_is_loaded"
 	];
 
 	if (ignore_messages.indexOf(message.type) != -1 ) {
@@ -243,8 +245,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		var cit = cookie_investigating_tabs[sender.tab.id];
 		if (!cit.content_script_started) {
 		    cit.content_script_started = true;
+		    sendResponse({
+			    'epoch_id' : cit.get_epoch_id()
+				});
 		}
-	    } 
+	    }
 	}
     }
     else if (message.type == "log_error") {
@@ -349,24 +354,26 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "check_pending_warning") {
 	if (sender.tab) {
-	    r = pii_check_pending_warning(message, sender);
-	    r.id = sender.tab.id;
-	    domain = r.domain;
-	    sendResponse(r);
-	    if (domain && r.event_type == "login_attempt") {
-		//At this point in code, we have a SUCCESSFUL LOGIN event
-		console.log("APPU DEBUG: LOGIN_COMPLETE for: " + get_domain(domain));
-		//print_all_cookies(get_domain(domain), "LOGIN_COMPLETE");
-		detect_login_cookies(get_domain(domain));
-	    }
-	    
-	    var pi_usernames = get_all_usernames();
-	    if (pi_usernames.length > 0) {
-		console.log("Here here: Sending command to detect usernames");
-		chrome.tabs.sendMessage(sender.tab.id, {
-			'type' : "check-if-username-present",
-			    'usernames' : pi_usernames,
-			    });
+	    if (!(sender.tab.id in cookie_investigating_tabs)) {
+		r = pii_check_pending_warning(message, sender);
+		r.id = sender.tab.id;
+		domain = r.domain;
+		sendResponse(r);
+		if (domain && r.event_type == "login_attempt") {
+		    //At this point in code, we have a SUCCESSFUL LOGIN event
+		    console.log("APPU DEBUG: LOGIN_COMPLETE for: " + get_domain(domain));
+		    //print_all_cookies(get_domain(domain), "LOGIN_COMPLETE");
+		    detect_login_cookies(get_domain(domain));
+		}
+		
+		var pi_usernames = get_all_usernames();
+		if (pi_usernames.length > 0) {
+		    console.log("Here here: Sending command to detect usernames");
+		    chrome.tabs.sendMessage(sender.tab.id, {
+			    'type' : "check-if-username-present",
+				'usernames' : pi_usernames,
+				});
+		}
 	    }
 	}
     }
@@ -374,25 +381,28 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	message.domain = get_domain(message.domain);
 	if (sender.tab.id in cookie_investigating_tabs) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
-	    console.log("APPU DEBUG: Usernames detected for 'COOKIE-INVESTIGATION', (page_load_success: " + 
-			cit.page_load_success + ", domain: " + message.domain + "), Num usernames detected: " + 
-			Object.keys(message.present_usernames).length);
-	    
-	    var am_i_logged_in = false;
-	    var num_pwd_boxes = message.num_password_boxes;
 
-	    if (Object.keys(message.present_usernames).length > 0) {
-		am_i_logged_in = true;
+	    if (message.curr_epoch_id == cit.get_epoch_id()) {
+		console.log("APPU DEBUG: Usernames detected for 'COOKIE-INVESTIGATION', (page_load_success: " + 
+			    cit.get_page_load_success() + ", domain: " + message.domain + "), Num usernames detected: " + 
+			    Object.keys(message.present_usernames).length);
+		
+		var am_i_logged_in = false;
+		var num_pwd_boxes = message.num_password_boxes;
+		
+		if (Object.keys(message.present_usernames).length > 0) {
+		    am_i_logged_in = true;
+		}
+		
+		if (cit.pageload_timeout != undefined) {
+		    console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
+				+ ", Interval-ID: " + cit.pageload_timeout);
+		    window.clearInterval(cit.pageload_timeout);
+		    cit.pageload_timeout = undefined;
+		}
+		
+		process_last_epoch(sender.tab.id, am_i_logged_in, num_pwd_boxes);
 	    }
-
-	    if (cit.pageload_timeout != undefined) {
-		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
-			+ ", Interval-ID: " + cit.pageload_timeout);
-		window.clearInterval(cit.pageload_timeout);
-		cit.pageload_timeout = undefined;
-	    }
-	    
-	    process_last_epoch_and_start_new_epoch(sender.tab.id, am_i_logged_in, num_pwd_boxes, cit.page_load_success);
 	}
 	else {
 	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected: " + 
@@ -464,6 +474,44 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "status_change") {
 	pii_modify_status(message);
     }
+    else if (message.type == "page_is_loaded") {
+	if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
+	    var cit = cookie_investigating_tabs[sender.tab.id];
+// 	    if (cit.page_load_success) {
+// 		console.log("Here here: EEEEEEEEEE Returning since we have already processed this epoch");
+// 		return;
+// 	    }
+
+	    if (message.curr_epoch_id == cit.get_epoch_id()) {
+		cit.set_page_load_success(true);
+		if (cit.pageload_timeout != undefined) {
+		    // 		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
+		    // 			+ ", Interval-ID: " + cit.pageload_timeout);
+		    window.clearInterval(cit.pageload_timeout);
+		    cit.pageload_timeout = undefined;
+		}
+		
+		if (cit.get_state() == 'st_cookie_test_start') {
+		    console.log("----------------------------------------");
+		    process_last_epoch(sender.tab.id, undefined, undefined)
+			}
+		else if (cit.get_state() == 'st_testing'                                  ||
+			 cit.get_state() == 'st_start_with_no_cookies'                    ||
+			 cit.get_state() == 'st_during_cookies_pass_test'                 ||
+			 cit.get_state() == 'st_during_cookies_block_test'                ||
+			 cit.get_state() == 'st_verification_epoch'                       ||
+			 cit.get_state() == 'st_cookiesets_block_nonduring_and_disabled'  ||
+			 cit.get_state() == 'st_cookiesets_block_disabled'                ||
+			 cit.get_state() == 'st_gub_cookiesets_block_test'                ||
+			 cit.get_state() == 'st_expand_suspected_account_cookies') {
+		    // We test here that user is still logged into the web application.
+		console.log("Here here: Calling check_usernames_for_cookie_investigation(), EPOCH-ID: " + 
+			    message.curr_epoch_id);
+		check_usernames_for_cookie_investigation(sender.tab.id);
+		}
+	    }
+	}
+    }
     else if (message.type == "query_status") {
 // 	console.log("APPU DEBUG: tabid: "+sender.tab.id+", In query status: " + 
 // 	template_processing_tabs[sender.tab.id]);
@@ -487,38 +535,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    else {
 		r.status = "process_template";
 		sendResponse(r);
-	    }
-	}
-	else if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
-	    var cit = cookie_investigating_tabs[sender.tab.id];
-	    if (cit.page_load_success) {
-		console.log("Here here: EEEEEEEEEE Returning since we have already processed this epoch");
-		return;
-	    }
-
-	    cit.page_load_success = true;
-	    if (cit.pageload_timeout != undefined) {
-// 		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
-// 			+ ", Interval-ID: " + cit.pageload_timeout);
-		window.clearInterval(cit.pageload_timeout);
-		cit.pageload_timeout = undefined;
-	    }
-
-	    if (cit.get_state() == 'st_cookie_test_start') {
-		console.log("----------------------------------------");
-		process_last_epoch_and_start_new_epoch(sender.tab.id, undefined, undefined, true)
-	    }
-	    else if (cit.get_state() == 'st_testing'                                  ||
-		     cit.get_state() == 'st_start_with_no_cookies'                    ||
-		     cit.get_state() == 'st_during_cookies_pass_test'                 ||
-		     cit.get_state() == 'st_during_cookies_block_test'                ||
-		     cit.get_state() == 'st_verification_epoch'                       ||
-		     cit.get_state() == 'st_cookiesets_block_nonduring_and_disabled'  ||
-		     cit.get_state() == 'st_cookiesets_block_disabled'                ||
-		     cit.get_state() == 'st_gub_cookiesets_block_test'                ||
-		     cit.get_state() == 'st_expand_suspected_account_cookies') {
-		// We test here that user is still logged into the web application.
-		check_usernames_for_cookie_investigation(sender.tab.id);
 	    }
 	}
 	else {

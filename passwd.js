@@ -11,6 +11,9 @@ var pwd_pending_warn_timeout = undefined;
 
 var is_site_loaded = undefined;
 
+// For cookie-investigation
+var curr_epoch_id = 0;
+
 function close_report_ready_modal_dialog() {
     $('#appu-report-ready').dialog("close");
 }
@@ -987,6 +990,7 @@ function check_if_username_present(usernames) {
     var message = {};
     message.type = "usernames_detected";
     message.domain = document.domain;
+    message.curr_epoch_id = curr_epoch_id;
     message.present_usernames = present_usernames;
     message.num_password_boxes = $("input:password:visible").length;
 
@@ -1300,6 +1304,13 @@ function do_document_ready_functions() {
 		}
 	    });
 
+	message = {};
+	message.type = "page_is_loaded";
+	message.url = document.domain;
+	message.curr_epoch_id = curr_epoch_id;
+	chrome.extension.sendMessage("", message, is_status_active);
+	console.log("APPU DEBUG: Sent message that page is loaded");
+
 	detect_if_user_logged_in();
     }
 }
@@ -1311,9 +1322,15 @@ if (document.URL.match(/.pdf$/) == null) {
 
     var message = {
 	type : "content_script_started",
+	epoch_id : curr_epoch_id,
 	url : document.domain
     }
-    chrome.extension.sendMessage("", message);
+
+    chrome.extension.sendMessage("", message, function(r) {
+	    curr_epoch_id = r.epoch_id;
+	    console.log("APPU DEBUG: Setting epoch-id to: " + curr_epoch_id);
+	});
+
     console.log("APPU DEBUG: Sending message 'content_script_started' to the background page.");
 
     $(document).ready(function() {
