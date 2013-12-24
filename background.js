@@ -483,6 +483,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 // 	    }
 
 	    if (message.curr_epoch_id == cit.get_epoch_id()) {
+		console.log("APPU DEBUG: Setting page load success for EPOCH-ID: " + 
+			    message.curr_epoch_id);
+
 		cit.set_page_load_success(true);
 		if (cit.pageload_timeout != undefined) {
 		    // 		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
@@ -542,54 +545,56 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
     }
     else if (message.type == "signed_in") {
-	var domain = get_domain(message.domain);
-
-	if (message.value == 'yes') {
-	    console.log("APPU DEBUG: Signed in for site: " + get_domain(message.domain));
-
-	    // First check with which username the user has logged into the site
-	    var username_list = get_logged_in_username(domain);
-	    add_domain_to_uas(domain, username_list[0], username_list[1], undefined);
-
-	    var hk = username_list[0] + ":" + domain;
-	    if (hk in pii_vault.current_report.user_account_sites) {
-		pii_vault.current_report.user_account_sites[hk].pwd_unchanged_duration = 
-		    get_pwd_unchanged_duration(domain, username_list[0]);
-	    }
-	    else {
-		console.log("APPU DEBUG: " + hk + " not present in cr.user_account_sites");
-	    }
-
-	    flush_selective_entries("current_report", ["user_account_sites"]);
-
-	    if (sender.tab && sender.tab.id in pending_pi_fetch) { 
-		if (pending_pi_fetch[sender.tab.id] == domain) {
-		    console.log("APPU DEBUG: domain: " + domain + ", tab-id: " + sender.tab.id);
-    		    check_if_pi_fetch_required(domain, sender.tab.id, sender.tab);		
-		    pending_pi_fetch[sender.tab.id] = "";
+	if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
+	    var domain = get_domain(message.domain);
+	    
+	    if (message.value == 'yes') {
+		console.log("APPU DEBUG: Signed in for site: " + get_domain(message.domain));
+		
+		// First check with which username the user has logged into the site
+		var username_list = get_logged_in_username(domain);
+		add_domain_to_uas(domain, username_list[0], username_list[1], undefined);
+		
+		var hk = username_list[0] + ":" + domain;
+		if (hk in pii_vault.current_report.user_account_sites) {
+		    pii_vault.current_report.user_account_sites[hk].pwd_unchanged_duration = 
+			get_pwd_unchanged_duration(domain, username_list[0]);
 		}
 		else {
-		    pending_pi_fetch[sender.tab.id] = "";
+		    console.log("APPU DEBUG: " + hk + " not present in cr.user_account_sites");
+		}
+		
+		flush_selective_entries("current_report", ["user_account_sites"]);
+		
+		if (sender.tab && sender.tab.id in pending_pi_fetch) { 
+		    if (pending_pi_fetch[sender.tab.id] == domain) {
+			console.log("APPU DEBUG: domain: " + domain + ", tab-id: " + sender.tab.id);
+			check_if_pi_fetch_required(domain, sender.tab.id, sender.tab);		
+			pending_pi_fetch[sender.tab.id] = "";
+		    }
+		    else {
+			pending_pi_fetch[sender.tab.id] = "";
+		    }
 		}
 	    }
-	}
-	else if (message.value == 'no') {
-	    //add_domain_to_nuas(domain);
-	    if (sender.tab) {
-		pending_pi_fetch[sender.tab.id] = "";
+	    else if (message.value == 'no') {
+		//add_domain_to_nuas(domain);
+		if (sender.tab) {
+		    pending_pi_fetch[sender.tab.id] = "";
+		}
+		console.log("APPU DEBUG: NOT Signed in for site: " + get_domain(message.domain));
 	    }
-	    console.log("APPU DEBUG: NOT Signed in for site: " + get_domain(message.domain));
-	}
-	else if (message.value == 'unsure') {
-	    //add_domain_to_nuas(domain);
-	    if (sender.tab) {
-		pending_pi_fetch[sender.tab.id] = "";
+	    else if (message.value == 'unsure') {
+		//add_domain_to_nuas(domain);
+		if (sender.tab) {
+		    pending_pi_fetch[sender.tab.id] = "";
+		}
+		console.log("APPU DEBUG: Signed in status UNSURE: " + get_domain(message.domain));
 	    }
-	    console.log("APPU DEBUG: Signed in status UNSURE: " + get_domain(message.domain));
-	}
-	else {
-	    console.log("APPU DEBUG: Undefined signed in value " + 
-			message.value + ", for domain: " + get_domain(message.domain));
+	    else {
+		console.log("APPU DEBUG: Undefined signed in value " + 
+			    message.value + ", for domain: " + get_domain(message.domain));
+	    }
 	}
     }
     else if (message.type == "explicit_sign_out") {
