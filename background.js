@@ -133,6 +133,14 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
     }
 });
 
+function tab_closed_cb(tabid, removeinfo) {
+    if (tabid in cookie_investigating_tabs) {
+	cookie_investigating_tabs[tabid].tab_closed_cb();
+    }
+}
+
+chrome.tabs.onRemoved.addListener(tab_closed_cb);
+
 // Start listening to cookie changes
 chrome.cookies.onChanged.addListener(cookie_change_detected);
 
@@ -260,6 +268,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	console.log("APPU DEBUG: Received 'Hello Appu', Sender Tab ID: " + sender.tab.id);
     }
     else if (message.type == "clear_pending_warnings") {
+	if (sender.tab.id in cookie_investigating_tabs) {
+	    return;
+	}
 	//This message indicates that user has interacted with earlier warning in some way.
 	//Hence, its not the case that user did not get to read it due to page redirects
 	if(pending_warnings[sender.tab.id] != undefined) {
@@ -413,11 +424,19 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
     }
     else if (message.type == "record_prelogin_cookies") {
+	if (sender.tab && (sender.tab.id in cookie_investigating_tabs)) {
+	    return;
+	}
+
 	message.domain = get_domain(message.domain);
 	console.log("APPU DEBUG: Recording prelogin cookies for: " + message.domain);
 	record_prelogin_cookies('', message.domain);
     }
     else if (message.type == "check_passwd_reuse") {
+	if (sender.tab && (sender.tab.id in cookie_investigating_tabs)) {
+	    return;
+	}
+
 	message.domain = get_domain(message.domain);
 	console.log("APPU DEBUG: User is attempting to LOGIN in: " + message.domain);
 	console.log("APPU DEBUG: LOGIN_ATTEMPT for: " + message.domain);
@@ -516,6 +535,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
     }
     else if (message.type == "query_status") {
+	if (sender.tab && (sender.tab.id in cookie_investigating_tabs)) {
+	    return;
+	}
+
 // 	console.log("APPU DEBUG: tabid: "+sender.tab.id+", In query status: " + 
 // 	template_processing_tabs[sender.tab.id]);
 
@@ -545,7 +568,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
     }
     else if (message.type == "signed_in") {
-	if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
+	if (sender.tab && !(sender.tab.id in cookie_investigating_tabs)) {
 	    var domain = get_domain(message.domain);
 	    
 	    if (message.value == 'yes') {
