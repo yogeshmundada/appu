@@ -248,16 +248,28 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "content_script_started") {
 	if (sender.tab) {
+	    var epoch_id = 0;
+	    var is_cookie_investigator_tab = false;
+	    var is_template_processing_tab = false;
+
 	    // console.log("APPU DEBUG: Content script is started on: " + sender.tab.id);
 	    if (sender.tab.id in cookie_investigating_tabs) {
 		var cit = cookie_investigating_tabs[sender.tab.id];
 		if (!cit.content_script_started) {
 		    cit.content_script_started = true;
-		    sendResponse({
-			    'epoch_id' : cit.get_epoch_id()
-				});
 		}
+		epoch_id = cit.get_epoch_id();
+		is_cookie_investigator_tab = true;
 	    }
+	    if (sender.tab.id in template_processing_tabs) {
+		is_template_processing_tab = true;
+	    }
+
+	    sendResponse({
+		    'epoch_id' : epoch_id,
+			'is_cookie_investigator_tab' : is_cookie_investigator_tab,
+			'is_template_processing_tab' : is_template_processing_tab,
+			});
 	}
     }
     else if (message.type == "log_error") {

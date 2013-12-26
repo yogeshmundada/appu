@@ -14,6 +14,9 @@ var is_site_loaded = undefined;
 // For cookie-investigation
 var curr_epoch_id = 0;
 
+var is_cookie_investigator_tab = false;
+var is_template_processing_tab = false;
+
 function close_report_ready_modal_dialog() {
     $('#appu-report-ready').dialog("close");
 }
@@ -262,6 +265,27 @@ function is_passwd_reused(response) {
     }
 }
 
+
+function locate_usernames() {
+    var uname_element = $();
+
+    uname_element = $("input[type=password]").parents('form').find('input[type=text], input[type=email]');
+    if (uname_element.length > 1) {
+	return uname_element;
+    }
+    
+    var parent = $("input[type=password]").parent();
+    while(parent.length > 0) {
+	uname_element = $(parent).find('input[type=text], input[type=email]');
+	if (uname_element.length > 1) {
+	    return uname_element;
+	}
+	parent = $(parent).parent();
+    } 
+
+    return uname_element;
+}
+
 // What should be reported back to server:
 // name anonymized: john.doe -> username1
 // username text box (X,Y) and password text box (X,Y)
@@ -280,7 +304,8 @@ function get_username(pwd_element) {
     var username = '';
     var reason = '';
     var pwd_element_pos = $(pwd_element).offset();
-    var uname_element = $("input[type=password]").parents('form').find('input[type=text], input[type=email]');
+    //var uname_element = $("input[type=password]").parents('form').find('input[type=text], input[type=email]');
+    var uname_element = locate_usernames();
 
     if (uname_element.length > 1) {
 	// First filter based on the X,Y coordinates
@@ -633,6 +658,15 @@ function check_for_visible_pwd_elements() {
     return rc;
 }
 
+
+function record_prelogin_cookies() {
+    var message = {};
+    message.type = "record_prelogin_cookies";
+    message.domain = document.domain;
+    chrome.extension.sendMessage("", message);
+}
+
+
 function is_blacklisted(response) {
     if(response.blacklisted == "no") {
 	if (!check_for_visible_pwd_elements()) {
@@ -644,10 +678,7 @@ function is_blacklisted(response) {
 	if ($("input:password").length > 0) {
 	    // This means there could possibly an attempt to login.
 	    // Hence record the current set of cookies.
-	    var message = {};
-	    message.type = "record_prelogin_cookies";
-	    message.domain = document.domain;
-	    chrome.extension.sendMessage("", message);
+	    record_prelogin_cookies();
 	}
 
 	//Register for password input type element. 
@@ -950,41 +981,124 @@ function window_unfocused(eo) {
     }
 }
 
+// function check_if_username_present(usernames) {
+//     var present_usernames = {};
+//     var uname_elements = [];
+//     console.log("Here here: Detecting usernames");
+//     usernames.forEach(function(value, index, array) {
+// 	    $(":Contains('" + value + "'):visible").filter(function() { 
+// 		    var text = $.trim($(this).text()).toLowerCase();
+// 		    var tagName = this.tagName;
+// 		    var donotadd = false;
+		    
+// 		    if (text == undefined || text == "") {
+// 			return;
+// 		    }
+		    
+// 		    var pos = $(this).offset();
+// 		    var h = $(this).height();
+// 		    var w = $(this).width();
+// 		    var rl_bottom = pos.top + h;
+// 		    var rl_right = pos.left + w;
+
+// 		    if (pos.top > 100 && pos.left > 100) {
+// 			return;
+// 		    }
+
+// // 		    if (rl_bottom > 100 && rl_right > 100) {
+// // 			return;
+// // 		    }
+
+// 		    var delete_index = [];
+// 		    for (var i = 0; i < uname_elements.length; i++) {
+// 			if ($(uname_elements[i]).parents().is(this)) {
+// 			    donotadd = true;
+// 			    break;
+// 			}
+// 			if ($(this).parents().is(uname_elements[i])) {
+// 			    delete_index.push(i);
+// 			}
+// 		    }
+
+// 		    if (!donotadd) {
+// 			var new_uname_elements = [];
+// 			for (var i = 0; i < uname_elements.length; i++) {
+// 			    if (delete_index.indexOf[i] == -1) {
+// 				new_uname_elements.push(uname_elements[i]);
+// 			    }
+// 			    else {
+// 				if (value in present_usernames &&
+// 				    present_usernames[value] > 0) {
+// 				    present_usernames[value] -= 1;
+// 				}
+// 			    }
+// 			}
+// 			new_uname_elements.push($(this));
+// 			uname_elements = new_uname_elements;
+// 		    }
+
+// 		    if (!(value in present_usernames)) {
+// 			present_usernames[value] = 1;
+// 		    }
+// 		    else {
+// 			present_usernames[value] += 1;
+// 		    }
+// 		});
+// 	});
+
+//     // Even if no usernames detected, just send the message.
+//     var message = {};
+//     message.type = "usernames_detected";
+//     message.domain = document.domain;
+//     message.curr_epoch_id = curr_epoch_id;
+//     message.present_usernames = present_usernames;
+//     message.num_password_boxes = $("input:password:visible").length;
+
+//     chrome.extension.sendMessage("", message, function(response) {
+// 	    if (response.command == "load_page") {
+// 		console.log("Here here: Loading page again to investigate cookies");
+// 		//window.location.href = response.url;
+// 		window.location.reload(true);
+// 	    }
+// 	});
+// }
+
+
 function check_if_username_present(usernames) {
     var present_usernames = {};
     console.log("Here here: Detecting usernames");
     usernames.forEach(function(value, index, array) {
-	    $(":Contains('" + value + "'):visible").filter(function() { 
-		    var text = $.trim($(this).text()).toLowerCase();
-		    var tagName = this.tagName;
+            $(":Contains('" + value + "'):visible").filter(function() { 
+                    var text = $.trim($(this).text()).toLowerCase();
+                    var tagName = this.tagName;
 
-		    if ($(this).children().length > 0) {
-			if ($(this).children().length == 1 &&
-			    $(this).children()[0].tagName == "BR") {
-			    // ad-hoc for georgia tech, need to generalize
-			    // pass
-			}
-			else {
-			    return;
-			}
-		    }
-		    
-		    if (text == undefined || text == "") {
-			return;
-		    }
-		    
-		    var pos = $(this).offset();
-		    if (pos.top > 100 && pos.left > 100) {
-			return;
-		    }
-		    if (!(value in present_usernames)) {
-			present_usernames[value] = 1;
-		    }
-		    else {
-			present_usernames[value] += 1;
-		    }
-		});
-	});
+                    if ($(this).children().length > 0) {
+                        if ($(this).children().length == 1 &&
+                            $(this).children()[0].tagName == "BR") {
+                            // ad-hoc for georgia tech, need to generalize
+                            // pass
+                        }
+                        else {
+                            return;
+                        }
+                    }
+                    
+                    if (text == undefined || text == "") {
+                        return;
+                    }
+                    
+                    var pos = $(this).offset();
+                    if (pos.top > 100 && pos.left > 100) {
+                        return;
+                    }
+                    if (!(value in present_usernames)) {
+                        present_usernames[value] = 1;
+                    }
+                    else {
+                        present_usernames[value] += 1;
+                    }
+                });
+        });
 
     // Even if no usernames detected, just send the message.
     var message = {};
@@ -995,13 +1109,14 @@ function check_if_username_present(usernames) {
     message.num_password_boxes = $("input:password:visible").length;
 
     chrome.extension.sendMessage("", message, function(response) {
-	    if (response.command == "load_page") {
-		console.log("Here here: Loading page again to investigate cookies");
-		//window.location.href = response.url;
-		window.location.reload(true);
-	    }
-	});
+            if (response.command == "load_page") {
+                console.log("Here here: Loading page again to investigate cookies");
+                //window.location.href = response.url;
+                window.location.reload(true);
+            }
+        });
 }
+
 
 //Case insensitive "contains" .. from stackoverflow with thanks
 //http://stackoverflow.com/questions/2196641/how-do-i-make-jquery-contains-case-insensitive-including-jquery-1-8
@@ -1311,6 +1426,28 @@ function do_document_ready_functions() {
 	chrome.extension.sendMessage("", message, is_status_active);
 	console.log("APPU DEBUG: Sent message that page is loaded");
 
+
+	if (!is_template_processing_tab &&
+	    !is_cookie_investigator_tab) {
+	    MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+	    
+	    var observer = new MutationObserver(function(mutations, observer) {
+		    var pwd_elements = $("input:password:visible");
+		    for (var i = 0; i < pwd_elements.length; i++) {
+			if ($(pwd_elements[i]).data("pwd_element_id") == undefined) {
+			    record_prelogin_cookies();
+			}
+		    }
+		});
+	    
+	    //var config = { attributes: true, childList: true, characterData: true }
+	    var config = { 
+		subtree: true,
+		childList: true
+	    };
+	    observer.observe(document, config);
+	}
+
 	detect_if_user_logged_in();
     }
 }
@@ -1328,6 +1465,8 @@ if (document.URL.match(/.pdf$/) == null) {
 
     chrome.extension.sendMessage("", message, function(r) {
 	    curr_epoch_id = r.epoch_id;
+	    is_template_processing_tab = r.is_template_processing_tab;
+	    is_cookie_investigator_tab = r.is_cookie_investigator_tab;
 	    console.log("APPU DEBUG: Setting epoch-id to: " + curr_epoch_id);
 	});
 
@@ -1335,8 +1474,6 @@ if (document.URL.match(/.pdf$/) == null) {
 
     $(document).ready(function() {
 	    store_pwd_elements();
-	    
-	    console.log("Here here: Sending 'query_status' message");
 
 	    var message = {};
 	    message.type = "query_status";
@@ -1415,7 +1552,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		    });
 		
 		//var config = { attributes: true, childList: true, characterData: true }
-		var config = { subtree: true, characterData: true, childList: true, attributes: true }
+		var config = { subtree: true, characterData: true, childList: true, attributes: true };
 		observer.observe(document, config);
 		
 		//Now do the actual click
