@@ -34,9 +34,9 @@
      "tabs",	
      "storage",	 
      "unlimitedStorage",
-     "downloads",
      "cookies",
      "http://appu.gtnoise.net:5005/post_report",	 	 
+     "http://192.168.56.101:59000/",	 	 
      "webRequest",
      "webRequestBlocking",
      "*://*/"

@@ -95,6 +95,25 @@ function print_appu_session_store_cookies(domain, cookie_class) {
 }
 
 
+function print_confirmed_account_cookies(domain, only_present) {
+    var cs = pii_vault.aggregate_data.session_cookie_store[domain];
+    var account_cookies = [];
+
+    only_present = (only_present == undefined) ? true : only_present;
+
+    for (c in cs.cookies) {
+	if (cs.cookies[c].is_part_of_account_cookieset == true) {
+	    if (only_present && cs.cookies[c].current_state == "absent") {
+		continue;
+	    }
+	    account_cookies.push(c);
+	}
+    }
+
+    print_cookie_values(domain, account_cookies);
+}
+
+
 function print_account_cookies(domain, only_present) {
     var cs = pii_vault.aggregate_data.session_cookie_store[domain];
     var account_cookies = [];
@@ -1566,29 +1585,32 @@ function prune_binary_cookiesets(verified_cookie_array,
 // **** END - Cookiesets generation, manipulations functions
 
 
+
 // **** BEGIN - Investigation state load/offload functions
 // This is to unlimitedStorage.
-
-function cb_print(msg) {
-    if (msg == undefined) {
-	msg = "APPU DEBUG: (localStorage callback)";
-    }
-    return function (rc) {
-        if (rc != undefined) {
-            msg += JSON.stringify(rc)
-		}
-        console.log(msg);
-    }
-}
+// None of the sensitive data is stored here.
 
 function offload_ci_state(url, ci_state) {
     var url_wo_paramters = url.replace(/\?.*/,'');
     var data = {};
-    print_ci_state_size();
     console.log("APPU DEBUG: Offloading CI state for: " + url_wo_paramters);
-    data[url_wo_paramters] = ci_state;
-    chrome.storage.local.set(data);
-    print_ci_state_size();
+    data["Cookie Investigation State:" + url_wo_paramters] = ci_state;
+    write_to_local_storage(data);
+}
+
+function load_ci_state(url, cb) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    console.log("APPU DEBUG: Loading CI state for: " + url_wo_paramters);
+    if (cb == undefined) {
+	cb = cb_print("APPU DEBUG: CI state for: " + url + "\n")
+    }
+    read_from_local_storage("Cookie Investigation State:" + url_wo_paramters, cb);
+}
+
+function remove_ci_state(url) {
+    var url_wo_paramters = url.replace(/\?.*/,'');
+    console.log("APPU DEBUG: Cleaning CI state for: " + url_wo_paramters);
+    delete_from_local_storage("Cookie Investigation State:" + url_wo_paramters);
 }
 
 function search_for_cookieset(url, cookieset) {
@@ -1653,45 +1675,7 @@ function search_for_cookieset(url, cookieset) {
     }
 }
 
-function load_ci_state(url, cb) {
-    var url_wo_paramters = url.replace(/\?.*/,'');
-    console.log("APPU DEBUG: Loading CI state for: " + url_wo_paramters);
-    if (cb == undefined) {
-	cb = cb_print("APPU DEBUG: CI state for: " + url + "\n")
-    }
-    var ci_state = chrome.storage.local.get(url_wo_paramters, cb);
-}
-
-function check_ci_state(url, cb) {
-    var url_wo_paramters = url.replace(/\?.*/,'');
-    console.log("APPU DEBUG: Checking CI state for: " + url_wo_paramters);
-    chrome.storage.local.get(url_wo_paramters, cb);
-}
-
-function remove_ci_state(url) {
-    var url_wo_paramters = url.replace(/\?.*/,'');
-    print_ci_state_size();
-    console.log("APPU DEBUG: Cleaning CI state for: " + url_wo_paramters);
-    chrome.storage.local.remove(url_wo_paramters);
-    print_ci_state_size();
-}
-
-// function clear_ci_state(url) {
-// //     var url_wo_paramters = url.replace(/\?.*/,'');
-// //     chrome.storage.local.clear(url_wo_paramters);
-// }
-
-function print_ci_state_size() {
-    get_ci_state_storage_size(cb_print("APPU DEBUG: (localStorage callback) Local Storage Size: "));
-}
-
-function get_ci_state_storage_size(cb) {
-    return chrome.storage.local.getBytesInUse(null, cb);
-}
-
 // **** END - Investigation state load/offload functions
-
-
 
 // **** BEGIN ---- Rest of the logic ----
 
