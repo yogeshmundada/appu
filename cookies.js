@@ -3570,10 +3570,6 @@ function cookie_investigator(account_cookies,
 			JSON.stringify(disabled_cookies) + 
 			"): " + am_i_logged_in);
 
-	    if (am_i_logged_in == false) {
-		console.log("Here here");
-	    }
-	    
 	    pending_am_i_logged_in.push(am_i_logged_in);
 	    pending_disabled_cookies.push(disabled_cookies);
 	    pending_enabled_cookies_array.push(enabled_cookies_array);
