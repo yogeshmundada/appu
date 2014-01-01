@@ -35,6 +35,9 @@ function write_to_local_storage(data) {
 }
 
 function read_from_local_storage(key, cb) {
+    if (cb == undefined) {
+	cb = cb_print("APPU DEBUG: Reading from local storage key: " + key + "\n")
+    }
     chrome.storage.local.get(key, cb);
 }
 

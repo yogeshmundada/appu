@@ -177,6 +177,15 @@ function print_cookie_values(domain, cookie_names) {
 			expiry_time = 'browser-close';
 		    }
 
+		    var cookie_val = undefined;
+		    try {
+			cookie_val = decodeURIComponent(all_cookies[i].value);
+		    }
+		    catch(e) {
+			cookie_val = all_cookies[i].value;
+		    }
+		    //cookie_val = all_cookies[i].value;
+
 		    var msg = sprintf("Cookie-key: '%s', " + 
 				      "\n\tValue-Length: %3d, " +
 				      "HostOnly: '%s', " +
@@ -193,7 +202,7 @@ function print_cookie_values(domain, cookie_names) {
 				      all_cookies[i].httpOnly,
 				      all_cookies[i].session,
 				      expiry_time,
-				      decodeURIComponent(all_cookies[i].value),
+				      cookie_val,
 				      cs.cookies[cookie_key].cookie_class);
 
 		    cookie_info[cookie_key] = msg;
@@ -248,6 +257,14 @@ function print_all_cookies(domain) {
 			expiry_time = 'browser-close';
 		    }
 		    
+		    var cookie_val = undefined;
+		    try {
+			cookie_val = decodeURIComponent(all_cookies[i].value);
+		    }
+		    catch(e) {
+			cookie_val = all_cookies[i].value;
+		    }
+
 		    var msg = sprintf("Cookie-key: '%s', " + 
 				      "\n\tValue-Length: %3d, " + 
 				      "HostOnly: '%s', " +
@@ -263,7 +280,7 @@ function print_all_cookies(domain) {
 				      all_cookies[i].httpOnly,
 				      all_cookies[i].session,
 				      expiry_time,
-				      decodeURIComponent(all_cookies[i].value));
+				      cookie_val);
 		    
 		    if (all_cookies[i].hostOnly) {
 			tot_hostonly += 1;
@@ -1613,6 +1630,8 @@ function remove_ci_state(url) {
     delete_from_local_storage("Cookie Investigation State:" + url_wo_paramters);
 }
 
+// Following is to be invoked as:
+// load_ci_state("https://google.com/", search_for_cookieset("https://google.com/", ["https://.google.com/:TEST_COOKIE1"]));
 function search_for_cookieset(url, cookieset) {
     return function(state) {
 	if (state == undefined) {
@@ -3945,7 +3964,6 @@ function cookie_investigator(account_cookies,
 		      (last_non_verification_state == "st_expand_suspected_account_cookies"))) {
 		rc = initialize_next_test_round_parameters("st_expand_suspected_account_cookies");
 
-
 		if (JSON.stringify(expand_state_disabled_cookies) == 
 		    JSON.stringify(["https://www.google.com/calendar:CAL"])) {
 		    console.log("Here here: should be true");
@@ -4006,6 +4024,7 @@ function cookie_investigator(account_cookies,
 		    break;
 		}
 		else if (rc == "next_state") {
+		    bool_st_cookiesets_block_test_done = false;
 		    continue;
 		}
 		else {
@@ -4623,7 +4642,8 @@ function cookie_investigator(account_cookies,
 		var cookie_properties = rh[i].value.split(";");
 		var cookie_name_value = cookie_properties.shift();
 		
-		var matched_entries = cookie_name_value.match(/(.+?)=(.*)/);
+		var matched_entries = cookie_name_value.match(/(.*?)=(.*)/);
+
 		cookie_struct.name = matched_entries[1].trim();
 		cookie_struct.value = matched_entries[2].trim();
 		
@@ -5653,3 +5673,29 @@ function test_compare_gub_cookieset_generation(x, tot_cookies) {
     }
 }
 
+function test_twitter() {
+    var a = new Date();
+    var options = {
+	url : "https://.twitter.com",
+	name: "auth_token",
+	value: "3",
+	domain: "https://.twitter.com",
+	path: "/",
+	secure: true,
+	httpOnly: true,
+	expirationDate: a.getTime() + 3600000
+    };
+
+    chrome.cookies.set(options, function(rc) {
+	    if (rc == null) {
+		console.log("Here here: Failed to set the cookie because: " + JSON.stringify(chrome.runtime.lastError));
+	    }
+	    else {
+		console.log("Here here: Success: " + JSON.stringify(rc));
+	    }
+	});
+}
+
+// print_downloaded_file("6719.gz", "pwdbf", "1")
+// download_file("6719.gz", "pwdbf", "1")
+// delete_downloaded_file("6719.gz", "pwdbf", "1")
