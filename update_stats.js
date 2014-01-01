@@ -406,22 +406,22 @@ function read_nuas_bf_from_disk() {
     }
 }
 
-//Following 2 functions are from: http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
-//I modified them to use Uint8Array instead of Uint16Array
-function ab2str(buf) {
-    return String.fromCharCode.apply(null, new Uint8Array(buf));
-}
+// //Following 2 functions are from: http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
+// //I modified them to use Uint8Array instead of Uint16Array
+// function ab2str(buf) {
+//     return String.fromCharCode.apply(null, new Uint8Array(buf));
+// }
 
-function str2ab(str) {
-    var buf = new ArrayBuffer(str.length); 
-    var bufView = new Uint8Array(buf);
+// function str2ab(str) {
+//     var buf = new ArrayBuffer(str.length); 
+//     var bufView = new Uint8Array(buf);
 
-    for (var i=0, strLen=str.length; i<strLen; i++) {
-	bufView[i] = str.charCodeAt(i);
-    }
+//     for (var i=0, strLen=str.length; i<strLen; i++) {
+// 	bufView[i] = str.charCodeAt(i);
+//     }
 
-    return buf;
-}
+//     return buf;
+// }
 
 // guid:nuas_bf:0-1023
 // guid:nuas_bf:1024-2047

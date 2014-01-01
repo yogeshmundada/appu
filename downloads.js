@@ -11,12 +11,35 @@
 // Which bloomfilter files are present in local-storage has
 // to be decided from some structure in pii_vault.
 
-// Should return currently present FPIs and
-// their versions.
+var download_attempt = {};
+
+function add_to_download_attempt(file_key) {
+
+}
+
+function check_dowonload_attempt(file_key) {
+
+}
+
+function delete_from_download_attempt(file_key) {
+
+}
+
+function purge_download_attempt() {
+
+}
+
+// This will go over all failed attempts and try to redownload them again.
+function retry_download_attempt() {
+
+}
 
 // Following 2 functions are from: http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
 // I modified them to use Uint8Array instead of Uint16Array
 // Because of Uint8, these will work probably only for ASCII strings 
+
+// Maintains which file was attempted to be downloaded in last 8 hour but was not successful.
+// If the attempt is tried again in that window then it will not actually download it.
 function download_ab2str(buf) {
     return String.fromCharCode.apply(null, new Uint8Array(buf));
 }
@@ -33,6 +56,7 @@ function download_str2ab(str) {
 }
 
 
+// ftype is either "fpi" or "pwdbf"
 function print_downloaded_file(fname, ftype, dname) {
     var file_key = "Downloads:" + ftype;
 
@@ -45,63 +69,36 @@ function print_downloaded_file(fname, ftype, dname) {
 
     read_from_local_storage(file_key, function(rc) {
 	    if (rc != undefined) {
-		var fzipped_data = rc[file_key];
+		var file = rc;
+		var file_data = file[file_key];
+		var zipbuf = get_binary_from_base64(file_data["file_zipped_base64"]);
 
-		unzipArrayBuffer(zipbuf, (function(file_key, file_data) {
+		unzipArrayBuffer(zipbuf, (function(file_key, file) {
 			    return function(uz_file_arrbuf) {
 				var uz_file_arrbuf_view8 = new Uint8Array(uz_file_arrbuf);
 				var uz_file_data = CryptoJS.enc.Latin1.parse(download_ab2str(uz_file_arrbuf_view8));
-			    
 				var cksum = CryptoJS.SHA1(uz_file_data).toString();
 				
 				if (file_data["file_sha1sum"] == cksum) {
-				    console.log("APPU DEBUG: Checksums MATCH for: '"+ file_key +"'");
-				    write_to_local_storage(file_data);
+				    if (file_data["file_type"] == "pwdbf") {
+					var version = file_data["version"];
+					var setbits = file_data["setbits"];
+					var rc = search_in_arrayBuffer("<bits>", uz_file_arrbuf);
+					var start_bf_bits = rc[1];
+					var rc = search_in_arrayBuffer("</bits>", uz_file_arrbuf);
+					var end_bf_bits = rc[0];
+					console.log("APPU DEBUG: Bloom filter length: " + (end_bf_bits - start_bf_bits));
+					var bf_bits = uz_file_arrbuf.slice(start_bf_bits, end_bf_bits);
+					print_bits(bf_bits);
+				    }
 				}
 				else {
 				    var err_str = "APPU Error: Checksums DO NOT match: '"+ file_key +"'"; 
 				    console.log(err_str);
-				    print_appu_error(err_str);
 				    return;
 				}
 			    }
-			})(file_key, file_data));
-	    }
-	    
-	    
-	    if (rc != undefined) {
-		if (dname == undefined) {
-		    console.log("APPU DEBUG: " + rc[file_key]);
-		}
-		else {
-		    zip.createReader(new zip.BlobReader(rc[file_key]), function(reader) {
-			    // get all entries from the zip
-			    reader.getEntries(function(entries) {
-				    if (entries.length) {
-
-					// get first entry content as text
-					entries[0].getData(new zip.TextWriter(), function(text) {
-						// text contains the entry data as a String
-						console.log(text);
-
-						// close the zip reader
-						reader.close(function() {
-							// onclose callback
-						    });
-
-					    }, function(current, total) {
-						// onprogress callback
-					    });
-				    }
-				});
-			}, function(error) {
-			    // onerror callback
-			    console.log("Here here: " + JSON.stringify(error));
-			});
-
-// 		    var k = unzip(rc[file_key]);
-// 		    console.log("APPU DEBUG: " + k);
-		}
+			})(file_key, file));
 	    }
 	});
 }
@@ -158,8 +155,40 @@ function extract_tag(tag, unzip_buf) {
     for (var i = 0; i < len; i++) {
 	vab_view8[i] = unzip_buf_view8[start + i];
     }
-    return ab2str(vab);
+    return download_ab2str(vab);
 }
+
+// Converts a base64 to binary first (Using CryptoJS than atob() because that
+// is more robust.
+// Then takes care of copying exact number of bytes (words are always multiple of 4).
+// Returns the zipped file data.
+function get_binary_from_base64(fdata) {
+    // Convert Base64 to binary words array
+    var fdata_words = CryptoJS.enc.Base64.parse(fdata);
+    
+    // Convert binary basearray to arrayBuffer
+    var fbuf = new ArrayBuffer(fdata_words.words.length * 4);
+    var fbuf_view = new DataView(fbuf);
+    
+    for (var k = 0; k < fdata_words.words.length; k++) {
+	// Taking care of little endianness
+	fbuf_view.setInt32(k * 4, fdata_words.words[k], false);
+    }
+
+    // Since all words are aligned at the boundary of 4
+    // need to create a new buffer to copy only filesize
+    var zipbuf = new ArrayBuffer(fdata_words.sigBytes);
+    var zipbuf_view = new Uint8Array(zipbuf);
+    // Create 8-bits view on original words buffer
+    var fbuf_view8 = new Uint8Array(fbuf);
+    
+    // Copy only filesize to zipbif
+    for (var k = 0; k < fdata_words.sigBytes; k++) {
+	zipbuf_view[k] = fbuf_view8[k];
+    }
+    return zipbuf;
+}
+
 
 // Download file
 function download_file(fname, ftype, dname) {
@@ -207,38 +236,18 @@ function download_file(fname, ftype, dname) {
 		   }
 		   
 		   var file_data = {};
-
+		   var file = {};
+		   file[file_key] = file_data;
+		   file_data["file_type"] = ftype;
 		   file_data["file_sha1sum"] = match[2];
-		   file_data[file_key] = match[3];
-		   var fdata = file_data[file_key];
-
-		   // Convert Base64 to binary words array
-		   var fdata_words = CryptoJS.enc.Base64.parse(fdata);
-
-		   // Convert binary basearray to arrayBuffer
-		   var fbuf = new ArrayBuffer(fdata_words.words.length * 4);
-		   var fbuf_view = new DataView(fbuf);
-
-		   for (var k = 0; k < fdata_words.words.length; k++) {
-		       // Taking care of little endianness
-		       fbuf_view.setInt32(k * 4, fdata_words.words[k], false);
-		   }
-
-		   // Since all words are aligned at the boundary of 4
-		   // need to create a new buffer to copy only filesize
-		   var zipbuf = new ArrayBuffer(fdata_words.sigBytes);
-		   var zipbuf_view = new Uint8Array(zipbuf);
-		   // Create 8-bits view on original words buffer
-		   var fbuf_view8 = new Uint8Array(fbuf);
-
-		   // Copy only filesize to zipbif
-		   for (var k = 0; k < fdata_words.sigBytes; k++) {
-		       zipbuf_view[k] = fbuf_view8[k];
-		   }
+		   file_data["file_zipped_base64"] = match[3];
+		   var zipbuf = get_binary_from_base64(file_data["file_zipped_base64"]);
 
 		   // Unzip the array buffer using zip.js library.
-		   unzipArrayBuffer(zipbuf, (function(file_key, file_data) {
+		   unzipArrayBuffer(zipbuf, (function(file_key, file) {
 			       return function(uz_file_arrbuf) {
+				   var file_data = file[file_key];
+
 				   var uz_file_arrbuf_view8 = new Uint8Array(uz_file_arrbuf);
 				   var uz_file_data = CryptoJS.enc.Latin1.parse(download_ab2str(uz_file_arrbuf_view8));
 
@@ -254,7 +263,7 @@ function download_file(fname, ftype, dname) {
 				       console.log("APPU DEBUG: Checksums MATCH for: '"+ file_key +"'");
 				       file_data["version"] = version;
 				       file_data["setbits"] = num_setbits;
-				       write_to_local_storage(file_data);
+				       write_to_local_storage(file);
 				   }
 				   else {
 				       var err_str = "APPU Error: Checksums DO NOT match: '"+ file_key +"'"; 
@@ -263,15 +272,23 @@ function download_file(fname, ftype, dname) {
 				       return;
 				   }
 			       }
-			   })(file_key, file_data));
+			   })(file_key, file));
 	       }
 	   });
 }
 
 
 // Delete
-function delete_downloaded_file(fname, ftype) {
-    var file_key = "Downloads:" + ftype + ":" + fname;
+function delete_downloaded_file(fname, ftype, dname) {
+    var file_key = "Downloads:" + ftype;
+
+    if (dname != undefined) {
+	file_key = file_key + ":" + dname + ":" + fname;
+    }
+    else {
+	file_key = file_key + ":" + fname;
+    }
+
     delete_from_local_storage(file_key);
 }
 
@@ -300,38 +317,18 @@ function unzipArrayBuffer(arrayBuffer, callback) {
 	}, onerror);
 }
 
-function print_bits(arrayBuffer) {
-    var data = download_ab2str(arrayBuffer);
-    var bits = data.split("<bits>")[1].split("</bits>\n")[0];
-    var ab = new ArrayBuffer(bits.length);
-    for (var i = 0; i < ab.length; i++) {
-	ab[i] = bits[i];
-    }
-    
-    var bit_set_array = [
-			 128,
-			 64,
-			 32,
-			 16,
-			 8,
-			 4,
-			 2,
-			 1,
-			 ];
-    
-    var abv = new Uint8Array(ab);
-    for (var i = 0; i < abv.length; i++) {
-	if (abv[i] == 0) {
+function print_bits(bf_bits) {
+    var bf_bits_view8 = new Uint8Array(bf_bits);
+    for (var i = 0; i < bf_bits_view8.byteLength; i++) {
+	if (bf_bits_view8[i] == 0) {
 	    continue;
 	}
 	else {
-	    console.log("Found something");
 	    for (var j = 0; j < 8; j++) {
-		if (bit_set_array[j] & abv[i]) {
-		    console.log("Here here: Bit " + j + " is set at byte " + i);
+		if (bit_set_array[j] & bf_bits_view8[i]) {
+		    console.log("APPU DEBUG: Bit " + j + " is set at byte " + i);
 		}
 	    }
 	}
     }
-    console.log("Here here");
 }

@@ -4186,7 +4186,6 @@ function cookie_investigator(account_cookies,
 	}
 	
 	console.log("APPU DEBUG: Pending binary_cookiesets: " + binary_cookiesets.length);
-	//remove_ci_state(my_url);
 	
 	console.log("APPU DEBUG: Number of skipped cookiesets (subset in account-cookiesets): " + 
 		    skipped_sets.num_subset_in_account_cookiesets);
@@ -4242,6 +4241,7 @@ function cookie_investigator(account_cookies,
 	console.log("APPU DEBUG: Ending cookie investigation for(" + my_domain + "): " + ci_end_time);
 	terminate_cookie_investigating_tab(my_tab_id);
 	window.clearTimeout(shut_tab_forcefully);
+	remove_ci_state(my_url);
     }
     
     
