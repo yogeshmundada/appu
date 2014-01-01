@@ -56,11 +56,18 @@ function get_bit_positions(hashes) {
 	var file_number = Math.ceil((bit_number + 1.0) / BITS_PER_FILE) - 1;
 	var bit_position = bit_number % BITS_PER_FILE;
 	var dir_number = Math.ceil((file_number + 1.0) / FILES_PER_DIR) - 1;
+
+	var byte_number = Math.ceil((bit_position + 1.0)/ 8) - 1;
+	var bitpos_inside_byte = bit_position % 8;
+
 	hash_bitpos[hashes[i]] = {
             "fname": file_number.toString(),
             "dname": dir_number.toString(),
             "bitpos": bit_position,
+	    "byte_number" : byte_number,
+	    "bitpos_inside_byte" : bitpos_inside_byte
 	}
     }
     return hash_bitpos;
 }
+
