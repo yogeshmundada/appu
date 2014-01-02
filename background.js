@@ -1038,4 +1038,3 @@ function make_user_approved_always(site) {
 
 // chrome.storage.local.clear(print_result("Cleaning up local storage"));
 // chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
-

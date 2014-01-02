@@ -71,6 +71,13 @@ function print_downloaded_file(fname, ftype, dname) {
 	    if (rc != undefined) {
 		var file = rc;
 		var file_data = file[file_key];
+
+		if (file_data["version"] == "0.0.0") {
+		    cb(undefined, "0.0.0");
+		    console.log("APPU DEBUG: File is at version 0.0.0: " + file_key);
+		    return;
+		}
+
 		var zipbuf = get_binary_from_base64(file_data["file_zipped_base64"]);
 
 		unzipArrayBuffer(zipbuf, (function(file_key, file) {
@@ -96,6 +103,53 @@ function print_downloaded_file(fname, ftype, dname) {
 				    var err_str = "APPU Error: Checksums DO NOT match: '"+ file_key +"'"; 
 				    console.log(err_str);
 				    return;
+				}
+			    }
+			})(file_key, file));
+	    }
+	});
+}
+
+
+function get_downloaded_file(fname, ftype, dname, cb) {
+    var file_key = "Downloads:" + ftype;
+
+    if (dname != undefined) {
+	file_key = file_key + ":" + dname + ":" + fname;
+    }
+    else {
+	file_key = file_key + ":" + fname;
+    }
+
+    read_from_local_storage(file_key, function(rc) {
+	    if (rc != undefined) {
+		var file = rc;
+		var file_data = file[file_key];
+
+		if (file_data["version"] == "0.0.0") {
+		    cb(undefined, "0.0.0");
+		    return;
+		}
+    
+		var zipbuf = get_binary_from_base64(file_data["file_zipped_base64"]);
+
+		unzipArrayBuffer(zipbuf, (function(file_key, file) {
+			    return function(uz_file_arrbuf) {
+				var uz_file_arrbuf_view8 = new Uint8Array(uz_file_arrbuf);
+				var uz_file_data = CryptoJS.enc.Latin1.parse(download_ab2str(uz_file_arrbuf_view8));
+				var cksum = CryptoJS.SHA1(uz_file_data).toString();
+				
+				if (file_data["file_sha1sum"] == cksum) {
+				    if (file_data["file_type"] == "pwdbf") {
+					if (cb != undefined) { 
+					    cb(uz_file_arrbuf, file_data["version"]);
+					}
+				    }
+				}
+				else {
+				    cb(undefined, undefined);
+				    var err_str = "APPU Error: Checksums DO NOT match: '"+ file_key +"'"; 
+				    console.log(err_str);
 				}
 			    }
 			})(file_key, file));
@@ -191,7 +245,7 @@ function get_binary_from_base64(fdata) {
 
 
 // Download file
-function download_file(fname, ftype, dname) {
+function download_file(fname, ftype, dname, cb, check_if_downloaded) {
     var file_fetch_url = "http://192.168.56.101:59000/";
     var file_params = {
 	    "filename" : fname,
@@ -204,77 +258,97 @@ function download_file(fname, ftype, dname) {
 
     file_params = JSON.stringify(file_params);
 
-    $.post(file_fetch_url + "get_file", 
-	   file_params,
-	   function(data) {
-	       var response = /^(OK\n)(.*)/.exec(data);
-	       var file_key = "Downloads:" + ftype;
-	       if (dname != undefined) {
-		   file_key = file_key + ":" + dname + ":" + fname;
-	       }
-	       else {
-		   file_key = file_key + ":" + fname;
-	       }
-	       
-	       if (response == null) {
-		   var err_str = "APPU Error: Error downloading '"+ file_key +"', message: " + data; 
-		   console.log(err_str);
-		   print_appu_error(err_str);
-	       }
-	       else {
-		   console.log("APPU DEBUG: Downloaded successfully: '"+ file_key +"'");
+    var file_key = "Downloads:" + ftype;
+    if (dname != undefined) {
+	file_key = file_key + ":" + dname + ":" + fname;
+    }
+    else {
+	file_key = file_key + ":" + fname;
+    }
+
+    if (check_if_downloaded != undefined &&
+	check_if_downloaded == true &&
+	storage_meta["storage_meta"].indexOf(file_key) != -1) {
+	console.log("APPU DEBUG: File ("+ file_key +") is already present");
+	get_downloaded_file(fname, ftype, dname, cb);
+    }
+    else {
+	$.post(file_fetch_url + "get_file", 
+	       file_params,
+	       function(data) {
+		   var response = /^(OK\n)(.*)/.exec(data);
 		   
-		   var data_wo_ok = data.split("OK\n")[1];
-		   var match = /^(Sha1sum: (.*)\n)?(.*)/.exec(data_wo_ok);
-		   
-		   if (match == undefined ||
-		       match[1] == undefined ||
-		       match[2] == undefined) {
-		       var err_str = "APPU Error: No sha1sum, corrupted data for: '"+ file_key +"'"; 
+		   if (response == null) {
+		       var err_str = "APPU Error: Error downloading '"+ file_key +"', message: " + data; 
 		       console.log(err_str);
 		       print_appu_error(err_str);
 		   }
-		   
-		   var file_data = {};
-		   var file = {};
-		   file[file_key] = file_data;
-		   file_data["file_type"] = ftype;
-		   file_data["file_sha1sum"] = match[2];
-		   file_data["file_zipped_base64"] = match[3];
-		   var zipbuf = get_binary_from_base64(file_data["file_zipped_base64"]);
+		   else {
+		       console.log("APPU DEBUG: Downloaded successfully: '"+ file_key +"'");
+		       
+		       var data_wo_ok = data.split("OK\n")[1];
+		       var match = /^(Sha1sum: (.*)\n)?(.*)/.exec(data_wo_ok);
+		       
+		       if (match == undefined ||
+			   match[1] == undefined ||
+			   match[2] == undefined) {
+			   var err_str = "APPU Error: No sha1sum, corrupted data for: '"+ file_key +"'"; 
+			   console.log(err_str);
+			   print_appu_error(err_str);
+		       }
+		       
+		       var file_data = {};
+		       var file = {};
+		       file[file_key] = file_data;
+		       file_data["file_type"] = ftype;
+		       file_data["file_sha1sum"] = match[2];
+		       file_data["file_zipped_base64"] = match[3];
+		       var zipbuf = get_binary_from_base64(file_data["file_zipped_base64"]);
+		       
+		       // Unzip the array buffer using zip.js library.
+		       unzipArrayBuffer(zipbuf, (function(file_key, file, cb) {
+				   return function(uz_file_arrbuf) {
+				       var file_data = file[file_key];
+				       
+				       var uz_file_arrbuf_view8 = new Uint8Array(uz_file_arrbuf);
+				       var uz_file_data = CryptoJS.enc.Latin1.parse(download_ab2str(uz_file_arrbuf_view8));
+				       
+				       var version = extract_tag("version", uz_file_arrbuf);
+				       console.log("APPU DEBUG: Extracted version is: " + version);
+				       
+				       var num_setbits = extract_tag("setbits", uz_file_arrbuf);
+				       console.log("APPU DEBUG: Number of set bits: " + num_setbits);
+				       
+				       var cksum = CryptoJS.SHA1(uz_file_data).toString();
+				       
+				       if (file_data["file_sha1sum"] == cksum) {
+					   console.log("APPU DEBUG: Checksums MATCH for: '"+ file_key +"'");
+					   file_data["version"] = version;
+					   file_data["setbits"] = num_setbits;
 
-		   // Unzip the array buffer using zip.js library.
-		   unzipArrayBuffer(zipbuf, (function(file_key, file) {
-			       return function(uz_file_arrbuf) {
-				   var file_data = file[file_key];
+					   if (version == "0.0.0") {
+					       delete file_data["file_zipped_base64"];
+					   }
 
-				   var uz_file_arrbuf_view8 = new Uint8Array(uz_file_arrbuf);
-				   var uz_file_data = CryptoJS.enc.Latin1.parse(download_ab2str(uz_file_arrbuf_view8));
-
-				   var version = extract_tag("version", uz_file_arrbuf);
-				   console.log("APPU DEBUG: Extracted version is: " + version);
-
-				   var num_setbits = extract_tag("setbits", uz_file_arrbuf);
-				   console.log("APPU DEBUG: Number of set bits: " + num_setbits);
-
-				   var cksum = CryptoJS.SHA1(uz_file_data).toString();
-
-				   if (file_data["file_sha1sum"] == cksum) {
-				       console.log("APPU DEBUG: Checksums MATCH for: '"+ file_key +"'");
-				       file_data["version"] = version;
-				       file_data["setbits"] = num_setbits;
-				       write_to_local_storage(file);
+					   write_to_local_storage(file);
+					   if (cb != undefined) {
+					       cb(uz_file_arrbuf, version);
+					   }
+				       }
+				       else {
+					   var err_str = "APPU Error: Checksums DO NOT match: '"+ file_key +"'"; 
+					   console.log(err_str);
+					   print_appu_error(err_str);
+					   return;
+				       }
 				   }
-				   else {
-				       var err_str = "APPU Error: Checksums DO NOT match: '"+ file_key +"'"; 
-				       console.log(err_str);
-				       print_appu_error(err_str);
-				       return;
-				   }
-			       }
-			   })(file_key, file));
-	       }
-	   });
+			       })(file_key, file, cb));
+		   }
+	       })	
+	    .error(function(cb) {
+		    cb(undefined, undefined);
+		} (cb));;
+    }
 }
 
 
