@@ -13,6 +13,14 @@
 
 var download_attempt = {};
 
+// This function will go over all the downloaded files everyday.
+// It will check their versions and ask server for the versions.
+// If a newer version is present then it will download that 
+// version.
+function get_latest_version() {
+
+}
+
 function add_to_download_attempt(file_key) {
 
 }

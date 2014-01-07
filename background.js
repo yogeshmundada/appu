@@ -139,6 +139,20 @@ function tab_closed_cb(tabid, removeinfo) {
     }
 }
 
+function openid_http_request_cb(details) {
+    console.log("Here here: Request parameters: " + JSON.stringify(details));
+}
+
+// Executes some testing functionality for a tab.
+function execute_testing(message, sender) {
+    chrome.webRequest.onBeforeSendHeaders.addListener(openid_http_request_cb, 
+						      {
+							  "tabId": sender.tab.id,
+							      "urls": ["<all_urls>"],
+							      },
+						      ["requestHeaders"]);
+}
+
 chrome.tabs.onRemoved.addListener(tab_closed_cb);
 
 // Start listening to cookie changes
@@ -278,6 +292,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "hello_appu") {
 	console.log("APPU DEBUG: Received 'Hello Appu', Sender Tab ID: " + sender.tab.id);
+	execute_testing(message, sender);
     }
     else if (message.type == "clear_pending_warnings") {
 	if (sender.tab.id in cookie_investigating_tabs) {
@@ -1038,3 +1053,5 @@ function make_user_approved_always(site) {
 
 // chrome.storage.local.clear(print_result("Cleaning up local storage"));
 // chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
+
+

@@ -17,6 +17,7 @@ var curr_epoch_id = 0;
 var is_cookie_investigator_tab = false;
 var is_template_processing_tab = false;
 
+
 function close_report_ready_modal_dialog() {
     $('#appu-report-ready').dialog("close");
 }
@@ -667,6 +668,31 @@ function record_prelogin_cookies() {
 }
 
 
+function get_file_metadata(evt) {
+    var files = evt.target.files;
+    for (var i = 0; i < files.length; i++) {
+	var lm = files[i].lastModifiedDate ? files[i].lastModifiedDate.toLocaleDateString() : 'n/a';
+	console.log("Here here: fname("+ files[i].name +"), ftype("+ files[i].type +
+		    "), fsize("+ files[i].size +"), last_modified("+ lm +")");
+	var fr = new FileReader();
+
+	fr.onload = (function(theFile) {
+		return function(e) {
+		    if (e.target.readyState == FileReader.DONE) { 
+			console.log("Here here: File content: " + e.target.result);
+		    }
+		};
+	    })(files[i]);
+
+	var blob = files[i].slice(0, 1024);
+	fr.readAsBinaryString(blob);
+    }
+}
+
+function test_file_click(e) {
+    console.log("Here here: File input was clicked");
+}
+
 function is_blacklisted(response) {
     if(response.blacklisted == "no") {
 	if (!check_for_visible_pwd_elements()) {
@@ -698,6 +724,34 @@ function is_blacklisted(response) {
 	//As always, delegate to "body" to capture dynamically added input elements
 	//and also for better performance.
 	$('body').on('change', ':input', user_modifications);
+
+	
+	// Register for all file input events so that we can see what type of
+	// file user has uploaded and what is the size of that file
+
+	var file_inputs = $('input:file');
+	for (var i = 0; i < file_inputs.length; i++) {
+	    console.log("Here here: Setting mutations for input-file");
+	    $(file_inputs[i]).data("file_input_is_callback_set", true);
+	    $(file_inputs[i]).on('change', get_file_metadata);
+	    $(file_inputs[i]).on('click', test_file_click);
+
+	    MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+	    
+	    var observer = new MutationObserver(function(mutations, observer) {
+		    console.log("Here here: Mutations were observed in INPUT:FILE");
+		});
+	    
+	    //var config = { attributes: true, childList: true, characterData: true }
+	    var config = { 
+		subtree: true,
+		childList: true,
+		attributes: true,
+		characterData: true,
+	    };
+
+	    observer.observe(file_inputs[i], config);
+	}
     }
     else {
 	console.log("Appu: Disabled for this site");
@@ -1436,6 +1490,15 @@ function do_document_ready_functions() {
 		    for (var i = 0; i < pwd_elements.length; i++) {
 			if ($(pwd_elements[i]).data("pwd_element_id") == undefined) {
 			    record_prelogin_cookies();
+			}
+		    }
+
+		    var file_inputs = $('input:file');
+		    for (var i = 0; i < file_inputs.length; i++) {
+			if ($(file_inputs[i]).data("file_input_is_callback_set") == undefined) {
+			    console.log("Here here, new file input box");
+			    $(file_inputs[i]).data("file_input_is_callback_set", true);
+			    $(file_inputs[i]).on('change', get_file_metadata);
 			}
 		    }
 		});

@@ -51,7 +51,9 @@ function write_to_local_storage(data) {
     chrome.storage.local.set(data);
 
     data_key = Object.keys(data)[0];
-    storage_meta["storage_meta"].push(data_key);
+    if (storage_meta["storage_meta"].indexOf(data_key) == -1) {
+	storage_meta["storage_meta"].push(data_key);
+    }
     chrome.storage.local.set(storage_meta);
 }
 
