@@ -1279,17 +1279,21 @@ function detect_logout_links() {
     signout_link_patterns.forEach(function(value, index, array) {
 	    signout_elements = signout_elements.add($("a, form").filter(function() {
 			if (this.tagName == "A") {
-			    if ($(this).attr('href') == '#') {
-				return false;
-			    }
-
-			    if ($(this).attr('href').toLowerCase().indexOf(value) !== -1) {
-				return true;
+			    if ($(this).attr('href') != undefined) {
+				if ($(this).attr('href') == '#') {
+				    return false;
+				}
+				
+				if ($(this).attr('href').toLowerCase().indexOf(value) !== -1) {
+				    return true;
+				}
 			    }
 			}
 			if (this.tagName == "FORM") {
-			    if ($(this).attr("action").toLowerCase().indexOf(value) !== -1) {
-				return true;
+			    if ($(this).attr("action") != undefined) {
+				if ($(this).attr("action").toLowerCase().indexOf(value) !== -1) {
+				    return true;
+				}
 			    }
 			}
 		    }));
