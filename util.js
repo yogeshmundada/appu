@@ -150,3 +150,33 @@ function delete_keys_with_prefix(prefix_array) {
     }
 
 }
+
+function print_url_params(url) {
+    var all_params = url.slice(url.indexOf('?') + 1).split('&');
+    console.log("Here here: Domain: " + get_domain(url.split("/")[2]));
+    for(var i = 0; i < all_params.length; i++)
+	{
+	    var p = all_params[i].split('=');
+	    console.log(i + ". " + decodeURIComponent(p[0]) + ":" + decodeURIComponent(p[1]));
+	}
+    return;
+}
+
+function get_url_params(url, decode) {
+    var params = {};
+    var all_params = url.slice(url.indexOf('?') + 1).split('&');
+    decode = (decode == undefined) ? false : decode;
+
+    for(var i = 0; i < all_params.length; i++)
+	{
+	    var p = all_params[i].split('=');
+	    if (decode) {
+		params[decodeURIComponent(p[0])] = decodeURIComponent(p[1]);
+	    }
+	    else {
+		params[p[0]] = p[1];
+	    }
+
+	}
+    return params;
+}

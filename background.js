@@ -139,18 +139,9 @@ function tab_closed_cb(tabid, removeinfo) {
     }
 }
 
-function openid_http_request_cb(details) {
-    console.log("Here here: Request parameters: " + JSON.stringify(details));
-}
-
-// Executes some testing functionality for a tab.
+// Executes some testing functionality for a SPECIFIC tab.
+// Can be triggered by sending "hello_appu" in that tab.
 function execute_testing(message, sender) {
-    chrome.webRequest.onBeforeSendHeaders.addListener(openid_http_request_cb, 
-						      {
-							  "tabId": sender.tab.id,
-							      "urls": ["<all_urls>"],
-							      },
-						      ["requestHeaders"]);
 }
 
 chrome.tabs.onRemoved.addListener(tab_closed_cb);
@@ -1053,5 +1044,3 @@ function make_user_approved_always(site) {
 
 // chrome.storage.local.clear(print_result("Cleaning up local storage"));
 // chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
-
-
