@@ -1283,12 +1283,12 @@ function detect_logout_links() {
 				return false;
 			    }
 
-			    if (this.href.toLowerCase().indexOf(value) !== -1) {
+			    if ($(this).attr('href').toLowerCase().indexOf(value) !== -1) {
 				return true;
 			    }
 			}
 			if (this.tagName == "FORM") {
-			    if (this.action.toLowerCase().indexOf(value) !== -1) {
+			    if ($(this).attr("action").toLowerCase().indexOf(value) !== -1) {
 				return true;
 			    }
 			}
