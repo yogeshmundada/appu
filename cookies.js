@@ -4137,25 +4137,29 @@ function cookie_investigator(account_cookies,
 	
 	console.log("APPU DEBUG: Number of account-cookiesets: " + 
 		    verified_strict_account_cookiesets_array.length);
-	for (var j = 0; j < verified_strict_account_cookiesets_array.length; j++) {
-	    var cs_names = verified_strict_account_cookiesets_array[j];
-	    console.log(j + ". Number of cookies: " + cs_names.length +
-			", CookieSet: " +
-			JSON.stringify(cs_names));
-	    if (logout_equation.length != 0) {
-		logout_equation += " || ";
-	    }
-	    
+	if (verified_strict_account_cookiesets_array.length > 0) {
 	    logout_equation += "(";
-	    for (var u = 0; u < cs_names.length; u++) {
-		var fields = cs_names[u].split(":");
-		var cookie_alias = fields[fields.length - 1];
-		cookie_aliases[cs_names[u]] = cookie_alias;
-		if (u != 0) {
-		    logout_equation += " && ";
+	    for (var j = 0; j < verified_strict_account_cookiesets_array.length; j++) {
+		var cs_names = verified_strict_account_cookiesets_array[j];
+		console.log(j + ". Number of cookies: " + cs_names.length +
+			    ", CookieSet: " +
+			    JSON.stringify(cs_names));
+		if (logout_equation.length != 0) {
+		    logout_equation += " || ";
 		}
-		logout_equation += "(~" + cookie_alias + ")" ;
+		
+		
+		for (var u = 0; u < cs_names.length; u++) {
+		    var fields = cs_names[u].split(":");
+		    var cookie_alias = fields[fields.length - 1];
+		    cookie_aliases[cs_names[u]] = cookie_alias;
+		    if (u != 0) {
+			logout_equation += " && ";
+		    }
+		    logout_equation += "(~" + cookie_alias + ")" ;
 		}
+		
+	    }
 	    logout_equation += ")";
 	}
 	
@@ -4233,6 +4237,7 @@ function cookie_investigator(account_cookies,
 	
 	if (!has_error_occurred) {
 	    console.log("APPU DEBUG: Testing done?: YES");
+	    remove_ci_state(my_url);
 	}
 	else {
 	    console.log("APPU DEBUG: Testing done?: NO");
@@ -4241,7 +4246,6 @@ function cookie_investigator(account_cookies,
 	console.log("APPU DEBUG: Ending cookie investigation for(" + my_domain + "): " + ci_end_time);
 	terminate_cookie_investigating_tab(my_tab_id);
 	window.clearTimeout(shut_tab_forcefully);
-	remove_ci_state(my_url);
     }
     
     

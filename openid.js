@@ -4,7 +4,8 @@
 
 var my_openid_requests = [];
 function openid_before_request_cb(details) {
-    if (JSON.stringify(details).toLowerCase().indexOf("openid") != -1) {
+    if (JSON.stringify(details).toLowerCase().indexOf("openid") != -1 ||
+	my_openid_requests.indexOf(details.requestId) != -1) {
 	my_openid_requests.push(details.requestId);
 	console.log("Here here: BEFORE REQUEST: " + JSON.stringify(details));
 	print_url_params(details.url);
@@ -20,7 +21,8 @@ function openid_before_request_cb(details) {
 }
 
 function openid_before_send_headers_cb(details) {    
-    if (my_openid_requests.indexOf(details.requestId) != -1) {
+    if (my_openid_requests.indexOf(details.requestId) != -1 ||
+	my_openid_requests.indexOf(details.requestId) != -1) {
 	console.log("Here here: BEFORE SEND HEADERS: " + JSON.stringify(details));
 	print_url_params(details.url);
     }
