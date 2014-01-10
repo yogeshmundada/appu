@@ -29,14 +29,14 @@ function openid_before_send_headers_cb(details) {
 }
 
 
-chrome.webRequest.onBeforeRequest.addListener(openid_before_request_cb, 
-						  {
-							  "urls": ["<all_urls>"],
-							  },
-					      ["blocking", "requestBody"]);
+// chrome.webRequest.onBeforeRequest.addListener(openid_before_request_cb, 
+// 						  {
+// 							  "urls": ["<all_urls>"],
+// 							  },
+// 					      ["blocking", "requestBody"]);
 
-chrome.webRequest.onBeforeSendHeaders.addListener(openid_before_send_headers_cb, 
-						  {
-							  "urls": ["<all_urls>"],
-							  },
-						  ["blocking", "requestHeaders"]);
+// chrome.webRequest.onBeforeSendHeaders.addListener(openid_before_send_headers_cb, 
+// 						  {
+// 							  "urls": ["<all_urls>"],
+// 							  },
+// 						  ["blocking", "requestHeaders"]);
