@@ -3730,7 +3730,7 @@ function cookie_investigator(account_cookies,
 		console.log("APPU DEBUG: Cookieset testing round finished for: " + num_cookies_drop_for_round);
 		bool_st_cookiesets_block_test_done = true;
 		num_cookies_drop_for_round += 1;
-		if (num_cookies_drop_for_round > tot_cookies) {
+		if (num_cookies_drop_for_round >= tot_cookies) {
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to drop exceed total cookies");
 		    return "error";
 		}
@@ -3796,7 +3796,7 @@ function cookie_investigator(account_cookies,
 		bool_st_gub_cookiesets_block_test_done = true;
 		bool_st_cookiesets_block_test_done = false;
 		num_cookies_pass_for_round += 1;
-		if (num_cookies_pass_for_round > tot_cookies) {
+		if (num_cookies_pass_for_round >= tot_cookies) {
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to pass exceed total cookies");
 		    return "error";
 		}
@@ -4301,7 +4301,8 @@ function cookie_investigator(account_cookies,
 	var was_result_expected = false;
 	tot_execution += 1;
 
-	if (my_state != "st_verification_epoch") {
+	if (my_state == "st_cookiesets_block_nonduring_and_disabled" ||
+	    my_state == "st_gub_cookiesets_block_test") {
 	    tot_cookiesets_tested_overall += 1;
 	    tot_cookiesets_tested += 1;
 	    tot_cookiesets_tested_this_round += 1;
