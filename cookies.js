@@ -4191,6 +4191,9 @@ function cookie_investigator(account_cookies,
 			", CookieSet: " +
 			JSON.stringify(cs_names));
 	}
+
+	console.log("APPU DEBUG: Total suspected cookies: " + 
+		    tot_cookies);
 	
 	console.log("APPU DEBUG: Number of restrictive account-cookiesets: " + 
 		    verified_restricted_cookiesets_array.length);
@@ -4218,6 +4221,13 @@ function cookie_investigator(account_cookies,
 		    skipped_sets.num_gub_already_tested_in_account_super_cookiesets);
 	console.log("APPU DEBUG: GUB Number of skipped cookiesets (subset in account-super-cookiesets): " + 
 		    skipped_sets.num_gub_subset_in_account_super_cookiesets);
+
+	console.log("APPU DEBUG: Total skipped cookiesets (due to subset in strict-account-cookiesets): " + 
+		    (skipped_sets.num_subset_in_account_cookiesets +
+		     skipped_sets.num_gub_subset_in_account_cookiesets));
+	console.log("APPU DEBUG: Total skipped cookiesets (due to superset in non-account-cookiesets): " + 
+		    (skipped_sets.num_superset_in_non_account_super_cookiesets +
+		     skipped_sets.num_gub_superset_in_non_account_cookiesets))
 	
 	var total_skipped_cookiesets = skipped_sets.num_subset_in_account_cookiesets +
 	    skipped_sets.num_superset_in_non_account_cookiesets +
