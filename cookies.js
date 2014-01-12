@@ -3743,7 +3743,7 @@ function cookie_investigator(account_cookies,
 		bool_st_cookiesets_block_test_done = true;
 		bool_is_cookie_testing_done = true;
 		my_state = "st_terminate";
-		return "finished"
+		return "finished";
 	    }
 	    else if (rc == -1) {
 		console.log("APPU Error: (" + state + ")Could not generate cookiesets for round: " + num_cookies_drop_for_round
@@ -3798,7 +3798,9 @@ function cookie_investigator(account_cookies,
 		num_cookies_pass_for_round += 1;
 		if (num_cookies_pass_for_round >= tot_cookies) {
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to pass exceed total cookies");
-		    return "error";
+		    bool_is_cookie_testing_done = true;
+		    my_state = "st_terminate";
+		    return "finished";
 		}
 		curr_gub_binary_cs = undefined;
 		curr_gub_decimal_cs = undefined;
@@ -3807,6 +3809,12 @@ function cookie_investigator(account_cookies,
 	    else if (rc == 1) {
 		console.log("APPU DEBUG: GUB Cookieset testing successfully finished");
 		num_cookies_pass_for_round += 1;
+		if (num_cookies_pass_for_round >= tot_cookies) {
+		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to pass exceed total cookies");
+		    bool_is_cookie_testing_done = true;
+		    my_state = "st_terminate";
+		    return "finished";
+		}
 		curr_gub_binary_cs = undefined;
 		curr_gub_decimal_cs = undefined;
 		// bool_st_gub_cookiesets_block_test_done = true;
