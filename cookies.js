@@ -3028,6 +3028,7 @@ function cookie_investigator(account_cookies,
 	}
     }
 
+
     function store_intermediate_state() { 
 	var tt = tot_time_taken + ((new Date()).getTime() - ci_start_time.getTime())/1000;
 	var tcgt = tot_cookiesets_generation_time + 
