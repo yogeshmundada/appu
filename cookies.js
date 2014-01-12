@@ -4143,9 +4143,6 @@ function cookie_investigator(account_cookies,
 	console.log("APPU DEBUG: Number of account-cookiesets: " + 
 		    verified_strict_account_cookiesets_array.length);
 	if (verified_strict_account_cookiesets_array.length > 0) {
-	    if (verified_strict_account_cookiesets_array.length > 1) {
-		logout_equation += "(";
-	    }
 	    var first_time = true;
 	    for (var j = 0; j < verified_strict_account_cookiesets_array.length; j++) {
 		var cs_names = verified_strict_account_cookiesets_array[j];
@@ -4158,7 +4155,10 @@ function cookie_investigator(account_cookies,
 		else {
 		    first_time = false;
 		}
-		
+
+		if (cs_names.length > 1) {
+		    logout_equation += "(";
+		}
 		for (var u = 0; u < cs_names.length; u++) {
 		    var fields = cs_names[u].split(":");
 		    var cookie_alias = fields[fields.length - 1];
@@ -4168,10 +4168,9 @@ function cookie_investigator(account_cookies,
 		    }
 		    logout_equation += "(~" + cookie_alias + ")" ;
 		}
-		
-	    }
-	    if (verified_strict_account_cookiesets_array.length > 1) {
-		logout_equation += ")";
+		if (cs_names.length > 1) {
+		    logout_equation += ")";
+		}
 	    }
 	}
 	
