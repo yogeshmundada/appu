@@ -3028,7 +3028,6 @@ function cookie_investigator(account_cookies,
 	}
     }
 
-
     function store_intermediate_state() { 
 	var tt = tot_time_taken + ((new Date()).getTime() - ci_start_time.getTime())/1000;
 	var tcgt = tot_cookiesets_generation_time + 
@@ -3742,7 +3741,12 @@ function cookie_investigator(account_cookies,
 		console.log("APPU DEBUG: Cookieset testing round finished for: " + num_cookies_drop_for_round);
 		bool_st_cookiesets_block_test_done = true;
 		num_cookies_drop_for_round += 1;
-		if (num_cookies_drop_for_round >= tot_cookies) {
+		
+		// Adding (num_cookies_pass_for_round - 1) instead of num_cookies_pass_for_round
+		// because I do not finish GUB rounds. I stop them as soon as tested_cookiesets in
+		// a round exceeds tot_cookies. Thus num_cookies_pass_for_round does not necessarily
+		// say finished round. The round could very well be in progress.
+		if ((num_cookies_drop_for_round + (num_cookies_pass_for_round - 1)) >= tot_cookies) {
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to drop exceed total cookies");
 		    console.log("APPU DEBUG: Cookieset testing successfully finished. No more cookiesets generated");
 		    bool_st_cookiesets_block_test_done = true;
@@ -3758,7 +3762,7 @@ function cookie_investigator(account_cookies,
 		console.log("APPU DEBUG: No more cookiesets generated for: " + num_cookies_drop_for_round);
 		bool_st_cookiesets_block_test_done = true;
 		num_cookies_drop_for_round += 1;
-		if (num_cookies_drop_for_round >= tot_cookies) {
+		if ((num_cookies_drop_for_round + (num_cookies_pass_for_round - 1)) >= tot_cookies) {
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to drop exceed total cookies");
 		    console.log("APPU DEBUG: Cookieset testing successfully finished. No more cookiesets generated");
 		    bool_st_cookiesets_block_test_done = true;
@@ -3830,7 +3834,7 @@ function cookie_investigator(account_cookies,
 		curr_gub_binary_cs = undefined;
 		curr_gub_decimal_cs = undefined;
 
-		if (num_cookies_pass_for_round >= tot_cookies) {
+		if ((num_cookies_drop_for_round + (num_cookies_pass_for_round - 1)) >= tot_cookies) {
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to pass exceed total cookies");
 		    bool_no_more_gub_tests = true;
 		}
@@ -3839,7 +3843,7 @@ function cookie_investigator(account_cookies,
 	    else if (rc == 1) {
 		console.log("APPU DEBUG: GUB Cookieset testing successfully finished");
 		num_cookies_pass_for_round += 1;
-		if (num_cookies_pass_for_round >= tot_cookies) {
+		if ((num_cookies_drop_for_round + (num_cookies_pass_for_round - 1)) >= tot_cookies) {
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to pass exceed total cookies");
 		    bool_no_more_gub_tests = true;
 		}
