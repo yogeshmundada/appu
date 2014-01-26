@@ -520,8 +520,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 // 	    }
 
 	    if (message.curr_epoch_id == cit.get_epoch_id()) {
+// 		console.log("APPU DEBUG: Setting page load success for EPOCH-ID: " + 
+// 			    message.curr_epoch_id);
 		console.log("APPU DEBUG: Setting page load success for EPOCH-ID: " + 
-			    message.curr_epoch_id);
+			    message.curr_epoch_id + ", test-var: " + message.test_var);
 
 		cit.set_page_load_success(true);
 		if (cit.pageload_timeout != undefined) {

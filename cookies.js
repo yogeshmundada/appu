@@ -1630,11 +1630,14 @@ function remove_ci_state(url) {
     delete_from_local_storage("Cookie Investigation State:" + url_wo_paramters);
 }
 
-// Following is to be invoked as:
-// load_ci_state("https://google.com/", search_for_cookieset("https://google.com/", ["https://.google.com/:TEST_COOKIE1"]));
-function search_for_cookieset(url, cookieset) {
-    return function(state) {
-	if (state == undefined) {
+// Print all cookiesets that have been tested so far for a URL
+function print_cookie_investigation_state(url) {
+    function process_state(state) {
+	var url_wo_paramters = url.replace(/\?.*/,'');
+	url = "Cookie Investigation State:" + url_wo_paramters; 
+
+	if (state == undefined ||
+	    JSON.stringify(state) == JSON.stringify({})) {
 	    console.log("APPU DEBUG: State is not detected for URL: " + url);
 	    return;
 	}
@@ -1648,6 +1651,94 @@ function search_for_cookieset(url, cookieset) {
 	var tot_cookiesets_generation_time = state[url]["tot_cookiesets_generation_time"];
 	var tot_attempts = state[url]["tot_attempts"];
 	var tot_page_reloads_overall = state[url]["tot_page_reloads_overall"];
+	var tot_page_reloads_since_last_lo_change = state[url]["tot_page_reloads_since_last_lo_change"];
+	var tot_cookiesets_tested_overall = state[url]["tot_cookiesets_tested_overall"];
+
+	console.log("APPU DEBUG: Length of 'verified strict account cookiesets' array" + 
+		    " (LLBs in suspected that cause logouts): " + vsaca.length);
+	console.log("APPU DEBUG: Length of 'verified strict non-account cookiesets' array" + 
+		    " (LLBs in suspected that *DO NOT* cause logouts): " + vsnaca.length);
+	console.log("APPU DEBUG: Length of 'verified account super cookiesets' array" + 
+		    " (GUBs in suspected that cause logouts): " + vasca.length);
+	console.log("APPU DEBUG: Length of 'verified non-account super cookiesets' array" + 
+		    " (GUBs in suspected that *DO NOT* cause logouts): " + vnasca.length);
+	console.log("APPU DEBUG: Length of 'verified strict non-during non-account cookiesets' array" + 
+		    " (LLBs in non-suspected that *DO NOT* cause logouts): " + vsndnadca.length);
+
+	console.log("APPU DEBUG: Total time taken for investigation so far: " + Math.floor((tot_time_taken/60)) + "m " +
+		    Math.floor((tot_time_taken % 60)) + "s");
+	console.log("APPU DEBUG: Total attempts so far: " + tot_attempts);
+	console.log("APPU DEBUG: Total page reloads so far: " + tot_page_reloads_overall);
+	console.log("APPU DEBUG: Total cookiesets tested so far: " + tot_cookiesets_tested_overall);
+	console.log("APPU DEBUG: Total time in generating cookiesets since last change to equation: " + 
+		    tot_cookiesets_generation_time);
+
+	console.log("APPU DEBUG: *** Printing 'verified strict account cookiesets' array" + 
+		    " (LLBs in suspected that cause logouts) ***");
+	for (var i = 0; i < vsaca.length; i++) {
+	    console.log(i + ". " + JSON.stringify(vsaca[i]));
+	}
+	console.log("");
+
+	console.log("APPU DEBUG: *** Printing 'verified strict non-account cookiesets' array" + 
+		    " (LLBs in suspected that *DO NOT* cause logouts) ***");
+	for (var i = 0; i < vsnaca.length; i++) {
+	    console.log(i + ". " + JSON.stringify(vsnaca[i]));
+	}
+	console.log("");
+
+
+	console.log("APPU DEBUG: *** Printing 'verified account super cookiesets' array" + 
+		    " (GUBs in suspected that cause logouts) ***");
+	for (var i = 0; i < vasca.length; i++) {
+	    console.log(i + ". " + JSON.stringify(vasca[i]));
+	}
+	console.log("");
+
+
+	console.log("APPU DEBUG: *** Printing 'verified non-account super cookiesets' array" + 
+		    " (GUBs in suspected that *DO NOT* cause logouts) ***");
+	for (var i = 0; i < vnasca.length; i++) {
+	    console.log(i + ". " + JSON.stringify(vnasca[i]));
+	}
+	console.log("");
+
+
+	console.log("APPU DEBUG: *** Printing 'verified strict non-during non-account cookiesets' array" + 
+		    " (LLBs in non-suspected that *DO NOT* cause logouts) ***");
+	for (var i = 0; i < vsndnadca.length; i++) {
+	    console.log(i + ". " + JSON.stringify(vsndnadca[i]));
+	}
+	console.log("");
+    }
+
+    load_ci_state(url, process_state);
+}
+
+// Following is to be invoked as:
+// load_ci_state("https://google.com/", search_for_cookieset("https://google.com/", ["https://.google.com/:TEST_COOKIE1"]));
+// Used to test if the cookieset has already been tested or not.
+function search_for_cookieset(url, cookieset) {
+    return function(state) {
+	var url_wo_paramters = url.replace(/\?.*/,'');
+	url = "Cookie Investigation State:" + url_wo_paramters; 
+
+	if (state == undefined ||
+	    JSON.stringify(state) == JSON.stringify({})) {
+	    console.log("APPU DEBUG: State is not detected for URL: " + url);
+	    return;
+	}
+
+	var vsaca = state[url]["vsaca"];
+	var vsnaca = state[url]["vsnaca"];
+	var vasca = state[url]["vasca"];
+	var vnasca = state[url]["vnasca"];
+	var vsndnadca = state[url]["vsndnadca"];
+	var tot_time_taken = state[url]["tot_time_taken"];
+	var tot_cookiesets_generation_time = state[url]["tot_cookiesets_generation_time"];
+	var tot_attempts = state[url]["tot_attempts"];
+	var tot_page_reloads_overall = state[url]["tot_page_reloads_overall"];
+	var tot_page_reloads_since_last_lo_change = state[url]["tot_page_reloads_since_last_lo_change"];
 	var tot_cookiesets_tested_overall = state[url]["tot_cookiesets_tested_overall"];
 
 	console.log("APPU DEBUG: Length vsaca: "     + vsaca.length);
@@ -2603,6 +2694,7 @@ function cookie_investigator(account_cookies,
 
     var tot_page_reloads = 0;
     var tot_page_reloads_overall = 0;
+    var tot_page_reloads_since_last_lo_change = 0;
 
     var ci_start_time = new Date();
     var tot_time_taken = 0;
@@ -2932,7 +3024,11 @@ function cookie_investigator(account_cookies,
 		if (pcs.tot_page_reloads_overall != undefined) {
 		    tot_page_reloads_overall = pcs.tot_page_reloads_overall;
 		}
- 
+
+		if (pcs.tot_page_reloads_since_last_lo_change != undefined) {
+		    tot_page_reloads_since_last_lo_change = pcs.tot_page_reloads_since_last_lo_change;
+		}
+
 		if (pcs.tot_cookiesets_tested_overall != undefined) {
 		    tot_cookiesets_tested_overall = pcs.tot_cookiesets_tested_overall;
 		}
@@ -3038,6 +3134,7 @@ function cookie_investigator(account_cookies,
 		"tot_cookiesets_generation_time" : tot_cookiesets_generation_time,
 		    "tot_cookiesets_tested_overall" : tot_cookiesets_tested_overall,
 		    "tot_page_reloads_overall" : tot_page_reloads_overall,
+		    "tot_page_reloads_since_last_lo_change" : tot_page_reloads_since_last_lo_change,
 		    "tot_attempts" : (tot_attempts+1),
 		    "vsaca" : verified_strict_account_cookiesets_array,
 		    "vsnaca" : verified_strict_non_account_cookiesets_array,
@@ -3163,6 +3260,7 @@ function cookie_investigator(account_cookies,
     function increment_page_reloads() {
 	tot_page_reloads += 1;
 	tot_page_reloads_overall += 1;
+	tot_page_reloads_since_last_lo_change += 1;
     }
     
     function print_cookie_array() {
@@ -3398,6 +3496,7 @@ function cookie_investigator(account_cookies,
 		    "): ");
 
 	cookiesets_generation_start_time = new Date();
+	tot_page_reloads_since_last_lo_change = 0;
     }
 
     // This means verification_epoch ran successfully and user is still logged-in.
@@ -3527,7 +3626,11 @@ function cookie_investigator(account_cookies,
 		console.log("APPU DEBUG: VERIFIED, ACCOUNT-COOKIES are present in default-cookie-store");
 		bool_are_all_account_cookies_in_default_store = true;
 		if (bool_pwd_box_present) {
+		    console.log("APPU DEBUG: @@@@ A password box should be present when user is not logged-in @@@@");
 		    bool_pwd_box_should_be_present = true;
+		}
+		else {
+		    console.log("APPU DEBUG: @@@@ A password box should *NOT* be present when user is not logged-in @@@@");
 		}
 	    }
 	    else {
@@ -3565,7 +3668,7 @@ function cookie_investigator(account_cookies,
 	}
 	else if (my_state == "st_testing") {
 	    console.log("APPU DEBUG: Disabled cookies (" + JSON.stringify(disabled_cookies) + "): ");
-	    console.log("APPU DEBUG: Are enabled cookies account-cookies?: " + am_i_logged_in);
+	    console.log("APPU DEBUG: Am I logged-in?: " + am_i_logged_in);
 	    
 	    var enabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs, 
 									   suspected_account_cookies_array, 
@@ -3592,6 +3695,13 @@ function cookie_investigator(account_cookies,
 	    console.log("APPU DEBUG: (" + my_state + ")Is user logged-in for this cookieset?(" + 
 			JSON.stringify(disabled_cookies) + 
 			"): " + am_i_logged_in);
+
+	    if ((JSON.stringify(disabled_cookies) == JSON.stringify(["http://.google.com/:HSID"]) ||
+		JSON.stringify(disabled_cookies) == JSON.stringify(["https://.google.com/:SSID"]) ||
+		JSON.stringify(disabled_cookies) == JSON.stringify(["http://.google.com/:SID"])) &&
+		(my_state != "st_cookiesets_block_disabled")) {
+		console.log("Here here:");
+	    }
 
 	    pending_am_i_logged_in.push(am_i_logged_in);
 	    pending_disabled_cookies.push(disabled_cookies);
@@ -3976,6 +4086,7 @@ function cookie_investigator(account_cookies,
 		    break;
 		}
 		else {
+		    last_non_verification_state = temp_state;
 		    my_state = "st_terminate";
 		    break;
 		}
@@ -4146,6 +4257,14 @@ function cookie_investigator(account_cookies,
     
     
     function final_result() {
+	if (last_non_verification_state == "st_testing") {
+	    console.log("APPU DEBUG: Ending cookie investigation for(" + my_domain + "): " + ci_end_time);
+	    remove_ci_state(my_url);
+	    terminate_cookie_investigating_tab(my_tab_id);
+	    window.clearTimeout(shut_tab_forcefully);
+	    return;
+	}
+
 	bool_is_cookie_testing_done = true;
 	store_intermediate_state();
 
@@ -4285,6 +4404,8 @@ function cookie_investigator(account_cookies,
 		    (Math.pow(2, tot_cookies) * 3));
 	console.log("APPU DEBUG: Total number of actual page reloads this attempt: " + tot_page_reloads);
 	console.log("APPU DEBUG: Total number of actual page reloads overall: " + tot_page_reloads_overall);
+	console.log("APPU DEBUG: Total number of page reloads since last change in logout-equation: " + 
+		    tot_page_reloads_since_last_lo_change);
 	
 	
 	console.log("APPU DEBUG: Total skipped cookiesets: " + 
@@ -4484,7 +4605,7 @@ function cookie_investigator(account_cookies,
 		    else {
 			// LESS SERIOUS error branch: No point in proceeding if page does 
 			// not get loaded while starting with empty shadow_cookie_store
-			console.log("APPU Error: NOT EXPECTED: Usernames NOT detected, page NOT loaded " +
+			console.log("APPU Error: NOT EXPECTED: Page is not loaded properly. No point in proceeding. " +
 				    "num-pwd-boxes: " + num_pwd_boxes +
 				    ", for 'st_start_with_no_cookies'");
 			report_fatal_error("Start-with-no-cookies-no-usernames-no-page-load");
@@ -5288,32 +5409,38 @@ function test_netflix_cookies() {
     return;
 }
 
-function test_asana_cookies() {
-    var omit_cookies = [
-			[
-			 "https://.app.asana.com/:auth_token",
-			 "https://.app.asana.com/:ticket"
-			 ],
-			];
-    
-    var test_cookies = [];
+function test_gdrive_cookies() {
 
-    var rc = get_domain_cookies("https://app.asana.com/0/7751245000999/7751245000999");
+    var omit_cookies = [
+			// ["http://.google.com/:NID"],
+			// ["http://.google.com/:HSID"],
+			// ["https://mail.google.com/mail/u/0:GMAIL_AT"],
+			["https://www.google.com/calendar:CAL"],
+		       ];
+
+    var pass_cookies = [];
+
+    var rc = get_domain_cookies("https://drive.google.com/");
     var aca = Object.keys(rc);
 
-    for (var i = 0; i < aca.length; i++) {
-	if (omit_cookies.indexOf(aca[i]) != -1) {
-	    test_cookies.push(aca[i]);
+    for (var j = 0; j < omit_cookies.length; j++) {
+	var curr_pass_cookies = [];
+	for (var i = 0; i < aca.length; i++) {
+	    if (omit_cookies[j].indexOf(aca[i]) == -1) {
+		curr_pass_cookies.push(aca[i]);
+	    }
 	}
+	pass_cookies.push(curr_pass_cookies);
     }
 
-    detect_account_cookies("https://app.asana.com/0/7751245000999/7751245000999", 
+    detect_account_cookies("https://drive.google.com/?tab=mo&authuser=0#my-drive", 
 			   undefined, 
 			   "all", 
 			   10, undefined, 
 			   { starting_state : "st_testing", 
-				   cookies_array : [test_cookies], 
+				   cookies_array : pass_cookies, 
 				   account_cookies_array : aca });
+
 
     return;
 }

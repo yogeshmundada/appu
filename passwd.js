@@ -1465,8 +1465,11 @@ function show_appu_monitor_icon() {
     }
 }
 
+var test_var1 = 0;
+
 function do_document_ready_functions() {
     if (document.readyState === "complete") {
+	test_var1 += 1;
 	console.log("APPU DEBUG: Document is loaded");
 	clearInterval(is_site_loaded);
 	var message = {};
@@ -1479,6 +1482,7 @@ function do_document_ready_functions() {
 
 	message = {};
 	message.type = "page_is_loaded";
+	message.test_var = test_var1;
 	message.url = document.domain;
 	message.curr_epoch_id = curr_epoch_id;
 	chrome.extension.sendMessage("", message, is_status_active);
