@@ -267,7 +267,7 @@ function is_passwd_reused(response) {
 }
 
 
-function locate_usernames() {
+function locate_probable_username_element() {
     var uname_element = $();
 
     uname_element = $("input[type=password]").parents('form').find('input[type=text], input[type=email]');
@@ -301,12 +301,11 @@ function locate_usernames() {
 // 4. If there are still multiple username boxes from above two steps then select
 //    that box which is closest to the password box (either on top of it or on left of it).
 // 5. Send the value of this box as username along with reason as to why it was chosen.
-function get_username(pwd_element) {
+function get_username_element_value(pwd_element) {
     var username = '';
     var reason = '';
     var pwd_element_pos = $(pwd_element).offset();
-    //var uname_element = $("input[type=password]").parents('form').find('input[type=text], input[type=email]');
-    var uname_element = locate_usernames();
+    var uname_element = locate_probable_username_element();
 
     if (uname_element.length > 1) {
 	// First filter based on the X,Y coordinates
@@ -452,7 +451,7 @@ function get_username(pwd_element) {
 function check_passwd_reuse(jevent) {
     if ( jevent.target.value != "" ) {
 	var message = {};
-	var uname_results = get_username(jevent.target);
+	var uname_results = get_username_element_value(jevent.target);
 	message.type = "check_passwd_reuse";
 	message.caller = "check_passwd_reuse";
 	message.domain = document.domain;
@@ -523,7 +522,7 @@ function check_for_enter(e) {
 
 	    var message = {};
 	    message.type = "check_passwd_reuse";
-	    var uname_results = get_username(e.target);
+	    var uname_results = get_username_element_value(e.target);
 	    message.uname_results = uname_results;
 	    message.caller = "check_for_enter";
 	    message.pwd_sentmsg = $(e.target).data("is_reuse_checked");
@@ -625,7 +624,7 @@ function final_password_reuse_check() {
 
 		message.pwd_sentmsg = $(all_passwds[i]).data("is_reuse_checked");
                 message.type = "check_passwd_reuse";
-		var uname_results = get_username($(all_passwds[i]));
+		var uname_results = get_username_element_value($(all_passwds[i]));
 		message.uname_results = uname_results;
 		message.caller = "final_password_reuse_check";
                 message.domain = document.domain;
@@ -731,7 +730,6 @@ function is_blacklisted(response) {
 
 	var file_inputs = $('input:file');
 	for (var i = 0; i < file_inputs.length; i++) {
-	    console.log("Here here: Setting mutations for input-file");
 	    $(file_inputs[i]).data("file_input_is_callback_set", true);
 	    $(file_inputs[i]).on('change', get_file_metadata);
 	    $(file_inputs[i]).on('click', test_file_click);
@@ -1118,9 +1116,9 @@ function window_unfocused(eo) {
 // }
 
 
-function check_if_username_present(usernames) {
+function check_if_username_present(usernames, reason) {
     var present_usernames = {};
-    console.log("Here here: Detecting usernames");
+    console.log("APPU DEBUG: Detecting if known usernames are present on the webpage for: " + reason);
     usernames.forEach(function(value, index, array) {
             $(":Contains('" + value + "'):visible").filter(function() { 
                     var text = $.trim($(this).text()).toLowerCase();
@@ -1504,7 +1502,6 @@ function do_document_ready_functions() {
 		    var file_inputs = $('input:file');
 		    for (var i = 0; i < file_inputs.length; i++) {
 			if ($(file_inputs[i]).data("file_input_is_callback_set") == undefined) {
-			    console.log("Here here, new file input box");
 			    $(file_inputs[i]).data("file_input_is_callback_set", true);
 			    $(file_inputs[i]).on('change', get_file_metadata);
 			}
@@ -1518,8 +1515,6 @@ function do_document_ready_functions() {
 	    };
 	    observer.observe(document, config);
 	}
-
-	detect_if_user_logged_in();
     }
 }
 
@@ -1685,7 +1680,8 @@ if (document.URL.match(/.pdf$/) == null) {
 		return true;
 	    }
 	    else if (message.type == "check-if-username-present") {
-		check_if_username_present(message.usernames);
+		check_if_username_present(message.usernames, "normal-operation");
+		detect_if_user_logged_in();
 		return true;
 	    }
 	    else if(message.type == "investigate_cookies") {
@@ -1699,7 +1695,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		    }
 		}
 		else if (message.command == "check_usernames") {
-		    check_if_username_present(message.usernames);
+		    check_if_username_present(message.usernames, "cookiesets-investigation");
 		}
 	    }
 	    else if (message.type == "check_passwd_reuse") {

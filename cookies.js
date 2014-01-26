@@ -1,13 +1,4 @@
 
-
-// Most important concept:
-// Account cookieset: Absence of *ALL* cookies from account cookieset
-//                    causes the session to be logged-out.
-//                    However, presence does not necessarily mean 
-//                    user session is logged-in. That depends on 
-//                    other account cookiesetS.
-
-
 // 2^25 = 32MB.
 // Do not want to test more cookies than that.
 var MAX_COOKIE_TEST = 25;
@@ -1492,12 +1483,14 @@ function check_if_binary_and_decimal_cookiesets_match(binary_cookiesets, decimal
 //                    ]
 // AND
 // decimal_cookiesets: [6, 10]
-function generate_binary_cookiesets(url, tot_cookies) {
+function generate_binary_cookiesets(url, tot_cookies, dontsort) {
     var my_binary_cookiesets = [];
     var my_decimal_cookiesets = [];
 
     var num_sets = Math.pow(2, tot_cookies);
 	
+    dontsort = (dontsort == undefined) ? false : dontsort; 
+
     if (tot_cookies > MAX_COOKIE_TEST) {
 	var err_str = "APPU Error: Cookie number exceeds(" + tot_cookies + 
 	    ") maximum cookies, cannot proceed for: " + url;
@@ -1523,43 +1516,45 @@ function generate_binary_cookiesets(url, tot_cookies) {
 	}
     }
 	
-    my_binary_cookiesets.sort(function(bin_set1, bin_set2) {
-	    var tot1 = 0, tot2 = 0;
-	    for (var i = 0; i < tot_cookies; i++) {
-		tot1 += bin_set1[i];
-		tot2 += bin_set2[i];
-	    }
-	    if (tot1 < tot2) {
-		return -1;
-	    }
-	    else if (tot1 > tot2) {
-		return 1;
-	    }
-	    else {
-		return 0;
-	    }
-	});
-
-    my_decimal_cookiesets.sort(function(dec_set1, dec_set2) {
-	    var tot1 = 0, tot2 = 0;
-	    var bin_set1 = decimal_to_binary_array(dec_set1, tot_cookies);
-	    var bin_set2 = decimal_to_binary_array(dec_set2, tot_cookies);
-
-	    for (var i = 0; i < tot_cookies; i++) {
-		tot1 += bin_set1[i];
-		tot2 += bin_set2[i];
-	    }
-
-	    if (tot1 < tot2) {
-		return -1;
-	    }
-	    else if (tot1 > tot2) {
-		return 1;
-	    }
-	    else {
-		return 0;
-	    }
-	});
+    if (!dontsort) {
+	my_binary_cookiesets.sort(function(bin_set1, bin_set2) {
+		var tot1 = 0, tot2 = 0;
+		for (var i = 0; i < tot_cookies; i++) {
+		    tot1 += bin_set1[i];
+		    tot2 += bin_set2[i];
+		}
+		if (tot1 < tot2) {
+		    return -1;
+		}
+		else if (tot1 > tot2) {
+		    return 1;
+		}
+		else {
+		    return 0;
+		}
+	    });
+	
+	my_decimal_cookiesets.sort(function(dec_set1, dec_set2) {
+		var tot1 = 0, tot2 = 0;
+		var bin_set1 = decimal_to_binary_array(dec_set1, tot_cookies);
+		var bin_set2 = decimal_to_binary_array(dec_set2, tot_cookies);
+		
+		for (var i = 0; i < tot_cookies; i++) {
+		    tot1 += bin_set1[i];
+		    tot2 += bin_set2[i];
+		}
+		
+		if (tot1 < tot2) {
+		    return -1;
+		}
+		else if (tot1 > tot2) {
+		    return 1;
+		}
+		else {
+		    return 0;
+		}
+	    });
+    }
 
     return {
 	binary_cookiesets: my_binary_cookiesets,
@@ -2498,25 +2493,6 @@ function process_last_epoch(tab_id, am_i_logged_in, num_pwd_boxes) {
 
 			console.log("APPU DEBUG: COOKIE INVESTIGATOR STATE(" + cit.get_state() + ")");
 
-// 			if (cit.content_script_started) {
-// 			    console.log("APPU DEBUG: Sending PAGE-RELOAD command: " + cit.url);
-// 			    chrome.tabs.sendMessage(tab_id, {
-// 				    type: "investigate_cookies",
-// 					command: "load_page",
-// 					url: cit.url
-// 					});
-// 			}
-// 			else {
-// 			    console.log("APPU DEBUG: Forcing PAGE-LOAD: " + cit.url);
-// 			    chrome.tabs.update(tab_id, {
-// 				    url: cit.url,
-// 					active: false,
-// 					highlighted: false,
-// 					pinned: true
-// 					});
-// 			}
-
-
 			// Increment the epoch-id, before refreshing the page.
 			cit.increment_epoch_id();
 
@@ -2524,7 +2500,6 @@ function process_last_epoch(tab_id, am_i_logged_in, num_pwd_boxes) {
 				url: cit.url,
 				    active: false,
 				    highlighted: false,
-				    //pinned: true
 				    });
 
 			console.log("APPU DEBUG: Sent command to slave-tab for PAGE-REFRESH");
@@ -2719,6 +2694,10 @@ function cookie_investigator(account_cookies,
     var tot_cookiesets_tested_overall = 0;
     var tot_cookiesets_tested = 0;
     var tot_cookiesets_tested_this_round = 0;
+
+    // We cannot confidently say anything about these perhaps because
+    // page was not loaded properly as well as no usernames were detected.
+    var tot_inconclusive_cookiesets_overall = 0;
 
     var suspected_account_cookies_array = Object.keys(account_cookies);
         
@@ -3033,6 +3012,10 @@ function cookie_investigator(account_cookies,
 		    tot_cookiesets_tested_overall = pcs.tot_cookiesets_tested_overall;
 		}
 
+		if (pcs.tot_inconclusive_cookiesets_overall != undefined) {
+		    tot_inconclusive_cookiesets_overall = pcs.tot_inconclusive_cookiesets_overall;
+		}
+
 	    }
 	}
 	else {
@@ -3133,6 +3116,7 @@ function cookie_investigator(account_cookies,
 		"tot_time_taken" : tt,
 		"tot_cookiesets_generation_time" : tot_cookiesets_generation_time,
 		    "tot_cookiesets_tested_overall" : tot_cookiesets_tested_overall,
+		    "tot_inconclusive_cookiesets_overall" : tot_inconclusive_cookiesets_overall,
 		    "tot_page_reloads_overall" : tot_page_reloads_overall,
 		    "tot_page_reloads_since_last_lo_change" : tot_page_reloads_since_last_lo_change,
 		    "tot_attempts" : (tot_attempts+1),
@@ -4332,6 +4316,9 @@ function cookie_investigator(account_cookies,
 		}
 	    }
 	}
+	else {
+	    logout_equation = "Not detected yet";
+	}
 	
 	var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
 	cs.logout_equation = logout_equation;
@@ -4339,7 +4326,13 @@ function cookie_investigator(account_cookies,
 	flush_session_cookie_store();
 	
 	console.log("APPU DEBUG: Cookie-aliases: " + JSON.stringify(cookie_aliases));	    
-	console.log("APPU DEBUG: Logout equation: " + logout_equation);
+
+	if (!has_error_occurred) {
+	    console.log("APPU DEBUG: Complete logout-equation: " + logout_equation);
+	}
+	else {
+	    console.log("APPU DEBUG: Partial logout-equation: " + logout_equation);
+	}
 	
 	console.log("APPU DEBUG: Number of account-login-cookiesets: " + 
 		    verified_strict_login_cookiesets_array.length);
@@ -4364,20 +4357,20 @@ function cookie_investigator(account_cookies,
 	
 	console.log("APPU DEBUG: Pending binary_cookiesets: " + binary_cookiesets.length);
 	
-	console.log("APPU DEBUG: Number of skipped cookiesets (subset in account-cookiesets): " + 
+	console.log("APPU DEBUG: Skipped cookiesets going UP in POSET (subset in account-cookiesets): " + 
 		    skipped_sets.num_subset_in_account_cookiesets);
-	console.log("APPU DEBUG: Number of skipped cookiesets (superset in non-account-cookiesets): " + 
+	console.log("APPU DEBUG: Skipped cookiesets going UP in POSET (superset in non-account-cookiesets): " + 
 		    skipped_sets.num_superset_in_non_account_cookiesets);
-	console.log("APPU DEBUG: Number of skipped cookiesets (superset in non-account-super-cookiesets): " + 
+	console.log("APPU DEBUG: Skipped cookiesets going UP in POSET (superset in non-account-super-cookiesets): " + 
 		    skipped_sets.num_superset_in_non_account_super_cookiesets);
 	
-	console.log("APPU DEBUG: GUB Number of skipped cookiesets (subset in account-cookiesets): " + 
+	console.log("APPU DEBUG: Skipped cookiesets coming DOWN in POSET (subset in account-cookiesets): " + 
 		    skipped_sets.num_gub_subset_in_account_cookiesets);
-	console.log("APPU DEBUG: GUB Number of skipped cookiesets (superset in non-account-cookiesets): " + 
+	console.log("APPU DEBUG: Skipped cookiesets coming DOWN in POSET (superset in non-account-cookiesets): " + 
 		    skipped_sets.num_gub_superset_in_non_account_cookiesets);
-	console.log("APPU DEBUG: GUB Number of skipped cookiesets (already tested account-super-cookiesets): " + 
+	console.log("APPU DEBUG: Skipped cookiesets coming DOWN in POSET (already tested account-super-cookiesets): " + 
 		    skipped_sets.num_gub_already_tested_in_account_super_cookiesets);
-	console.log("APPU DEBUG: GUB Number of skipped cookiesets (subset in account-super-cookiesets): " + 
+	console.log("APPU DEBUG: Skipped cookiesets coming DOWN in POSET (subset in account-super-cookiesets): " + 
 		    skipped_sets.num_gub_subset_in_account_super_cookiesets);
 
 	console.log("APPU DEBUG: Total skipped cookiesets (due to subset in strict-account-cookiesets): " + 
@@ -4415,6 +4408,8 @@ function cookie_investigator(account_cookies,
 	console.log("APPU DEBUG: Total cookiesets tested in overall: " + tot_cookiesets_tested_overall);	
 	console.log("APPU DEBUG: Total cookiesets for naive method: " + 
 		    Math.pow(2, tot_cookies));
+	console.log("APPU DEBUG: Total inconclusive cookiesets overall(page load failure and no usernames): " + 
+		    tot_inconclusive_cookiesets_overall);	
 
 	var ci_end_time = new Date();
 	var cg_time_taken = tot_cookiesets_generation_time + (ci_end_time.getTime() - 
@@ -4483,8 +4478,7 @@ function cookie_investigator(account_cookies,
 	var was_result_expected = false;
 	tot_execution += 1;
 
-	if (my_state == "st_cookiesets_block_nonduring_and_disabled" ||
-	    my_state == "st_gub_cookiesets_block_test") {
+	if (my_state == "st_cookiesets_block_nonduring_and_disabled") {
 	    tot_cookiesets_tested_overall += 1;
 	    tot_cookiesets_tested += 1;
 	    tot_cookiesets_tested_this_round += 1;
@@ -4745,18 +4739,33 @@ function cookie_investigator(account_cookies,
 		    }
 		    else {
 			if (num_pwd_boxes > 0) {
-			    console.log("APPU DEBUG: NOT EXPECTED: Usernames are NOT detected, page is not loaded, " + 
-					"num-pwd-boxes: " + num_pwd_boxes + 
-					", for '" + my_state + "'");
-			    are_disabled_cookies_regenerated();
-			    update_cookie_status(false, (num_pwd_boxes > 0));
-			    was_result_expected = true;
+			    if (bool_pwd_box_should_be_present) {
+				// Even if page was not loaded and even if usernames were not found,
+				// password box is present and from previous testing, it is present
+				// when user is not logged in.
+				console.log("APPU DEBUG: EXPECTED: Usernames are NOT detected, page is not loaded, " +
+					    "BUT password box is present, " + 
+					    "num-pwd-boxes: " + num_pwd_boxes + 
+					    ", for '" + my_state + "'");
+				are_disabled_cookies_regenerated();
+				update_cookie_status(false, (num_pwd_boxes > 0));
+				was_result_expected = true;
+			    }
+			    else {
+				// No page loaded, no usernames found, password box is not necessarily present
+				console.log("APPU DEBUG: NOT EXPECTED: Usernames are NOT detected, page is not loaded, " +
+					    "num-pwd-boxes: " + num_pwd_boxes + 
+					    ", for '" + my_state + "'");
+				tot_inconclusive_cookiesets_overall += 1;
+				was_result_expected = true;
+			    }
 			}
 			else {
 			    // INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
 			    console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded" + 
 					", num-pwd-boxes: " + num_pwd_boxes + 
 					", for '" + my_state + "'");
+			    tot_inconclusive_cookiesets_overall += 1;
 			    was_result_expected = true;
 			}
 		    }
@@ -4767,6 +4776,7 @@ function cookie_investigator(account_cookies,
 		// But no need to stop testing 
 		console.log("APPU DEBUG: NON-SERIOUS: Username detection test never " + 
 			    "carried out for '" + my_state + "', Page load: " + page_load_success);
+		tot_inconclusive_cookiesets_overall += 1;
 		was_result_expected = true;
 	    }
 	}
@@ -4793,18 +4803,33 @@ function cookie_investigator(account_cookies,
 		    }
 		    else {
 			if (num_pwd_boxes > 0) {
-			    console.log("APPU DEBUG: NOT EXPECTED: Usernames are NOT detected, page is not loaded, " + 
-					"num-pwd-boxes: " + num_pwd_boxes + 
-					", for 'st_gub_cookiesets_block_test'");
-			    are_disabled_cookies_regenerated();
-			    update_cookie_status(false, (num_pwd_boxes > 0));
-			    was_result_expected = true;
+			    if (bool_pwd_box_should_be_present) {
+				// Even if page was not loaded and even if usernames were not found,
+				// password box is present and from previous testing, it is present
+				// when user is not logged in.
+				console.log("APPU DEBUG: EXPECTED: Usernames are NOT detected, page is not loaded, " + 
+					    "BUT password box is present, " +
+					    "num-pwd-boxes: " + num_pwd_boxes + 
+					    ", for 'st_gub_cookiesets_block_test'");
+				are_disabled_cookies_regenerated();
+				update_cookie_status(false, (num_pwd_boxes > 0));
+				was_result_expected = true;
+			    }
+			    else {
+				// No page loaded, no usernames found, password box is not necessarily present
+				console.log("APPU DEBUG: NOT EXPECTED: Usernames are NOT detected, page is not loaded, " +
+					    "num-pwd-boxes: " + num_pwd_boxes + 
+					    ", for '" + my_state + "'");
+				tot_inconclusive_cookiesets_overall += 1;
+				was_result_expected = true;
+			    }
 			}
 			else {
 			    // INCONCLUSIVE branch BUT nothing serious. Don't call update_cookie_status()
 			    console.log("APPU DEBUG: NOT EXPECTED: Usernames NOT detected BUT page is not loaded" + 
 					", num-pwd-boxes: " + num_pwd_boxes + 
 					", for 'st_gub_cookiesets_block_test'");
+			    tot_inconclusive_cookiesets_overall += 1;
 			    was_result_expected = true;
 			}
 		    }
@@ -4815,6 +4840,7 @@ function cookie_investigator(account_cookies,
 		// But no need to stop testing 
 		console.log("APPU DEBUG: NON-SERIOUS: Username detection test never " + 
 			    "carried out for 'st_gub_cookiesets_block_test', Page load: " + page_load_success);
+		tot_inconclusive_cookiesets_overall += 1;
 		was_result_expected = true;
 	    }
 	}
