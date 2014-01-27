@@ -1033,124 +1033,120 @@ function window_unfocused(eo) {
     }
 }
 
-// function check_if_username_present(usernames) {
-//     var present_usernames = {};
-//     var uname_elements = [];
-//     console.log("Here here: Detecting usernames");
-//     usernames.forEach(function(value, index, array) {
-// 	    $(":Contains('" + value + "'):visible").filter(function() { 
-// 		    var text = $.trim($(this).text()).toLowerCase();
-// 		    var tagName = this.tagName;
-// 		    var donotadd = false;
-		    
-// 		    if (text == undefined || text == "") {
-// 			return;
-// 		    }
-		    
-// 		    var pos = $(this).offset();
-// 		    var h = $(this).height();
-// 		    var w = $(this).width();
-// 		    var rl_bottom = pos.top + h;
-// 		    var rl_right = pos.left + w;
-
-// 		    if (pos.top > 100 && pos.left > 100) {
-// 			return;
-// 		    }
-
-// // 		    if (rl_bottom > 100 && rl_right > 100) {
-// // 			return;
-// // 		    }
-
-// 		    var delete_index = [];
-// 		    for (var i = 0; i < uname_elements.length; i++) {
-// 			if ($(uname_elements[i]).parents().is(this)) {
-// 			    donotadd = true;
-// 			    break;
-// 			}
-// 			if ($(this).parents().is(uname_elements[i])) {
-// 			    delete_index.push(i);
-// 			}
-// 		    }
-
-// 		    if (!donotadd) {
-// 			var new_uname_elements = [];
-// 			for (var i = 0; i < uname_elements.length; i++) {
-// 			    if (delete_index.indexOf[i] == -1) {
-// 				new_uname_elements.push(uname_elements[i]);
-// 			    }
-// 			    else {
-// 				if (value in present_usernames &&
-// 				    present_usernames[value] > 0) {
-// 				    present_usernames[value] -= 1;
-// 				}
-// 			    }
-// 			}
-// 			new_uname_elements.push($(this));
-// 			uname_elements = new_uname_elements;
-// 		    }
-
-// 		    if (!(value in present_usernames)) {
-// 			present_usernames[value] = 1;
-// 		    }
-// 		    else {
-// 			present_usernames[value] += 1;
-// 		    }
-// 		});
-// 	});
-
-//     // Even if no usernames detected, just send the message.
-//     var message = {};
-//     message.type = "usernames_detected";
-//     message.domain = document.domain;
-//     message.curr_epoch_id = curr_epoch_id;
-//     message.present_usernames = present_usernames;
-//     message.num_password_boxes = $("input:password:visible").length;
-
-//     chrome.extension.sendMessage("", message, function(response) {
-// 	    if (response.command == "load_page") {
-// 		console.log("Here here: Loading page again to investigate cookies");
-// 		//window.location.href = response.url;
-// 		window.location.reload(true);
-// 	    }
-// 	});
-// }
-
-
 function check_if_username_present(usernames, reason) {
     var present_usernames = {};
     console.log("APPU DEBUG: Detecting if known usernames are present on the webpage for: " + reason);
-    usernames.forEach(function(value, index, array) {
-            $(":Contains('" + value + "'):visible").filter(function() { 
-                    var text = $.trim($(this).text()).toLowerCase();
-                    var tagName = this.tagName;
 
-                    if ($(this).children().length > 0) {
-                        if ($(this).children().length == 1 &&
-                            $(this).children()[0].tagName == "BR") {
-                            // ad-hoc for georgia tech, need to generalize
-                            // pass
-                        }
-                        else {
-                            return;
-                        }
-                    }
+    var elements_with_usernames = $();
+    for (var i = 0; i < usernames.length; i++) {
+	elements_with_usernames = elements_with_usernames.add($(":Contains('" + usernames[i] + "'):visible"));
+    }
+    elements_with_usernames = $.unique(elements_with_usernames);
+
+    var elements_with_usernames_within_range = $();
+    for (var i = 0; i < elements_with_usernames.length; i++) {
+	var pos = $(elements_with_usernames[i]).offset();
+	var h = $(elements_with_usernames[i]).height();
+	var w = $(elements_with_usernames[i]).width();
+	if (pos.top > 150 && pos.left > 150) {
+	    continue;
+	}
+	if ((pos.top+h) > 150 && (pos.left+w) > 150) {
+	    continue;
+	}
+	elements_with_usernames_within_range = elements_with_usernames_within_range.add($(elements_with_usernames[i]));
+    }
+
+    var elements_with_text = $();
+    for (var i = 0; i < elements_with_usernames_within_range.length; i++) {
+	var text = $.trim($(elements_with_usernames_within_range[i]).text()).toLowerCase();
+	if (text == undefined || text == "") {
+	    continue;
+	}
+	elements_with_text = elements_with_text.add($(elements_with_usernames_within_range[i]));
+    }
+
+    var elements_wo_kids = $();
+    for (var i = 0; i < elements_with_text.length; i++) {
+	var kids = $(elements_with_text[i]).children();
+	var kids_contain_username = false;
+	if (kids.length > 0) {
+	    for (var k = 0; k < kids.length; k++) {
+		for (var j = 0; j < usernames.length; j++) {
+		    if ($(":Contains(" + usernames[j] + "):visible", $(kids[k])).length > 0) {
+			kids_contain_username = true;
+			break;
+		    }
+		}
+		if (kids_contain_username) {
+		    break;
+		}
+	    }
+	}
+
+	if (!kids_contain_username) {
+	    elements_wo_kids = elements_wo_kids.add($(elements_with_text[i]));
+	}
+    }
+
+    for (var i = 0; i < usernames.length; i++) {
+	var ue = $(":Contains('" + usernames[i] + "'):visible", $(elements_wo_kids).parent());
+	if (ue.length > 0) {
+	    if (!(usernames[i] in present_usernames)) {
+		present_usernames[usernames[i]] = ue.length;
+	    }
+	    else {
+		present_usernames[usernames[i]] += ue.length;
+	    }
+	}
+    }
+
+//     usernames.forEach(function(value, index, array) {
+//             $(":Contains('" + value + "'):visible").filter(function() { 
+//                     var text = $.trim($(this).text()).toLowerCase();
+//                     var tagName = this.tagName;
+
+//                     var pos = $(this).offset();
+//                     if (pos.top > 100 && pos.left > 100) {
+//                         return;
+//                     }
                     
-                    if (text == undefined || text == "") {
-                        return;
-                    }
+//                     if (text == undefined || text == "") {
+//                         return;
+//                     }
+
+// 		    var kids = $(this).children();
+// 		    var kids_contain_username = false;
+
+// //                     if (kids.length > 0) {
+// // 			for (var k = 0; k < kids.length; k++) {
+// // 			    if ($(":Contains(" + value + "):visible", $(kids[k])).length > 0) {
+// // 				kids_contain_username = true;
+// // 				break;
+// // 			    }
+// // 			}
+// // 			if (kids_contain_username) {
+// // 			    return;
+// // 			}
+// //                     }
+
+// 		    if ($(this).children().length == 1 &&
+// 			$(this).children()[0].tagName == "BR") {
+// 			// ad-hoc for georgia tech, need to generalize
+// 			// pass
+// 		    }
+// 		    else {
+// 			return;
+// 		    }
                     
-                    var pos = $(this).offset();
-                    if (pos.top > 100 && pos.left > 100) {
-                        return;
-                    }
-                    if (!(value in present_usernames)) {
-                        present_usernames[value] = 1;
-                    }
-                    else {
-                        present_usernames[value] += 1;
-                    }
-                });
-        });
+//                     if (!(value in present_usernames)) {
+//                         present_usernames[value] = 1;
+//                     }
+//                     else {
+//                         present_usernames[value] += 1;
+//                     }
+//                 });
+//         });
 
     // Even if no usernames detected, just send the message.
     var message = {};
@@ -1463,14 +1459,11 @@ function show_appu_monitor_icon() {
     }
 }
 
-var test_var1 = 0;
-
 function do_document_ready_functions() {
     if (document.readyState === "complete" &&
 	curr_epoch_id > -1) {
 	// "curr_epoch_id > -1" ensures that the "content_script_started" 
 	// message has been processed by background and answered back.
-	test_var1 += 1;
 	console.log("APPU DEBUG: Document is loaded");
 	clearInterval(is_site_loaded);
 	var message = {};
@@ -1483,7 +1476,6 @@ function do_document_ready_functions() {
 
 	message = {};
 	message.type = "page_is_loaded";
-	message.test_var = test_var1;
 	message.url = document.domain;
 	message.curr_epoch_id = curr_epoch_id;
 	chrome.extension.sendMessage("", message, is_status_active);

@@ -4297,9 +4297,7 @@ function cookie_investigator(account_cookies,
 		    first_time = false;
 		}
 
-		if (cs_names.length > 1) {
-		    logout_equation += "(";
-		}
+		logout_equation += "(";
 		for (var u = 0; u < cs_names.length; u++) {
 		    var fields = cs_names[u].split(":");
 		    var cookie_alias = fields[fields.length - 1];
@@ -4307,11 +4305,9 @@ function cookie_investigator(account_cookies,
 		    if (u != 0) {
 			logout_equation += " && ";
 		    }
-		    logout_equation += "(~" + cookie_alias + ")" ;
+		    logout_equation += "~" + cookie_alias;
 		}
-		if (cs_names.length > 1) {
-		    logout_equation += ")";
-		}
+		logout_equation += ")";
 	    }
 	}
 	else {

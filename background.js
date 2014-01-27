@@ -514,21 +514,13 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "page_is_loaded") {
 	if (sender.tab && sender.tab.id in cookie_investigating_tabs) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
-// 	    if (cit.page_load_success) {
-// 		console.log("Here here: EEEEEEEEEE Returning since we have already processed this epoch");
-// 		return;
-// 	    }
 
 	    if (message.curr_epoch_id == cit.get_epoch_id()) {
-// 		console.log("APPU DEBUG: Setting page load success for EPOCH-ID: " + 
-// 			    message.curr_epoch_id);
 		console.log("APPU DEBUG: Setting page load success for EPOCH-ID: " + 
-			    message.curr_epoch_id + ", test-var: " + message.test_var);
+			    message.curr_epoch_id);
 
 		cit.set_page_load_success(true);
 		if (cit.pageload_timeout != undefined) {
-		    // 		console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
-		    // 			+ ", Interval-ID: " + cit.pageload_timeout);
 		    window.clearInterval(cit.pageload_timeout);
 		    cit.pageload_timeout = undefined;
 		}
