@@ -12,7 +12,7 @@ var pwd_pending_warn_timeout = undefined;
 var is_site_loaded = undefined;
 
 // For cookie-investigation
-var curr_epoch_id = 0;
+var curr_epoch_id = -1;
 
 var is_cookie_investigator_tab = false;
 var is_template_processing_tab = false;
@@ -1466,7 +1466,10 @@ function show_appu_monitor_icon() {
 var test_var1 = 0;
 
 function do_document_ready_functions() {
-    if (document.readyState === "complete") {
+    if (document.readyState === "complete" &&
+	curr_epoch_id > -1) {
+	// "curr_epoch_id > -1" ensures that the "content_script_started" 
+	// message has been processed by background and answered back.
 	test_var1 += 1;
 	console.log("APPU DEBUG: Document is loaded");
 	clearInterval(is_site_loaded);
@@ -1485,7 +1488,6 @@ function do_document_ready_functions() {
 	message.curr_epoch_id = curr_epoch_id;
 	chrome.extension.sendMessage("", message, is_status_active);
 	console.log("APPU DEBUG: Sent message that page is loaded");
-
 
 	if (!is_template_processing_tab &&
 	    !is_cookie_investigator_tab) {
