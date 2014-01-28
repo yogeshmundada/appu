@@ -1101,53 +1101,6 @@ function check_if_username_present(usernames, reason) {
 	}
     }
 
-//     usernames.forEach(function(value, index, array) {
-//             $(":Contains('" + value + "'):visible").filter(function() { 
-//                     var text = $.trim($(this).text()).toLowerCase();
-//                     var tagName = this.tagName;
-
-//                     var pos = $(this).offset();
-//                     if (pos.top > 100 && pos.left > 100) {
-//                         return;
-//                     }
-                    
-//                     if (text == undefined || text == "") {
-//                         return;
-//                     }
-
-// 		    var kids = $(this).children();
-// 		    var kids_contain_username = false;
-
-// //                     if (kids.length > 0) {
-// // 			for (var k = 0; k < kids.length; k++) {
-// // 			    if ($(":Contains(" + value + "):visible", $(kids[k])).length > 0) {
-// // 				kids_contain_username = true;
-// // 				break;
-// // 			    }
-// // 			}
-// // 			if (kids_contain_username) {
-// // 			    return;
-// // 			}
-// //                     }
-
-// 		    if ($(this).children().length == 1 &&
-// 			$(this).children()[0].tagName == "BR") {
-// 			// ad-hoc for georgia tech, need to generalize
-// 			// pass
-// 		    }
-// 		    else {
-// 			return;
-// 		    }
-                    
-//                     if (!(value in present_usernames)) {
-//                         present_usernames[value] = 1;
-//                     }
-//                     else {
-//                         present_usernames[value] += 1;
-//                     }
-//                 });
-//         });
-
     // Even if no usernames detected, just send the message.
     var message = {};
     message.type = "usernames_detected";
