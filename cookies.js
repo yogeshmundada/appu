@@ -2507,52 +2507,75 @@ function process_last_epoch(tab_id, am_i_logged_in, num_pwd_boxes) {
 			cit.set_page_load_success(false);
 			cit.content_script_started = false;
 
-			cit.pageload_timeout = window.setInterval((function(tab_id) {
-				    return function() {
-					var cit = cookie_investigating_tabs[tab_id];
-					if (cit == undefined) {
-					    // Probably some error occurred and tab is terminated
-					    console.log("APPU Error: Cookie investigating tab not defined " + 
-							"but interval function not cleared");
-					    return;
-					}
-
-					if (cit.num_pageload_timeouts > 5) {
-					    if (cit.content_script_started) {
-						console.log("APPU DEBUG: Page load timeout(>2), " + 
-							    "content script started, username detection test never worked");
-						if (cit.pageload_timeout != undefined) {
-						    console.log("APPU DEBUG: Clearing reload-interval for: " + tab_id
-								+ ", Interval-ID: " + cit.pageload_timeout);
-						    window.clearInterval(cit.pageload_timeout);
-						    cit.pageload_timeout = undefined;
-						}
-						process_last_epoch(tab_id, undefined, undefined);
+			var page_load_timeout_hndlrs = (function(tab_id) {
+				var interval_hndlr_func = undefined;
+				var tab_id = tab_id;
+				
+				function set_interval_hndlr_func(ihf) {
+				    interval_hndlr_func = ihf;
+				};
+				
+				function timeout_cb() {
+				    var cit = cookie_investigating_tabs[tab_id];
+				    if (cit == undefined) {
+					// Probably some error occurred and tab is terminated
+					console.log("APPU Error: Cookie investigating tab not defined " + 
+						    "but interval function not cleared");
+					window.clearInterval(interval_hndlr_func);
+					return;
+				    }
+				    
+				    if (cit.num_pageload_timeouts > 3) {
+					if (cit.content_script_started ||
+					    cit.get_state() == "st_start_with_no_cookies") {
+					    console.log("APPU DEBUG: Page load timeout(>3), " + 
+							"content script started, username detection test never worked");
+					    if (cit.pageload_timeout != undefined) {
+						console.log("APPU DEBUG: Clearing reload-interval for: " + tab_id
+							    + ", Interval-ID: " + cit.pageload_timeout);
+						window.clearInterval(cit.pageload_timeout);
+						cit.pageload_timeout = undefined;
+					    }
+					    if (cit.get_state() == "st_start_with_no_cookies") {
+						cit.set_page_load_success(true);
+						process_last_epoch(tab_id, false, undefined);
 					    }
 					    else {
-						console.log("APPU Error: Page load timeout(>2) and no content script, " + 
-							    "may be network error");
-						cit.report_fatal_error("Page-load-timeout-max-no-content-script");
+						process_last_epoch(tab_id, undefined, undefined);
 					    }
 					}
 					else {
-					    // Just check if there is any username present.
-					    // If so, no need to wait for page to fully reload.
-					    if (cit.get_state() != "st_cookie_test_start" &&
-						cit.content_script_started) {
-						if (cit.get_state() == "st_verification_epoch") {
-						    console.log("Here here: Delete me");
-						}
-						console.log("APPU DEBUG: Page load timeout, " + 
-							    "content script started, firing username detection test");
-						console.log("Here here: Calling check_usernames_for_cookie_investigation()");
-						check_usernames_for_cookie_investigation(tab_id);
-					    }
+					    console.log("APPU Error: Page load timeout(>2) and no content script, " + 
+							"may be network error");
+					    cit.report_fatal_error("Page-load-timeout-max-no-content-script");
 					}
-					
-					cit.num_pageload_timeouts += 1;
 				    }
-				})(tab_id), 20 * 1000);
+				    else {
+					// Just check if there is any username present.
+					// If so, no need to wait for page to fully reload.
+					if (cit.get_state() != "st_cookie_test_start" &&
+					    cit.content_script_started) {
+					    if (cit.get_state() == "st_verification_epoch") {
+						console.log("Here here: Delete me");
+					    }
+					    console.log("APPU DEBUG: Page load timeout, " + 
+							"content script started, firing username detection test");
+					    console.log("Here here: Calling check_usernames_for_cookie_investigation()");
+					    check_usernames_for_cookie_investigation(tab_id);
+					}
+				    }
+				    
+				    cit.num_pageload_timeouts += 1;
+				};
+				
+				return [set_interval_hndlr_func, 
+					timeout_cb];
+			    }(tab_id));
+
+			var interval_func = window.setInterval(page_load_timeout_hndlrs[1], 20 * 1000);
+			page_load_timeout_hndlrs[0](interval_func);
+
+			cit.pageload_timeout = interval_func;
 
 // 			console.log("APPU DEBUG: Setting reload-interval for: " + tab_id 
 // 				    + ", Interval-ID: " + cit.pageload_timeout);
@@ -3488,7 +3511,6 @@ function cookie_investigator(account_cookies,
 	if (last_non_verification_state == "st_during_cookies_pass_test") {
 	    if (pending_am_i_logged_in != undefined) {
 		if(!pending_am_i_logged_in) {
-		    // This is expected that the user will be logged-in
 		    console.log("APPU DEBUG: Switching to expand state from 'st_during_cookies_pass_test'");
 		    rs = "switch_to_expand";
 		    disabled_cookies = [];
@@ -3500,6 +3522,23 @@ function cookie_investigator(account_cookies,
 	    else {
 		console.log("APPU Error: Totally not expected, terminating");
 		report_fatal_error("during-cookie-pass-login-undefined");
+		rs = "st_terminate";
+	    }
+	}
+	else if (last_non_verification_state == "st_during_cookies_block_test") {
+	    if (pending_am_i_logged_in != undefined) {
+		if(pending_am_i_logged_in == true) {
+		    console.log("APPU DEBUG: Switching to expand state from 'st_during_cookies_block_test'");
+		    rs = "switch_to_expand";
+		    //disabled_cookies = [];
+		}
+		else {
+		    // This is expected that the user will be logged-in
+		}
+	    }
+	    else {
+		console.log("APPU Error: Totally not expected, terminating");
+		report_fatal_error("during-cookie-block-login-undefined");
 		rs = "st_terminate";
 	    }
 	}
@@ -3624,17 +3663,18 @@ function cookie_investigator(account_cookies,
 	else if (my_state == "st_during_cookies_pass_test") {
 	    pending_am_i_logged_in = am_i_logged_in;
 	    if (am_i_logged_in) {
-		console.log("APPU DEBUG: ACCOUNT-COOKIES are present in 'DURING' cookies");
+		console.log("APPU DEBUG: EXPECTED: ACCOUNT-COOKIES are present in 'DURING' cookies");
 		bool_are_account_cookies_in_during_cookies = true;
 	    }
 	    else {
-		console.log("APPU DEBUG: Not all ACCOUNT-COOKIES are present in 'DURING' cookies");
-		bool_are_account_cookies_in_during_cookies = true;
+		console.log("APPU DEBUG: NOT-EXPECTED: Not all ACCOUNT-COOKIES are present in 'DURING' cookies");
+		bool_are_account_cookies_in_during_cookies = false;
 	    }
 	}
 	else if (my_state == "st_during_cookies_block_test") {
+	    pending_am_i_logged_in = am_i_logged_in;
 	    if (!am_i_logged_in) {
-		console.log("APPU DEBUG: ACCOUNT-COOKIES are *NOT* present in non-'DURING' cookies");
+		console.log("APPU DEBUG: EXPECTED: ACCOUNT-COOKIES are *NOT* present in non-'DURING' cookies");
 		bool_are_account_cookies_not_in_nonduring_cookies = true;
 		
 		verified_account_super_cookiesets_array.push(disabled_cookies);
@@ -3643,9 +3683,9 @@ function cookie_investigator(account_cookies,
 				undefined);
 	    }
 	    else {
-		console.log("APPU DEBUG: ACCOUNT-COOKIES are present in non-'DURING' cookies");
+		console.log("APPU DEBUG: NOT-EXPECTED: ACCOUNT-COOKIES are present in non-'DURING' cookies");
 		bool_are_account_cookies_not_in_nonduring_cookies = false;
-		report_fatal_error("account cookies in non-'during' cookies");
+		// report_fatal_error("account cookies in non-'during' cookies");
 	    }
 	}
 	else if (my_state == "st_testing") {
@@ -3805,6 +3845,10 @@ function cookie_investigator(account_cookies,
 	    return "success";
 	}
 	else if (state == "st_during_cookies_pass_test") {
+	    pending_am_i_logged_in = undefined;
+	    return "success";
+	}
+	else if (state == "st_during_cookies_block_test") {
 	    pending_am_i_logged_in = undefined;
 	    return "success";
 	}
@@ -4041,6 +4085,7 @@ function cookie_investigator(account_cookies,
 	if (was_last_result_expected && 
 	    my_state == "st_verification_epoch" &&
 	    (last_non_verification_state == "st_during_cookies_pass_test" ||
+	     last_non_verification_state == "st_during_cookies_block_test" ||
 	     last_non_verification_state == "st_gub_cookiesets_block_test" ||
 	     last_non_verification_state == "st_cookiesets_block_disabled" ||
 	     last_non_verification_state == "st_expand_suspected_account_cookies")) {
@@ -4128,8 +4173,18 @@ function cookie_investigator(account_cookies,
 		}
 	    }
 	    else if (!is_suspected_account_cookies_block_test_done) {
-		my_state = "st_during_cookies_block_test";
-		break;
+		rc = initialize_next_test_round_parameters("st_during_cookies_block_test");
+		if (rc == "success") {
+		    my_state = "st_during_cookies_block_test";
+		    break;
+		}
+		else {
+		    my_state = "st_terminate";
+		    break;
+		}
+
+		// my_state = "st_during_cookies_block_test";
+		// break;
 	    }
 	    else if ((my_state == "st_verification_epoch") && 
 		     ((last_non_verification_state == "st_during_cookies_block_test") ||
@@ -4630,8 +4685,9 @@ function cookie_investigator(account_cookies,
 		}
 		else {
 		    if (page_load_success) {
-			// SERIOUS error branch (Usernames not detected even if page loaded, we could
+			// (Usernames not detected even if page loaded, we could
 			// be detecting 'DURING' cookies incorrectly)
+			// Need to switch to expand state and find those cookies.
 			console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames NOT detected, " + 
 				    "num-pwd-boxes: " + num_pwd_boxes +
 				    ", for 'st_during_cookies_pass_test'");
@@ -4662,13 +4718,22 @@ function cookie_investigator(account_cookies,
 	else if (my_state == 'st_during_cookies_block_test') {
 	    if (am_i_logged_in != undefined) {
 		if (am_i_logged_in) {
-		    // SERIOUS error branch (Usernames found even when all 'DURING' cookies blocked.
+		    // (Usernames found even when all 'DURING' cookies blocked.
 		    // This means we are not detecting them correctly)
-		    console.log("APPU Error: NOT EXPECTED: Usernames found " + 
-				"for 'st_during_cookies_block_test', Page load: " + page_load_success +
-				", num-pwd-boxes: " + num_pwd_boxes);
-		    report_fatal_error("During-cookies-block-usernames-found: Page load: " + page_load_success);
-		    was_result_expected = false;
+		    // Need to switch to expand cookie state.
+		    console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames found, " + 
+				"num-pwd-boxes: " + num_pwd_boxes +
+				", for 'st_during_cookies_block_test'");
+		    console.log("APPU DEBUG: Seems like account-cookies in non-DURING set");
+		    update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+		    is_suspected_account_cookies_block_test_done = true;
+		    was_result_expected = true;
+
+// 		    console.log("APPU Error: NOT EXPECTED: Usernames found " + 
+// 				"for 'st_during_cookies_block_test', Page load: " + page_load_success +
+// 				", num-pwd-boxes: " + num_pwd_boxes);
+// 		    report_fatal_error("During-cookies-block-usernames-found: Page load: " + page_load_success);
+// 		    was_result_expected = false;
 		}
 		else {
 		    if (page_load_success) {

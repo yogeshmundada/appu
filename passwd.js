@@ -17,6 +17,9 @@ var curr_epoch_id = -1;
 var is_cookie_investigator_tab = false;
 var is_template_processing_tab = false;
 
+// If the site is blacklisted, then ignore
+// all messages
+var do_not_watch_this_site = undefined;
 
 function close_report_ready_modal_dialog() {
     $('#appu-report-ready').dialog("close");
@@ -694,6 +697,7 @@ function test_file_click(e) {
 
 function is_blacklisted(response) {
     if(response.blacklisted == "no") {
+	do_not_watch_this_site = false;
 	if (!check_for_visible_pwd_elements()) {
 	    //This means that its a successful login.
 	    //Otherwise, password might be wrong.
@@ -753,6 +757,7 @@ function is_blacklisted(response) {
     }
     else {
 	console.log("Appu: Disabled for this site");
+	do_not_watch_this_site = true;
     }
 }
 
@@ -1033,13 +1038,16 @@ function window_unfocused(eo) {
     }
 }
 
-function check_if_username_present(usernames, reason) {
+function check_if_username_present(usernames, operation_mode, check_only_visible) {
     var present_usernames = {};
-    console.log("APPU DEBUG: Detecting if known usernames are present on the webpage for: " + reason);
+    console.log("APPU DEBUG: Detecting if known usernames are present on the webpage for: " + operation_mode);
+
+    check_only_visible = (check_only_visible == undefined) ? true : check_only_visible;
+    check_only_visible = (check_only_visible == true) ? ":visible" : "";
 
     var elements_with_usernames = $();
     for (var i = 0; i < usernames.length; i++) {
-	elements_with_usernames = elements_with_usernames.add($(":Contains('" + usernames[i] + "'):visible"));
+	elements_with_usernames = elements_with_usernames.add($(":Contains('" + usernames[i] + "')" + check_only_visible));
     }
     elements_with_usernames = $.unique(elements_with_usernames);
 
@@ -1048,10 +1056,10 @@ function check_if_username_present(usernames, reason) {
 	var pos = $(elements_with_usernames[i]).offset();
 	var h = $(elements_with_usernames[i]).height();
 	var w = $(elements_with_usernames[i]).width();
-	if (pos.top > 150 && pos.left > 150) {
+	if (pos.top > 200 && pos.left > 200) {
 	    continue;
 	}
-	if ((pos.top+h) > 150 && (pos.left+w) > 150) {
+	if ((pos.top+h) > 200 && (pos.left+w) > 200) {
 	    continue;
 	}
 	elements_with_usernames_within_range = elements_with_usernames_within_range.add($(elements_with_usernames[i]));
@@ -1073,7 +1081,7 @@ function check_if_username_present(usernames, reason) {
 	if (kids.length > 0) {
 	    for (var k = 0; k < kids.length; k++) {
 		for (var j = 0; j < usernames.length; j++) {
-		    if ($(":Contains(" + usernames[j] + "):visible", $(kids[k])).length > 0) {
+		    if ($(":Contains(" + usernames[j] + ")" + check_only_visible, $(kids[k])).length > 0) {
 			kids_contain_username = true;
 			break;
 		    }
@@ -1090,7 +1098,7 @@ function check_if_username_present(usernames, reason) {
     }
 
     for (var i = 0; i < usernames.length; i++) {
-	var ue = $(":Contains('" + usernames[i] + "'):visible", $(elements_wo_kids).parent());
+	var ue = $(":Contains('" + usernames[i] + "')" + check_only_visible, $(elements_wo_kids).parent());
 	if (ue.length > 0) {
 	    if (!(usernames[i] in present_usernames)) {
 		present_usernames[usernames[i]] = ue.length;
@@ -1101,21 +1109,7 @@ function check_if_username_present(usernames, reason) {
 	}
     }
 
-    // Even if no usernames detected, just send the message.
-    var message = {};
-    message.type = "usernames_detected";
-    message.domain = document.domain;
-    message.curr_epoch_id = curr_epoch_id;
-    message.present_usernames = present_usernames;
-    message.num_password_boxes = $("input:password:visible").length;
-
-    chrome.extension.sendMessage("", message, function(response) {
-            if (response.command == "load_page") {
-                console.log("Here here: Loading page again to investigate cookies");
-                //window.location.href = response.url;
-                window.location.reload(true);
-            }
-        });
+    return present_usernames;
 }
 
 
@@ -1514,6 +1508,14 @@ if (document.URL.match(/.pdf$/) == null) {
     is_site_loaded = setInterval(do_document_ready_functions, 200);
     
     chrome.extension.onMessage.addListener(function(message, sender, send_response) {
+	    if (((is_cookie_investigator_tab == false && is_template_processing_tab == false) && 
+		 (do_not_watch_this_site == undefined || do_not_watch_this_site == true)) ||
+		curr_epoch_id == -1) {
+		// Ignore all messages if we are not sure if this site should be monitored or not.
+		// Or if epoch-id is -1 then likely this is a message for last page and not for us.
+		return;
+	    }
+
 	    if (message.type == "report-reminder") {
 		show_report_ready_modal_dialog();
 	    }
@@ -1627,7 +1629,31 @@ if (document.URL.match(/.pdf$/) == null) {
 		return true;
 	    }
 	    else if (message.type == "check-if-username-present") {
-		check_if_username_present(message.usernames, "normal-operation");
+		present_usernames = check_if_username_present(message.usernames, "normal-operation");
+
+		var message = {};
+		message.invisible_check_invoked = false;
+		if (Object.keys(present_usernames).length == 0) {
+		    present_usernames = check_if_username_present(message.usernames, "normal-operation", false);
+		    message.invisible_check_invoked = true;
+		}
+
+		// Even if no usernames detected, just send the message.
+		message.type = "usernames_detected";
+		message.domain = document.domain;
+		message.curr_epoch_id = curr_epoch_id;
+		message.present_usernames = present_usernames;
+		message.num_password_boxes = $("input:password:visible").length;
+		
+		chrome.extension.sendMessage("", message, function(response) {
+			if (response.command == "load_page") {
+			    console.log("Here here: Loading page again to investigate cookies");
+			    //window.location.href = response.url;
+			    window.location.reload(true);
+			}
+		    });
+
+		// Now we can also detect for any signout, signin links
 		detect_if_user_logged_in();
 		return true;
 	    }
@@ -1642,7 +1668,29 @@ if (document.URL.match(/.pdf$/) == null) {
 		    }
 		}
 		else if (message.command == "check_usernames") {
-		    check_if_username_present(message.usernames, "cookiesets-investigation");
+		    present_usernames = check_if_username_present(message.usernames, "cookiesets-investigation");
+		    var message = {};
+		    message.invisible_check_invoked = false;
+
+		    if (Object.keys(present_usernames).length == 0) {
+			present_usernames = check_if_username_present(message.usernames, "cookiesets-investigation", false);
+			message.invisible_check_invoked = true;
+		    }
+		    // Even if no usernames detected, just send the message.
+
+		    message.type = "usernames_detected";
+		    message.domain = document.domain;
+		    message.curr_epoch_id = curr_epoch_id;
+		    message.present_usernames = present_usernames;
+		    message.num_password_boxes = $("input:password:visible").length;
+		    
+		    chrome.extension.sendMessage("", message, function(response) {
+			    if (response.command == "load_page") {
+				console.log("Here here: Loading page again to investigate cookies");
+				//window.location.href = response.url;
+				window.location.reload(true);
+			    }
+			});
 		}
 	    }
 	    else if (message.type == "check_passwd_reuse") {
