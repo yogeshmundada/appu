@@ -1664,6 +1664,8 @@ function print_cookie_investigation_state(url) {
 	var vnasca = state[url]["vnasca"];
 	var vsndnadca = state[url]["vsndnadca"];
 	var tot_time_taken = state[url]["tot_time_taken"];
+	var tot_bytes_sent = state[url]["tot_bytes_sent"];
+	var tot_bytes_recvd = state[url]["tot_bytes_recvd"];
 	var tot_cookiesets_generation_time = state[url]["tot_cookiesets_generation_time"];
 	var tot_attempts = state[url]["tot_attempts"];
 	var tot_page_reloads_overall = state[url]["tot_page_reloads_overall"];
@@ -1680,6 +1682,9 @@ function print_cookie_investigation_state(url) {
 		    " (GUBs in suspected that *DO NOT* cause logouts): " + vnasca.length);
 	console.log("APPU DEBUG: Length of 'verified strict non-during non-account cookiesets' array" + 
 		    " (LLBs in non-suspected that *DO NOT* cause logouts): " + vsndnadca.length);
+
+	console.log("APPU DEBUG: Total bytes sent during investigation: " + tot_bytes_sent);
+	console.log("APPU DEBUG: Total bytes recieved during investigation: " + tot_bytes_recvd);
 
 	console.log("APPU DEBUG: Total time taken for investigation so far: " + Math.floor((tot_time_taken/60)) + "m " +
 		    Math.floor((tot_time_taken % 60)) + "s");
@@ -1749,6 +1754,9 @@ function search_for_cookieset(url, cookieset) {
 	var vnasca = state[url]["vnasca"];
 	var vsndnadca = state[url]["vsndnadca"];
 	var tot_time_taken = state[url]["tot_time_taken"];
+	var tot_bytes_sent = state[url]["tot_bytes_sent"];
+	var tot_bytes_recvd = state[url]["tot_bytes_recvd"];
+
 	var tot_cookiesets_generation_time = state[url]["tot_cookiesets_generation_time"];
 	var tot_attempts = state[url]["tot_attempts"];
 	var tot_page_reloads_overall = state[url]["tot_page_reloads_overall"];
@@ -1761,6 +1769,10 @@ function search_for_cookieset(url, cookieset) {
 	console.log("APPU DEBUG: Length vnasca: "    + vnasca.length);
 	console.log("APPU DEBUG: Length vsndnadca: " + vsndnadca.length);
 	console.log("APPU DEBUG: Length vsndnadca: " + vsndnadca.length);
+
+	console.log("APPU DEBUG: Total bytes sent during investigation: " + tot_bytes_sent);
+	console.log("APPU DEBUG: Total bytes recieved during investigation: " + tot_bytes_recvd);
+
 	console.log("APPU DEBUG: Total time taken for investigation: " + Math.floor((tot_time_taken/60)) + "m " +
 		    Math.floor((tot_time_taken % 60)) + "s");
 	console.log("APPU DEBUG: Total attempts: " + tot_attempts);
@@ -1804,6 +1816,29 @@ function search_for_cookieset(url, cookieset) {
 // **** END - Investigation state load/offload functions
 
 // **** BEGIN ---- Rest of the logic ----
+
+function get_human_readable_size(bytes) {
+    var kb = 1024;
+    var mb = kb * kb;
+    var gb = mb * kb;
+    
+    var tot_kb = Math.floor(bytes / kb);
+    var tot_mb = Math.floor(bytes / mb);
+    var tot_gb = Math.floor(bytes / gb);
+
+    var append_text = "(" + bytes + " bytes)";
+
+    if (tot_kb == 0) {
+	return bytes + " bytes";
+    }
+    else if (tot_mb == 0) {
+	return tot_kb + " KB" + append_text;
+    }
+    else if (tot_gb == 0) {
+	return tot_mb + " MB" + append_text;
+    }
+    return tot_gb + " GB" + append_text;
+}
 
 function reset_nonduring_account_cookies(url) {
     var my_domain = get_domain(url.split("/")[2]);
@@ -2649,6 +2684,13 @@ function open_cookie_slave_tab(url,
 											     },
 										     ["blocking", "requestHeaders"]);
 				   cookie_investigating_tabs[tab.id].http_request_cb = http_request_cb;
+
+// 				   chrome.webRequest.onSendHeaders.addListener(test_content_length_reader, 
+// 									       {
+// 										   "tabId": tab.id,
+// 										       "urls": ["<all_urls>"]
+// 										       },
+// 									       ["requestHeaders"]);
 			       }
 
 			       if (http_response_cb) {
@@ -2726,6 +2768,13 @@ function cookie_investigator(account_cookies,
     var ci_start_time = new Date();
     var tot_time_taken = 0;
     var tot_attempts = 1;
+
+    var tot_bytes_sent = 0;
+    var tot_bytes_recvd = 0;
+
+    var bytes_sent_this_attempt = 0;
+    var bytes_recvd_this_attempt = 0;
+
     console.log("APPU DEBUG: Starting cookie investigation for(" + my_domain + "): " + ci_start_time);
 
     // This measures time spent in just generating cookiesets.
@@ -3044,6 +3093,14 @@ function cookie_investigator(account_cookies,
 		    tot_time_taken = pcs.tot_time_taken;
 		}
 
+		if (pcs.tot_bytes_sent != undefined) {
+		    tot_bytes_sent = pcs.tot_bytes_sent;
+		}
+
+		if (pcs.tot_bytes_recvd != undefined) {
+		    tot_bytes_recvd = pcs.tot_bytes_recvd;
+		}
+
 		if (pcs.tot_cookiesets_generation_time != undefined) {
 		    tot_cookiesets_generation_time = pcs.tot_cookiesets_generation_time;
 		}
@@ -3163,9 +3220,13 @@ function cookie_investigator(account_cookies,
 	var tt = tot_time_taken + ((new Date()).getTime() - ci_start_time.getTime())/1000;
 	var tcgt = tot_cookiesets_generation_time + 
 	    (((new Date()).getTime() - cookiesets_generation_start_time.getTime())/1000);
+	var tbs = tot_bytes_sent + bytes_sent_this_attempt;
+	var tbr = tot_bytes_recvd + bytes_recvd_this_attempt;
 
 	offload_ci_state(my_url, {
 		"tot_time_taken" : tt,
+		"tot_bytes_sent" : tbs,
+		"tot_bytes_recvd" : tbr,
 		"tot_cookiesets_generation_time" : tot_cookiesets_generation_time,
 		    "tot_cookiesets_tested_overall" : tot_cookiesets_tested_overall,
 		    "tot_inconclusive_cookiesets_overall" : tot_inconclusive_cookiesets_overall,
@@ -3280,9 +3341,13 @@ function cookie_investigator(account_cookies,
 	cit.tab_closed_cb = cookie_investigator_closed;
 	cit.set_page_load_success = set_page_load_success;
 	cit.get_page_load_success = get_page_load_success;
-	cit.increment_epoch_id = increment_epoch_id;
 	cit.get_epoch_id = get_epoch_id;
+
+	cit.increment_epoch_id = increment_epoch_id;
 	cit.increment_page_reloads = increment_page_reloads;
+	cit.increment_sent_bytes = increment_sent_bytes;
+	cit.increment_recvd_bytes = increment_recvd_bytes;
+	    
 	cit.web_request_fully_fetched = web_request_fully_fetched;
 	cit.print_cookie_investigation_state = print_cookie_investigation_state;
 	cit.get_state = get_state; 
@@ -3292,7 +3357,21 @@ function cookie_investigator(account_cookies,
 	cit.print_cookie_array = print_cookie_array;
     }
 
-    
+
+    function increment_sent_bytes(bytes) {
+	if (bytes) {
+	    bytes_sent_this_attempt += bytes;
+	}
+    }
+
+
+    function increment_recvd_bytes(bytes) {
+	if (bytes) {
+	    bytes_recvd_this_attempt += bytes;
+	}
+    }
+
+
     function increment_page_reloads() {
 	tot_page_reloads += 1;
 	tot_page_reloads_overall += 1;
@@ -3434,7 +3513,8 @@ function cookie_investigator(account_cookies,
 
 		    if (my_state != "st_verification_epoch" &&
 			my_state != "st_during_cookies_block_test" &&
-			my_state != "st_expand_suspected_account_cookies") {
+			my_state != "st_expand_suspected_account_cookies" &&
+			my_state != "st_gub_cookiesets_block_test") {
 			console.log("APPU DEBUG: Disabled cookies in this epoch: " + 
 				    JSON.stringify(disabled_cookies));
 		    }
@@ -3443,6 +3523,10 @@ function cookie_investigator(account_cookies,
 				    JSON.stringify(disabled_cookies));
 			console.log("APPU DEBUG: Disabled cookies getting tested: " + 
 				    JSON.stringify(expand_state_disabled_cookies));
+		    }
+		    else if (my_state == "st_gub_cookiesets_block_test") {
+			console.log("APPU DEBUG: Enabled cookies in this epoch: " + 
+				    JSON.stringify(enabled_cookies_array));
 		    }
 
 		    original_shadow_cookie_store = $.extend(true, {}, shadow_cookie_store);
@@ -4008,7 +4092,7 @@ function cookie_investigator(account_cookies,
 		return "next_state";
 	    }
 	    else if (rc == 1) {
-		console.log("APPU DEBUG: GUB Cookieset testing successfully finished");
+		console.log("APPU DEBUG: GUB Cookieset testing round finished for: " + num_cookies_pass_for_round);
 		num_cookies_pass_for_round += 1;
 		if ((num_cookies_drop_for_round + (num_cookies_pass_for_round - 1)) >= tot_cookies) {
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to pass exceed total cookies");
@@ -4230,6 +4314,9 @@ function cookie_investigator(account_cookies,
 		    break;
 		}
 		else if (rc == "next_state") {
+		    // This is to make forceful switch to GUB.
+		    // This is useful when one resumes testing from on-disk state.
+		    last_non_verification_state = "st_cookiesets_block_disabled";
 		    continue;
 		}
 		else {
@@ -4281,8 +4368,31 @@ function cookie_investigator(account_cookies,
 	}
 
 	console.log("APPU DEBUG: Next state: " + my_state);	
+	if (my_state == "st_cookiesets_block_nonduring_and_disabled" ||
+	    my_state == "st_cookiesets_block_disabled") {
+	    console.log("APPU DEBUG: Number of cookies to DROP in this state: " + num_cookies_drop_for_round);	
+	}
+	else if (my_state == "st_gub_cookiesets_block_test") {
+	    console.log("APPU DEBUG: Number of cookies to PASS in this state: " + num_cookies_pass_for_round);	
+	}
+
 	console.log("APPU DEBUG: Total cookiesets tested in this round: " + tot_cookiesets_tested_this_round);	
 	console.log("APPU DEBUG: Total cookiesets tested this attempt: " + tot_cookiesets_tested);		
+
+	console.log("APPU DEBUG: Total number of actual page reloads this attempt: " + tot_page_reloads);
+	console.log("APPU DEBUG: Total number of actual page reloads overall: " + tot_page_reloads_overall);
+
+	var ci_end_time = new Date();
+	var time_taken_this_attempt = (ci_end_time.getTime() - ci_start_time.getTime())/1000;
+	console.log("APPU DEBUG: Time taken for investigation in this attempt: " + 
+		    Math.floor((time_taken_this_attempt/60)) + "m " +
+		    Math.floor((time_taken_this_attempt % 60)) + "s");
+
+	var time_taken_overall = tot_time_taken + (ci_end_time.getTime() - ci_start_time.getTime())/1000;
+	console.log("APPU DEBUG: Time taken for investigation overall: " + 
+		    Math.floor((time_taken_overall/60)) + "m " +
+		    Math.floor((time_taken_overall % 60)) + "s");
+
 
 	if (my_state == "st_terminate" && !has_error_occurred) {
 	    final_result();
@@ -4337,32 +4447,27 @@ function cookie_investigator(account_cookies,
 	store_intermediate_state();
 
 	console.log("------ FINAL RESULT ------");
-	console.log("APPU DEBUG: Cookies investigated for URL: " + my_url);
+	console.log("APPU DEBUG: Cookies investigated for Web-Application: " + my_url);
 	// Testing with blocking and verification.
 	
 	if (bool_are_all_account_cookies_in_default_store) {
-	    print_appu_error("APPU DEBUG: All account-cookies present in the default-cookie-store: " + 
-			     my_domain);
+	    // 	    print_appu_error("APPU DEBUG: All account-cookies present in the default-cookie-store: " + 
+	    // 			     my_domain);
 	}
 	else {
-	    print_appu_error("APPU Error: All account-cookies are *NOT* present in the default-cookie-store: " + 
+	    print_appu_error("APPU Error: Error: All account-cookies are *NOT* present in the default-cookie-store: " + 
 			     my_domain);
 	}
 
 	if (bool_are_account_cookies_in_during_cookies &&
 	    bool_are_account_cookies_not_in_nonduring_cookies) {
-	    print_appu_error("APPU DEBUG: All account-cookies present *ONLY* in the 'DURING' cookies" + 
-			     my_domain);
+	    // 	    print_appu_error("APPU DEBUG: All account-cookies present *ONLY* in the 'DURING' cookies" + 
+	    // 			     my_domain);
 	}
 	else {
 	    print_appu_error("APPU DEBUG: Not all account-cookies present in the 'DURING' cookies" + 
 			     my_domain);
 	}
-	
-	//console.log("APPU DEBUG: Finished testing account cookies for: " + url);
-	//for (c in account_cookies) {
-	//	console.log(c + ": " + (account_cookies[c].account_cookie ? "YES" : "NO"));
-	//}
 	
 	var cookie_aliases = {};
 	var logout_equation = "";
@@ -4405,6 +4510,8 @@ function cookie_investigator(account_cookies,
 	cs.cookie_aliases = cookie_aliases;
 	flush_session_cookie_store();
 	
+	console.log("");
+	console.log("APPU DEBUG: LOGOUT-EQUATION INFORMATION");
 	console.log("APPU DEBUG: Cookie-aliases: " + JSON.stringify(cookie_aliases));	    
 
 	if (!has_error_occurred) {
@@ -4423,6 +4530,8 @@ function cookie_investigator(account_cookies,
 			JSON.stringify(cs_names));
 	}
 
+	console.log("");
+	console.log("APPU DEBUG: COOKIESETS INFORMATION");
 	console.log("APPU DEBUG: Total suspected cookies: " + 
 		    tot_cookies);
 	
@@ -4435,8 +4544,8 @@ function cookie_investigator(account_cookies,
 			    JSON.stringify(cs_names));
 	}
 	
-	console.log("APPU DEBUG: Pending binary_cookiesets: " + binary_cookiesets.length);
-	
+	console.log("");
+	console.log("APPU DEBUG: LLB & GUB OPTIMIZATION INFORMATION");
 	console.log("APPU DEBUG: Skipped cookiesets going UP in POSET (subset in account-cookiesets): " + 
 		    skipped_sets.num_subset_in_account_cookiesets);
 	console.log("APPU DEBUG: Skipped cookiesets going UP in POSET (superset in non-account-cookiesets): " + 
@@ -4467,43 +4576,52 @@ function cookie_investigator(account_cookies,
 	    skipped_sets.num_gub_superset_in_non_account_cookiesets +
 	    skipped_sets.num_gub_already_tested_in_account_super_cookiesets +
 	    skipped_sets.num_gub_subset_in_account_super_cookiesets;
+	console.log("APPU DEBUG: Total skipped cookiesets: " + 
+		    total_skipped_cookiesets);
+
+	console.log("APPU DEBUG: Total inconclusive cookiesets overall(page load failure and no usernames): " + 
+		    tot_inconclusive_cookiesets_overall);	
+	console.log("APPU DEBUG: Total cookiesets for naive method: " + 
+		    Math.pow(2, tot_cookies));
+	console.log("APPU DEBUG: Total cookiesets tested this attempt: " + tot_cookiesets_tested);	
+	console.log("APPU DEBUG: Total cookiesets tested in overall: " + tot_cookiesets_tested_overall);	
 	
 
 	// Multiplied by 3 because:
 	// 1. st_cookiesets_block_nonduring_and_disabled
 	// 2. st_cookiesets_block_disabled
 	// 3. st_verification_epoch
+	console.log("");
+	console.log("APPU DEBUG: PAGE RELOAD INFORMATION");
 	console.log("APPU DEBUG: Total number of page reloads with naive method: " + 
 		    (Math.pow(2, tot_cookies) * 3));
-	console.log("APPU DEBUG: Total number of actual page reloads this attempt: " + tot_page_reloads);
-	console.log("APPU DEBUG: Total number of actual page reloads overall: " + tot_page_reloads_overall);
+	console.log("APPU DEBUG: Total number of page reloads this attempt: " + tot_page_reloads);
+	console.log("APPU DEBUG: Total number of page reloads overall: " + tot_page_reloads_overall);
 	console.log("APPU DEBUG: Total number of page reloads since last change in logout-equation: " + 
 		    tot_page_reloads_since_last_lo_change);
-	
-	
-	console.log("APPU DEBUG: Total skipped cookiesets: " + 
-		    total_skipped_cookiesets);
-	
-	console.log("APPU DEBUG: Total cookiesets tested this attempt: " + tot_cookiesets_tested);	
-	console.log("APPU DEBUG: Total cookiesets tested in overall: " + tot_cookiesets_tested_overall);	
-	console.log("APPU DEBUG: Total cookiesets for naive method: " + 
-		    Math.pow(2, tot_cookies));
-	console.log("APPU DEBUG: Total inconclusive cookiesets overall(page load failure and no usernames): " + 
-		    tot_inconclusive_cookiesets_overall);	
 
+	console.log("");
+	console.log("APPU DEBUG: BANDWIDTH INFORMATION");
+	var tbs = tot_bytes_sent + bytes_sent_this_attempt;
+	var tbr = tot_bytes_recvd + bytes_recvd_this_attempt;
+	console.log("APPU DEBUG: Total bytes sent during investigation: " + get_human_readable_size(tbs)); 
+	console.log("APPU DEBUG: Total bytes received during investigation: " + get_human_readable_size(tbr)); 
+
+	console.log("");
+	console.log("APPU DEBUG: TIME INFORMATION");
 	var ci_end_time = new Date();
 	var cg_time_taken = tot_cookiesets_generation_time + (ci_end_time.getTime() - 
 					    cookiesets_generation_start_time.getTime())/1000;
 	console.log("APPU DEBUG: Total time in generating cookiesets since last change to equation: " + 
 		    Math.floor((cg_time_taken/60)) + "m " +
 		    Math.floor((cg_time_taken % 60)) + "s");
-	
 
 	var ci_time_taken = tot_time_taken + (ci_end_time.getTime() - ci_start_time.getTime())/1000;
 	console.log("APPU DEBUG: Total time taken for investigation: " + Math.floor((ci_time_taken/60)) + "m " +
 		    Math.floor((ci_time_taken % 60)) + "s");
 	console.log("APPU DEBUG: Total attempts so far: " + tot_attempts);
 	
+	console.log("");
 	if (!has_error_occurred) {
 	    console.log("APPU DEBUG: Testing done?: YES");
 	    remove_ci_state(my_url);
@@ -4512,7 +4630,6 @@ function cookie_investigator(account_cookies,
 	    console.log("APPU DEBUG: Testing done?: NO");
 	}
 
-	console.log("APPU DEBUG: Ending cookie investigation for(" + my_domain + "): " + ci_end_time);
 	terminate_cookie_investigating_tab(my_tab_id);
 	window.clearTimeout(shut_tab_forcefully);
     }
@@ -4950,6 +5067,10 @@ function cookie_investigator(account_cookies,
 	}
 
 	for (var i = 0; i < rh.length; i++) {
+	    if (rh[i].name.toLowerCase() == "content-length") {
+		increment_recvd_bytes(parseInt(rh[i].value));
+	    }
+
 	    if (rh[i].name.toLowerCase() != "set-cookie") {
 		final_rh.push(rh[i]);
 	    }
@@ -5229,7 +5350,6 @@ function cookie_investigator(account_cookies,
 	if (details.url == "https://www.google.com/calendar/render") {
 	    console.log("Here here");
 	}
-
 
 	for (c in shadow_cookie_store) {
 	    var cookie_protocol = shadow_cookie_store[c].secure ? "https://" : "http://";
@@ -6071,3 +6191,14 @@ function test_cookieset_generation(tot_cookies,
     console.log("APPU DEBUG: Cookiesets generated by get_next(): " + rc.binary_cookiesets.length);
 }
 
+function test_content_length_reader(details) {
+    console.log("I AM HERE, I AM HERE, I AM HERE, I AM HERE, I AM HERE, I AM HERE, I AM HERE, ");
+    for (var i = 0; i < details.requestHeaders.length; i++) {
+	if (details.requestHeaders[i].name.toLowerCase() == "content-length") {
+	    console.log("");
+	    console.log("MUHAHAHAHAH HERE HERE HERE:" + details.requestHeaders[i].value);
+	    console.log("");
+	    increment_sent_bytes(parseInt(details.requestHeaders[i].value));
+	}
+    }
+}
