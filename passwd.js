@@ -1629,12 +1629,13 @@ if (document.URL.match(/.pdf$/) == null) {
 		return true;
 	    }
 	    else if (message.type == "check-if-username-present") {
-		present_usernames = check_if_username_present(message.usernames, "normal-operation");
+		var username_list = message.usernames;
+		present_usernames = check_if_username_present(username_list, "normal-operation");
 
 		var message = {};
 		message.invisible_check_invoked = false;
 		if (Object.keys(present_usernames).length == 0) {
-		    present_usernames = check_if_username_present(message.usernames, "normal-operation", false);
+		    present_usernames = check_if_username_present(username_list, "normal-operation", false);
 		    message.invisible_check_invoked = true;
 		}
 
@@ -1668,12 +1669,13 @@ if (document.URL.match(/.pdf$/) == null) {
 		    }
 		}
 		else if (message.command == "check_usernames") {
-		    present_usernames = check_if_username_present(message.usernames, "cookiesets-investigation");
+		    var username_list = message.usernames;
+		    present_usernames = check_if_username_present(username_list, "cookiesets-investigation");
 		    var message = {};
 		    message.invisible_check_invoked = false;
 
 		    if (Object.keys(present_usernames).length == 0) {
-			present_usernames = check_if_username_present(message.usernames, "cookiesets-investigation", false);
+			present_usernames = check_if_username_present(username_list, "cookiesets-investigation", false);
 			message.invisible_check_invoked = true;
 		    }
 		    // Even if no usernames detected, just send the message.

@@ -413,7 +413,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	    if (message.curr_epoch_id == cit.get_epoch_id()) {
 		console.log("APPU DEBUG: Usernames detected for 'COOKIE-INVESTIGATION', (page_load_success: " + 
-			    cit.get_page_load_success() + ", domain: " + message.domain + "), Num usernames detected: " + 
+			    cit.get_page_load_success() + ", domain: " + message.domain + 
+			    "), Num usernames detected(invisible? " + message.invisible_check_invoked + "): " + 
 			    Object.keys(message.present_usernames).length);
 		
 		var am_i_logged_in = false;
@@ -434,7 +435,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	}
 	else {
-	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected: " + 
+	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected(invisible? " +
+			message.invisible_check_invoked + "): " + 
 			Object.keys(message.present_usernames).length);
 	    for (var uname in message.present_usernames) {
 		console.log("APPU DEBUG: Username: " + uname + ", Frequency: " + message.present_usernames[uname]);

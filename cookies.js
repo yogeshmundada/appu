@@ -104,6 +104,27 @@ function print_confirmed_account_cookies(domain, only_present) {
     print_cookie_values(domain, account_cookies);
 }
 
+// Print the cookies discovered in "expand-state" phase
+function print_expand_state_cookies(domain, only_present) {
+    var cs = pii_vault.aggregate_data.session_cookie_store[domain];
+    var account_cookies = [];
+
+    only_present = (only_present == undefined) ? true : only_present;
+
+    for (c in cs.cookies) {
+	if (cs.cookies[c].cookie_class == 'during') {
+	    continue;
+	}
+	if (cs.cookies[c].is_part_of_account_cookieset == true) {
+	    if (only_present && cs.cookies[c].current_state == "absent") {
+		continue;
+	    }
+	    account_cookies.push(c);
+	}
+    }
+    print_cookie_values(domain, account_cookies);
+}
+
 
 function print_account_cookies(domain, only_present) {
     var cs = pii_vault.aggregate_data.session_cookie_store[domain];
@@ -2590,7 +2611,8 @@ function open_cookie_slave_tab(url,
 			       http_request_cb,
 			       http_response_cb,
 			       update_tab_id, 
-			       init_cookie_investigation) {
+			       init_cookie_investigation,
+			       open_new_window) {
     // Just some link so that appu content script runs on it.
     // I am purposely running some different site on this page 
     // because if I run the actual URL that I am investigating
@@ -2612,7 +2634,8 @@ function open_cookie_slave_tab(url,
 				 http_request_cb,
 				 http_response_cb,
 				 update_tab_id, 
-				 init_cookie_investigation) {
+				 init_cookie_investigation,
+				 open_new_window) {
 			   return function slave_tab_callback(tab) {
 			       var filter = {};
 
@@ -2656,12 +2679,20 @@ function open_cookie_slave_tab(url,
 					   cookie_investigating_tabs[tab.id].get_state() + ")");
 
 			       // cookie_investigating_tabs[tab.id].print_cookie_array();
+			       if (open_new_window && open_new_window == true) {
+				   chrome.windows.create({
+					   tabId: tab.id,
+					       width: 300,
+					       height: 600,
+					       });
+			       }
 			   }
 		       })(url, 
 			  http_request_cb,
 			  http_response_cb,
 			  update_tab_id, 
-			  init_cookie_investigation));
+			  init_cookie_investigation,
+			  open_new_window));
 }
 
 // Returns a cookie-investigator that maintains all the state and drives the
@@ -4527,7 +4558,8 @@ function cookie_investigator(account_cookies,
 	var was_result_expected = false;
 	tot_execution += 1;
 
-	if (my_state == "st_cookiesets_block_nonduring_and_disabled") {
+	if (my_state == "st_cookiesets_block_nonduring_and_disabled" ||
+	    my_state == "st_gub_cookiesets_block_test") {
 	    tot_cookiesets_tested_overall += 1;
 	    tot_cookiesets_tested += 1;
 	    tot_cookiesets_tested_this_round += 1;
@@ -5279,7 +5311,8 @@ function detect_account_cookies(current_url,
 				opt_config_cookiesets,
 				opt_config_forceshut,
 				opt_config_skip_initial_states,
-				opt_start_params) {
+				opt_start_params,
+				opt_open_new_window) {
     // This returns an object with keys: domain + path + ":" + cookie_name and
     // value as hashed cookie value. Because the HTTP requests only have cookie names
     // and cookie names can be repeated often (as seen in google's case), there is no
@@ -5289,6 +5322,7 @@ function detect_account_cookies(current_url,
     var config_cookiesets = "random";
     var config_forceshut = 5;
     var config_skip_initial_states = false;
+    var config_open_new_window = false;
 
     // opt_config_forceshut will be time in minutes after which the cookie-investigation tab
     // would get closed. If not specified, default values is '5' minutes.
@@ -5302,6 +5336,11 @@ function detect_account_cookies(current_url,
     if (opt_config_cookiesets != undefined) {
 	// Possible values are: "none", "random", "all"
 	config_cookiesets = opt_config_cookiesets;
+    }
+
+    if (opt_open_new_window != undefined) {
+	// Possible values are: "none", "random", "all"
+	config_open_new_window = opt_open_new_window;
     }
 
     if (cookie_names == undefined) {
@@ -5334,7 +5373,8 @@ function detect_account_cookies(current_url,
 				  ret_functions[0], 
 				  ret_functions[1], 
 				  ret_functions[2], 
-				  ret_functions[3]);
+				  ret_functions[3],
+				  config_open_new_window);
 	}
 	else {
 	    console.log("APPU Error: Could not do cookie-investigation for: " + current_url);
