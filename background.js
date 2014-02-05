@@ -415,14 +415,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		console.log("APPU DEBUG: Usernames detected for 'COOKIE-INVESTIGATION', (page_load_success: " + 
 			    cit.get_page_load_success() + ", domain: " + message.domain + 
 			    "), Num usernames detected(invisible? " + message.invisible_check_invoked + "): " + 
-			    Object.keys(message.present_usernames).length);
-		
-		var am_i_logged_in = false;
+			    Object.keys(message.present_usernames.frequency).length);
+
 		var num_pwd_boxes = message.num_password_boxes;
-		
-		if (Object.keys(message.present_usernames).length > 0) {
-		    am_i_logged_in = true;
-		}
 		
 		if (cit.pageload_timeout != undefined) {
 		    console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
@@ -431,15 +426,19 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    cit.pageload_timeout = undefined;
 		}
 		
-		process_last_epoch(sender.tab.id, am_i_logged_in, num_pwd_boxes);
+		process_last_epoch(sender.tab.id, message.present_usernames, num_pwd_boxes);
 	    }
 	}
 	else {
 	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected(invisible? " +
 			message.invisible_check_invoked + "): " + 
-			Object.keys(message.present_usernames).length);
-	    for (var uname in message.present_usernames) {
-		console.log("APPU DEBUG: Username: " + uname + ", Frequency: " + message.present_usernames[uname]);
+			Object.keys(message.present_usernames.frequency).length);
+	    for (var uname in message.present_usernames.frequency) {
+		console.log("APPU DEBUG: Username: " + uname + ", Frequency: " + message.present_usernames.frequency[uname]);
+	    }
+	    for (var i = 0; i < message.present_usernames.elem_list.length; i++) {
+		var pos = message.present_usernames.elem_list[i];
+		console.log("APPU DEBUG: Element(top: "+ pos.top +", left: "+ pos.left +")");
 	    }
 	}
     }

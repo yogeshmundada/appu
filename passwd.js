@@ -1039,7 +1039,11 @@ function window_unfocused(eo) {
 }
 
 function check_if_username_present(usernames, operation_mode, check_only_visible) {
-    var present_usernames = {};
+    var present_usernames = {
+	frequency: {},
+	elem_list: []
+    };
+
     console.log("APPU DEBUG: Detecting if known usernames are present on the webpage for: " + operation_mode);
 
     check_only_visible = (check_only_visible == undefined) ? true : check_only_visible;
@@ -1078,10 +1082,11 @@ function check_if_username_present(usernames, operation_mode, check_only_visible
     for (var i = 0; i < elements_with_text.length; i++) {
 	var kids = $(elements_with_text[i]).children();
 	var kids_contain_username = false;
+
 	if (kids.length > 0) {
 	    for (var k = 0; k < kids.length; k++) {
 		for (var j = 0; j < usernames.length; j++) {
-		    if ($(":Contains(" + usernames[j] + ")" + check_only_visible, $(kids[k])).length > 0) {
+		    if ($(":Contains(" + usernames[j] + ")" + check_only_visible, $(kids[k]).parent()).length > 0) {
 			kids_contain_username = true;
 			break;
 		    }
@@ -1100,15 +1105,68 @@ function check_if_username_present(usernames, operation_mode, check_only_visible
     for (var i = 0; i < usernames.length; i++) {
 	var ue = $(":Contains('" + usernames[i] + "')" + check_only_visible, $(elements_wo_kids).parent());
 	if (ue.length > 0) {
-	    if (!(usernames[i] in present_usernames)) {
-		present_usernames[usernames[i]] = ue.length;
+	    if (!(usernames[i] in present_usernames.frequency)) {
+		present_usernames.frequency[usernames[i]] = 0;
 	    }
-	    else {
-		present_usernames[usernames[i]] += ue.length;
+	    present_usernames.frequency[usernames[i]] += ue.length;
+
+	    for (var r = 0; r < ue.length; r++) {
+		var pos = $(ue[r]).offset();
+
+		if (pos.top < 0 ||
+		    pos.left < 0) {
+		    continue;
+		}
+
+		var e = $.extend(true, {}, $(ue[r]));
+
+		pos.username = usernames[i];
+		pos.element = e;
+		var add_position = 0;
+		var bool_add = true;
+		var found_position = false;
+
+		for (var k = 0; k < present_usernames.elem_list.length; k++) {
+		    var curr_node = present_usernames.elem_list[k];
+		    if (curr_node.element[0] == pos.element[0]) {
+			if (curr_node.username.length < pos.username.length) {
+			    curr_node.username = pos.username;
+			}
+			bool_add = false;
+			break;
+		    }
+
+		    if ((pos.top < curr_node.top) && 
+			(pos.left < curr_node.left)) {
+			found_position = true;
+		    }
+		    else if (pos.left < curr_node.left) {
+			found_position = true;
+		    }
+
+		    if (!found_position) {
+			add_position += 1;
+		    }
+		}
+
+		if (bool_add == true) {
+		    present_usernames.elem_list.splice(add_position, 0, pos);
+		}
 	    }
 	}
     }
 
+    var final_elem_list = [];
+    for (var i = 0; i < present_usernames.elem_list.length; i++) {
+	var curr_node = {};
+	curr_node.top = present_usernames.elem_list[i].top;
+	curr_node.left = present_usernames.elem_list[i].left;
+	curr_node.username = present_usernames.elem_list[i].username;
+
+	final_elem_list.push(curr_node);
+    }
+ 
+   present_usernames.elem_list = final_elem_list;
     return present_usernames;
 }
 
@@ -1634,7 +1692,7 @@ if (document.URL.match(/.pdf$/) == null) {
 
 		var message = {};
 		message.invisible_check_invoked = false;
-		if (Object.keys(present_usernames).length == 0) {
+		if (Object.keys(present_usernames.frequency).length == 0) {
 		    present_usernames = check_if_username_present(username_list, "normal-operation", false);
 		    message.invisible_check_invoked = true;
 		}
@@ -1674,7 +1732,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		    var message = {};
 		    message.invisible_check_invoked = false;
 
-		    if (Object.keys(present_usernames).length == 0) {
+		    if (Object.keys(present_usernames.frequency).length == 0) {
 			present_usernames = check_if_username_present(username_list, "cookiesets-investigation", false);
 			message.invisible_check_invoked = true;
 		    }
