@@ -408,17 +408,23 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "usernames_detected") {
 	message.domain = get_domain(message.domain);
+	var tot_detected_unames = 0;
+	for (var n in message.present_usernames.frequency) {
+	    tot_detected_unames += message.present_usernames.frequency[n];
+	}
+
 	if (sender.tab.id in cookie_investigating_tabs) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
 
 	    if (message.curr_epoch_id == cit.get_epoch_id()) {
-		console.log("APPU DEBUG: Usernames detected for 'COOKIE-INVESTIGATION', (page_load_success: " + 
+		console.log("APPU DEBUG: Username detection response for 'COOKIE-INVESTIGATION', (page_load_success: " + 
 			    cit.get_page_load_success() + ", domain: " + message.domain + 
 			    "), Num usernames detected(invisible? " + message.invisible_check_invoked + "): " + 
-			    Object.keys(message.present_usernames.frequency).length);
+			    tot_detected_unames);
 
 		var num_pwd_boxes = message.num_password_boxes;
-		
+		// cit.compare_screen_layout(message.visible_elements);
+
 		if (cit.pageload_timeout != undefined) {
 		    console.log("APPU DEBUG: Clearing reload-interval for: " + sender.tab.id
 				+ ", Interval-ID: " + cit.pageload_timeout);
@@ -432,7 +438,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	else {
 	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected(invisible? " +
 			message.invisible_check_invoked + "): " + 
-			Object.keys(message.present_usernames.frequency).length);
+			tot_detected_unames);
 	    for (var uname in message.present_usernames.frequency) {
 		console.log("APPU DEBUG: Username: " + uname + ", Frequency: " + message.present_usernames.frequency[uname]);
 	    }

@@ -2605,9 +2605,6 @@ function process_last_epoch(tab_id, present_usernames, num_pwd_boxes) {
 					// If so, no need to wait for page to fully reload.
 					if (cit.get_state() != "st_cookie_test_start" &&
 					    cit.content_script_started) {
-					    if (cit.get_state() == "st_verification_epoch") {
-						console.log("Here here: Delete me");
-					    }
 					    console.log("APPU DEBUG: Page load timeout, " + 
 							"content script started, firing username detection test");
 					    console.log("Here here: Calling check_usernames_for_cookie_investigation()");
@@ -3027,6 +3024,10 @@ function cookie_investigator(account_cookies,
 	num_gub_subset_in_account_super_cookiesets : 0,
     };
 
+    var verification_screen_layout = {};
+    var no_cookies_screen_layout = {};
+    var during_blocked_screen_layout = {};
+    var during_passed_screen_layout = {};
 
     if (config_start_params != undefined) {
 	if (config_start_params.starting_state == "st_testing") {
@@ -3321,6 +3322,69 @@ function cookie_investigator(account_cookies,
 	return page_load_success;
     }
 
+
+    function get_jaccard_index(sl1, sl2) {
+	var elem1 = Object.keys(sl1);
+	var elem2 = Object.keys(sl2);
+	var all_elements = elem1.concat(elem2);
+	var m11 = 0, m01 = 0, m10 = 0;
+	
+	for (var i = 0; i < all_elements.length; i++) {
+	    var e = all_elements[i]; 
+	    if (e in sl1 &&
+		e in sl2) {
+		var min = (sl1[e] > sl2[e]) ? sl2[e]: sl1[e];
+		m11 += min;
+	    }
+	    else if (e in sl1) {
+		m10 += sl1[e];
+	    }
+	    else if (e in sl2) {
+		m01 += sl2[e];
+	    }
+	}
+	
+	console.log("APPU DEBUG: m11: "+ m11 +",m01: "+ m01 +", m10: "+ m10);
+	return (m11/(m11 + m01 + m10));
+    }
+    
+    function compare_screen_layout(sl) {
+	if (my_state == "st_verification_epoch" &&
+	    Object.keys(verification_screen_layout).length == 0) {
+	    console.log("APPU DEBUG: Setting verification screen layout, size: " + Object.keys(sl).length);
+	    verification_screen_layout = sl;
+	}
+	else if (my_state == "st_start_with_no_cookies" &&
+		 Object.keys(no_cookies_screen_layout).length == 0) {
+	    console.log("APPU DEBUG: Setting no cookies screen layout, size: " + Object.keys(sl).length);
+	    no_cookies_screen_layout = sl;
+	}
+	else if (my_state == "st_during_cookies_block_test" &&
+		 Object.keys(during_blocked_screen_layout).length == 0) {
+	    console.log("APPU DEBUG: Setting during blocked screen layout, size: " + Object.keys(sl).length);
+	    during_blocked_screen_layout = sl;
+	}
+	else if (my_state == "st_during_cookies_pass_test" &&
+		 Object.keys(during_passed_screen_layout).length == 0) {
+	    console.log("APPU DEBUG: Setting during passed screen layout, size: " + Object.keys(sl).length);
+	    during_passed_screen_layout = sl;
+	}
+
+	var ji = undefined;
+	ji = get_jaccard_index(verification_screen_layout, sl);
+	console.log("APPU DEBUG: Jaccard's index(verification_screen_layout): " + ji);
+	
+	ji = get_jaccard_index(no_cookies_screen_layout, sl);
+	console.log("APPU DEBUG: Jaccard's index(no_cookies_screen_layout): " + ji);
+	
+	ji = get_jaccard_index(during_blocked_screen_layout, sl);
+	console.log("APPU DEBUG: Jaccard's index(during_blocked_screen_layout): " + ji);
+	
+	ji = get_jaccard_index(during_passed_screen_layout, sl);
+	console.log("APPU DEBUG: Jaccard's index(during_passed_screen_layout): " + ji);
+    }
+
+
     function init_cookie_investigation() {
 	var cit = cookie_investigating_tabs[my_tab_id];
 	cit.url = my_url;
@@ -3341,7 +3405,8 @@ function cookie_investigator(account_cookies,
 	cit.increment_page_reloads = increment_page_reloads;
 	cit.increment_sent_bytes = increment_sent_bytes;
 	cit.increment_recvd_bytes = increment_recvd_bytes;
-	    
+
+	cit.compare_screen_layout = compare_screen_layout;	    
 	cit.web_request_fully_fetched = web_request_fully_fetched;
 	cit.print_cookie_investigation_state = print_cookie_investigation_state;
 	cit.get_state = get_state; 
@@ -4657,6 +4722,50 @@ function cookie_investigator(account_cookies,
     }
 
 
+    function detect_login_status(present_usernames) {
+	var bool_top_three_elems_present = true;
+
+	var tn = [];
+	for (var i = 0; i < top_three_elements_with_usernames.length; i++) {
+	    var t = top_three_elements_with_usernames[i];
+	    tn.push($.extend(true, {}, t));
+	    tn[i].counted_before = false;
+	}
+	
+	for (var i = 0; i < tn.length; i++) {
+	    var cn = present_usernames.elem_list;
+	    var bool_found = false;
+	    for (var j = 0; j < cn.length; j++) {
+		// Checking for 'X' co-ordinate match OR 'Y' co-ordinate match because
+		// sometimes some element load takes time.
+		// if ((cn[j].top == tn[i].top ||
+		//      cn[j].left == tn[i].left) &&
+		//     cn[j].username == tn[i].username) {
+		//     bool_found = true;
+		//     break;
+		// }
+		if (!tn[i].counted_before &&
+		    cn[j].username == tn[i].username) {
+		    bool_found = true;
+		    tn[i].counted_before = true;
+		    break;
+		}
+	    }
+	    if (bool_found == false) {
+		bool_top_three_elems_present = false;
+		break;
+	    }
+	}
+	
+	if (bool_top_three_elems_present) {
+	    return true;
+	}
+	else {
+	    return false;
+	}
+	return false;
+    }
+
     // I need this function because each web page fetch consists of multiple
     // HTTP GET requests for various resources on the web page.
     // For all those GET requests, same cookie must be blocked.
@@ -4676,30 +4785,7 @@ function cookie_investigator(account_cookies,
 
 	var bool_top_three_elems_present = true;
 	if (top_three_elements_with_usernames != undefined) {
-	    for (var i = 0; i < top_three_elements_with_usernames.length; i++) {
-		var tn = top_three_elements_with_usernames[i];
-		var cn = present_usernames.elem_list;
-		var bool_found = false;
-		for (var j = 0; j < cn.length; j++) {
-		    if (cn[j].top == tn.top &&
-			cn[j].left == tn.left &&
-			cn[j].username == tn.username) {
-			bool_found = true;
-			break;
-		    }
-		}
-		if (bool_found == false) {
-		    bool_top_three_elems_present = false;
-		    break;
-		}
-	    }
-
-	    if (bool_top_three_elems_present) {
-		am_i_logged_in = true;
-	    }
-	    else {
-		am_i_logged_in = false;
-	    }
+	    am_i_logged_in = detect_login_status(present_usernames);
 	}
 
 	num_pwd_boxes = (num_pwd_boxes == undefined) ? 0 : num_pwd_boxes;
@@ -4759,6 +4845,7 @@ function cookie_investigator(account_cookies,
 		    for (var i = 0; i < tot_uname_elems; i++) {
 			top_three_elements_with_usernames.push(present_usernames.elem_list[i]);
 		    }
+		    console.log("APPU DEBUG: Total number usernames detected in the logged-in state: " + tot_uname_elems);
 		}
 		else {
 		    am_i_logged_in = false;

@@ -17,6 +17,10 @@ var curr_epoch_id = -1;
 var is_cookie_investigator_tab = false;
 var is_template_processing_tab = false;
 
+// Total number of times when we reached document
+// in interactive state.
+var tot_interactive_state_times = 0;
+
 // If the site is blacklisted, then ignore
 // all messages
 var do_not_watch_this_site = undefined;
@@ -1465,8 +1469,22 @@ function show_appu_monitor_icon() {
 }
 
 function do_document_ready_functions() {
-    if (document.readyState === "complete" &&
-	curr_epoch_id > -1) {
+    console.log("Here here: Document state: " + document.readyState);
+    if (document.readyState !== "complete") {
+	if (!is_cookie_investigator_tab) {
+	    return;
+	}
+
+	if (is_cookie_investigator_tab &&
+	     document.readyState !== "interactive") {
+	    tot_interactive_state_times += 1;
+	    if (tot_interactive_state_times < 5) {
+		return;
+	    }
+	}
+    }
+    
+    if (curr_epoch_id > -1) {
 	// "curr_epoch_id > -1" ensures that the "content_script_started" 
 	// message has been processed by background and answered back.
 	console.log("APPU DEBUG: Document is loaded");
@@ -1516,6 +1534,28 @@ function do_document_ready_functions() {
 	}
     }
 }
+
+function get_screen_layout() {
+    var se = $(":visible");
+    var se_arr = {};
+
+    for (var i = 0; i < se.length; i++) {
+	var pos = $(se[i]).offset();
+	var t = pos.top;
+	var l = pos.left;
+	var h = $(se[i]).height();
+	var w = $(se[i]).width();
+	var m = t + "_" + l + "_" + h + "_" + w;
+	if (!(m in se_arr)) {
+	    se_arr[m] = 1; 
+	}
+	else {
+	    se_arr[m] += 1; 
+	}
+    }
+    return se_arr;
+}
+
 
 if (document.URL.match(/.pdf$/) == null) {
     $(window).on('unload', window_unfocused);
@@ -1736,12 +1776,13 @@ if (document.URL.match(/.pdf$/) == null) {
 			present_usernames = check_if_username_present(username_list, "cookiesets-investigation", false);
 			message.invisible_check_invoked = true;
 		    }
-		    // Even if no usernames detected, just send the message.
 
+		    // Even if no usernames detected, just send the message.
 		    message.type = "usernames_detected";
 		    message.domain = document.domain;
 		    message.curr_epoch_id = curr_epoch_id;
 		    message.present_usernames = present_usernames;
+		    // message.visible_elements = get_screen_layout();
 		    message.num_password_boxes = $("input:password:visible").length;
 		    
 		    chrome.extension.sendMessage("", message, function(response) {
