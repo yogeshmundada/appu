@@ -1681,6 +1681,8 @@ function print_cookie_investigation_state(url) {
 	var tot_cookiesets_tested_overall = state[url]["tot_cookiesets_tested_overall"];
 	var tot_gub_cookiesets_tested_overall = state[url]["tot_gub_cookiesets_tested_overall"];
 	var skipped_sets = state[url]["skipped_sets"];
+	var tot_expand_state_cookiesets_tested_overall = state[url]["tot_expand_state_cookiesets_tested_overall"];
+	var tot_expand_state_entered = state[url]["tot_expand_state_entered"];
 
 	console.log("APPU DEBUG: Length of 'verified strict account cookiesets' array" + 
 		    " (LLBs in suspected that cause logouts): " + vsaca.length);
@@ -1701,8 +1703,11 @@ function print_cookie_investigation_state(url) {
 	console.log("APPU DEBUG: Total attempts so far: " + tot_attempts);
 	console.log("APPU DEBUG: Total page reloads so far: " + tot_page_reloads_overall);
 	console.log("APPU DEBUG: Total page reloads naive method so far: " + tot_page_reloads_naive);
-	console.log("APPU DEBUG: Total cookiesets tested so far: " + tot_cookiesets_tested_overall);
+
+	console.log("APPU DEBUG: Total times expand-state entered: " + tot_expand_state_entered);
+	console.log("APPU DEBUG: Total expand cookiesets tested so far: " + tot_expand_state_cookiesets_tested_overall);
 	console.log("APPU DEBUG: Total GUB cookiesets tested so far: " + tot_gub_cookiesets_tested_overall);
+	console.log("APPU DEBUG: Total cookiesets tested so far: " + tot_cookiesets_tested_overall);
 	console.log("APPU DEBUG: Total time in generating cookiesets since last change to equation: " + 
 		    tot_cookiesets_generation_time);
 
@@ -1799,6 +1804,9 @@ function search_for_cookieset(url, cookieset) {
 	var tot_page_reloads_since_last_lo_change = state[url]["tot_page_reloads_since_last_lo_change"];
 	var tot_cookiesets_tested_overall = state[url]["tot_cookiesets_tested_overall"];
 	var tot_gub_cookiesets_tested_overall = state[url]["tot_gub_cookiesets_tested_overall"];
+	var tot_expand_state_cookiesets_tested_overall = state[url]["tot_expand_state_cookiesets_tested_overall"];
+	var tot_expand_state_entered = state[url]["tot_expand_state_entered"];
+
 	var skipped_sets = state[url]["skipped_sets"];
 
 	console.log("APPU DEBUG: Length vsaca: "     + vsaca.length);
@@ -1816,8 +1824,10 @@ function search_for_cookieset(url, cookieset) {
 	console.log("APPU DEBUG: Total attempts: " + tot_attempts);
 	console.log("APPU DEBUG: Total page reloads overall so far: " + tot_page_reloads_overall);
 	console.log("APPU DEBUG: Total page reloads naive method so far: " + tot_page_reloads_naive);
-	console.log("APPU DEBUG: Total cookiesets tested: " + tot_cookiesets_tested_overall);
+	console.log("APPU DEBUG: Total times expand-state entered: " + tot_expand_state_entered);
+	console.log("APPU DEBUG: Total expand cookiesets tested: " + tot_expand_state_cookiesets_tested_overall);
 	console.log("APPU DEBUG: Total GUB cookiesets tested: " + tot_gub_cookiesets_tested_overall);
+	console.log("APPU DEBUG: Total cookiesets tested: " + tot_cookiesets_tested_overall);
 	console.log("APPU DEBUG: Total time in generating cookiesets since last change to equation: " + 
 		    tot_cookiesets_generation_time);
 
@@ -3050,7 +3060,11 @@ function cookie_investigator(account_cookies,
     var non_during_cookies = get_non_account_cookies(my_domain);
     var non_during_suspected_account_cookies_array = Object.keys(non_during_cookies);
     var tot_non_during_cookies = non_during_suspected_account_cookies_array.length;
-    var tot_expand_state_cookiesets_tested = 0;
+
+    // Total number of expand state cookiesets tested.
+    var tot_expand_state_cookiesets_tested_overall = 0;
+    // Total number of times expand-state entered.
+    var tot_expand_state_entered = 0;
 
     var top_three_elements_with_usernames = undefined;
 
@@ -3166,6 +3180,14 @@ function cookie_investigator(account_cookies,
 		    tot_gub_cookiesets_tested_overall = pcs.tot_gub_cookiesets_tested_overall;
 		}
 
+		if (pcs.tot_expand_state_cookiesets_tested_overall != undefined) {
+		    tot_expand_state_cookiesets_tested_overall = pcs.tot_expand_state_cookiesets_tested_overall;
+		}
+
+		if (pcs.tot_expand_state_entered != undefined) {
+		    tot_expand_state_entered = pcs.tot_expand_state_entered;
+		}
+
 		if (pcs.tot_inconclusive_cookiesets_overall != undefined) {
 		    tot_inconclusive_cookiesets_overall = pcs.tot_inconclusive_cookiesets_overall;
 		}
@@ -3279,6 +3301,8 @@ function cookie_investigator(account_cookies,
 		    "tot_cookiesets_generation_time" : tot_cookiesets_generation_time,
 		    "tot_cookiesets_tested_overall" : tot_cookiesets_tested_overall,
 		    "tot_gub_cookiesets_tested_overall" : tot_gub_cookiesets_tested_overall,
+		    "tot_expand_state_cookiesets_tested_overall" : tot_expand_state_cookiesets_tested_overall,
+		    "tot_expand_state_entered" : tot_expand_state_entered,
 		    "tot_inconclusive_cookiesets_overall" : tot_inconclusive_cookiesets_overall,
 		    "tot_page_reloads_overall" : tot_page_reloads_overall,
 		    "tot_page_reloads_naive" : skipped_sets.tot_page_reloads_naive,
@@ -3347,7 +3371,7 @@ function cookie_investigator(account_cookies,
 
 	bool_st_expand_suspected_account_cookies_done = false;
 	bool_expand_state_initialized = false;
-	tot_expand_state_cookiesets_tested = 0;
+	// tot_expand_state_cookiesets_tested_overall = 0;
     }
 
     
@@ -3735,6 +3759,7 @@ function cookie_investigator(account_cookies,
 		if(!pending_am_i_logged_in) {
 		    console.log("APPU DEBUG: Switching to expand state from 'st_during_cookies_pass_test'");
 		    rs = "switch_to_expand";
+		    tot_expand_state_entered += 1;
 		    disabled_cookies = [];
 		}
 		else {
@@ -3752,6 +3777,7 @@ function cookie_investigator(account_cookies,
 		if(pending_am_i_logged_in == true) {
 		    console.log("APPU DEBUG: Switching to expand state from 'st_during_cookies_block_test'");
 		    rs = "switch_to_expand";
+		    tot_expand_state_entered += 1;
 		    // Don't zero out disabled cookies since we want to keep disabling them.
 		    // disabled_cookies = [];
 		}
@@ -3819,6 +3845,7 @@ function cookie_investigator(account_cookies,
 			console.log("APPU DEBUG: It seems that some cookies are in non-DURING class. " +
 				    "Switching to 'st_expand_suspected_account_cookies'");
 			rs = "switch_to_expand";
+			tot_expand_state_entered += 1;
 		    }
 		    else {
 			// Disabling 'non-DURING' cookies caused session to be logged-in
@@ -3992,7 +4019,7 @@ function cookie_investigator(account_cookies,
 	    }
 
 	    current_cookiesets_test_attempts += 1;
-	    tot_expand_state_cookiesets_tested += 1;
+	    tot_expand_state_cookiesets_tested_overall += 1;
 	}
 	else if (my_state == "st_gub_cookiesets_block_test") {
 	    var enabled_cookies = convert_binary_cookieset_to_cookie_array(curr_gub_binary_cs, 
@@ -4167,6 +4194,10 @@ function cookie_investigator(account_cookies,
 		return "next_state";
 	    }
 
+	    if (last_non_verification_state != "st_gub_cookiesets_block_test") {
+		tot_cookiesets_tested_this_round = 0;
+	    }
+
 	    if (tot_cookiesets_tested_this_round > tot_cookies) {
 		console.log("APPU DEBUG: Tested " + tot_cookiesets_tested_this_round + 
 			    " GUB cookiesets for this round, going to next state: ");
@@ -4225,7 +4256,6 @@ function cookie_investigator(account_cookies,
 		pending_bool_pwd_box_present = undefined;
 		
 		if (last_non_verification_state != "st_gub_cookiesets_block_test") {
-		    tot_cookiesets_tested_this_round = 0;
 		    disabled_cookies = undefined;
 		}
 
@@ -4707,6 +4737,8 @@ function cookie_investigator(account_cookies,
 	console.log("");
 	console.log("APPU DEBUG: COOKIESETS INFORMATION");
 	console.log("APPU DEBUG: Total suspected cookies: " + tot_cookies);
+	console.log("APPU DEBUG: Total times expand-state entered: " + tot_expand_state_entered);	
+	console.log("APPU DEBUG: Total expand cookiesets tested in overall: " + tot_expand_state_cookiesets_tested_overall);	
 	console.log("APPU DEBUG: Total GUB cookiesets tested in overall: " + tot_gub_cookiesets_tested_overall);	
 	console.log("APPU DEBUG: Total cookiesets tested in overall: " + tot_cookiesets_tested_overall);	
 	console.log("APPU DEBUG: Total inconclusive cookiesets overall(page load failure and no usernames): " + 
