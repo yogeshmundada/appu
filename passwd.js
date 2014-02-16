@@ -1235,10 +1235,6 @@ function detect_text_pattern(patterns) {
 			    return false;
 			}
 
-// 			if (!$(this).is(":visible")) {
-// 			    return false;
-// 			}
-			
 			if (!text.match(regex_val)) {
 			    return false;
 			}
