@@ -4874,9 +4874,9 @@ function cookie_investigator(account_cookies,
 	console.log("APPU DEBUG: COOKIESETS INFORMATION");
 	console.log("APPU DEBUG: Total suspected cookies: " + tot_cookies);
 	console.log("APPU DEBUG: Total times expand-state entered: " + tot_expand_state_entered);	
-	console.log("APPU DEBUG: Total expand cookiesets tested in overall: " + tot_expand_state_cookiesets_tested_overall);	
-	console.log("APPU DEBUG: Total GUB cookiesets tested in overall: " + tot_gub_cookiesets_tested_overall);	
-	console.log("APPU DEBUG: Total cookiesets tested in overall: " + tot_cookiesets_tested_overall);	
+	console.log("APPU DEBUG: Total expand cookiesets tested overall: " + tot_expand_state_cookiesets_tested_overall);	
+	console.log("APPU DEBUG: Total GUB cookiesets tested overall: " + tot_gub_cookiesets_tested_overall);	
+	console.log("APPU DEBUG: Total cookiesets tested overall: " + tot_cookiesets_tested_overall);	
 	console.log("APPU DEBUG: Total inconclusive cookiesets overall(page load failure and no usernames): " + 
 		    tot_inconclusive_cookiesets_overall);	
 	
