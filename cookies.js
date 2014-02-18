@@ -3028,10 +3028,6 @@ function cookie_investigator(account_cookies,
     var epoch_id = 0;
     var req_epch_table = {};
 
-    var bool_st_cookiesets_block_test_done = false;
-    var bool_st_gub_cookiesets_block_test_done = false;
-    var bool_no_more_gub_tests = false;
-
     // To store results until verification_epoch gives good to go
     var pending_am_i_logged_in = undefined;
     var pending_disabled_cookies = undefined;
@@ -3054,7 +3050,6 @@ function cookie_investigator(account_cookies,
     var verified_strict_non_during_non_account_decimal_cookiesets = [];
     var verified_strict_non_during_non_account_cookiesets_array = [];
     var verified_non_during_non_account_super_decimal_cookiesets = [];
-    var bool_st_expand_suspected_account_cookies_done = false;
     var bool_expand_state_initialized = false;
 
     var non_during_cookies = get_non_account_cookies(my_domain);
@@ -3353,9 +3348,6 @@ function cookie_investigator(account_cookies,
 	epoch_id = 0;
 	req_epch_table = {};
 
-	bool_st_cookiesets_block_test_done = false;
-	bool_st_gub_cookiesets_block_test_done = false;
-
 	// Reseting the pending variables for verification_epoch
 	pending_am_i_logged_in = undefined;
 	pending_disabled_cookies = undefined;
@@ -3369,7 +3361,6 @@ function cookie_investigator(account_cookies,
 	expand_state_disabled_cookies = [];
 	expand_state_num_cookies_drop_for_round = 1;
 
-	bool_st_expand_suspected_account_cookies_done = false;
 	bool_expand_state_initialized = false;
 	// tot_expand_state_cookiesets_tested_overall = 0;
     }
@@ -4020,7 +4011,6 @@ function cookie_investigator(account_cookies,
 	    if (rc == 0) {
 		console.log("APPU DEBUG: LLB Cookieset testing round finished for: " + num_cookies_drop_for_round);
 
-		bool_st_cookiesets_block_test_done = true;
 		num_cookies_drop_for_round += 1;
 		
 		// Adding (num_cookies_pass_for_round - 1) instead of num_cookies_pass_for_round
@@ -4031,7 +4021,6 @@ function cookie_investigator(account_cookies,
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to drop exceed total cookies");
 		    console.log("APPU DEBUG: Cookieset testing successfully finished. No more cookiesets generated");
 
-		    bool_st_cookiesets_block_test_done = true;
 		    bool_is_cookie_testing_done = true;
 
 		    return "done";
@@ -4045,13 +4034,10 @@ function cookie_investigator(account_cookies,
 	    else if (rc == 1) {
 		console.log("APPU DEBUG: LLB No more cookiesets generated for: " + num_cookies_drop_for_round);
 
-		bool_st_cookiesets_block_test_done = true;
-
 		num_cookies_drop_for_round += 1;
 		if ((num_cookies_drop_for_round + (num_cookies_pass_for_round - 1)) >= tot_cookies) {
 		    console.log("APPU DEBUG: LLB (cookieset testing) Number of cookies to drop exceed total cookies");
 		    console.log("APPU DEBUG: Cookieset testing successfully finished. No more cookiesets generated");
-		    bool_st_cookiesets_block_test_done = true;
 		    bool_is_cookie_testing_done = true;
 		    return "done";
 		}
@@ -4069,7 +4055,6 @@ function cookie_investigator(account_cookies,
 	    else {
 		reset_for_cookieset_testing(false);
 
-		bool_st_cookiesets_block_test_done = false;
 		curr_binary_cs = rc.binary_cookieset;
 		curr_decimal_cs = rc.decimal_cookieset;
 		disabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs,
@@ -4083,17 +4068,9 @@ function cookie_investigator(account_cookies,
 		reset_for_gub_testing(true);
 	    }
 
-	    if (bool_no_more_gub_tests) {
-		bool_st_gub_cookiesets_block_test_done = true;
-		bool_st_cookiesets_block_test_done = false;
-		return "attempt_next_state";
-	    }
-
 	    if (tot_cookiesets_tested_this_round > tot_cookies) {
 		console.log("APPU DEBUG: Tested " + tot_cookiesets_tested_this_round + 
 			    " GUB cookiesets for this round, going to next state: ");
-		bool_st_gub_cookiesets_block_test_done = true;
-		bool_st_cookiesets_block_test_done = false;
 		return "attempt_next_state";
 	    }
 
@@ -4108,9 +4085,6 @@ function cookie_investigator(account_cookies,
 	    if (rc == 0) {
 		console.log("APPU DEBUG: GUB Cookieset testing round finished for: " + num_cookies_pass_for_round);
 
-		bool_st_gub_cookiesets_block_test_done = true;
-		bool_st_cookiesets_block_test_done = false;
-
 		num_cookies_pass_for_round += 1;
 
 		curr_gub_binary_cs = undefined;
@@ -4118,26 +4092,23 @@ function cookie_investigator(account_cookies,
 
 		if ((num_cookies_drop_for_round + (num_cookies_pass_for_round - 1)) >= tot_cookies) {
 		    console.log("APPU DEBUG: (cookieset testing) Number of cookies to pass exceed total cookies");
-		    bool_no_more_gub_tests = true;
+		    return "attempt_next_state";
 		}
 		return "attempt_same_state";
 	    }
 	    else if (rc == 1) {
 		console.log("APPU DEBUG: GUB Cookieset testing round finished for: " + num_cookies_pass_for_round);
 
-		bool_st_gub_cookiesets_block_test_done = true;
-		bool_st_cookiesets_block_test_done = false;
-
 		num_cookies_pass_for_round += 1;
-		if ((num_cookies_drop_for_round + (num_cookies_pass_for_round - 1)) >= tot_cookies) {
-		    console.log("APPU DEBUG: GUB (cookieset testing) Number of cookies to pass exceed total cookies");
-		    bool_no_more_gub_tests = true;
-		}
 
 		curr_gub_binary_cs = undefined;
 		curr_gub_decimal_cs = undefined;
 
-		// bool_st_gub_cookiesets_block_test_done = true;
+		if ((num_cookies_drop_for_round + (num_cookies_pass_for_round - 1)) >= tot_cookies) {
+		    console.log("APPU DEBUG: GUB (cookieset testing) Number of cookies to pass exceed total cookies");
+		    return "attempt_next_state";
+		}
+
 		return "attempt_same_state";
 	    }
 	    else if (rc == -1) {
@@ -4150,7 +4121,6 @@ function cookie_investigator(account_cookies,
 	    else {
 		reset_for_gub_testing(false);
 
-		bool_st_gub_cookiesets_block_test_done = false;
 		curr_gub_binary_cs = rc.binary_cookieset;
 		curr_gub_decimal_cs = rc.decimal_cookieset;
 		disabled_cookies = convert_binary_cookieset_to_cookie_array(curr_gub_binary_cs,
@@ -4220,7 +4190,6 @@ function cookie_investigator(account_cookies,
 	    else {		
 		reset_for_expand_cookies_testing(false);
 		
-		bool_st_expand_suspected_account_cookies_done = false;
 		curr_expand_state_binary_cs = rc.binary_cookieset;
 		curr_expand_state_decimal_cs = rc.decimal_cookieset;
 		expand_state_disabled_cookies = 
@@ -4461,6 +4430,15 @@ function cookie_investigator(account_cookies,
 			cs.cookies[acct_cookies[i]].is_part_of_account_cookieset = true;
 		    }
 		    flush_session_cookie_store();
+
+		    for (var i = 0; i < verified_account_super_cookiesets_array.length; i++) {
+			for (var j = 0; j < acct_cookies.length; j++) {
+			    if (verified_account_super_cookiesets_array[i].indexOf(acct_cookies[j]) == -1) {
+				verified_account_super_cookiesets_array[i].push(acct_cookies[j]);
+			    }
+			}
+		    }
+
 		    console.log("APPU DEBUG: Detected account cookies in non-DURING cookies. Resetting to start state");
 		    reset_to_start_state(acct_cookies);
 		    rs = "continue_testing";
@@ -4872,6 +4850,29 @@ function cookie_investigator(account_cookies,
 
 	console.log("");
 	console.log("APPU DEBUG: COOKIESETS INFORMATION");
+	if (!has_error_occurred) {
+	    for (var k = 0; k < verified_account_super_decimal_cookiesets.length; k++) {
+		var rc = is_a_setmember_subset(verified_account_super_decimal_cookiesets[k], 
+					       verified_strict_account_decimal_cookiesets);
+		if (!rc) {
+		    var t = convert_cookie_array_to_binary_cookieset(verified_account_super_cookiesets_array[k], 
+								     suspected_account_cookies_array);
+		    if (t.decimal_cookieset != verified_account_super_decimal_cookiesets[k]) {
+			console.log("Here here: cookiesets mismatch, delete me");
+		    }
+
+		    // If I start seeing a lot of cookiesets getting printing in the following
+		    // statement, then I will have to write code to shift them to
+		    // verified_strict_account_cookiesets_array.
+		    // That would mean that they somehow did not get tested while going UP in
+		    // poset but actually are strict-account-cookiesets.
+		    console.log("APPU DEBUG: No member in strict account cookiesets is a " + 
+				"subset of non-account-super-cookieset: " + 
+				JSON.stringify(verified_account_super_cookiesets_array[k]));
+		}
+	    }
+	}
+
 	console.log("APPU DEBUG: Total suspected cookies: " + tot_cookies);
 	console.log("APPU DEBUG: Total times expand-state entered: " + tot_expand_state_entered);	
 	console.log("APPU DEBUG: Total expand cookiesets tested overall: " + tot_expand_state_cookiesets_tested_overall);	
@@ -6085,6 +6086,41 @@ function test_gdrive_cookies() {
     }
 
     detect_account_cookies("https://drive.google.com/?tab=mo&authuser=0#my-drive", 
+			   undefined, 
+			   "all", 
+			   10, undefined, 
+			   { starting_state : "st_testing", 
+				   cookies_array : pass_cookies, 
+				   account_cookies_array : aca });
+
+
+    return;
+}
+
+function test_netflix_cookies() {
+
+    var omit_cookies = [
+			[
+			 "https://.netflix.com/:SecureNetflixId",
+			 ],
+		       ];
+
+    var pass_cookies = [];
+
+    var rc = get_domain_cookies("http://netflix.com/");
+    var aca = Object.keys(rc);
+
+    for (var j = 0; j < omit_cookies.length; j++) {
+	var curr_pass_cookies = [];
+	for (var i = 0; i < aca.length; i++) {
+	    if (omit_cookies[j].indexOf(aca[i]) == -1) {
+		curr_pass_cookies.push(aca[i]);
+	    }
+	}
+	pass_cookies.push(curr_pass_cookies);
+    }
+
+    detect_account_cookies("http://movies.netflix.com/WiHome", 
 			   undefined, 
 			   "all", 
 			   10, undefined, 

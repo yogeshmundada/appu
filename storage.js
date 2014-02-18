@@ -10,6 +10,14 @@ var storage_meta = {
     "storage_meta" : []
 };
 
+
+function print_storage_keys() {
+    for (var i = 0; i < storage_meta.storage_meta.length; i++) {
+	console.log("APPU DEBUG: " + (i+1) + ". Key: '" + storage_meta.storage_meta[i] + "'");
+    }
+    print_storage_size();
+}
+
 function init_storage_meta() {
     read_from_local_storage("storage_meta", function(rc) {
 	    if (rc != undefined &&
