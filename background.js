@@ -420,7 +420,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		console.log("APPU DEBUG: Username detection response for 'COOKIE-INVESTIGATION', (page_load_success: " + 
 			    cit.get_page_load_success() + ", domain: " + message.domain + 
 			    "), Num usernames detected(invisible? " + message.invisible_check_invoked + "): " + 
-			    tot_detected_unames);
+			    tot_detected_unames + 
+			    " (total time: " + message.total_time + "ms)");
 
 		var num_pwd_boxes = message.num_password_boxes;
 		// cit.compare_screen_layout(message.visible_elements);

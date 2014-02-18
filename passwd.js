@@ -1476,9 +1476,9 @@ function do_document_ready_functions() {
 	if (curr_epoch_id != 1) {
 	    if (is_cookie_investigator_tab &&
 		document.readyState !== "complete") {
-		if (document.readyState !== "interactive") {
+		if (document.readyState == "interactive") {
 		    tot_interactive_state_times += 1;
-		    if (tot_interactive_state_times < 2) {
+		    if (tot_interactive_state_times < 1) {
 			return;
 		    }
 		}
