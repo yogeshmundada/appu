@@ -25,6 +25,8 @@ var tot_interactive_state_times = 0;
 // all messages
 var do_not_watch_this_site = undefined;
 
+var page_load_start = undefined;
+
 function close_report_ready_modal_dialog() {
     $('#appu-report-ready').dialog("close");
 }
@@ -1471,12 +1473,22 @@ function do_document_ready_functions() {
 	    return;
 	}
 
-	if (is_cookie_investigator_tab &&
-	     document.readyState !== "interactive") {
-	    tot_interactive_state_times += 1;
-	    if (tot_interactive_state_times < 5) {
-		return;
+	if (curr_epoch_id != 1) {
+	    if (is_cookie_investigator_tab &&
+		document.readyState !== "complete") {
+		if (document.readyState !== "interactive") {
+		    tot_interactive_state_times += 1;
+		    if (tot_interactive_state_times < 2) {
+			return;
+		    }
+		}
+		else {
+		    return;
+		}
 	    }
+	}
+	else {
+	    return;
 	}
     }
     
@@ -1493,10 +1505,13 @@ function do_document_ready_functions() {
 		}
 	    });
 
+	var page_load_time = (new Date()).getTime() - page_load_start.getTime();
+
 	message = {};
 	message.type = "page_is_loaded";
 	message.url = document.domain;
 	message.curr_epoch_id = curr_epoch_id;
+	message.page_load_time = page_load_time;
 	chrome.extension.sendMessage("", message, is_status_active);
 	console.log("APPU DEBUG: Sent message that page is loaded");
 
@@ -1557,6 +1572,8 @@ if (document.URL.match(/.pdf$/) == null) {
     $(window).on('unload', window_unfocused);
     $(window).on("focus", window_focused);
     $(window).on("blur", window_unfocused);
+
+    page_load_start = new Date();
 
     var message = {
 	type : "content_script_started",
@@ -1775,6 +1792,7 @@ if (document.URL.match(/.pdf$/) == null) {
 
 		    // Even if no usernames detected, just send the message.
 		    message.type = "usernames_detected";
+		    message.total_time = (new Date()).getTime() - page_load_start.getTime();
 		    message.domain = document.domain;
 		    message.curr_epoch_id = curr_epoch_id;
 		    message.present_usernames = present_usernames;

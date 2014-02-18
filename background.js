@@ -432,7 +432,18 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    cit.pageload_timeout = undefined;
 		}
 		
-		process_last_epoch(sender.tab.id, message.present_usernames, num_pwd_boxes);
+		if (cit.is_user_logged_in(message.present_usernames) == false &&
+		    message.total_time < (cit.get_page_load_time() * 3)) {
+		    console.log("APPU DEBUG: User does not seem to be logged-in." + 
+				" Waiting for 3 times the normal page load time: " + 
+				(cit.get_page_load_time() * 3) + " ms");
+		    window.setTimeout(function(){
+			    check_usernames_for_cookie_investigation(sender.tab.id);
+		        }, (cit.get_page_load_time() * 3));
+		}
+		else {
+		    process_last_epoch(sender.tab.id, message.present_usernames, num_pwd_boxes);
+		}
 	    }
 	}
 	else {
@@ -524,7 +535,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	    if (message.curr_epoch_id == cit.get_epoch_id()) {
 		console.log("APPU DEBUG: Setting page load success for EPOCH-ID: " + 
-			    message.curr_epoch_id);
+			    message.curr_epoch_id +
+			    " (page_load_time: " + message.page_load_time + " ms)");
+
+		if (cit.get_epoch_id() == 1) {
+		    cit.set_page_load_time(message.page_load_time);
+		}
 
 		cit.set_page_load_success(true);
 		if (cit.pageload_timeout != undefined) {

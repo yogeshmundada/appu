@@ -2804,6 +2804,10 @@ function cookie_investigator(account_cookies,
     var tot_page_reloads_overall = 0;
     var tot_page_reloads_since_last_lo_change = 0;
 
+    // Sets it when Epoch-ID 1 executes to give a rough idea of
+    // page load time.
+    var page_load_time = 0;
+
     var ci_start_time = new Date();
     var tot_time_taken = 0;
     var tot_attempts = 1;
@@ -3345,8 +3349,8 @@ function cookie_investigator(account_cookies,
 	binary_cookiesets = [];
 	decimal_cookiesets = [];
 	
-	epoch_id = 0;
-	req_epch_table = {};
+	// epoch_id = 0;
+	// req_epch_table = {};
 
 	// Reseting the pending variables for verification_epoch
 	pending_am_i_logged_in = undefined;
@@ -3363,6 +3367,7 @@ function cookie_investigator(account_cookies,
 
 	bool_expand_state_initialized = false;
 	// tot_expand_state_cookiesets_tested_overall = 0;
+	store_intermediate_state();
     }
 
     
@@ -3455,6 +3460,24 @@ function cookie_investigator(account_cookies,
 	console.log("APPU DEBUG: Jaccard's index(during_passed_screen_layout): " + ji);
     }
 
+    function set_page_load_time(plt) {
+	page_load_time = plt;
+    }
+    
+    function get_page_load_time() {
+	return page_load_time;
+    }
+
+
+    function is_user_logged_in(present_usernames) {
+	if (top_three_elements_with_usernames != undefined) {
+	    var am_i_logged_in = detect_login_status(present_usernames);
+	    return am_i_logged_in;
+	}
+	
+	return true;
+    }
+
 
     function init_cookie_investigation() {
 	var cit = cookie_investigating_tabs[my_tab_id];
@@ -3467,6 +3490,9 @@ function cookie_investigator(account_cookies,
 
 	cit.reload_interval = undefined;
 
+	cit.is_user_logged_in = is_user_logged_in;
+	cit.get_page_load_time = get_page_load_time;
+	cit.set_page_load_time = set_page_load_time;
 	cit.tab_closed_cb = cookie_investigator_closed;
 	cit.set_page_load_success = set_page_load_success;
 	cit.get_page_load_success = get_page_load_success;
@@ -3814,6 +3840,10 @@ function cookie_investigator(account_cookies,
 	    console.log("APPU DEBUG: (" + my_state + ")Is user logged-in for this cookieset?(" + 
 			JSON.stringify(disabled_cookies) + 
 			"): " + am_i_logged_in);
+	    
+	    if (!am_i_logged_in) {
+		console.log("Here here: Delete me");
+	    }
 
 	    pending_am_i_logged_in.push(am_i_logged_in);
 	    pending_disabled_cookies.push(disabled_cookies);
@@ -3835,6 +3865,10 @@ function cookie_investigator(account_cookies,
 	    console.log("APPU DEBUG: (" + my_state + ")Is user logged-in for this cookieset?" + 
 			JSON.stringify(expand_state_disabled_cookies) + 
 			"): " + am_i_logged_in);
+
+	    if (!am_i_logged_in) {
+		console.log("Here here: Delete me");
+	    }
 
 	    pending_am_i_logged_in = am_i_logged_in;
 	    pending_disabled_cookies = disabled_cookies;
@@ -5006,7 +5040,7 @@ function cookie_investigator(account_cookies,
 
 
     function detect_login_status(present_usernames) {
-	var bool_top_three_elems_present = true;
+	var bool_at_least_one_username_present = false;
 
 	var tn = [];
 	for (var i = 0; i < top_three_elements_with_usernames.length; i++) {
@@ -5017,7 +5051,6 @@ function cookie_investigator(account_cookies,
 	
 	for (var i = 0; i < tn.length; i++) {
 	    var cn = present_usernames.elem_list;
-	    var bool_found = false;
 	    for (var j = 0; j < cn.length; j++) {
 		// Checking for 'X' co-ordinate match OR 'Y' co-ordinate match because
 		// sometimes some element load takes time.
@@ -5029,18 +5062,14 @@ function cookie_investigator(account_cookies,
 		// }
 		if (!tn[i].counted_before &&
 		    cn[j].username == tn[i].username) {
-		    bool_found = true;
+		    bool_at_least_one_username_present = true;
 		    tn[i].counted_before = true;
 		    break;
 		}
 	    }
-	    if (bool_found == false) {
-		bool_top_three_elems_present = false;
-		break;
-	    }
 	}
 	
-	if (bool_top_three_elems_present) {
+	if (bool_at_least_one_username_present) {
 	    return true;
 	}
 	else {
@@ -5073,6 +5102,9 @@ function cookie_investigator(account_cookies,
 	var bool_top_three_elems_present = true;
 	if (top_three_elements_with_usernames != undefined) {
 	    am_i_logged_in = detect_login_status(present_usernames);
+	    if (!am_i_logged_in && my_state != "st_gub_cookiesets_block_test") {
+		console.log("Here here: Delete me");
+	    }
 	}
 
 	num_pwd_boxes = (num_pwd_boxes == undefined) ? 0 : num_pwd_boxes;
