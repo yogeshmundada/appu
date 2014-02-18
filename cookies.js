@@ -2446,7 +2446,9 @@ function get_account_cookies(current_url, bool_url_specific_cookies) {
 	if (cs.cookies[c].current_state == 'absent') {
 	    // No point in testing for cookies that are not present in the 
 	    // default cookie-store.
-	    continue;
+	    // (actually there is -- seems like if that cookie is generated later then
+	    //  that creates problems in cookie investigation)
+	    // continue;
 	}
 	if (cs.cookies[c].cookie_class == 'during' ||
 	    cs.cookies[c].is_part_of_account_cookieset == true) {
