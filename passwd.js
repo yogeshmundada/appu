@@ -1781,6 +1781,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		}
 		else if (message.command == "check_usernames") {
 		    var username_list = message.usernames;
+		    var ud_start = new Date();
 		    present_usernames = check_if_username_present(username_list, "cookiesets-investigation");
 		    var message = {};
 		    message.invisible_check_invoked = false;
@@ -1790,9 +1791,15 @@ if (document.URL.match(/.pdf$/) == null) {
 			message.invisible_check_invoked = true;
 		    }
 
+		    var ud_end = new Date();
+		    var ud_time = (ud_end.getTime() - ud_start.getTime()); 
+		    console.log("APPU DEBUG: Time taken to detect usernames: " + 
+				 ud_time + " ms");
+
 		    // Even if no usernames detected, just send the message.
 		    message.type = "usernames_detected";
 		    message.total_time = (new Date()).getTime() - page_load_start.getTime();
+		    message.user_detection_time = ud_time; 
 		    message.domain = document.domain;
 		    message.curr_epoch_id = curr_epoch_id;
 		    message.present_usernames = present_usernames;

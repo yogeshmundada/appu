@@ -432,17 +432,22 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    window.clearInterval(cit.pageload_timeout);
 		    cit.pageload_timeout = undefined;
 		}
-		
-		if (cit.is_user_logged_in(message.present_usernames) == false &&
+
+		var is_user_logged_in = cit.is_user_logged_in(message.present_usernames);
+		if (is_user_logged_in == false &&
 		    message.total_time < (cit.get_page_load_time() * 3)) {
 		    console.log("APPU DEBUG: User does not seem to be logged-in." + 
 				" Waiting for 3 times the normal page load time: " + 
-				(cit.get_page_load_time() * 3) + " ms");
+				(cit.get_page_load_time() * 1.5) + " ms");
 		    window.setTimeout(function(){
 			    check_usernames_for_cookie_investigation(sender.tab.id);
-		        }, (cit.get_page_load_time() * 3));
+		        }, (cit.get_page_load_time() * 1.5));
 		}
 		else {
+		    if (is_user_logged_in && 
+			cit.get_state() == 'st_verification_epoch') {
+			cit.set_page_load_time(message.total_time - message.user_detection_time);
+		    }
 		    process_last_epoch(sender.tab.id, message.present_usernames, num_pwd_boxes);
 		}
 	    }

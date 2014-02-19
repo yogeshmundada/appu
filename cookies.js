@@ -2808,6 +2808,7 @@ function cookie_investigator(account_cookies,
 
     // Sets it when Epoch-ID 1 executes to give a rough idea of
     // page load time.
+    var total_verification_page_loads = 0;
     var page_load_time = 0;
 
     var ci_start_time = new Date();
@@ -3462,8 +3463,15 @@ function cookie_investigator(account_cookies,
 	console.log("APPU DEBUG: Jaccard's index(during_passed_screen_layout): " + ji);
     }
 
+    // Keeping a moving average of page-load-times for successful verification
+    // epochs.
     function set_page_load_time(plt) {
-	page_load_time = plt;
+	var t = total_verification_page_loads * page_load_time;
+	total_verification_page_loads += 1;
+	page_load_time = (t + plt)/total_verification_page_loads;
+	console.log("APPU DEBUG: Current average page-load-time: " + 
+		    page_load_time + " ms (total verification page loads:" + 
+		    total_verification_page_loads + ")");
     }
     
     function get_page_load_time() {
@@ -4381,16 +4389,18 @@ function cookie_investigator(account_cookies,
 				commit_account_cookies();
 			    }
 			    else {
-				if (pending_disabled_cookies[0] == null ||
-				    verified_strict_non_account_cookiesets_array.length == 19) {
-				    console.log("Here here: Delete me");
-				}
+				commit_account_cookies();
 
-				console.log("Here here: Delete me: Adding to VSNACA: " + 
-					    JSON.stringify(pending_disabled_cookies[0]));
-				verified_strict_non_account_cookiesets_array.push(pending_disabled_cookies[0]);
-				verified_strict_non_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
-				store_intermediate_state();
+				//	if (pending_disabled_cookies[0] == null ||
+				//	    verified_strict_non_account_cookiesets_array.length == 19) {
+				//	    console.log("Here here: Delete me");
+				//	}
+
+				//	console.log("Here here: Delete me: Adding to VSNACA: " + 
+				//		    JSON.stringify(pending_disabled_cookies[0]));
+				//	verified_strict_non_account_cookiesets_array.push(pending_disabled_cookies[0]);
+				//	verified_strict_non_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+				//	store_intermediate_state();
 			    }
 			}
 			else {
