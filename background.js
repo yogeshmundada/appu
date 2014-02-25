@@ -558,19 +558,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    console.log("----------------------------------------");
 		    process_last_epoch(sender.tab.id, undefined, undefined)
 			}
-		else if (cit.get_state() == 'st_testing'                                  ||
-			 cit.get_state() == 'st_start_with_no_cookies'                    ||
-			 cit.get_state() == 'st_suspected_cookies_pass_test'              ||
-			 cit.get_state() == 'st_suspected_cookies_block_test'             ||
-			 cit.get_state() == 'st_verification_epoch'                       ||
-			 cit.get_state() == 'st_cookiesets_block_nonduring_and_disabled'  ||
-			 cit.get_state() == 'st_cookiesets_block_disabled'                ||
-			 cit.get_state() == 'st_gub_cookiesets_block_test'                ||
-			 cit.get_state() == 'st_expand_suspected_account_cookies') {
+		else {
 		    // We test here that user is still logged into the web application.
-		console.log("Here here: Calling check_usernames_for_cookie_investigation(), EPOCH-ID: " + 
-			    message.curr_epoch_id);
-		check_usernames_for_cookie_investigation(sender.tab.id);
+		    console.log("Here here: Calling check_usernames_for_cookie_investigation(), EPOCH-ID: " + 
+				message.curr_epoch_id);
+		    check_usernames_for_cookie_investigation(sender.tab.id);
 		}
 	    }
 	}
@@ -580,8 +572,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    return;
 	}
 
-// 	console.log("APPU DEBUG: tabid: "+sender.tab.id+", In query status: " + 
-// 	template_processing_tabs[sender.tab.id]);
+	// 	console.log("APPU DEBUG: tabid: "+sender.tab.id+", In query status: " + 
+	// 	template_processing_tabs[sender.tab.id]);
 
 	r = {};
 	r.status = pii_vault.config.status;
