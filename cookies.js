@@ -1161,8 +1161,6 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	if (rc) {
 	    // Suppressing these cookies will not affect a session's logged-in status.
 	    // No point in testing.
-	    // console.log("APPU DEBUG: Skipping decimal cookieset(superset in non-account_cookiesets): " + 
-	    //	dec_cookieset);
 	    if (state == "normal") {
 		skipped_sets.num_llb_superset_in_non_account_super_cookiesets += 1;
 		skipped_sets.tot_page_reloads_naive += 1;
@@ -1244,7 +1242,7 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 
 	    if (state == "normal") {
 		skipped_sets.num_gub_subset_in_account_cookiesets += 1;
-		skipped_sets.tot_page_reloads_naive += 3;
+		skipped_sets.tot_page_reloads_naive += 2;
 	    }
 
 	    continue;
@@ -1257,7 +1255,7 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 	    // No point in testing.
 	    if (state == "normal") {
 		skipped_sets.num_gub_superset_in_non_account_super_cookiesets += 1;
-		skipped_sets.tot_page_reloads_naive += 1;
+		skipped_sets.tot_page_reloads_naive += 2;
 	    }
 
 	    continue;
@@ -1273,7 +1271,7 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 
 	    if (state == "normal") {
 		skipped_sets.num_gub_subset_in_account_super_cookiesets += 1;
-		skipped_sets.tot_page_reloads_naive += 3;
+		skipped_sets.tot_page_reloads_naive += 2;
 	    }
 	    continue;
 	}
@@ -1285,7 +1283,7 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 	    // (very unlikely to happen). So no point in testing.
 	    if (state == "normal") {
 		skipped_sets.num_llb_superset_in_non_account_cookiesets += 1;
-		skipped_sets.tot_page_reloads_naive += 1;
+		skipped_sets.tot_page_reloads_naive += 2;
 	    }
 	    continue;
 	}
@@ -1688,6 +1686,7 @@ function print_cookie_investigation_state(url) {
 	    return;
 	}
 
+	var expand_state_discovered_cookies = JSON.parse(state[url]["expand_state_discovered_cookies"]);
 	var vsaca = state[url]["vsaca"];
 	var vsnaca = state[url]["vsnaca"];
 	var vasca = state[url]["vasca"];
@@ -1739,6 +1738,14 @@ function print_cookie_investigation_state(url) {
 	console.log("APPU DEBUG: Total cookiesets tested so far: " + tot_cookiesets_tested_overall);
 	console.log("APPU DEBUG: Total time in generating cookiesets since last change to equation: " + 
 		    tot_cookiesets_generation_time);
+
+	console.log("-------------------");
+	console.log("APPU DEBUG: Total expand-state discovered cookies: " + 
+		    expand_state_discovered_cookies.length);
+	console.log("APPU DEBUG: Expand-state discovered cookies: "); 
+	for (var i = 0; i < expand_state_discovered_cookies.length; i++) {
+	    console.log((i+1) + ". " + expand_state_discovered_cookies[i]);
+	}
 
 	console.log("-------------------");
 	console.log("APPU DEBUG: *** Printing 'verified strict account cookiesets' array" + 
@@ -1827,6 +1834,7 @@ function search_for_cookieset(url, cookieset) {
 	    return;
 	}
 
+	var expand_state_discovered_cookies = JSON.parse(state[url]["expand_state_discovered_cookies"]);
 	var vsaca = state[url]["vsaca"];
 	var vsnaca = state[url]["vsnaca"];
 	var vasca = state[url]["vasca"];
@@ -2879,6 +2887,8 @@ function cookie_investigator(account_cookies,
     var bytes_sent_this_attempt = 0;
     var bytes_recvd_this_attempt = 0;
 
+    var expand_state_discovered_cookies = [];
+
     console.log("APPU DEBUG: Starting cookie investigation for(" + my_domain + "): " + ci_start_time);
 
     // This measures time spent in just generating cookiesets.
@@ -2906,8 +2916,8 @@ function cookie_investigator(account_cookies,
     var tot_inconclusive_cookiesets_overall = 0;
 
     var suspected_account_cookies_array = Object.keys(account_cookies);
-        
     var tot_cookies = suspected_account_cookies_array.length;
+
     var tot_execution = 0;
     var my_tab_id = undefined;
 
@@ -3285,6 +3295,28 @@ function cookie_investigator(account_cookies,
 		if (pcs.skipped_sets != undefined) {
 		    skipped_sets = pcs.skipped_sets;
 		}
+
+		if (pcs.expand_state_discovered_cookies != undefined) {
+		    expand_state_discovered_cookies = JSON.parse(pcs.expand_state_discovered_cookies);
+		    console.log("APPU DEBUG: Restoring previously discovered expand-state cookies: " +
+				JSON.stringify(expand_state_discovered_cookies));
+		    
+		    for (var p = 0; p < expand_state_discovered_cookies.length; p++) {
+			var cookie_key = expand_state_discovered_cookies[p];
+			if (suspected_account_cookies_array.indexOf(cookie_key) == -1) {
+			    console.log("APPU DEBUG: Previously discovered expand-state cookie(" + cookie_key +
+					") was not present in the" +
+					"suspected-account-cookies array. Adding it.");
+			    suspected_account_cookies_array.push(cookie_key);
+			    tot_cookies++;
+			    var index_to_delete = non_during_suspected_account_cookies_array.indexOf(cookie_key);
+			    if (index_to_delete != -1) {
+				non_during_suspected_account_cookies_array.splice(index_to_delete, 1);		
+				tot_non_during_cookies -= 1;
+			    }
+			}
+		    }
+		}
 	    }
 	}
 	else {
@@ -3429,6 +3461,7 @@ function cookie_investigator(account_cookies,
 		    "tot_page_reloads_naive" : skipped_sets.tot_page_reloads_naive,
 		    "tot_page_reloads_since_last_lo_change" : tot_page_reloads_since_last_lo_change,
 		    "tot_attempts" : (tot_attempts+1),
+		    "expand_state_discovered_cookies" : JSON.stringify(expand_state_discovered_cookies),
 		    "vsaca" : verified_strict_account_cookiesets_array,
 		    "vsnaca" : verified_strict_non_account_cookiesets_array,
 		    "vasca" : verified_account_super_cookiesets_array,
@@ -3452,7 +3485,8 @@ function cookie_investigator(account_cookies,
 	is_suspected_account_cookies_block_test_done = false;
 	
 	num_cookies_drop_for_round = 1;
-	
+	num_cookies_pass_for_round = 1;
+
 	bool_are_all_account_cookies_in_default_store = undefined;
 	bool_are_account_cookies_in_during_cookies = undefined;
 	bool_are_account_cookies_not_in_nonduring_cookies = undefined;
@@ -3491,6 +3525,7 @@ function cookie_investigator(account_cookies,
 	curr_expand_state_gub_decimal_cs = undefined;
 
 	expand_state_disabled_cookies = [];
+
 	expand_state_num_cookies_drop_for_round = 1;
 	expand_state_num_cookies_pass_for_round = 1;
 
@@ -3696,6 +3731,9 @@ function cookie_investigator(account_cookies,
 		    }
 
 		    enabled_cookies_array = [];
+		    var enabled_nonduring_cookies_array = [];
+		    var enabled_during_cookies_array = [];
+
 		    for (var i = 0; i < all_cookies.length; i++) {
 			var cookie_name = all_cookies[i].name;
 			var cookie_domain = all_cookies[i].domain;
@@ -3787,6 +3825,12 @@ function cookie_investigator(account_cookies,
 			}
 			
 			enabled_cookies_array.push(cookie_key);
+			if (cs.cookies[cookie_key].cookie_class == "during") {
+			    enabled_during_cookies_array.push(cookie_key);
+			}
+			else {
+			    enabled_nonduring_cookies_array.push(cookie_key);
+			}
 			cookie_store[cookie_key] = all_cookies[i];
 		    }
 		    console.log("APPU DEBUG: Populated shadow_cookie_store length: " + 
@@ -3798,24 +3842,31 @@ function cookie_investigator(account_cookies,
 
 		    if (my_state != "st_verification_epoch"                            &&
 			my_state != "st_suspected_cookies_block_test"                  &&
-			my_state != "st_llb_expand_suspected_account_cookies"              &&
+			my_state != "st_llb_expand_suspected_account_cookies"          &&
 			my_state != "st_gub_expand_suspected_account_cookies"          &&
 			my_state != "st_gub_cookiesets_block_disabled_and_nonduring"   &&
 			my_state != "st_gub_cookiesets_block_disabled") {
 			console.log("APPU DEBUG: Disabled cookies in this epoch: " + 
 				    JSON.stringify(disabled_cookies));
 		    }
-		    else if (my_state == "st_llb_expand_suspected_account_cookies" ||
-			     my_state == "st_gub_expand_suspected_account_cookies") {
+		    else if (my_state == "st_llb_expand_suspected_account_cookies") {
 			console.log("APPU DEBUG: Main disabled cookies that caused to enter 'expand' state: " + 
 				    JSON.stringify(disabled_cookies));
 			console.log("APPU DEBUG: Disabled cookies getting tested: " + 
 				    JSON.stringify(expand_state_disabled_cookies));
 		    }
+		    else if (my_state == "st_gub_expand_suspected_account_cookies") {
+			console.log("APPU DEBUG: Main disabled cookies that caused to enter 'expand' state: " + 
+				    JSON.stringify(disabled_cookies));
+			console.log("APPU DEBUG: Enabled non-during cookies getting tested: " + 
+				    JSON.stringify(enabled_nonduring_cookies_array));
+		    }
 		    else if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring" ||
 			     my_state == "st_gub_cookiesets_block_disabled") {
-			console.log("APPU DEBUG: Enabled cookies in this epoch: " + 
-				    JSON.stringify(enabled_cookies_array));
+			console.log("APPU DEBUG: Enabled during cookies in this epoch: " + 
+				    JSON.stringify(enabled_during_cookies_array));
+			console.log("APPU DEBUG: Enabled non-during cookies getting tested: " + 
+				    JSON.stringify(enabled_nonduring_cookies_array));
 		    }
 
 		    original_shadow_cookie_store = $.extend(true, {}, shadow_cookie_store);
@@ -4109,7 +4160,7 @@ function cookie_investigator(account_cookies,
     }
     
 
-    function reset_for_cookieset_testing(reset_stats) {
+    function reset_for_llb_cookieset_testing(reset_stats) {
 	if (reset_stats) {
 	    tot_cookiesets_tested_this_round = 0;
 	}
@@ -4138,7 +4189,7 @@ function cookie_investigator(account_cookies,
 	pending_bool_pwd_box_present = [];
     }
 
-    function reset_for_expand_cookies_testing(reset_stats) {
+    function reset_for_llb_expand_cookies_testing(reset_stats) {
 	if (reset_stats) {
 	    tot_cookiesets_tested_this_round = 0;
 	}
@@ -4152,7 +4203,7 @@ function cookie_investigator(account_cookies,
 	pending_bool_pwd_box_present = undefined;
     }
 
-    function reset_for_expand_cookies_gub_testing(reset_stats) {
+    function reset_for_gub_expand_cookies_testing(reset_stats) {
 	if (reset_stats) {
 	    tot_cookiesets_tested_this_round = 0;
 	}
@@ -4206,7 +4257,7 @@ function cookie_investigator(account_cookies,
 	else if (attempt_state == "st_llb_cookiesets_block_disabled_and_nonduring") {	    
 	    if (last_non_verification_state != "st_llb_cookiesets_block_disabled" &&
 		last_non_verification_state != "st_llb_cookiesets_block_disabled_and_nonduring") {
-		reset_for_cookieset_testing(true);
+		reset_for_llb_cookieset_testing(true);
 	    }
 
 	    var rc = get_next_binary_cookieset_X(curr_binary_cs, 
@@ -4265,7 +4316,7 @@ function cookie_investigator(account_cookies,
 		return "error";
 	    }
 	    else {
-		reset_for_cookieset_testing(false);
+		reset_for_llb_cookieset_testing(false);
 
 		curr_binary_cs = rc.binary_cookieset;
 		curr_decimal_cs = rc.decimal_cookieset;
@@ -4275,9 +4326,9 @@ function cookie_investigator(account_cookies,
 		return "success";
 	    }
 	}
-	else if (attempt_state == "st_gub_cookiesets_block_disabled_and_nonduring") {
-	    if (last_non_verification_state != "st_gub_cookiesets_block_disabled_and_nonduring" &&
-		last_non_verification_state != "st_gub_cookiesets_block_disabled") {
+	else if (attempt_state == "st_gub_cookiesets_block_disabled") {
+	    if (last_non_verification_state != "st_gub_cookiesets_block_disabled" &&
+		last_non_verification_state != "st_gub_cookiesets_block_disabled_and_nonduring") {
 		reset_for_gub_cookieset_testing(true);
 	    }
 
@@ -4351,7 +4402,7 @@ function cookie_investigator(account_cookies,
 	    }
 
 	    if (last_non_verification_state != "st_llb_expand_suspected_account_cookies") {
-		reset_for_expand_cookies_testing(true);
+		reset_for_llb_expand_cookies_testing(true);
 	    }
 
 	    var rc = get_next_binary_cookieset_X(curr_expand_state_binary_cs, 
@@ -4405,7 +4456,7 @@ function cookie_investigator(account_cookies,
 		return "error";
 	    }
 	    else {		
-		reset_for_expand_cookies_testing(false);
+		reset_for_llb_expand_cookies_testing(false);
 		
 		curr_expand_state_binary_cs = rc.binary_cookieset;
 		curr_expand_state_decimal_cs = rc.decimal_cookieset;
@@ -4423,7 +4474,7 @@ function cookie_investigator(account_cookies,
 	    }
 
 	    if (last_non_verification_state != "st_gub_expand_suspected_account_cookies") {
-		reset_for_expand_cookies_gub_testing(true);
+		reset_for_gub_expand_cookies_testing(true);
 	    }
 
 	    if (tot_cookiesets_tested_this_round > tot_non_during_cookies) {
@@ -4483,7 +4534,7 @@ function cookie_investigator(account_cookies,
 		return "error";
 	    }
 	    else {
-		reset_for_expand_cookies_gub_testing(false);
+		reset_for_gub_expand_cookies_testing(false);
 
 		curr_expand_state_gub_binary_cs = rc.binary_cookieset;
 		curr_expand_state_gub_decimal_cs = rc.decimal_cookieset;
@@ -4706,8 +4757,13 @@ function cookie_investigator(account_cookies,
 
 		    for (var i = 0; i < acct_cookies.length; i++) {
 			cs.cookies[acct_cookies[i]].is_part_of_account_cookieset = true;
+			if (expand_state_discovered_cookies.indexOf(acct_cookies[i]) == -1) {
+			    expand_state_discovered_cookies.push(acct_cookies[i]);
+			}
 		    }
+
 		    flush_session_cookie_store();
+		    store_intermediate_state();
 
 		    console.log("APPU DEBUG: Detected account cookies in non-DURING cookies. Resetting to start state");
 		    reset_to_start_state(acct_cookies);
@@ -4723,7 +4779,9 @@ function cookie_investigator(account_cookies,
 	else if (tested_state == "st_gub_expand_suspected_account_cookies") {
 	    if (pending_am_i_logged_in != undefined &&
 		pending_am_i_logged_in == true) {
+		var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
 		var acct_cookies = [];
+
 		for (var k = 0; k < pending_enabled_cookies_array.length; k++) {
 		    var cookie_key = pending_enabled_cookies_array[k];
 		    if (cs.cookies[cookie_key].cookie_class != "during") {
@@ -4734,13 +4792,15 @@ function cookie_investigator(account_cookies,
 		    }
 		}
 
-		var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
-
 		for (var i = 0; i < acct_cookies.length; i++) {
 		    cs.cookies[acct_cookies[i]].is_part_of_account_cookieset = true;
+		    if (expand_state_discovered_cookies.indexOf(acct_cookies[i]) == -1) {
+			expand_state_discovered_cookies.push(acct_cookies[i]);
+		    }
 		}
 
 		flush_session_cookie_store();
+		store_intermediate_state();
 
 		console.log("APPU DEBUG: (GUB-EXPAND) Detected account cookies in non-DURING cookies." + 
 			    " Resetting to start state");
@@ -4761,15 +4821,20 @@ function cookie_investigator(account_cookies,
 
 
     // Returns: 
-    // "yes"      : Means the result is significant for last-non-verification state.
-    // "no"       : if the user was still LOGGED-IN for states:
-    //              "st_llb_cookiesets_block_disabled_and_nonduring"
-    //              "st_llb_expand_suspected_account_cookies"
-    // "possibly" : if the user was not logged-in and need to execute further states to
-    //              decide
-    // "dontcare" :
+    // "yes"           : When result is assuredly significant.
+    // "no"            : When result is assuredly NOT significant.
+    // "possibly_yes"  : When result may be significant, but need verification that user is still logged-in.
+    // "possibly_no"   : When result may NOT be significant, but need verification that user is still logged-in.
+    // "force_commit"  : Possibly something went wrong. Let commit_result() take care of it.
+    // 
+    // Deciding significance depends on what type of state you are in.
+    // "yes"            : Returned for GUB states when we find user is logged-in.
+    // "no"             : Returned for LLB states when we find user is logged-in.
+    // "possibly_yes"   : Returned for LLB states when user is NOT logged-in.
+    //                    Returned for GUB states when user is logged-in. 
+    // "possibly_no"    : Returned for GUB states when user is NOT logged-in.
     function decide_result_significance() {
-	var ignore_states = [
+	var dontcare_states = [
 			     "st_cookie_test_start", 
 			     "st_start_with_no_cookies",
 			     "st_suspected_cookies_pass_test",
@@ -4779,36 +4844,49 @@ function cookie_investigator(account_cookies,
 			     "st_verification_epoch",
 			     ];
 
-	if (ignore_states.indexOf(my_state) != -1) {
-	    return "no";
+	if (dontcare_states.indexOf(my_state) != -1) {
+	    return "force_commit";
 	}
 
 	if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring") {
-	    // If we are in 'st_gub_cookiesets_block_disabled_and_nonduring' then
-	    // no matter whatever is the result, just being in this state is significant.
-	    return "dontcare";
-	}
-
-	if (pending_am_i_logged_in == undefined) {
-	    console.log("APPU Error: State(" + my_state + "): pending_am_i_logged_in undefined");
-	    report_fatal_error(my_state + "-pending_am_i_logged_in-undefined");
-	    return "no";
-	}
-
-	if (my_state == "st_llb_expand_suspected_account_cookies"    ||
-	    my_state == "st_gub_expand_suspected_account_cookies") {
-	    if (pending_am_i_logged_in == false) {
-		return "possibly";
+	    if (pending_am_i_logged_in[0] == true && 
+		pending_am_i_logged_in[1] == true) {
+		return "yes";
+	    }
+	    else {
+		return "force_commit";
 	    }
 	}
-	else if (my_state == "st_gub_cookiesets_block_disabled") {
-	    if (pending_am_i_logged_in[0] == false) {
-		return "possibly";
+	if (my_state == "st_gub_cookiesets_block_disabled") {
+	    if (pending_am_i_logged_in[0] == true) {
+		return "possibly_yes";
+	    }
+	    else {
+		return "possibly_no";
 	    }
 	}
 	else if (my_state == "st_llb_cookiesets_block_disabled_and_nonduring") {
 	    if (pending_am_i_logged_in[0] == false) {
-		return "possibly";
+		return "possibly_yes";
+	    }
+	    else if (pending_am_i_logged_in[0] == true) {
+		return "no";
+	    }
+	}
+	else if (my_state == "st_llb_expand_suspected_account_cookies") {
+	    if (pending_am_i_logged_in == false) {
+		return "possibly_yes";
+	    }
+	    else if (pending_am_i_logged_in == true) {
+		return "no";
+	    }
+	}
+	else if (my_state == "st_gub_expand_suspected_account_cookies") {
+	    if (pending_am_i_logged_in == true) {
+		return "yes";
+	    }
+	    else {
+		return "possibly_no";
 	    }
 	}
 
@@ -4819,7 +4897,7 @@ function cookie_investigator(account_cookies,
 	var rc = -1;
 	var temp_state = my_state;
 	var crrc = '';
-	var test_significance = '';
+	var result_significance = '';
 
 	// was_last_result_expected: Just decides if the result for the last state expected.
 	//                           For e.g., clearly if user is not logged-in for verification state,
@@ -4832,19 +4910,20 @@ function cookie_investigator(account_cookies,
 	    var verification_state_based_commit = {
 		"st_verification_epoch:st_suspected_cookies_pass_test"                 : true,
 		"st_verification_epoch:st_suspected_cookies_block_test"                : true,
-		"st_verification_epoch:st_llb_cookiesets_block_disabled"                   : true,
-		"st_verification_epoch:st_llb_expand_suspected_account_cookies"            : true,
+
+		"st_verification_epoch:st_llb_cookiesets_block_disabled"               : true,
+		"st_verification_epoch:st_llb_expand_suspected_account_cookies"        : true,
+
 		"st_verification_epoch:st_gub_expand_suspected_account_cookies"        : true,
 		"st_verification_epoch:st_gub_cookiesets_block_disabled"               : true,
 	    };
 
 	    var result_significance_based_commit = {
-		"st_llb_expand_suspected_account_cookies:no"                               : true,
-		"st_gub_expand_suspected_account_cookies:no"                           : true,
-		"st_llb_cookiesets_block_disabled_and_nonduring:no"                        : true,
+		"st_llb_cookiesets_block_disabled_and_nonduring:no"         : true,
+		"st_llb_expand_suspected_account_cookies:no"                : true,
 
-		"st_gub_cookiesets_block_disabled:no"                                  : true,
-		"st_gub_cookiesets_block_disabled_and_nonduring:dontcare"              : true,
+		"st_gub_cookiesets_block_disabled_and_nonduring:yes"        : true,
+		"st_gub_expand_suspected_account_cookies:yes"               : true,
 	    };
 
 	    var curr_last_state_combo = my_state + ":" + last_non_verification_state;	    
@@ -4859,7 +4938,8 @@ function cookie_investigator(account_cookies,
 		//                    
 		result_significance = decide_result_significance();
 		var result_state_combo = my_state + ":" + result_significance;
-		if (result_state_combo in result_significance_based_commit) {
+		if (result_state_combo in result_significance_based_commit ||
+		    result_significance == "force_commit") {
 		    crrc = commit_result(my_state);
 		}
 	    }
@@ -4883,39 +4963,49 @@ function cookie_investigator(account_cookies,
 	// b. Last non-verification state
 	// c. Last cookieset test result
 	var state_machine = {
-	    "st_cookie_test_start"            : "st_verification_epoch",                      
-	    
-	    "st_start_with_no_cookies"        : "st_verification_epoch",        
-	    "st_suspected_cookies_pass_test"  : "st_verification_epoch",        
-	    "st_suspected_cookies_block_test" : "st_verification_epoch",        
-	    "st_llb_cookiesets_block_disabled"    : "st_verification_epoch",        
-	    
-	    // Combination: last_non_verification_state + ":st_verification_epoch"
-	    "st_cookie_test_start:st_verification_epoch"                : "st_start_with_no_cookies",
-	    "st_start_with_no_cookies:st_verification_epoch"            : "st_suspected_cookies_pass_test",
-	    "st_suspected_cookies_pass_test:st_verification_epoch"      : "st_suspected_cookies_block_test",
-	    
-	    "st_suspected_cookies_block_test:st_verification_epoch" : "ATTEMPT:st_llb_cookiesets_block_disabled_and_nonduring",
-	    "st_llb_cookiesets_block_disabled:st_verification_epoch"    : "ATTEMPT:st_llb_cookiesets_block_disabled_and_nonduring",
-	    "st_gub_cookiesets_block_disabled_and_nonduring:st_verification_epoch" : "ATTEMPT:st_gub_cookiesets_block_disabled_and_nonduring",
-	    "st_llb_expand_suspected_account_cookies:st_verification_epoch"      : "ATTEMPT:st_llb_expand_suspected_account_cookies",
-	    "st_gub_expand_suspected_account_cookies:st_verification_epoch"  : "ATTEMPT:st_gub_expand_suspected_account_cookies",
-	    
+	    // For following states, we always switch to st_verification_epoch after their execution.
+	    "st_cookie_test_start"                           : "st_verification_epoch",                      
+	    "st_start_with_no_cookies"                       : "st_verification_epoch",        
+	    "st_suspected_cookies_pass_test"                 : "st_verification_epoch",        
+	    "st_suspected_cookies_block_test"                : "st_verification_epoch",        
+	    "st_llb_cookiesets_block_disabled"               : "st_verification_epoch",        
+
+
+	    // If current-state is "st_verification_epoch" then we find out what should
+	    // be the next state by combining "st_verification_epoch" + last_non_verification_state
+	    "st_verification_epoch:st_cookie_test_start"                : "st_start_with_no_cookies",
+	    "st_verification_epoch:st_start_with_no_cookies"            : "st_suspected_cookies_pass_test",
+	    "st_verification_epoch:st_suspected_cookies_pass_test"      : "st_suspected_cookies_block_test",
+	    "st_verification_epoch:st_suspected_cookies_block_test" : "ATTEMPT:st_llb_cookiesets_block_disabled_and_nonduring",
+
+	    "st_verification_epoch:st_llb_cookiesets_block_disabled" : "ATTEMPT:st_llb_cookiesets_block_disabled_and_nonduring",
+	    "st_verification_epoch:st_gub_cookiesets_block_disabled" : "ATTEMPT:st_gub_cookiesets_block_disabled",
+	    "st_verification_epoch:st_llb_expand_suspected_account_cookies" : "ATTEMPT:st_llb_expand_suspected_account_cookies",
+	    "st_verification_epoch:st_gub_expand_suspected_account_cookies" : "ATTEMPT:st_gub_expand_suspected_account_cookies",
+
+	    // If we are in one of the following states, then next-state depends on whether the cookieset tested
+	    // was significant according to the rules of that state.
+	    // In general, for LLB, the result is significant if user is logged-out.
+	    // In general, for GUB, the result is significant if user is logged-in.
 	    "st_gub_cookiesets_block_disabled_and_nonduring"  : "last_test_result_dependent",
-	    "st_llb_cookiesets_block_disabled_and_nonduring"      : "last_test_result_dependent",
-	    "st_llb_expand_suspected_account_cookies"             : "last_test_result_dependent",
+	    "st_gub_cookiesets_block_disabled"                : "last_test_result_dependent",
+	    "st_llb_cookiesets_block_disabled_and_nonduring"  : "last_test_result_dependent",
+	    "st_llb_expand_suspected_account_cookies"         : "last_test_result_dependent",
 	    "st_gub_expand_suspected_account_cookies"         : "last_test_result_dependent",
 	    
 	    // Combination: my_state + ":" + cookieset_test_result_significance
-	    "st_gub_cookiesets_block_disabled_and_nonduring:possibly" : "st_verification_epoch",
-	    "st_llb_cookiesets_block_disabled_and_nonduring:possibly"     : "st_llb_cookiesets_block_disabled",
-	    "st_llb_expand_suspected_account_cookies:possibly"            : "st_verification_epoch",
-	    "st_gub_expand_suspected_account_cookies:possibly"        : "st_verification_epoch",
-	    
-	    "st_gub_cookiesets_block_disabled_and_nonduring:no"   : "ATTEMPT:st_gub_cookiesets_block_disabled_and_nonduring",
-	    "st_llb_cookiesets_block_disabled_and_nonduring:no"       : "ATTEMPT:st_llb_cookiesets_block_disabled_and_nonduring",
-	    "st_llb_expand_suspected_account_cookies:no"              : "ATTEMPT:st_llb_expand_suspected_account_cookies",
-	    "st_gub_expand_suspected_account_cookies:no"          : "ATTEMPT:st_gub_expand_suspected_account_cookies",
+	    "st_gub_cookiesets_block_disabled:possibly_yes"        : "st_gub_cookiesets_block_disabled_and_nonduring",
+	    "st_gub_cookiesets_block_disabled:possibly_no"         : "st_verification_epoch",
+
+	    "st_gub_cookiesets_block_disabled_and_nonduring:yes" : "ATTEMPT:st_gub_cookiesets_block_disabled",
+
+	    "st_llb_cookiesets_block_disabled_and_nonduring:possibly_yes" : "st_llb_cookiesets_block_disabled",
+	    "st_llb_cookiesets_block_disabled_and_nonduring:no"  : "ATTEMPT:st_llb_cookiesets_block_disabled_and_nonduring",
+
+	    "st_llb_expand_suspected_account_cookies:possibly_yes"  : "st_verification_epoch",
+	    "st_llb_expand_suspected_account_cookies:no"            : "ATTEMPT:st_llb_expand_suspected_account_cookies",
+
+	    "st_gub_expand_suspected_account_cookies:possibly_no"   : "st_verification_epoch",
 	};
 	
 	var attempt_state = undefined; 
@@ -4933,11 +5023,11 @@ function cookie_investigator(account_cookies,
 		my_state = "st_terminate";
 	}
 	else if (crrc == "switch_to_expand") {
-	    attempt_state = "st_llb_expand_suspected_account_cookies";
+	    attempt_state = "st_gub_expand_suspected_account_cookies";
 	}
 	else if (my_state == "st_verification_epoch") {
 	    // This test has to be here. Do not move it from here.
-	    var s = last_non_verification_state + ":" + "st_verification_epoch";
+	    var s = "st_verification_epoch" + ":" + last_non_verification_state;
 	    if (s in state_machine) {
 		if (state_machine[s].indexOf("ATTEMPT:") == 0) {
 		    attempt_state = state_machine[s].split(":")[1];
@@ -4948,15 +5038,16 @@ function cookie_investigator(account_cookies,
 	    }
 	    else {
 		console.log("APPU Error: No state machine entry for: " + s);
-		report_fatal_error("no-state-machine-entry-for-" + s);
 		my_state = "st_terminate";
+		report_fatal_error("sve-no-state-machine-entry-for-" + s);
 	    }
 	}
 	else if (state_machine[my_state] == "st_verification_epoch") {
 	    my_state = "st_verification_epoch";
 	}
 	else if (state_machine[my_state] == "last_test_result_dependent") {
-	    var s = my_state + ":" + test_significance;
+	    var s = my_state + ":" + result_significance;
+
 	    if (s in state_machine) {
 		if (state_machine[s].indexOf("ATTEMPT:") == 0) {
 		    attempt_state = state_machine[s].split(":")[1];
@@ -4968,6 +5059,7 @@ function cookie_investigator(account_cookies,
 	    else {
 		console.log("APPU Error: No state machine entry for: " + s);
 		my_state = "st_terminate";
+		report_fatal_error("ltrd-no-state-machine-entry-for-" + s);
 	    }
 	}
 	else {
@@ -4986,20 +5078,20 @@ function cookie_investigator(account_cookies,
 		}
 		else if (rc == "attempt_next_state") {
 		    if (attempt_state == "st_llb_cookiesets_block_disabled_and_nonduring") {
-			attempt_state = "st_gub_cookiesets_block_disabled_and_nonduring";
+			attempt_state = "st_gub_cookiesets_block_disabled";
 			reset_for_gub_cookieset_testing(true);
 		    }
-		    else if (attempt_state == "st_gub_cookiesets_block_disabled_and_nonduring") {
+		    else if (attempt_state == "st_gub_cookiesets_block_disabled") {
 			attempt_state = "st_llb_cookiesets_block_disabled_and_nonduring";
-			reset_for_cookieset_testing(true);
+			reset_for_llb_cookieset_testing(true);
 		    }
 		    else if (attempt_state == "st_llb_expand_suspected_account_cookies") {
 			attempt_state = "st_gub_expand_suspected_account_cookies";
-			reset_for_expand_cookies_gub_testing(true);
+			reset_for_gub_expand_cookies_testing(true);
 		    }
 		    else if (attempt_state == "st_gub_expand_suspected_account_cookies") {
 			attempt_state = "st_llb_expand_suspected_account_cookies";
-			reset_for_expand_cookies_testing(true);
+			reset_for_llb_expand_cookies_testing(true);
 		    }
 		    else {
 			console.log("APPU Error: Attempt state(" + attempt_state + ") should not return attempt_next_state");
@@ -5022,7 +5114,8 @@ function cookie_investigator(account_cookies,
 	}
 
 	if (my_state == "st_verification_epoch" ||
-	    my_state == "st_llb_cookiesets_block_disabled") {
+	    my_state == "st_llb_cookiesets_block_disabled" ||
+	    my_state == "st_gub_cookiesets_block_disabled_and_nonduring") {
 	    console.log("-----------------");
 	}
 	else {
@@ -5037,6 +5130,14 @@ function cookie_investigator(account_cookies,
 	else if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring" ||
 		 my_state == "st_gub_cookiesets_block_disabled") {
 	    console.log("APPU DEBUG: Number of cookies to PASS in this state: " + num_cookies_pass_for_round);	
+	}
+	else if (my_state == "st_llb_expand_suspected_account_cookies") {
+	    console.log("APPU DEBUG: (EXPAND-STATE) Number of cookies to DROP in this state: " + 
+			expand_state_num_cookies_drop_for_round);	
+	}
+	else if (my_state == "st_gub_expand_suspected_account_cookies") {
+	    console.log("APPU DEBUG: (EXPAND-STATE) Number of cookies to PASS in this state: " + 
+			expand_state_num_cookies_pass_for_round);	
 	}
 
 	console.log("APPU DEBUG: Total cookiesets tested in this round: " + tot_cookiesets_tested_this_round);	
@@ -5427,13 +5528,13 @@ function cookie_investigator(account_cookies,
 	tot_execution += 1;
 
 	if (my_state == "st_llb_cookiesets_block_disabled_and_nonduring"  ||
-	    my_state == "st_gub_cookiesets_block_disabled_and_nonduring"  ||
+	    my_state == "st_gub_cookiesets_block_disabled"                ||
 	    my_state == "st_llb_expand_suspected_account_cookies"         ||
 	    my_state == "st_gub_expand_suspected_account_cookies") {
 	    tot_cookiesets_tested_overall += 1;
 	    tot_cookiesets_tested += 1;
 	    tot_cookiesets_tested_this_round += 1;
-	    if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring" ||
+	    if (my_state == "st_gub_cookiesets_block_disabled" ||
 		my_state == "st_gub_expand_suspected_account_cookies") {
 		tot_gub_cookiesets_tested_overall += 1;
 	    }
