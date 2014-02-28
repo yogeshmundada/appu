@@ -1956,6 +1956,23 @@ function get_human_readable_size(bytes) {
     return tot_gb + " GB" + append_text;
 }
 
+// Accepts a URL and array of cookies.
+// It will then mark them as "after" class cookies and
+// set their "is_part_of_account_cookieset" to false.
+// This is useful to test if EXPAND-STATE is properly working.
+function mark_as_insignificant_cookies(url, cookies_array) {
+    var my_domain = get_domain(url.split("/")[2]);
+    
+    var all_cookies = pii_vault.aggregate_data.session_cookie_store[my_domain].cookies;
+    for (var c in all_cookies) {
+	if (cookies_array.indexOf(c) != -1) {
+	    all_cookies[c].is_part_of_account_cookieset = false;
+	    all_cookies[c].cookie_class = 'after';
+	}
+    }
+    flush_session_cookie_store();
+}
+
 function reset_nonduring_account_cookies(url) {
     var my_domain = get_domain(url.split("/")[2]);
     
