@@ -3478,6 +3478,11 @@ function cookie_investigator(account_cookies,
 	for (var i = 0; i < acct_cookies.length; i++) {
 	    suspected_account_cookies_array.push(acct_cookies[i]);
 	    tot_cookies += 1;
+	    var delete_index = non_during_suspected_account_cookies_array.indexOf(acct_cookies[i]);
+	    if (delete_index != -1) {
+		non_during_suspected_account_cookies_array.splice(delete_index, 1);
+		tot_non_during_cookies -= 1;
+	    }
 	}
 
 	is_st_start_with_no_cookies_done = false;
@@ -3503,7 +3508,9 @@ function cookie_investigator(account_cookies,
         // of new cookies.
 	generate_vnasdc();
 	generate_vsndnadc();
-	
+	generate_vndasca();	
+	generate_vndnasca();
+
 	binary_cookiesets = [];
 	decimal_cookiesets = [];
 	
@@ -3825,7 +3832,8 @@ function cookie_investigator(account_cookies,
 			}
 			
 			enabled_cookies_array.push(cookie_key);
-			if (cs.cookies[cookie_key].cookie_class == "during") {
+			if (cs.cookies[cookie_key].cookie_class == "during" ||
+			    cs.cookies[cookie_key].is_part_of_account_cookieset == true) {
 			    enabled_during_cookies_array.push(cookie_key);
 			}
 			else {
@@ -4784,7 +4792,8 @@ function cookie_investigator(account_cookies,
 
 		for (var k = 0; k < pending_enabled_cookies_array.length; k++) {
 		    var cookie_key = pending_enabled_cookies_array[k];
-		    if (cs.cookies[cookie_key].cookie_class != "during") {
+		    if (cs.cookies[cookie_key].cookie_class != "during" &&
+			cs.cookies[cookie_key].is_part_of_account_cookieset != true) {
 			// Enabling this cookie caused the session to be logged-in when
 			// we kept suppressing original disabled_cookies. Thus,
 			// these cookies must be in-fact part of account-cookiesets
@@ -4845,7 +4854,7 @@ function cookie_investigator(account_cookies,
 			     ];
 
 	if (dontcare_states.indexOf(my_state) != -1) {
-	    return "force_commit";
+	    return "no";
 	}
 
 	if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring") {
