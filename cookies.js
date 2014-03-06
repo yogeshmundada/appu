@@ -1781,12 +1781,14 @@ function print_cookie_investigation_state(url) {
 	for (var i = 0; i < vsndnadca.length; i++) {
 	    console.log((i+1) + ". Length: " + vsndnadca[i].length + ", Array: " +  JSON.stringify(vsndnadca[i]));
 	}
+	console.log("-------------------");
 
 	console.log("APPU DEBUG: *** Printing 'verified non-DURING account super cookiesets' array" + 
 		    " (GUBs in non-suspected that cause logouts) ***");
 	for (var i = 0; i < vndasca.length; i++) {
 	    console.log((i+1) + ". Length: " + vndasca[i].length + ", Array: " +  JSON.stringify(vndasca[i]));
 	}
+	console.log("-------------------");
 
 	console.log("APPU DEBUG: *** Printing 'verified non-DURING non-account super cookiesets' array" + 
 		    " (GUBs in non-suspected that *DO NOT* cause logouts) ***");
@@ -3000,8 +3002,8 @@ function cookie_investigator(account_cookies,
     //  are subset of 'DURING' cookies *ONLY*. This is expected, otherwise we are detecting 'DURING' cookies 
     //  incorrectly.
     //
-    // "st_gub_cookiesets_block_disabled_and_nonduring" : For all the untested cookiesets at the moment, calculate 
-    // "st_gub_cookiesets_block_disabled"                 the set of cookiesets that are greatest upper bounds(GUB). 
+    // "st_GUB_cookiesets_block_DISABLED_and_NONDURING" : For all the untested cookiesets at the moment, calculate 
+    // "st_GUB_cookiesets_block_DISABLED"                 the set of cookiesets that are greatest upper bounds(GUB). 
     //                                                    That is, all the existing untested cookiesets are subsets of
     //                                                    exactly one of the GUBs. Once all the GUBs are found, 
     //                                                    systematically test each by blocking the cookies. 
@@ -3026,8 +3028,8 @@ function cookie_investigator(account_cookies,
     //                                                    session and our testing will stop there.
     //                                                    This test is conducted after each cookieset block test epoch.
     //
-    // "st_llb_cookiesets_block_disabled_and_nonduring"     : Cookiesets are created by systematically omitting some of the
-    // "st_llb_cookiesets_block_disabled"                   : 'DURING' cookies. So, if we have detected 'N' 'DURING' cookies,
+    // "st_LLB_cookiesets_block_DISABLED_and_NONDURING" : Cookiesets are created by systematically omitting some of the
+    // "st_LLB_cookiesets_block_DISABLED"               : 'DURING' cookies. So, if we have detected 'N' 'DURING' cookies,
     //                                                    then there are '2^N - 1' cookie sets. Here '1' is subtracted for
     //                                                    for all cookies 
     //                                                    (already tested in "st_suspected_cookies_block_test").
@@ -3045,9 +3047,9 @@ function cookie_investigator(account_cookies,
     //                                                    This test is done only for sites like 'Google' and might not be 
     //                                                    performed always.
     //
-    // "st_llb_expand_suspected_account_cookies"            : Add more cookies to 'DURING' set and see if user is logged-in.
+    // "st_expand_LLB_suspected_account_cookies"        : Add more cookies to 'DURING' set and see if user is logged-in.
     //                                                    Remember that their class is not actually changed to 'during'.
-    // "st_gub_expand_suspected_account_cookies"        : Just like GUB phase for normal suspected cookies, this is a
+    // "st_expand_GUB_suspected_account_cookies"        : Just like GUB phase for normal suspected cookies, this is a
     //                                                    GUB phase for expand-state. This is required for sites like
     //                                                    BankOfAmerica where expand-state goes to dropping more than
     //                                                    one cookie in non-during cookies. Since number of non-during 
@@ -3127,11 +3129,15 @@ function cookie_investigator(account_cookies,
     var req_epch_table = {};
 
     // To store results until verification_epoch gives good to go
-    var pending_am_i_logged_in = undefined;
+    var pending_are_usernames_present = undefined;
     var pending_disabled_cookies = undefined;
     var pending_enabled_cookies_array = undefined;
     var pending_curr_decimal_cs = undefined;
     var pending_bool_pwd_box_present = undefined;
+    var pending_result_significance = undefined;
+
+    var pending_bool_pwd_box_present_first_verification = undefined;
+    var pending_bool_pwd_box_present_suspected_block = undefined;
 
     // To judge whether page load timeouts are due to network
     // problems or abset cookies
@@ -3220,8 +3226,33 @@ function cookie_investigator(account_cookies,
 	else if (config_start_params.pending_ci_state != undefined) {
 	    var url_wo_paramters = my_url.replace(/\?.*/,'');
 	    var pcs = config_start_params.pending_ci_state["Cookie Investigation State:" + url_wo_paramters];
-	    
+
 	    if (pcs != undefined) {
+		
+		// Do not move this from here. This has to be first.
+		// So that the already tested cookisets are generated properly.
+		if (pcs.expand_state_discovered_cookies != undefined) {
+		    expand_state_discovered_cookies = JSON.parse(pcs.expand_state_discovered_cookies);
+		    console.log("APPU DEBUG: Restoring previously discovered expand-state cookies: " +
+				JSON.stringify(expand_state_discovered_cookies));
+		    
+		    for (var p = 0; p < expand_state_discovered_cookies.length; p++) {
+			var cookie_key = expand_state_discovered_cookies[p];
+			if (suspected_account_cookies_array.indexOf(cookie_key) == -1) {
+			    console.log("APPU DEBUG: Previously discovered expand-state cookie(" + cookie_key +
+					") was not present in the" +
+					"suspected-account-cookies array. Adding it.");
+			    suspected_account_cookies_array.push(cookie_key);
+			    tot_cookies++;
+			    var index_to_delete = non_during_suspected_account_cookies_array.indexOf(cookie_key);
+			    if (index_to_delete != -1) {
+				non_during_suspected_account_cookies_array.splice(index_to_delete, 1);		
+				tot_non_during_cookies -= 1;
+			    }
+			}
+		    }
+		}
+
 		if (pcs.vsaca != undefined) {
 		    verified_strict_account_cookiesets_array = pcs.vsaca;
 		    generate_vsadc();
@@ -3311,28 +3342,6 @@ function cookie_investigator(account_cookies,
 
 		if (pcs.skipped_sets != undefined) {
 		    skipped_sets = pcs.skipped_sets;
-		}
-
-		if (pcs.expand_state_discovered_cookies != undefined) {
-		    expand_state_discovered_cookies = JSON.parse(pcs.expand_state_discovered_cookies);
-		    console.log("APPU DEBUG: Restoring previously discovered expand-state cookies: " +
-				JSON.stringify(expand_state_discovered_cookies));
-		    
-		    for (var p = 0; p < expand_state_discovered_cookies.length; p++) {
-			var cookie_key = expand_state_discovered_cookies[p];
-			if (suspected_account_cookies_array.indexOf(cookie_key) == -1) {
-			    console.log("APPU DEBUG: Previously discovered expand-state cookie(" + cookie_key +
-					") was not present in the" +
-					"suspected-account-cookies array. Adding it.");
-			    suspected_account_cookies_array.push(cookie_key);
-			    tot_cookies++;
-			    var index_to_delete = non_during_suspected_account_cookies_array.indexOf(cookie_key);
-			    if (index_to_delete != -1) {
-				non_during_suspected_account_cookies_array.splice(index_to_delete, 1);		
-				tot_non_during_cookies -= 1;
-			    }
-			}
-		    }
 		}
 	    }
 	}
@@ -3535,13 +3544,17 @@ function cookie_investigator(account_cookies,
 	// req_epch_table = {};
 
 	// Reseting the pending variables for verification_epoch
-	pending_am_i_logged_in = undefined;
+	pending_are_usernames_present = undefined;
 	pending_disabled_cookies = undefined;
 	pending_enabled_cookies_array = undefined;
 	pending_curr_decimal_cs = undefined;
 	pending_bool_pwd_box_present = undefined;
+	pending_result_significance = undefined;
 
-    // Resetting expand cookies state variables.
+	pending_bool_pwd_box_present_first_verification = undefined;
+	pending_bool_pwd_box_present_suspected_block = undefined;
+
+	// Resetting expand cookies state variables.
 	curr_expand_state_binary_cs = undefined;
 	curr_expand_state_decimal_cs = undefined;
 
@@ -3664,10 +3677,10 @@ function cookie_investigator(account_cookies,
     }
 
 
-    function is_user_logged_in(present_usernames) {
+    function are_usernames_present(present_usernames) {
 	if (top_three_elements_with_usernames != undefined) {
-	    var am_i_logged_in = detect_login_status(present_usernames);
-	    return am_i_logged_in;
+	    var are_usernames_present = detect_login_status(present_usernames);
+	    return are_usernames_present;
 	}
 	
 	return true;
@@ -3685,7 +3698,7 @@ function cookie_investigator(account_cookies,
 
 	cit.reload_interval = undefined;
 
-	cit.is_user_logged_in = is_user_logged_in;
+	cit.are_usernames_present = are_usernames_present;
 	cit.get_page_load_time = get_page_load_time;
 	cit.set_page_load_time = set_page_load_time;
 	cit.tab_closed_cb = cookie_investigator_closed;
@@ -3798,7 +3811,7 @@ function cookie_investigator(account_cookies,
 				continue;
 			    }
 			}
-			else if (my_state == 'st_llb_cookiesets_block_disabled_and_nonduring') {
+			else if (my_state == 'st_LLB_cookiesets_block_DISABLED_and_NONDURING') {
 			    // If the cookie is in the set of disabled-cookie-sets in this 
 			    // iteration, then ignore it.
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
@@ -3811,14 +3824,14 @@ function cookie_investigator(account_cookies,
 				continue;
 			    }
 			}
-			else if (my_state == 'st_llb_cookiesets_block_disabled') {
+			else if (my_state == 'st_LLB_cookiesets_block_DISABLED') {
 			    // If the cookie is in the set of disabled-cookie-sets in this 
 			    // iteration, then ignore it.
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
 				continue;
 			    }
 			}
-			else if (my_state == 'st_gub_cookiesets_block_disabled_and_nonduring') {
+			else if (my_state == 'st_GUB_cookiesets_block_DISABLED_and_NONDURING') {
 			    // If the cookie is in the set of disabled-cookie-sets in this 
 			    // iteration, then ignore it.
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
@@ -3829,15 +3842,15 @@ function cookie_investigator(account_cookies,
 				continue;
 			    }
 			}
-			else if (my_state == 'st_gub_cookiesets_block_disabled') {
+			else if (my_state == 'st_GUB_cookiesets_block_DISABLED') {
 			    // If the cookie is in the set of disabled-cookie-sets in this 
 			    // iteration, then ignore it.
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
 				continue;
 			    }
 			}
-			else if (my_state == 'st_llb_expand_suspected_account_cookies' ||
-				 my_state == 'st_gub_expand_suspected_account_cookies') {
+			else if (my_state == 'st_expand_LLB_suspected_account_cookies' ||
+				 my_state == 'st_expand_GUB_suspected_account_cookies') {
 			    // If the cookie is in the set of disabled-cookie-sets in this 
 			    // iteration, then ignore it.
 			    if (disabled_cookies.indexOf(cookie_key) != -1) {
@@ -3867,27 +3880,27 @@ function cookie_investigator(account_cookies,
 
 		    if (my_state != "st_verification_epoch"                            &&
 			my_state != "st_suspected_cookies_block_test"                  &&
-			my_state != "st_llb_expand_suspected_account_cookies"          &&
-			my_state != "st_gub_expand_suspected_account_cookies"          &&
-			my_state != "st_gub_cookiesets_block_disabled_and_nonduring"   &&
-			my_state != "st_gub_cookiesets_block_disabled") {
+			my_state != "st_expand_LLB_suspected_account_cookies"          &&
+			my_state != "st_expand_GUB_suspected_account_cookies"          &&
+			my_state != "st_GUB_cookiesets_block_DISABLED_and_NONDURING"   &&
+			my_state != "st_GUB_cookiesets_block_DISABLED") {
 			console.log("APPU DEBUG: Disabled cookies in this epoch: " + 
 				    JSON.stringify(disabled_cookies));
 		    }
-		    else if (my_state == "st_llb_expand_suspected_account_cookies") {
+		    else if (my_state == "st_expand_LLB_suspected_account_cookies") {
 			console.log("APPU DEBUG: Main disabled cookies that caused to enter 'expand' state: " + 
 				    JSON.stringify(disabled_cookies));
 			console.log("APPU DEBUG: Disabled cookies getting tested: " + 
 				    JSON.stringify(expand_state_disabled_cookies));
 		    }
-		    else if (my_state == "st_gub_expand_suspected_account_cookies") {
+		    else if (my_state == "st_expand_GUB_suspected_account_cookies") {
 			console.log("APPU DEBUG: Main disabled cookies that caused to enter 'expand' state: " + 
 				    JSON.stringify(disabled_cookies));
 			console.log("APPU DEBUG: Enabled non-during cookies getting tested: " + 
 				    JSON.stringify(enabled_nonduring_cookies_array));
 		    }
-		    else if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring" ||
-			     my_state == "st_gub_cookiesets_block_disabled") {
+		    else if (my_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING" ||
+			     my_state == "st_GUB_cookiesets_block_DISABLED") {
 			console.log("APPU DEBUG: Enabled during cookies in this epoch: " + 
 				    JSON.stringify(enabled_during_cookies_array));
 			console.log("APPU DEBUG: Enabled non-during cookies getting tested: " + 
@@ -3956,13 +3969,13 @@ function cookie_investigator(account_cookies,
     }
     
     
-    function verification_epoch_results(am_i_logged_in) {
-	console.log("APPU DEBUG: Verification Epoch, Is user still logged in? " + 
-		    (am_i_logged_in ? "YES" : "NO"));
+    function verification_epoch_results(are_usernames_present) {
+	console.log("APPU DEBUG: Verification Epoch, Is user still logged-in? " + 
+		    (are_usernames_present ? "YES" : "NO"));
 	// If not, then login and terminate.
     }
     
-    function commit_account_cookies() {
+    function commit_llb_account_cookieset() {
 	verified_strict_account_cookiesets_array.push(pending_disabled_cookies[0]);
 	verified_strict_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
 	
@@ -3984,12 +3997,96 @@ function cookie_investigator(account_cookies,
 	tot_page_reloads_since_last_lo_change = 0;
     }
 
+    function commit_llb_nonaccount_cookieset() {
+	verified_strict_non_account_cookiesets_array.push(pending_disabled_cookies[0]);
+	verified_strict_non_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+	
+	if (pending_bool_pwd_box_present[0]) {
+	    verified_restricted_cookiesets_array.push(pending_disabled_cookies[0]);
+	    console.log("APPU DEBUG: Found restrictive cookieset: " + 
+			JSON.stringify(pending_disabled_cookies[0]));
+	}
+	store_intermediate_state();
+    }
 
-    function update_cookie_status(am_i_logged_in, bool_pwd_box_present) {
+    function shift_llb_expand_account_cookieset_to_suspected() {
+	var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
+	var acct_cookies = expand_state_disabled_cookies;
+	
+	for (var i = 0; i < acct_cookies.length; i++) {
+	    cs.cookies[acct_cookies[i]].is_part_of_account_cookieset = true;
+	    if (expand_state_discovered_cookies.indexOf(acct_cookies[i]) == -1) {
+		expand_state_discovered_cookies.push(acct_cookies[i]);
+	    }
+	}
+
+	flush_session_cookie_store();
+	store_intermediate_state();
+    }
+
+    
+    function commit_llb_expand_nonaccount_cookieset() {
+	verified_strict_non_during_non_account_cookiesets_array.push(expand_state_disabled_cookies);
+	verified_strict_non_during_non_account_decimal_cookiesets.push(pending_curr_decimal_cs);
+	store_intermediate_state();
+    }
+
+    function commit_gub_account_cookieset() {
+	// User is not logged-in. We need to test subset of this GUB cookieset.
+	num_account_super_cookiesets_found += 1;
+	verified_account_super_cookiesets_array.push(pending_disabled_cookies[0]);
+	verified_account_super_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+	store_intermediate_state();
+    }
+
+    function commit_gub_nonaccount_cookieset() {
+	// User is logged in in both GUB sub states. We found a GUB optimization
+	// cookieset
+	num_non_account_super_cookiesets_found += 1;
+	verified_non_account_super_cookiesets_array.push(pending_disabled_cookies[0]);
+	verified_non_account_super_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+	store_intermediate_state();
+    }
+
+    function shift_gub_expand_nonaccount_cookieset_to_suspected() {
+	var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
+	var acct_cookies = [];
+	
+	for (var k = 0; k < pending_enabled_cookies_array.length; k++) {
+	    var cookie_key = pending_enabled_cookies_array[k];
+	    if (cs.cookies[cookie_key].cookie_class != "during" &&
+		cs.cookies[cookie_key].is_part_of_account_cookieset != true) {
+		// Enabling this cookie caused the session to be logged-in when
+		// we kept suppressing original disabled_cookies. Thus,
+		// these cookies must be in-fact part of account-cookiesets
+		acct_cookies.push(cookie_key);
+	    }
+	}
+	
+	for (var i = 0; i < acct_cookies.length; i++) {
+	    cs.cookies[acct_cookies[i]].is_part_of_account_cookieset = true;
+	    if (expand_state_discovered_cookies.indexOf(acct_cookies[i]) == -1) {
+		expand_state_discovered_cookies.push(acct_cookies[i]);
+	    }
+	}
+	
+	flush_session_cookie_store();
+	store_intermediate_state();
+    }
+
+    function commit_gub_expand_nonaccount_cookieset() {
+	verified_non_during_account_super_decimal_cookiesets.push(pending_curr_decimal_cs);
+	verified_non_during_account_super_cookiesets_array.push(expand_state_disabled_cookies);
+	
+	store_intermediate_state();
+    }
+
+
+    function update_cookie_status(are_usernames_present, bool_pwd_box_present) {
 	bool_pwd_box_present = (bool_pwd_box_present == undefined) ? false : bool_pwd_box_present; 
 
 	if (my_state == "st_start_with_no_cookies") {
-	    if (!am_i_logged_in) {
+	    if (!are_usernames_present) {
 		console.log("APPU DEBUG: VERIFIED, ACCOUNT-COOKIES are present in default-cookie-store");
 		bool_are_all_account_cookies_in_default_store = true;
 	    }
@@ -4000,9 +4097,9 @@ function cookie_investigator(account_cookies,
 	    }
 	}
 	else if (my_state == "st_suspected_cookies_pass_test") {
-	    pending_am_i_logged_in = am_i_logged_in;
+	    pending_are_usernames_present = are_usernames_present;
 
-	    if (am_i_logged_in) {
+	    if (are_usernames_present) {
 		console.log("APPU DEBUG: EXPECTED: ACCOUNT-COOKIES are present in 'DURING' cookies");
 		bool_are_account_cookies_in_during_cookies = true;
 	    }
@@ -4012,10 +4109,10 @@ function cookie_investigator(account_cookies,
 	    }
 	}
 	else if (my_state == "st_suspected_cookies_block_test") {
-	    pending_am_i_logged_in = am_i_logged_in;
-	    pending_bool_pwd_box_present = bool_pwd_box_present;
+	    pending_are_usernames_present = are_usernames_present;
+	    pending_bool_pwd_box_present_suspected_block = bool_pwd_box_present;
 
-	    if (!am_i_logged_in) {
+	    if (!are_usernames_present) {
 		console.log("APPU DEBUG: EXPECTED: ACCOUNT-COOKIES are *NOT* present in non-'DURING' cookies");
 		bool_are_account_cookies_not_in_nonduring_cookies = true;
 		
@@ -4036,13 +4133,13 @@ function cookie_investigator(account_cookies,
 	}
 	else if (my_state == "st_testing") {
 	    console.log("APPU DEBUG: Disabled cookies (" + JSON.stringify(disabled_cookies) + "): ");
-	    console.log("APPU DEBUG: Am I logged-in?: " + am_i_logged_in);
+	    console.log("APPU DEBUG: Am I logged-in?: " + are_usernames_present);
 	    
 	    var enabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs, 
 									   suspected_account_cookies_array, 
 									   true);
 	    
-	    if (am_i_logged_in) {
+	    if (are_usernames_present) {
 		verified_strict_account_cookiesets_array.push(enabled_cookies);
 	    }
 	    
@@ -4057,21 +4154,21 @@ function cookie_investigator(account_cookies,
 	    tot_cookiesets_tested += 1;
 	    tot_cookiesets_tested_overall += 1;
 	}
-	else if (my_state == "st_llb_cookiesets_block_disabled_and_nonduring" ||
-		 my_state == "st_llb_cookiesets_block_disabled") {
+	else if (my_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING" ||
+		 my_state == "st_LLB_cookiesets_block_DISABLED") {
 
 	    console.log("APPU DEBUG: (" + my_state + ")Is user logged-in for this cookieset?(" + 
 			JSON.stringify(disabled_cookies) + 
-			"): " + am_i_logged_in);
+			"): " + are_usernames_present);
 
-	    pending_am_i_logged_in.push(am_i_logged_in);
+	    pending_are_usernames_present.push(are_usernames_present);
 	    pending_disabled_cookies.push(disabled_cookies);
 	    pending_enabled_cookies_array.push(enabled_cookies_array);
 	    pending_curr_decimal_cs.push(curr_decimal_cs);
 	    pending_bool_pwd_box_present.push(bool_pwd_box_present);
 	    
 	    //update the status first.
-	    if (am_i_logged_in) {
+	    if (are_usernames_present) {
 		if (bool_pwd_box_present) {
 		    console.log("APPU DEBUG: Found restrictive cookieset: " + 
 				JSON.stringify(disabled_cookies));
@@ -4080,19 +4177,19 @@ function cookie_investigator(account_cookies,
 
 	    current_cookiesets_test_attempts += 1;
 	}
-	else if (my_state == "st_llb_expand_suspected_account_cookies") {
+	else if (my_state == "st_expand_LLB_suspected_account_cookies") {
 	    console.log("APPU DEBUG: (" + my_state + ")Is user logged-in for this cookieset?" + 
 			JSON.stringify(expand_state_disabled_cookies) + 
-			"): " + am_i_logged_in);
+			"): " + are_usernames_present);
 
-	    pending_am_i_logged_in = am_i_logged_in;
+	    pending_are_usernames_present = are_usernames_present;
 	    pending_disabled_cookies = disabled_cookies;
 	    pending_enabled_cookies_array = enabled_cookies_array;
 	    pending_curr_decimal_cs = curr_expand_state_decimal_cs;
 	    pending_bool_pwd_box_present = bool_pwd_box_present;
 	    
 	    //update the status first.
-	    if (am_i_logged_in) {
+	    if (are_usernames_present) {
 		if (bool_pwd_box_present) {
 		    console.log("APPU DEBUG: Found restrictive cookieset: " + 
 				JSON.stringify(expand_state_disabled_cookies));
@@ -4102,18 +4199,18 @@ function cookie_investigator(account_cookies,
 	    current_cookiesets_test_attempts += 1;
 	    tot_expand_state_cookiesets_tested_overall += 1;
 	}
-	else if (my_state == "st_gub_expand_suspected_account_cookies") {
+	else if (my_state == "st_expand_GUB_suspected_account_cookies") {
 	    console.log("APPU DEBUG: (" + my_state + ")Is user logged-in for this cookieset?" + 
 			JSON.stringify(expand_state_disabled_cookies) + 
-			"): " + am_i_logged_in);
+			"): " + are_usernames_present);
 
-	    pending_am_i_logged_in = am_i_logged_in;
+	    pending_are_usernames_present = are_usernames_present;
 	    pending_disabled_cookies = disabled_cookies;
 	    pending_enabled_cookies_array = enabled_cookies_array;
 	    pending_curr_decimal_cs = curr_expand_state_gub_decimal_cs;
 	    pending_bool_pwd_box_present = bool_pwd_box_present;
 
-	    if (am_i_logged_in) {
+	    if (are_usernames_present) {
 		console.log("APPU DEBUG: User is still logged-in after blocking EXAPAND-STATE-GUB-COOKIE-SET");
 		console.log("APPU DEBUG: We do NOT NEED to test any subsets of this EXPAND-STATE-GUB-COOKIE-SET: " + 
 			    JSON.stringify(disabled_cookies));
@@ -4127,16 +4224,16 @@ function cookie_investigator(account_cookies,
 	    current_cookiesets_test_attempts += 1;
 	    tot_expand_state_cookiesets_tested_overall += 1;
 	}
-	else if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring" ||
-		 my_state == "st_gub_cookiesets_block_disabled") {
+	else if (my_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING" ||
+		 my_state == "st_GUB_cookiesets_block_DISABLED") {
 
-	    pending_am_i_logged_in.push(am_i_logged_in);
+	    pending_are_usernames_present.push(are_usernames_present);
 	    pending_disabled_cookies.push(disabled_cookies);
 	    pending_enabled_cookies_array.push(enabled_cookies_array);
 	    pending_curr_decimal_cs.push(curr_gub_decimal_cs);
 	    pending_bool_pwd_box_present.push(bool_pwd_box_present);
 	    
-	    if (am_i_logged_in) {
+	    if (are_usernames_present) {
 		console.log("APPU DEBUG: User is still logged-in after blocking GUB-COOKIE-SET");
 		console.log("APPU DEBUG: We do NOT NEED to test any subsets of this GUB-COOKIE-SET: " + 
 			    JSON.stringify(disabled_cookies));
@@ -4192,11 +4289,12 @@ function cookie_investigator(account_cookies,
 		
 	disabled_cookies = undefined;
 
-	pending_am_i_logged_in = [];
+	pending_are_usernames_present = [];
 	pending_disabled_cookies = [];
 	pending_enabled_cookies_array = [];
 	pending_curr_decimal_cs = [];
 	pending_bool_pwd_box_present = [];
+	pending_result_significance = undefined;
     }
 
 
@@ -4207,11 +4305,12 @@ function cookie_investigator(account_cookies,
 
 	disabled_cookies = undefined;
 
-	pending_am_i_logged_in = [];
+	pending_are_usernames_present = [];
 	pending_disabled_cookies = [];
 	pending_enabled_cookies_array = [];
 	pending_curr_decimal_cs = [];
 	pending_bool_pwd_box_present = [];
+	pending_result_significance = undefined;
     }
 
     function reset_for_llb_expand_cookies_testing(reset_stats) {
@@ -4221,11 +4320,12 @@ function cookie_investigator(account_cookies,
 		
 	expand_state_disabled_cookies = undefined;
 	
-	pending_am_i_logged_in = undefined;
+	pending_are_usernames_present = undefined;
 	pending_disabled_cookies = undefined;
 	pending_enabled_cookies_array = undefined;
 	pending_curr_decimal_cs = undefined;
 	pending_bool_pwd_box_present = undefined;
+	pending_result_significance = undefined;
     }
 
     function reset_for_gub_expand_cookies_testing(reset_stats) {
@@ -4235,19 +4335,22 @@ function cookie_investigator(account_cookies,
 		
 	expand_state_disabled_cookies = undefined;
 	
-	pending_am_i_logged_in = undefined;
+	pending_are_usernames_present = undefined;
 	pending_disabled_cookies = undefined;
 	pending_enabled_cookies_array = undefined;
 	pending_curr_decimal_cs = undefined;
 	pending_bool_pwd_box_present = undefined;
+	pending_result_significance = undefined;
     }
 
-    function reset_for_during_pass() {
-	pending_am_i_logged_in = undefined;
+    function reset_for_only_suspected_cookies_pass() {
+	pending_are_usernames_present = undefined;
+	pending_result_significance = undefined;
     }
 
-    function reset_for_during_block() {
-	pending_am_i_logged_in = undefined;
+    function reset_for_only_suspected_cookies_block() {
+	pending_are_usernames_present = undefined;
+	pending_result_significance = undefined;
     }
 
     // Accepts next_state that would be set and checks if the test parameters
@@ -4279,9 +4382,9 @@ function cookie_investigator(account_cookies,
 									suspected_account_cookies_array);
 	    return "success";
 	}
-	else if (attempt_state == "st_llb_cookiesets_block_disabled_and_nonduring") {	    
-	    if (last_non_verification_state != "st_llb_cookiesets_block_disabled" &&
-		last_non_verification_state != "st_llb_cookiesets_block_disabled_and_nonduring") {
+	else if (attempt_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING") {	    
+	    if (last_non_verification_state != "st_LLB_cookiesets_block_DISABLED" &&
+		last_non_verification_state != "st_LLB_cookiesets_block_DISABLED_and_NONDURING") {
 		reset_for_llb_cookieset_testing(true);
 	    }
 
@@ -4351,9 +4454,9 @@ function cookie_investigator(account_cookies,
 		return "success";
 	    }
 	}
-	else if (attempt_state == "st_gub_cookiesets_block_disabled") {
-	    if (last_non_verification_state != "st_gub_cookiesets_block_disabled" &&
-		last_non_verification_state != "st_gub_cookiesets_block_disabled_and_nonduring") {
+	else if (attempt_state == "st_GUB_cookiesets_block_DISABLED") {
+	    if (last_non_verification_state != "st_GUB_cookiesets_block_DISABLED" &&
+		last_non_verification_state != "st_GUB_cookiesets_block_DISABLED_and_NONDURING") {
 		reset_for_gub_cookieset_testing(true);
 	    }
 
@@ -4420,13 +4523,13 @@ function cookie_investigator(account_cookies,
 		return "success";
 	    }
 	}
-	else if (attempt_state == "st_llb_expand_suspected_account_cookies") {
+	else if (attempt_state == "st_expand_LLB_suspected_account_cookies") {
 	    if (!bool_expand_state_initialized) {
 		initialize_expand_state_parameters();
 		bool_expand_state_initialized = true;
 	    }
 
-	    if (last_non_verification_state != "st_llb_expand_suspected_account_cookies") {
+	    if (last_non_verification_state != "st_expand_LLB_suspected_account_cookies") {
 		reset_for_llb_expand_cookies_testing(true);
 	    }
 
@@ -4492,13 +4595,13 @@ function cookie_investigator(account_cookies,
 		return "success";
 	    }
 	}
-	else if (attempt_state == "st_gub_expand_suspected_account_cookies") {
+	else if (attempt_state == "st_expand_GUB_suspected_account_cookies") {
 	    if (!bool_expand_state_initialized) {
 		initialize_expand_state_parameters();
 		bool_expand_state_initialized = true;
 	    }
 
-	    if (last_non_verification_state != "st_gub_expand_suspected_account_cookies") {
+	    if (last_non_verification_state != "st_expand_GUB_suspected_account_cookies") {
 		reset_for_gub_expand_cookies_testing(true);
 	    }
 
@@ -4580,12 +4683,12 @@ function cookie_investigator(account_cookies,
     // tested_state: The tested cookieset was tested for this state. Values could be:
     // 1. st_suspected_cookies_pass_test
     // 2. st_suspected_cookies_block_test
-    // 3. st_llb_cookiesets_block_disabled_and_nonduring
-    // 4. st_llb_cookiesets_block_disabled
-    // 5. st_gub_cookiesets_block_disabled
-    // 6. st_gub_cookiesets_block_disabled_and_nonduring
-    // 7. st_llb_expand_suspected_account_cookies
-    // 8. st_gub_expand_suspected_account_cookies
+    // 3. st_LLB_cookiesets_block_DISABLED_and_NONDURING
+    // 4. st_LLB_cookiesets_block_DISABLED
+    // 5. st_GUB_cookiesets_block_DISABLED
+    // 6. st_GUB_cookiesets_block_DISABLED_and_NONDURING
+    // 7. st_expand_LLB_suspected_account_cookies
+    // 8. st_expand_GUB_suspected_account_cookies
     //
     // Returns one of the following:
     // "switch_to_expand" : Looks like suspected cookies do not contain all. Switch to expand state.
@@ -4594,8 +4697,8 @@ function cookie_investigator(account_cookies,
     function commit_result(tested_state) {
 	var rs = "continue_testing";
 	if (tested_state == "st_suspected_cookies_pass_test") {
-	    if (pending_am_i_logged_in != undefined) {
-		if(!pending_am_i_logged_in) {
+	    if (pending_are_usernames_present != undefined) {
+		if(!pending_are_usernames_present) {
 		    console.log("APPU DEBUG: Switching to expand state from 'st_suspected_cookies_pass_test'");
 		    rs = "switch_to_expand";
 		    tot_expand_state_entered += 1;
@@ -4612,8 +4715,8 @@ function cookie_investigator(account_cookies,
 	    }
 	}
 	else if (tested_state == "st_suspected_cookies_block_test") {
-	    if (pending_am_i_logged_in != undefined) {
-		if(pending_am_i_logged_in == true) {
+	    if (pending_are_usernames_present != undefined) {
+		if(pending_are_usernames_present == true) {
 		    console.log("APPU DEBUG: Switching to expand state from 'st_suspected_cookies_block_test'");
 		    rs = "switch_to_expand";
 		    tot_expand_state_entered += 1;
@@ -4621,7 +4724,11 @@ function cookie_investigator(account_cookies,
 		    // disabled_cookies = [];
 		}
 		else {
-		    if (pending_bool_pwd_box_present) {
+		    if (pending_bool_pwd_box_present_first_verification == false &&
+			pending_bool_pwd_box_present_suspected_block == true) {
+			// There was no password box present in the very first "verification epoch",
+			// but now when we block suspected cookies, there is a password box present.
+			// So looks like when user is not logged-in, password box would be present.
 			bool_pwd_box_should_be_present = true;
 			console.log("APPU DEBUG: @@@@ A password box should be present when user is not logged-in @@@@");
 		    }
@@ -4637,58 +4744,31 @@ function cookie_investigator(account_cookies,
 		rs = "error";
 	    }
 	}
-	else if (tested_state == "st_llb_cookiesets_block_disabled_and_nonduring") {
-	    if (pending_am_i_logged_in[0] != undefined) {
-		if (!pending_am_i_logged_in[0]) {
+	else if (tested_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING") {
+	    if (pending_are_usernames_present[0] != undefined) {
+		if (pending_are_usernames_present[0] == false) {
 		    // FATAL ERROR: If user is not logged in, then control should not
-		    // come here. It should execute "st_llb_cookiesets_block_disabled"
+		    // come here. It should execute "st_LLB_cookiesets_block_DISABLED"
 		    console.log("APPU Error: Totally not expected, terminating");
-		    report_fatal_error("commit-result-st_llb_cookiesets_block_disabled_and_nonduring-user-not-logged-in");
+		    report_fatal_error("commit-result-st_LLB_cookiesets_block_DISABLED_and_NONDURING-user-not-logged-in");
 		    rs = "error";
 		}
 		else {
-		    verified_strict_non_account_cookiesets_array.push(pending_disabled_cookies[0]);
-		    verified_strict_non_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
-		    store_intermediate_state();
-		    
-		    if (pending_bool_pwd_box_present[0]) {
-			verified_restricted_cookiesets_array.push(pending_disabled_cookies[0]);
-			console.log("APPU DEBUG: Found restrictive cookieset: " + 
-				    JSON.stringify(pending_disabled_cookies[0]));
-		    }
-		}
-	    }
-	}
-	else if (tested_state == "st_llb_cookiesets_block_disabled") {
-	    if (pending_am_i_logged_in[0] != undefined &&
-		pending_am_i_logged_in[1] != undefined) {
-		if (pending_am_i_logged_in[0] == pending_am_i_logged_in[1]) {
-		    if (pending_am_i_logged_in[0] != undefined &&
-			!pending_am_i_logged_in[0]) {
-			if (bool_pwd_box_should_be_present) {
-			    if (pending_bool_pwd_box_present[0]) {
-				commit_account_cookies();
-			    }
-			    else {
-				commit_account_cookies();
-				// I stopped checking for pwd_box as that test is a bit flaky.
-				// Especially on Gmail, I have observed that presence of password-box
-				// is not assured. This causes the testing to go on longer than what is right and
-				// detects unnecessary and extra cookiesets.
-				//   verified_strict_non_account_cookiesets_array.push(pending_disabled_cookies[0]);
-				//   verified_strict_non_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
-				//   store_intermediate_state();
-			    }
-			}
-			else {
-				commit_account_cookies();
-			}
+		    if (bool_pwd_box_should_be_present && pending_bool_pwd_box_present[0]) {
+			// FATAL ERROR: If user is not logged in, then control should not
+			// come here. It should execute "st_LLB_cookiesets_block_DISABLED"
+			console.log("APPU Error: Totally not expected, terminating");
+			report_fatal_error("commit-result-st_LLB_cookiesets_block_DISABLED_and_NONDURING" +
+					   "-user-not-logged-in-pwd-boxes-present");
+			rs = "error";
 		    }
 		    else {
+			// User is logged-in and no restrictions about password boxes.
+			// mark this as non-account-cookieset and continue.
 			verified_strict_non_account_cookiesets_array.push(pending_disabled_cookies[0]);
 			verified_strict_non_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
 			store_intermediate_state();
-
+			
 			if (pending_bool_pwd_box_present[0]) {
 			    verified_restricted_cookiesets_array.push(pending_disabled_cookies[0]);
 			    console.log("APPU DEBUG: Found restrictive cookieset: " + 
@@ -4696,12 +4776,76 @@ function cookie_investigator(account_cookies,
 			}
 		    }
 		}
+	    }
+	}
+	else if (tested_state == "st_LLB_cookiesets_block_DISABLED") {
+	    if (pending_are_usernames_present[0] != undefined &&
+		pending_are_usernames_present[1] != undefined) {
+		if (pending_are_usernames_present[0] == pending_are_usernames_present[1]) {
+		    if (pending_are_usernames_present[0] == false) {
+			// Both times we detected that the user is NOT logged-in.
+			commit_account_cookies();
+		    }
+		    else {
+			// Both times we detected that the user is logged-in
+			if (bool_pwd_box_should_be_present) {
+			    if (pending_bool_pwd_box_present[0] == pending_bool_pwd_box_present[1]) {
+				if (pending_bool_pwd_box_present[0] == false) {
+				    // Both times we detected that the password box is not present
+				    // User is really logged-in
+				    verified_strict_non_account_cookiesets_array.push(pending_disabled_cookies[0]);
+				    verified_strict_non_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+				    store_intermediate_state();
+				}
+				else {
+				    // Both times we detected that the password box IS present
+				    // User is not logged-in
+				    commit_account_cookies();
+				}
+			    }
+			    else {
+				if (pending_bool_pwd_box_present[0] == true &&
+				    pending_bool_pwd_box_present[1] == false) {
+				    // Enabling 'non-DURING' cookies causes session to be logged-in.
+				    // Then disabling 'non-DURING' cookies causes session to be logged-out.
+				    // Hence some account cookies must be present in 'non-During' cookies.
+				    console.log("APPU DEBUG: It seems that some cookies are in non-DURING class. " +
+						"Switching to EXPAND-STATES");
+				    rs = "switch_to_expand";
+				    tot_expand_state_entered += 1;
+				}
+				else {
+				    // Disabling 'non-DURING' cookies caused session to be logged-out
+				    // Enabling 'non-DURING' cookies caused session to be logged-in
+				    // TOTALLY UNEXPECTED.
+				    console.log("APPU Error: Totally not expected, terminating");
+				    report_fatal_error("llb-disable-non-during-causes-session-logout-pwd-box-present");
+				    rs = "error";
+				}
+			    }
+			}
+			else {
+			    // User is logged-in in both cases. 
+			    // Also no restrition about password boxes.
+			    // So just mark as non-account-cookieset and continue.
+			    verified_strict_non_account_cookiesets_array.push(pending_disabled_cookies[0]);
+			    verified_strict_non_account_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+			    store_intermediate_state();
+			    
+			    if (pending_bool_pwd_box_present[0]) {
+				verified_restricted_cookiesets_array.push(pending_disabled_cookies[0]);
+				console.log("APPU DEBUG: Found restrictive cookieset: " + 
+					    JSON.stringify(pending_disabled_cookies[0]));
+			    }
+			}
+		    }
+		}
 		else {
-		    if (!pending_am_i_logged_in[0] && pending_am_i_logged_in[1]) {
+		    if (!pending_are_usernames_present[0] && pending_are_usernames_present[1]) {
 			// Disabling 'non-DURING' cookies caused session to be logged out.
 			// Hence some account cookies must be present in 'non-During' cookies.
 			console.log("APPU DEBUG: It seems that some cookies are in non-DURING class. " +
-				    "Switching to 'st_llb_expand_suspected_account_cookies'");
+				    "Switching to EXPAND-STATES");
 			rs = "switch_to_expand";
 			tot_expand_state_entered += 1;
 		    }
@@ -4716,50 +4860,102 @@ function cookie_investigator(account_cookies,
 		}
 	    }
 	}
-	else if (tested_state == "st_gub_cookiesets_block_disabled") {
-	    if (pending_am_i_logged_in[0] != undefined) {
-		if (pending_am_i_logged_in[0] == false) {
+	else if (tested_state == "st_GUB_cookiesets_block_DISABLED") {
+	    if (pending_are_usernames_present[0] != undefined) {
+		if (pending_are_usernames_present[0] == false) {
+		    // User is not logged-in. We need to test subset of this GUB cookieset.
 		    num_account_super_cookiesets_found += 1;
 		    verified_account_super_cookiesets_array.push(pending_disabled_cookies[0]);
 		    verified_account_super_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
 		    store_intermediate_state();
 		}
 		else {
-		    // FATAL ERROR: If user is logged in, then control should not
-		    // come here. It should execute "st_gub_cookiesets_block_disabled_and_nonduring"
-		    console.log("APPU Error: Totally not expected, terminating");
-		    report_fatal_error("commit-result-st_gub_cookiesets_block_disabled-user-logged-in");
-		    rs = "error";
+		    if (bool_pwd_box_should_be_present && pending_bool_pwd_box_present[0]) {
+			// User is not logged-in. We need to test subset of this GUB cookieset.
+			num_account_super_cookiesets_found += 1;
+			verified_account_super_cookiesets_array.push(pending_disabled_cookies[0]);
+			verified_account_super_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+			store_intermediate_state();
+		    }
+		    else {
+			// FATAL ERROR: If user is logged in, then control should not
+			// come here. It should execute "st_GUB_cookiesets_block_DISABLED_and_NONDURING"
+			console.log("APPU Error: Totally not expected, terminating");
+			report_fatal_error("commit-result-st_GUB_cookiesets_block_DISABLED-user-logged-in");
+			rs = "error";
+		    }
 		}
 	    }
 	}
-	else if (tested_state == "st_gub_cookiesets_block_disabled_and_nonduring") {
-	    if (pending_am_i_logged_in[0] != undefined &&
-		pending_am_i_logged_in[1] != undefined) {
-		if (pending_am_i_logged_in[0] == pending_am_i_logged_in[1]) {
-		    if (pending_am_i_logged_in[0]) {
-			// User is logged in in both GUB sub states. We found a GUB optimization
-			// cookieset
-			num_non_account_super_cookiesets_found += 1;
-			verified_non_account_super_cookiesets_array.push(pending_disabled_cookies[0]);
-			verified_non_account_super_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
-			store_intermediate_state();
+	else if (tested_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING") {
+	    if (pending_are_usernames_present[0] != undefined &&
+		pending_are_usernames_present[1] != undefined) {
+		if (pending_are_usernames_present[0] == pending_are_usernames_present[1]) {
+		    if (pending_are_usernames_present[0]) {
+
+			if (bool_pwd_box_should_be_present) {
+			    if (pending_bool_pwd_box_present[0] == pending_bool_pwd_box_present[1]) {
+				if (pending_bool_pwd_box_present[0] == false) {
+				    // User is logged in in both GUB sub states. We found a GUB optimization
+				    // cookieset
+				    num_non_account_super_cookiesets_found += 1;
+				    verified_non_account_super_cookiesets_array.push(pending_disabled_cookies[0]);
+				    verified_non_account_super_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+				    store_intermediate_state();
+				}
+				else {
+				    // User is not logged-in. We need to test subset of this GUB cookieset.
+				    num_account_super_cookiesets_found += 1;
+				    verified_account_super_cookiesets_array.push(pending_disabled_cookies[0]);
+				    verified_account_super_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+				    store_intermediate_state();
+				}
+			    }
+			    else {
+				if (pending_bool_pwd_box_present[0] == false &&
+				    pending_bool_pwd_box_present[1] == true) {
+				    // Enabling 'non-DURING' cookies causes session to be logged-in.
+				    // Then disabling 'non-DURING' cookies causes session to be logged-out.
+				    // Hence some account cookies must be present in 'non-During' cookies.
+				    console.log("APPU DEBUG: It seems that some cookies are in non-DURING class. " +
+						"Switching to EXPAND-STATES");
+				    rs = "switch_to_expand";
+				    tot_expand_state_entered += 1;
+				}
+				else {
+				    // Disabling 'non-DURING' cookies caused session to be logged-out
+				    // Enabling 'non-DURING' cookies caused session to be logged-in
+				    // TOTALLY UNEXPECTED.
+				    console.log("APPU Error: Totally not expected, terminating");
+				    report_fatal_error("gub-disable-non-during-causes-session-logout-pwd-box-present");
+				    rs = "error";
+				}
+			    }
+			}
+			else {
+			    // User is logged in in both GUB sub states. We found a GUB optimization
+			    // cookieset
+			    num_non_account_super_cookiesets_found += 1;
+			    verified_non_account_super_cookiesets_array.push(pending_disabled_cookies[0]);
+			    verified_non_account_super_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
+			    store_intermediate_state();
+			}
 		    }
 		    else {
 			// User is not logged in either GUB sub state. Control should not 
 			// have come here at all. Error.
 			console.log("APPU Error: Totally not expected, terminating");
-			report_fatal_error("commit-result-st_gub_cookiesets_block_disabled_and_nonduring-user-logged-out");
+			report_fatal_error("commit-result-st_GUB_cookiesets_block_DISABLED_and_NONDURING-user-logged-out");
 			rs = "error";
 		    }
 		}
 		else {
-		    if (pending_am_i_logged_in[0] && !pending_am_i_logged_in[1]) {
+		    if (pending_are_usernames_present[0] && !pending_are_usernames_present[1]) {
 			// Enabling 'non-DURING' cookies causes session to be logged-in.
 			// Then disabling 'non-DURING' cookies causes session to be logged-out.
 			// Hence some account cookies must be present in 'non-During' cookies.
 			console.log("APPU DEBUG: It seems that some cookies are in non-DURING class. " +
-				    "Switching to 'st_llb_expand_suspected_account_cookies'");
+				    "Switching to EXPAND-STATES");
 			rs = "switch_to_expand";
 			tot_expand_state_entered += 1;
 		    }
@@ -4774,9 +4970,9 @@ function cookie_investigator(account_cookies,
 		}
 	    }
 	}
-	else if (tested_state == "st_llb_expand_suspected_account_cookies") {
-	    if (pending_am_i_logged_in != undefined) {
-		if (!pending_am_i_logged_in) {
+	else if (tested_state == "st_expand_LLB_suspected_account_cookies") {
+	    if (pending_are_usernames_present != undefined) {
+		if (!pending_are_usernames_present) {
 		    var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
 		    var acct_cookies = expand_state_disabled_cookies;
 
@@ -4801,9 +4997,9 @@ function cookie_investigator(account_cookies,
 		}
 	    }
 	}
-	else if (tested_state == "st_gub_expand_suspected_account_cookies") {
-	    if (pending_am_i_logged_in != undefined &&
-		pending_am_i_logged_in == true) {
+	else if (tested_state == "st_expand_GUB_suspected_account_cookies") {
+	    if (pending_are_usernames_present != undefined &&
+		pending_are_usernames_present == true) {
 		var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
 		var acct_cookies = [];
 
@@ -4833,8 +5029,8 @@ function cookie_investigator(account_cookies,
 		reset_to_start_state(acct_cookies);
 		rs = "continue_testing";
 	    }
-	    else if (pending_am_i_logged_in != undefined &&
-		     pending_am_i_logged_in == false) {
+	    else if (pending_are_usernames_present != undefined &&
+		     pending_are_usernames_present == false) {
 		verified_non_during_account_super_decimal_cookiesets.push(pending_curr_decimal_cs);
 		verified_non_during_account_super_cookiesets_array.push(expand_state_disabled_cookies);
 
@@ -4846,77 +5042,459 @@ function cookie_investigator(account_cookies,
     }
 
 
-    // Returns: 
-    // "yes"           : When result is assuredly significant.
-    // "no"            : When result is assuredly NOT significant.
-    // "possibly_yes"  : When result may be significant, but need verification that user is still logged-in.
-    // "possibly_no"   : When result may NOT be significant, but need verification that user is still logged-in.
-    // "force_commit"  : Possibly something went wrong. Let commit_result() take care of it.
-    // 
-    // Deciding significance depends on what type of state you are in.
-    // "yes"            : Returned for GUB states when we find user is logged-in.
-    // "no"             : Returned for LLB states when we find user is logged-in.
-    // "possibly_yes"   : Returned for LLB states when user is NOT logged-in.
-    //                    Returned for GUB states when user is logged-in. 
-    // "possibly_no"    : Returned for GUB states when user is NOT logged-in.
-    function decide_result_significance() {
-	var dontcare_states = [
-			     "st_cookie_test_start", 
-			     "st_start_with_no_cookies",
-			     "st_suspected_cookies_pass_test",
-			     "st_suspected_cookies_block_test",
-			     "st_testing",
-			     "st_terminate",
-			     "st_verification_epoch",
-			     ];
+    // Accepts:
+    // tested_state: State for which we want to commit result. Could be my_state or last_non_verification_state
+    // is_result_significant: true or false
+    function new_commit_result(tested_state, is_result_significant) {
+	var rs = "continue_testing";
+	if (tested_state == "st_suspected_cookies_pass_test") {
+	    // do nothing
+	}
+	else if (tested_state == "st_suspected_cookies_block_test") {
+	    if (!is_result_significant) {
+		if (pending_bool_pwd_box_present_first_verification == false &&
+		    pending_bool_pwd_box_present_suspected_block == true) {
+		    bool_pwd_box_should_be_present = true;
+		    console.log("APPU DEBUG: @@@@ A password box should be present when user is not logged-in @@@@");
+		}
+		else {
+		    bool_pwd_box_should_be_present = false;
+		    console.log("APPU DEBUG: @@@@ A password box should *NOT* be present when user is not logged-in @@@@");
+		}
+	    }
+	}
+	else if (tested_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING") {
+	    if (is_result_significant) {
+		console.log("APPU Error: Totally not expected, terminating");
+		report_fatal_error("llb-disable-nonduring-nonsignificant-result");
+		rs = "error";
+	    }
+	    else {
+		commit_llb_nonaccount_cookieset();
+	    }
+	}
+	else if (tested_state == "st_LLB_cookiesets_block_DISABLED") {
+	    if (is_result_significant) {
+		commit_llb_account_cookieset();
+	    }
+	    else {
+		console.log("APPU Error: Totally not expected, terminating");
+		report_fatal_error("llb-disable-nonsignificant-result");
+		rs = "error";
+	    }
+	}
+	else if (tested_state == "st_GUB_cookiesets_block_DISABLED") {
+	    if (is_result_significant) {
+		console.log("APPU Error: Totally not expected, terminating");
+		report_fatal_error("gub-block-disabled-significant-result");
+		rs = "error";
+	    }
+	    else {
+		commit_gub_account_cookieset();
+	    }
+	}
+	else if (tested_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING") {
+	    if (is_result_significant) {
+		commit_gub_nonaccount_cookieset();
+	    }
+	    else {
+		console.log("APPU Error: Totally not expected, terminating");
+		report_fatal_error("gub-block-disabled-nonduring-nonsignificant-result");
+		rs = "error";
+	    }
+	}
+	else if (tested_state == "st_expand_LLB_suspected_account_cookies") {
+	    if (is_result_significant) {
+		shift_llb_expand_account_cookieset_to_suspected();
+		console.log("APPU DEBUG: Detected account cookies in non-DURING cookies. Resetting to start state");
+		reset_to_start_state(acct_cookies);
+	    }
+	    else {
+		commit_llb_expand_nonaccount_cookieset();
+	    }
+	}
+	else if (tested_state == "st_expand_GUB_suspected_account_cookies") {
+	    if (is_result_significant) {
+		shift_gub_expand_nonaccount_cookieset_to_suspected();
+		console.log("APPU DEBUG: (GUB-EXPAND) Detected account cookies in non-DURING cookies." + 
+			    " Resetting to start state");
+		reset_to_start_state(acct_cookies);
+	    }
+	    else {
+		commit_gub_expand_nonaccount_cookieset();
+	    }
+	}
 
-	if (dontcare_states.indexOf(my_state) != -1) {
+	return rs;
+    }
+
+    
+    // Returns: 'yes' or 'no'
+    function is_user_logged_in(is_username_present, is_pwd_box_present, should_pwd_box_be_present) {
+	if (is_username_present) {
+	    if (should_pwd_box_be_present) {
+		if (is_pwd_box_present) {
+		    // Username is present, and password box IS present.
+		    // Password box should NOT be present when user is logged-in.
+		    // So user is NOT logged-in
+		    return "no";
+		}
+		else {
+		    // Username is present, and password box is not present.
+		    // Password box should be present when user is NOT logged-in.
+		    // So user is logged-in
+		    return "yes";
+		}
+	    }
+	    else {
+		// Don't care about pwd_boxes, username is present.
+		// So user is logged-in.
+		return "yes";
+	    }
+	}
+	else {
+	    // Username is not present. So user is not logged-in.
 	    return "no";
 	}
-
-	if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring") {
-	    if (pending_am_i_logged_in[0] == true && 
-		pending_am_i_logged_in[1] == true) {
-		return "yes";
-	    }
-	    else {
-		return "force_commit";
-	    }
-	}
-	if (my_state == "st_gub_cookiesets_block_disabled") {
-	    if (pending_am_i_logged_in[0] == true) {
-		return "possibly_yes";
-	    }
-	    else {
-		return "possibly_no";
-	    }
-	}
-	else if (my_state == "st_llb_cookiesets_block_disabled_and_nonduring") {
-	    if (pending_am_i_logged_in[0] == false) {
-		return "possibly_yes";
-	    }
-	    else if (pending_am_i_logged_in[0] == true) {
-		return "no";
-	    }
-	}
-	else if (my_state == "st_llb_expand_suspected_account_cookies") {
-	    if (pending_am_i_logged_in == false) {
-		return "possibly_yes";
-	    }
-	    else if (pending_am_i_logged_in == true) {
-		return "no";
-	    }
-	}
-	else if (my_state == "st_gub_expand_suspected_account_cookies") {
-	    if (pending_am_i_logged_in == true) {
-		return "yes";
-	    }
-	    else {
-		return "possibly_no";
-	    }
-	}
-
 	return "no";
+    }
+
+
+    // Return values:
+    // "yes"    : User is logged in
+    // "no"     : User is NOT logged in
+    // "error"  : Some error, terminate
+    // "expand" : Goto expand state
+    function decide_loggedin_status(curr_state) {
+	var error_states = [
+			    "st_cookie_test_start",
+			    "st_start_with_no_cookies",
+			    "st_testing", 
+			    "st_terminate",
+			    ];
+
+	if (error_states.indexOf(curr_state) != -1) {
+	    console.log("APPU Error: decide_loggedin_status() should not be called with this state: " + my_state);
+	    report_fatal_error("decide_loggedin_status-called-from-wrong-state-" + my_state);
+	    return "error";
+	}
+
+	if (curr_state == "st_suspected_cookies_block_test" ||
+	    curr_state == "st_suspected_cookies_pass_test") {
+	    return is_user_logged_in(pending_are_usernames_present,
+				     pending_bool_pwd_box_present,
+				     bool_pwd_box_should_be_present);
+	}
+	else if (curr_state == "st_verification_epoch" ||
+	    curr_state == "st_expand_LLB_suspected_account_cookies" ||
+	    curr_state == "st_expand_GUB_suspected_account_cookies") {
+	    // In all these cases, pending_* variables are not arrays.
+	    return is_user_logged_in(pending_are_usernames_present,
+				     pending_bool_pwd_box_present,
+				     bool_pwd_box_should_be_present);
+	}
+	else if (curr_state == "st_GUB_cookiesets_block_DISABLED" ||
+	    curr_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING") {
+	    // In these both states, only ZEROth index is present.
+	    return is_user_logged_in(pending_are_usernames_present[0],
+				     pending_bool_pwd_box_present[0],
+				     bool_pwd_box_should_be_present);
+	}
+	else if (curr_state == "st_LLB_cookiesets_block_DISABLED" ||
+		 curr_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING") {
+	    // In these both states, both ZEROth and FIRST indexes are present
+	    var blocked_disabled_and_nonduring = undefined;
+	    var blocked_disabled = undefined;
+	    var rc1 = undefined;
+	    var rc2 = undefined;
+
+	    var rc1 = is_user_logged_in(pending_are_usernames_present[0],
+					pending_bool_pwd_box_present[0],
+					bool_pwd_box_should_be_present);
+	    var rc2 = is_user_logged_in(pending_are_usernames_present[1],
+					pending_bool_pwd_box_present[1],
+					bool_pwd_box_should_be_present);
+
+	    if (curr_state == "st_LLB_cookiesets_block_DISABLED") {
+		blocked_disabled_and_nonduring = rc1;
+		blocked_disabled = rc2;
+	    }
+	    else if (curr_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING") {
+		blocked_disabled_and_nonduring = rc2;
+		blocked_disabled = rc1;
+	    }
+
+	    if (blocked_disabled_and_nonduring && blocked_disabled) {
+		return "yes";
+	    }
+	    else {
+		if (!blocked_disabled_and_nonduring && !blocked_disabled) {
+		    return "no";
+		}
+		else {
+		    if (!blocked_disabled_and_nonduring && blocked_disabled) {
+			return "expand";
+		    }
+		    else {
+			return "error"
+			    }
+		}
+	    }
+	}
+
+	return "error";
+    }
+
+    // Returns: 
+    // "yes"              : When result is assuredly significant.
+    // "no"               : When result is assuredly NOT significant.
+    // "expand"           : Goto 'expand' state
+    // "possibly_yes"     : When result may be significant, but need verification that user is still logged-in.
+    // "possibly_no"      : When result may NOT be significant, but need verification that user is still logged-in.
+    // "possibly_expand"  : Means in the last test user was logged-out, but if verification proves that
+    //                       user is still logged-in then we need to switch to "EXPAND"
+    // "dont_care"        : No useful result for the calling function.
+    // "error"            : Something went terribly wrong. Big error.
+    //
+    // Any state with "possibly_" prefixed to it needs a verification execution OR some other state execution
+    //  (such as st_GUB_cookiesets_block_DISABLED_and_NONDURING) before converting
+    //  possibly_xxx to xxx
+    //
+    function decide_result_significance(curr_state) {
+	var dontcare_states = [
+			       "st_cookie_test_start", 
+			       "st_start_with_no_cookies",
+			       "st_testing",
+			       "st_terminate",
+			       "st_verification_epoch",
+			     ];
+
+	if (dontcare_states.indexOf(curr_state) != -1) {
+	    return "dont_care";
+	}
+
+	if (curr_state == "st_suspected_cookies_pass_test") {
+	    var rc = decide_loggedin_status(curr_state);	    
+	    if (rc == "no") {
+		// It is necessary to zero out all disabled_cookies because currently
+		// they will contain all 'non-DURING' cookies. 
+		// But expand-state will check cookiesets in 'non-DURING' cookies.
+		disabled_cookies = [];
+		return "possibly_expand";
+	    }
+	    else if (rc == "yes") {
+		// Expected, nothing important
+		return "no";
+	    }
+	    else {
+		console.log("APPU Error: Unknow return code for suspected-pass. RC: " + rc);
+		report_fatal_error("suspected-pass-unknown-return-code-" + rc);
+		return "error";
+	    }
+	}
+	else if (curr_state == "st_suspected_cookies_block_test") {
+	    var rc = decide_loggedin_status(curr_state);	    
+	    if (rc == "no") {
+		return "possibly_no";
+	    }
+	    else if (rc == "yes") {
+		// Not expected, switch to expand
+		// Don't zero out disabled cookies since we want to keep disabling them.
+		// disabled_cookies = [];
+		return "expand";
+	    }
+	    else {
+		console.log("APPU Error: Unknow return code for suspected-pass. RC: " + rc);
+		report_fatal_error("suspected-pass-unknown-return-code-" + rc);
+		return "error";
+	    }
+	}
+	else if (curr_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING") {
+	    var rc = decide_loggedin_status(curr_state);	    
+	    if (rc == "yes") {
+		return "yes";
+	    }
+	    else if (rc == "no") {
+		// Control should not come here if in both states, the user is not
+		// logged-in. Right after executing first GUB substate, the control
+		// should have gone to the next cookieset.
+		console.log("APPU Error: Control should not have come here. Both LLB substates need not be executed");
+		report_fatal_error("both-llb-states-need-not-be-executed-user-not-logged-in");
+		return "error";
+	    }
+	    else {
+		if (rc == "error") {
+		    console.log("APPU Error: GUB, blocked disabled & nonduring, Cant decide user's login status");
+		    report_fatal_error("gub-blocked-disabled-nonduring-cant-decide-user-login-status");
+		    return "error";
+		}
+		else if (rc == "expand") {
+		    // We convert expand to possibly_expand as user is logged-out in this state.
+		    // We need to first make sure that user is logged out due to cookisets and
+		    // not because of user-action. Thus, need to execute verification epoch.
+		    return "possibly_expand";
+		}
+		else {
+		    console.log("APPU Error: GUB, blocked disabled & nonduring, " + 
+				"Unknown result from decide_loggedin_status: " + rc);
+		    report_fatal_error("gub-blocked-disabled-nonduring-unknown-return-code-" + rc);
+		    return "error";
+		}
+	    }
+	}
+	if (curr_state == "st_GUB_cookiesets_block_DISABLED") {
+	    var rc = decide_loggedin_status(curr_state);	    
+	    if (rc == "yes") {
+		return "possibly_yes";
+	    }
+	    else if (rc == "no") {
+		return "possibly_no";
+	    }
+	    else {
+		console.log("APPU Error: GUB, blocked disabled, Cant decide user's login status");
+		report_fatal_error("gub-blocked-disabled-cant-decide-user-login-status");
+		return "error";
+	    }
+	}
+	else if (curr_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING") {
+	    var rc = decide_loggedin_status(curr_state);	    
+	    if (rc == "yes") {
+		return "no";
+	    }
+	    else if (rc == "no") {
+		return "possibly_yes";
+	    }
+	    else {
+		console.log("APPU Error: LLB, blocked disabled & nonduring, Cant decide user's login status");
+		report_fatal_error("llb-blocked-disabled-nonduring-cant-decide-user-login-status");
+		return "error";
+	    }
+	}
+	else if (curr_state == "st_LLB_cookiesets_block_DISABLED") {
+	    var rc = decide_loggedin_status(curr_state);	    
+	    if (rc == "yes") {
+		// Control should not have come here. If LLB was logged-in in its first
+		// substate, then just terminate execution and move on to next cookie-set
+		console.log("APPU Error: Control should not have come here. Both GUB substates need not be executed");
+		report_fatal_error("both-gub-states-need-not-be-executed-user-not-logged-in");
+		return "error";
+	    }
+	    else if (rc == "no") {
+		return "yes";
+	    }
+	    else if (rc == "expand") {
+		// Last state was logged-in, no need to run verification
+		return "expand";
+	    }
+	    else {
+		if (rc == "error") {
+		    console.log("APPU Error: LLB, blocked disabled, Cant decide user's login status");
+		    report_fatal_error("llb-blocked-disabled-cant-decide-user-login-status");
+		}
+		return rc;
+	    }
+	}
+	else if (curr_state == "st_expand_LLB_suspected_account_cookies") {
+	    var rc = decide_loggedin_status(curr_state);	    
+	    if (rc == "yes") {
+		return "no";
+	    }
+	    else if (rc == "no") {
+		return "possibly_yes";
+	    }
+	    else {
+		console.log("APPU Error: EXPAND LLB, Cant decide user's login status");
+		report_fatal_error("expand-llb-cant-decide-user-login-status");
+		return "error";
+	    }
+	}
+	else if (curr_state == "st_expand_GUB_suspected_account_cookies") {
+	    var rc = decide_loggedin_status(curr_state);	    
+	    if (rc == "yes") {
+		return "yes";
+	    }
+	    else if (rc == "no") {
+		return "possibly_no";
+	    }
+	    else {
+		console.log("APPU Error: EXPAND GUB, Cant decide user's login status");
+		report_fatal_error("expand-gub-cant-decide-user-login-status");
+		return "error";
+	    }
+	}
+
+	return "error";
+    }
+
+    
+    function perform_state_transition(last_non_verification_state,
+				      my_state,
+				      ) {
+	// Next state is decided by following variables (possibly in combination):
+	// a. Current state: Possible values are following:
+	//        1. st_verification_epoch
+	//        2. st_cookie_test_start
+	//        3. st_start_with_no_cookies
+	//        4. st_suspected_cookies_pass_test
+	//        5. st_suspected_cookies_block_test
+	//        6. st_LLB_cookiesets_block_DISABLED_and_NONDURING
+	//        7. st_LLB_cookiesets_block_DISABLED
+	//        8. st_GUB_cookiesets_block_DISABLED_and_NONDURING
+	//        9. st_expand_LLB_suspected_account_cookies
+	//       10. st_expand_GUB_suspected_account_cookies
+	//       11. st_testing
+	//       12. st_terminate
+	// 
+	// b. Last non-verification state
+	// c. Last cookieset test result
+	var state_machine = {
+	    // For following states, we always switch to st_verification_epoch after their execution.
+	    "st_cookie_test_start"                           : "st_verification_epoch",                      
+	    "st_start_with_no_cookies"                       : "st_verification_epoch",        
+	    "st_suspected_cookies_pass_test"                 : "st_verification_epoch",        
+	    "st_suspected_cookies_block_test"                : "st_verification_epoch",        
+	    "st_LLB_cookiesets_block_DISABLED"               : "st_verification_epoch",        
+
+
+	    // If current-state is "st_verification_epoch" then we find out what should
+	    // be the next state by combining "st_verification_epoch" + last_non_verification_state
+	    "st_verification_epoch:st_cookie_test_start"                : "st_start_with_no_cookies",
+	    "st_verification_epoch:st_start_with_no_cookies"            : "st_suspected_cookies_pass_test",
+	    "st_verification_epoch:st_suspected_cookies_pass_test"      : "st_suspected_cookies_block_test",
+	    "st_verification_epoch:st_suspected_cookies_block_test" : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
+
+	    "st_verification_epoch:st_LLB_cookiesets_block_DISABLED" : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
+	    "st_verification_epoch:st_GUB_cookiesets_block_DISABLED" : "ATTEMPT:st_GUB_cookiesets_block_DISABLED",
+	    "st_verification_epoch:st_expand_LLB_suspected_account_cookies" : "ATTEMPT:st_expand_LLB_suspected_account_cookies",
+	    "st_verification_epoch:st_expand_GUB_suspected_account_cookies" : "ATTEMPT:st_expand_GUB_suspected_account_cookies",
+
+	    // If we are in one of the following states, then next-state depends on whether the cookieset tested
+	    // was significant according to the rules of that state.
+	    // In general, for LLB, the result is significant if user is logged-out.
+	    // In general, for GUB, the result is significant if user is logged-in.
+	    "st_GUB_cookiesets_block_DISABLED_and_NONDURING"  : "last_test_result_dependent",
+	    "st_GUB_cookiesets_block_DISABLED"                : "last_test_result_dependent",
+	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING"  : "last_test_result_dependent",
+	    "st_expand_LLB_suspected_account_cookies"         : "last_test_result_dependent",
+	    "st_expand_GUB_suspected_account_cookies"         : "last_test_result_dependent",
+	    
+	    // Combination: my_state + ":" + cookieset_test_result_significance
+	    "st_GUB_cookiesets_block_DISABLED:possibly_yes"        : "st_GUB_cookiesets_block_DISABLED_and_NONDURING",
+	    "st_GUB_cookiesets_block_DISABLED:possibly_no"         : "st_verification_epoch",
+
+	    "st_GUB_cookiesets_block_DISABLED_and_NONDURING:yes" : "ATTEMPT:st_GUB_cookiesets_block_DISABLED",
+
+	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING:possibly_yes" : "st_LLB_cookiesets_block_DISABLED",
+	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING:no"  : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
+
+	    "st_expand_LLB_suspected_account_cookies:possibly_yes"  : "st_verification_epoch",
+	    "st_expand_LLB_suspected_account_cookies:no"            : "ATTEMPT:st_expand_LLB_suspected_account_cookies",
+
+	    "st_expand_GUB_suspected_account_cookies:possibly_no"   : "st_verification_epoch",
+	};
+
+	remove the attempts state.
+	move the attempt loop right here.
     }
 
     function next_state(was_last_result_expected) {
@@ -4924,32 +5502,102 @@ function cookie_investigator(account_cookies,
 	var temp_state = my_state;
 	var crrc = '';
 	var result_significance = '';
+	var bool_switch_to_expand = false;
 
-	// was_last_result_expected: Just decides if the result for the last state expected.
-	//                           For e.g., clearly if user is not logged-in for verification state,
-	//                           then that is unexpected result.
 	was_last_result_expected = (was_last_result_expected == undefined) ? false : was_last_result_expected;
 
 	if (was_last_result_expected) {
+	    if (my_state == "st_verification_epoch") {
+		var rc = is_user_logged_in(pending_are_usernames_present,
+					   pending_bool_pwd_box_present,
+					   bool_pwd_box_should_be_present);
+		if (rc == "yes") {
+		    if (pending_result_significance.indexOf("possibly_") != -1) {
+			var is_result_significant = pending_result_significance.split("possibly_")[1];
+			if (is_result_significant == "expand") {
+			    bool_switch_to_expand = true;
+			}
+			else if (is_result_significant == 'yes' ||
+				 is_result_significant == 'no') {
+			    is_result_significant = (is_result_significant == 'yes') ? true : false;
+			    var rc = new_commit_result(my_state, is_result_significant);
+			    write real code --> perform_state_transition();
+			}
+			else {
+			    console.log("APPU Error: Unknown pending result significance: " + pending_result_significance);
+			    report_fatal_error('unknown-prs-' + pending_result_significance +
+					       '-lnvs-' + last_non_verification_state);
+			    my_state = "st_terminate";
+			}
+		    }
+		    else {
+			console.log("APPU Error: Pending result significance does not contain possibly_* " +
+				    "(prs: " + pending_result_significance + ", lnvs: " + 
+				    last_non_verification_state + ")");
+			report_fatal_error('incorrect-psr-' + pending_result_significance + 
+					   '-lnvs-' + last_non_verification_state);
+			my_state = "st_terminate";
+		    }
+		}
+		else {
+		    report_fatal_error("verification-user-not-logged-in");
+		}
+	    }
+	    else {
+		var is_result_significant = decide_result_significance(my_state);
+		if (is_result_significant == "error") {
+
+		}
+		else if (is_result_significant == "dont_care") {
+
+		}
+		else if (is_result_significant.indexOf('possibly_') != -1) {
+		    // next state should be verification except when
+		    // it is possibly_yes and my_state="st_GUB_cookiesets_block_DISABLED"
+		    if (my_state == "st_GUB_cookiesets_block_DISABLED" &&
+			is_result_significant == "possibly_yes") {
+			// switch to st_GUB_cookiesets_block_DISABLED_and_NONDURING
+		    }
+		    else {
+			// switch to st_verification_epoch
+		    }
+		}
+		else if (is_result_significant == "expand") {
+		    bool_switch_to_expand = true;
+		}
+		else if (is_result_significant == 'yes' ||
+			 is_result_significant == 'no') {
+		    is_result_significant = (is_result_significant == 'yes') ? true : false;
+		    var rc = new_commit_result(my_state, is_result_significant);
+		    write real code --> perform_state_transition();
+		}
+		else {
+		    console.log("APPU Error: Unknown result significance: " + is_result_significance);
+		    report_fatal_error('unknown-rs-' + result_significance +
+				       '-my-state-' + my_state);
+		    my_state = "st_terminate";
+		}
+	    }
+	    
 	    // If current state is verification and if last state was any of the following then
 	    // commit result
 	    var verification_state_based_commit = {
 		"st_verification_epoch:st_suspected_cookies_pass_test"                 : true,
 		"st_verification_epoch:st_suspected_cookies_block_test"                : true,
 
-		"st_verification_epoch:st_llb_cookiesets_block_disabled"               : true,
-		"st_verification_epoch:st_llb_expand_suspected_account_cookies"        : true,
+		"st_verification_epoch:st_LLB_cookiesets_block_DISABLED"               : true,
+		"st_verification_epoch:st_expand_LLB_suspected_account_cookies"        : true,
 
-		"st_verification_epoch:st_gub_expand_suspected_account_cookies"        : true,
-		"st_verification_epoch:st_gub_cookiesets_block_disabled"               : true,
+		"st_verification_epoch:st_expand_GUB_suspected_account_cookies"        : true,
+		"st_verification_epoch:st_GUB_cookiesets_block_DISABLED"               : true,
 	    };
 
 	    var result_significance_based_commit = {
-		"st_llb_cookiesets_block_disabled_and_nonduring:no"         : true,
-		"st_llb_expand_suspected_account_cookies:no"                : true,
+		"st_LLB_cookiesets_block_DISABLED_and_NONDURING:no"         : true,
+		"st_expand_LLB_suspected_account_cookies:no"                : true,
 
-		"st_gub_cookiesets_block_disabled_and_nonduring:yes"        : true,
-		"st_gub_expand_suspected_account_cookies:yes"               : true,
+		"st_GUB_cookiesets_block_DISABLED_and_NONDURING:yes"        : true,
+		"st_expand_GUB_suspected_account_cookies:yes"               : true,
 	    };
 
 	    var curr_last_state_combo = my_state + ":" + last_non_verification_state;	    
@@ -4970,6 +5618,11 @@ function cookie_investigator(account_cookies,
 		}
 	    }
 	}
+	else {
+	    console.log("APPU Error: Unexpected result, terminating");
+	    report_fatal_error('last-result-unexpected-my-state-' + my_state);
+	    my_state = "st_terminate";
+	}
 
 	// Next state is decided by following variables (possibly in combination):
 	// a. Current state: Possible values are following:
@@ -4978,11 +5631,11 @@ function cookie_investigator(account_cookies,
 	//        3. st_start_with_no_cookies
 	//        4. st_suspected_cookies_pass_test
 	//        5. st_suspected_cookies_block_test
-	//        6. st_llb_cookiesets_block_disabled_and_nonduring
-	//        7. st_llb_cookiesets_block_disabled
-	//        8. st_gub_cookiesets_block_disabled_and_nonduring
-	//        9. st_llb_expand_suspected_account_cookies
-	//       10. st_gub_expand_suspected_account_cookies
+	//        6. st_LLB_cookiesets_block_DISABLED_and_NONDURING
+	//        7. st_LLB_cookiesets_block_DISABLED
+	//        8. st_GUB_cookiesets_block_DISABLED_and_NONDURING
+	//        9. st_expand_LLB_suspected_account_cookies
+	//       10. st_expand_GUB_suspected_account_cookies
 	//       11. st_testing
 	//       12. st_terminate
 	// 
@@ -4994,7 +5647,7 @@ function cookie_investigator(account_cookies,
 	    "st_start_with_no_cookies"                       : "st_verification_epoch",        
 	    "st_suspected_cookies_pass_test"                 : "st_verification_epoch",        
 	    "st_suspected_cookies_block_test"                : "st_verification_epoch",        
-	    "st_llb_cookiesets_block_disabled"               : "st_verification_epoch",        
+	    "st_LLB_cookiesets_block_DISABLED"               : "st_verification_epoch",        
 
 
 	    // If current-state is "st_verification_epoch" then we find out what should
@@ -5002,36 +5655,36 @@ function cookie_investigator(account_cookies,
 	    "st_verification_epoch:st_cookie_test_start"                : "st_start_with_no_cookies",
 	    "st_verification_epoch:st_start_with_no_cookies"            : "st_suspected_cookies_pass_test",
 	    "st_verification_epoch:st_suspected_cookies_pass_test"      : "st_suspected_cookies_block_test",
-	    "st_verification_epoch:st_suspected_cookies_block_test" : "ATTEMPT:st_llb_cookiesets_block_disabled_and_nonduring",
+	    "st_verification_epoch:st_suspected_cookies_block_test" : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
 
-	    "st_verification_epoch:st_llb_cookiesets_block_disabled" : "ATTEMPT:st_llb_cookiesets_block_disabled_and_nonduring",
-	    "st_verification_epoch:st_gub_cookiesets_block_disabled" : "ATTEMPT:st_gub_cookiesets_block_disabled",
-	    "st_verification_epoch:st_llb_expand_suspected_account_cookies" : "ATTEMPT:st_llb_expand_suspected_account_cookies",
-	    "st_verification_epoch:st_gub_expand_suspected_account_cookies" : "ATTEMPT:st_gub_expand_suspected_account_cookies",
+	    "st_verification_epoch:st_LLB_cookiesets_block_DISABLED" : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
+	    "st_verification_epoch:st_GUB_cookiesets_block_DISABLED" : "ATTEMPT:st_GUB_cookiesets_block_DISABLED",
+	    "st_verification_epoch:st_expand_LLB_suspected_account_cookies" : "ATTEMPT:st_expand_LLB_suspected_account_cookies",
+	    "st_verification_epoch:st_expand_GUB_suspected_account_cookies" : "ATTEMPT:st_expand_GUB_suspected_account_cookies",
 
 	    // If we are in one of the following states, then next-state depends on whether the cookieset tested
 	    // was significant according to the rules of that state.
 	    // In general, for LLB, the result is significant if user is logged-out.
 	    // In general, for GUB, the result is significant if user is logged-in.
-	    "st_gub_cookiesets_block_disabled_and_nonduring"  : "last_test_result_dependent",
-	    "st_gub_cookiesets_block_disabled"                : "last_test_result_dependent",
-	    "st_llb_cookiesets_block_disabled_and_nonduring"  : "last_test_result_dependent",
-	    "st_llb_expand_suspected_account_cookies"         : "last_test_result_dependent",
-	    "st_gub_expand_suspected_account_cookies"         : "last_test_result_dependent",
+	    "st_GUB_cookiesets_block_DISABLED_and_NONDURING"  : "last_test_result_dependent",
+	    "st_GUB_cookiesets_block_DISABLED"                : "last_test_result_dependent",
+	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING"  : "last_test_result_dependent",
+	    "st_expand_LLB_suspected_account_cookies"         : "last_test_result_dependent",
+	    "st_expand_GUB_suspected_account_cookies"         : "last_test_result_dependent",
 	    
 	    // Combination: my_state + ":" + cookieset_test_result_significance
-	    "st_gub_cookiesets_block_disabled:possibly_yes"        : "st_gub_cookiesets_block_disabled_and_nonduring",
-	    "st_gub_cookiesets_block_disabled:possibly_no"         : "st_verification_epoch",
+	    "st_GUB_cookiesets_block_DISABLED:possibly_yes"        : "st_GUB_cookiesets_block_DISABLED_and_NONDURING",
+	    "st_GUB_cookiesets_block_DISABLED:possibly_no"         : "st_verification_epoch",
 
-	    "st_gub_cookiesets_block_disabled_and_nonduring:yes" : "ATTEMPT:st_gub_cookiesets_block_disabled",
+	    "st_GUB_cookiesets_block_DISABLED_and_NONDURING:yes" : "ATTEMPT:st_GUB_cookiesets_block_DISABLED",
 
-	    "st_llb_cookiesets_block_disabled_and_nonduring:possibly_yes" : "st_llb_cookiesets_block_disabled",
-	    "st_llb_cookiesets_block_disabled_and_nonduring:no"  : "ATTEMPT:st_llb_cookiesets_block_disabled_and_nonduring",
+	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING:possibly_yes" : "st_LLB_cookiesets_block_DISABLED",
+	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING:no"  : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
 
-	    "st_llb_expand_suspected_account_cookies:possibly_yes"  : "st_verification_epoch",
-	    "st_llb_expand_suspected_account_cookies:no"            : "ATTEMPT:st_llb_expand_suspected_account_cookies",
+	    "st_expand_LLB_suspected_account_cookies:possibly_yes"  : "st_verification_epoch",
+	    "st_expand_LLB_suspected_account_cookies:no"            : "ATTEMPT:st_expand_LLB_suspected_account_cookies",
 
-	    "st_gub_expand_suspected_account_cookies:possibly_no"   : "st_verification_epoch",
+	    "st_expand_GUB_suspected_account_cookies:possibly_no"   : "st_verification_epoch",
 	};
 	
 	var attempt_state = undefined; 
@@ -5048,8 +5701,8 @@ function cookie_investigator(account_cookies,
 	else if (my_state == "st_terminate") {
 		my_state = "st_terminate";
 	}
-	else if (crrc == "switch_to_expand") {
-	    attempt_state = "st_gub_expand_suspected_account_cookies";
+	else if (bool_switch_to_expand == true) {
+	    attempt_state = "st_expand_GUB_suspected_account_cookies";
 	}
 	else if (my_state == "st_verification_epoch") {
 	    // This test has to be here. Do not move it from here.
@@ -5103,20 +5756,20 @@ function cookie_investigator(account_cookies,
 		    break;
 		}
 		else if (rc == "attempt_next_state") {
-		    if (attempt_state == "st_llb_cookiesets_block_disabled_and_nonduring") {
-			attempt_state = "st_gub_cookiesets_block_disabled";
+		    if (attempt_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING") {
+			attempt_state = "st_GUB_cookiesets_block_DISABLED";
 			reset_for_gub_cookieset_testing(true);
 		    }
-		    else if (attempt_state == "st_gub_cookiesets_block_disabled") {
-			attempt_state = "st_llb_cookiesets_block_disabled_and_nonduring";
+		    else if (attempt_state == "st_GUB_cookiesets_block_DISABLED") {
+			attempt_state = "st_LLB_cookiesets_block_DISABLED_and_NONDURING";
 			reset_for_llb_cookieset_testing(true);
 		    }
-		    else if (attempt_state == "st_llb_expand_suspected_account_cookies") {
-			attempt_state = "st_gub_expand_suspected_account_cookies";
+		    else if (attempt_state == "st_expand_LLB_suspected_account_cookies") {
+			attempt_state = "st_expand_GUB_suspected_account_cookies";
 			reset_for_gub_expand_cookies_testing(true);
 		    }
-		    else if (attempt_state == "st_gub_expand_suspected_account_cookies") {
-			attempt_state = "st_llb_expand_suspected_account_cookies";
+		    else if (attempt_state == "st_expand_GUB_suspected_account_cookies") {
+			attempt_state = "st_expand_LLB_suspected_account_cookies";
 			reset_for_llb_expand_cookies_testing(true);
 		    }
 		    else {
@@ -5140,8 +5793,8 @@ function cookie_investigator(account_cookies,
 	}
 
 	if (my_state == "st_verification_epoch" ||
-	    my_state == "st_llb_cookiesets_block_disabled" ||
-	    my_state == "st_gub_cookiesets_block_disabled_and_nonduring") {
+	    my_state == "st_LLB_cookiesets_block_DISABLED" ||
+	    my_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING") {
 	    console.log("-----------------");
 	}
 	else {
@@ -5149,19 +5802,19 @@ function cookie_investigator(account_cookies,
 	}
 
 	console.log("APPU DEBUG: Next state: " + my_state);	
-	if (my_state == "st_llb_cookiesets_block_disabled_and_nonduring" ||
-	    my_state == "st_llb_cookiesets_block_disabled") {
+	if (my_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING" ||
+	    my_state == "st_LLB_cookiesets_block_DISABLED") {
 	    console.log("APPU DEBUG: Number of cookies to DROP in this state: " + num_cookies_drop_for_round);	
 	}
-	else if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring" ||
-		 my_state == "st_gub_cookiesets_block_disabled") {
+	else if (my_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING" ||
+		 my_state == "st_GUB_cookiesets_block_DISABLED") {
 	    console.log("APPU DEBUG: Number of cookies to PASS in this state: " + num_cookies_pass_for_round);	
 	}
-	else if (my_state == "st_llb_expand_suspected_account_cookies") {
+	else if (my_state == "st_expand_LLB_suspected_account_cookies") {
 	    console.log("APPU DEBUG: (EXPAND-STATE) Number of cookies to DROP in this state: " + 
 			expand_state_num_cookies_drop_for_round);	
 	}
-	else if (my_state == "st_gub_expand_suspected_account_cookies") {
+	else if (my_state == "st_expand_GUB_suspected_account_cookies") {
 	    console.log("APPU DEBUG: (EXPAND-STATE) Number of cookies to PASS in this state: " + 
 			expand_state_num_cookies_pass_for_round);	
 	}
@@ -5549,26 +6202,26 @@ function cookie_investigator(account_cookies,
     // Thus, someone else from outside will have to know that the webpage fetch
     // is complete and we should move to suppress next cookie.
     function web_request_fully_fetched(present_usernames, num_pwd_boxes) {
-	var am_i_logged_in = undefined;
+	var are_usernames_present = undefined;
 	var was_result_expected = false;
 	tot_execution += 1;
 
-	if (my_state == "st_llb_cookiesets_block_disabled_and_nonduring"  ||
-	    my_state == "st_gub_cookiesets_block_disabled"                ||
-	    my_state == "st_llb_expand_suspected_account_cookies"         ||
-	    my_state == "st_gub_expand_suspected_account_cookies") {
+	if (my_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING"  ||
+	    my_state == "st_GUB_cookiesets_block_DISABLED"                ||
+	    my_state == "st_expand_LLB_suspected_account_cookies"         ||
+	    my_state == "st_expand_GUB_suspected_account_cookies") {
 	    tot_cookiesets_tested_overall += 1;
 	    tot_cookiesets_tested += 1;
 	    tot_cookiesets_tested_this_round += 1;
-	    if (my_state == "st_gub_cookiesets_block_disabled" ||
-		my_state == "st_gub_expand_suspected_account_cookies") {
+	    if (my_state == "st_GUB_cookiesets_block_DISABLED" ||
+		my_state == "st_expand_GUB_suspected_account_cookies") {
 		tot_gub_cookiesets_tested_overall += 1;
 	    }
 	}
 
 	var bool_top_three_elems_present = true;
 	if (top_three_elements_with_usernames != undefined) {
-	    am_i_logged_in = detect_login_status(present_usernames);
+	    are_usernames_present = detect_login_status(present_usernames);
 	}
 
 	num_pwd_boxes = (num_pwd_boxes == undefined) ? 0 : num_pwd_boxes;
@@ -5577,7 +6230,7 @@ function cookie_investigator(account_cookies,
 
 	if (my_state == 'st_cookie_test_start') {
 	    console.log("APPU DEBUG: Cookie testing state: " + my_state);
-	    console.log("APPU DEBUG: am_i_logged_in: " + am_i_logged_in + ", " + 
+	    console.log("APPU DEBUG: are_usernames_present: " + are_usernames_present + ", " + 
 			"page_load_success: " + page_load_success + ", " +
 			"num_pwd_boxes: " + num_pwd_boxes);
 	    
@@ -5616,7 +6269,7 @@ function cookie_investigator(account_cookies,
 	else if (my_state == 'st_verification_epoch') {
 	    if (top_three_elements_with_usernames == undefined) {
 		if (Object.keys(present_usernames.frequency).length > 0) {
-		    am_i_logged_in = true;
+		    are_usernames_present = true;
 		    
 		    top_three_elements_with_usernames = [];
 		    var tot_uname_elems = 3;
@@ -5628,26 +6281,29 @@ function cookie_investigator(account_cookies,
 		    for (var i = 0; i < tot_uname_elems; i++) {
 			top_three_elements_with_usernames.push(present_usernames.elem_list[i]);
 		    }
-		    console.log("APPU DEBUG: Total number usernames detected in the logged-in state: " + tot_uname_elems);
+		    console.log("APPU DEBUG: Ideally these number of usernames should " +
+				"be present when user is logged-in: " + tot_uname_elems);
+		    console.log("APPU DEBUG: Total number of password-boxes present: " + num_pwd_boxes);
+		    pending_bool_pwd_box_present_first_verification = (num_pwd_boxes > 0);
 		}
 		else {
-		    am_i_logged_in = false;
+		    are_usernames_present = false;
 		}
 	    }
 
-	    if (am_i_logged_in != undefined) {
+	    if (are_usernames_present != undefined) {
 		num_verification_page_load_attempts += 1;
-		if (page_load_success || am_i_logged_in) {
+		if (page_load_success || are_usernames_present) {
 		    num_verification_page_load_success += 1;
 		}
 
-		if (am_i_logged_in) {
+		if (are_usernames_present) {
 		    if (num_pwd_boxes == 0) {
 			// EXPECTED branch
 			// Either page loaded successfully and usernames found OR
 			// page not loaded successfully (but content script ran) and usernames are found
 			console.log("APPU DEBUG: WORKS-AS-EXPECTED: User is logged-in for test 'st_verification_epoch'");
-			verification_epoch_results(am_i_logged_in);
+			verification_epoch_results(are_usernames_present);
 			was_result_expected = true;
 		    }
 		    else {
@@ -5686,8 +6342,8 @@ function cookie_investigator(account_cookies,
 	    }
 	}
 	else if (my_state == 'st_start_with_no_cookies') {
-	    if (am_i_logged_in != undefined) {
-		if (am_i_logged_in) {
+	    if (are_usernames_present != undefined) {
+		if (are_usernames_present) {
 		    // SERIOUS error branch: When starting with no cookies, user should not be logged-in
 		    //                       Critical error in Appu code.
 		    console.log("APPU Error: NOT EXPECTED: Usernames detected for 'st_start_with_no_cookies', " +
@@ -5700,7 +6356,7 @@ function cookie_investigator(account_cookies,
 			// EXPECTED branch: User should not be logged-in after page is loaded
 			console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames NOT detected for " + 
 				    "'st_start_with_no_cookies', num-pwd-boxes: " + num_pwd_boxes);
-			update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+			update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 			is_st_start_with_no_cookies_done = true;
 			was_result_expected = true;
 		    }
@@ -5724,12 +6380,12 @@ function cookie_investigator(account_cookies,
 	    }
 	}
 	else if (my_state == 'st_suspected_cookies_pass_test') {
-	    if (am_i_logged_in != undefined) {
-		if (am_i_logged_in) {
+	    if (are_usernames_present != undefined) {
+		if (are_usernames_present) {
 		    if (num_pwd_boxes == 0) {
 			// EXPECTED branch
 			console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames detected for 'st_suspected_cookies_pass_test'");
-			update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+			update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 			is_suspected_account_cookies_pass_test_done = true;
 			was_result_expected = true;
 		    }
@@ -5751,7 +6407,7 @@ function cookie_investigator(account_cookies,
 				    "num-pwd-boxes: " + num_pwd_boxes +
 				    ", for 'st_suspected_cookies_pass_test'");
 			console.log("APPU DEBUG: Seems like account-cookies in non-DURING set");
-			update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+			update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 			is_suspected_account_cookies_pass_test_done = true;
 			was_result_expected = true;
 		    }
@@ -5775,8 +6431,8 @@ function cookie_investigator(account_cookies,
 	    }
 	}
 	else if (my_state == 'st_suspected_cookies_block_test') {
-	    if (am_i_logged_in != undefined) {
-		if (am_i_logged_in) {
+	    if (are_usernames_present != undefined) {
+		if (are_usernames_present) {
 		    // (Usernames found even when all 'DURING' cookies blocked.
 		    // This means we are not detecting them correctly)
 		    // Need to switch to expand cookie state.
@@ -5784,7 +6440,7 @@ function cookie_investigator(account_cookies,
 				"num-pwd-boxes: " + num_pwd_boxes +
 				", for 'st_suspected_cookies_block_test'");
 		    console.log("APPU DEBUG: Seems like account-cookies in non-DURING set");
-		    update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+		    update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 		    is_suspected_account_cookies_block_test_done = true;
 		    was_result_expected = true;
 
@@ -5799,7 +6455,7 @@ function cookie_investigator(account_cookies,
 			// EXPECTED branch
 			console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames NOT detected for " + 
 				    "'st_suspected_cookies_block_test', num-pwd-boxes: " + num_pwd_boxes);
-			update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+			update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 			is_suspected_account_cookies_block_test_done = true;
 			was_result_expected = true;
 		    }
@@ -5828,31 +6484,31 @@ function cookie_investigator(account_cookies,
 			"done, page loaded, num-pwd-boxes: " + num_pwd_boxes + 
 			", for 'st_testing'");
 	    are_disabled_cookies_regenerated();
-	    update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+	    update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 	    was_result_expected = true;
 
 	}
-	else if (my_state == "st_llb_cookiesets_block_disabled_and_nonduring" ||
-		 my_state == "st_llb_cookiesets_block_disabled" ||
-		 my_state == "st_llb_expand_suspected_account_cookies") {
-	    if (am_i_logged_in != undefined) {
+	else if (my_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING" ||
+		 my_state == "st_LLB_cookiesets_block_DISABLED" ||
+		 my_state == "st_expand_LLB_suspected_account_cookies") {
+	    if (are_usernames_present != undefined) {
 		if (page_load_success) {
 		    // EXPECTED branch
 		    console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames detection test " + 
 				"done, page loaded, num-pwd-boxes: " + num_pwd_boxes + 
 				", for '"+ my_state +"'");
 		    are_disabled_cookies_regenerated();
-		    update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+		    update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 		    was_result_expected = true;
 		}
 		else {
-		    if (am_i_logged_in) {
+		    if (are_usernames_present) {
 			// EXPECTED branch
 			console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames are detected, page is not loaded, " + 
 				    "num-pwd-boxes: " + num_pwd_boxes + 
 				    ", for '" + my_state + "'");
 			are_disabled_cookies_regenerated();
-			update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+			update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 			was_result_expected = true;
 		    }
 		    else {
@@ -5898,27 +6554,27 @@ function cookie_investigator(account_cookies,
 		was_result_expected = true;
 	    }
 	}
-	else if (my_state == "st_gub_cookiesets_block_disabled_and_nonduring" ||
-		 my_state == "st_gub_cookiesets_block_disabled" ||
-		 my_state == "st_gub_expand_suspected_account_cookies") {
-	    if (am_i_logged_in != undefined) {
+	else if (my_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING" ||
+		 my_state == "st_GUB_cookiesets_block_DISABLED" ||
+		 my_state == "st_expand_GUB_suspected_account_cookies") {
+	    if (are_usernames_present != undefined) {
 		if (page_load_success) {
 		    // EXPECTED branch
 		    console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames detection test " + 
 				"done, page loaded, num-pwd-boxes: " + num_pwd_boxes + 
 				", for '" + my_state + "'");
 		    are_disabled_cookies_regenerated();
-		    update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+		    update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 		    was_result_expected = true;
 		}
 		else {
-		    if (am_i_logged_in) {
+		    if (are_usernames_present) {
 			// EXPECTED branch
 			console.log("APPU DEBUG: WORKS-AS-EXPECTED: Usernames are detected, page is not loaded, " + 
 				    "num-pwd-boxes: " + num_pwd_boxes + 
 				    ", for '" + my_state + "'");
 			are_disabled_cookies_regenerated();
-			update_cookie_status(am_i_logged_in, (num_pwd_boxes > 0));
+			update_cookie_status(are_usernames_present, (num_pwd_boxes > 0));
 			was_result_expected = true;
 		    }
 		    else {
@@ -6292,7 +6948,7 @@ function cookie_investigator(account_cookies,
 	if (my_cookies.length == 0 &&
 	    my_domain == curr_domain) {
 	    if (my_state != "st_start_with_no_cookies" &&
-		my_state != "st_gub_cookiesets_block_disabled_and_nonduring" &&
+		my_state != "st_GUB_cookiesets_block_DISABLED_and_NONDURING" &&
 		my_state != "st_testing") {
 		var cit = cookie_investigating_tabs[my_tab_id];
 		if (cit.bool_state_in_progress) {
@@ -6354,7 +7010,7 @@ function detect_account_cookies(current_url,
     config_forceshut = (opt_config_forceshut == undefined) ? 5 : opt_config_forceshut;
 
     if (opt_config_skip_initial_states != undefined) {
-    // opt_config_skip_initial_states will make it jump directly to "st_llb_cookiesets_block_disabled_and_nonduring"
+    // opt_config_skip_initial_states will make it jump directly to "st_LLB_cookiesets_block_DISABLED_and_NONDURING"
 	config_skip_initial_states = opt_config_skip_initial_states;
     }
 

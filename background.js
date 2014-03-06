@@ -433,8 +433,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    cit.pageload_timeout = undefined;
 		}
 
-		var is_user_logged_in = cit.is_user_logged_in(message.present_usernames);
-		if (is_user_logged_in == false &&
+		var are_usernames_present = cit.are_usernames_present(message.present_usernames);
+		if (are_usernames_present == false &&
 		    message.total_time < (cit.get_page_load_time() * 3)) {
 		    console.log("APPU DEBUG: User does not seem to be logged-in." + 
 				" Waiting for 3 times the normal page load time: " + 
@@ -444,7 +444,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		        }, (cit.get_page_load_time() * 1.5));
 		}
 		else {
-		    if (is_user_logged_in && 
+		    if (are_usernames_present && 
 			cit.get_state() == 'st_verification_epoch') {
 			cit.set_page_load_time(message.total_time - message.user_detection_time);
 		    }
