@@ -5428,8 +5428,7 @@ function cookie_investigator(account_cookies,
 
     
     function perform_state_transition(last_non_verification_state,
-				      my_state,
-				      ) {
+				      my_state) {
 	// Next state is decided by following variables (possibly in combination):
 	// a. Current state: Possible values are following:
 	//        1. st_verification_epoch
@@ -5493,8 +5492,8 @@ function cookie_investigator(account_cookies,
 	    "st_expand_GUB_suspected_account_cookies:possibly_no"   : "st_verification_epoch",
 	};
 
-	remove the attempts state.
-	move the attempt loop right here.
+	// remove the attempts state.
+	// move the attempt loop right here.
     }
 
     function next_state(was_last_result_expected) {
@@ -5521,7 +5520,7 @@ function cookie_investigator(account_cookies,
 				 is_result_significant == 'no') {
 			    is_result_significant = (is_result_significant == 'yes') ? true : false;
 			    var rc = new_commit_result(my_state, is_result_significant);
-			    write real code --> perform_state_transition();
+			    // write real code --> perform_state_transition();
 			}
 			else {
 			    console.log("APPU Error: Unknown pending result significance: " + pending_result_significance);
@@ -5569,7 +5568,7 @@ function cookie_investigator(account_cookies,
 			 is_result_significant == 'no') {
 		    is_result_significant = (is_result_significant == 'yes') ? true : false;
 		    var rc = new_commit_result(my_state, is_result_significant);
-		    write real code --> perform_state_transition();
+		    // write real code --> perform_state_transition();
 		}
 		else {
 		    console.log("APPU Error: Unknown result significance: " + is_result_significance);
