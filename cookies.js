@@ -2948,6 +2948,7 @@ function cookie_investigator(account_cookies,
     var orig_cookie_store = {};
 
     var verification_are_usernames_present = undefined;
+    var verification_bool_pwd_box_present = undefined;
 
     // Number of cookies to be dropped in each cookiesets-test BIG epoch
     // This variable goes from 1 to 'N-1' where 'N' are suspected 
@@ -3504,8 +3505,12 @@ function cookie_investigator(account_cookies,
 	my_state = "st_verification_epoch";
 
 	for (var i = 0; i < acct_cookies.length; i++) {
-	    suspected_account_cookies_array.push(acct_cookies[i]);
-	    tot_cookies += 1;
+
+	    if (suspected_account_cookies_array.indexOf(acct_cookies[i]) == -1) {
+		suspected_account_cookies_array.push(acct_cookies[i]);
+		tot_cookies += 1;
+	    }
+
 	    var delete_index = non_during_suspected_account_cookies_array.indexOf(acct_cookies[i]);
 	    if (delete_index != -1) {
 		non_during_suspected_account_cookies_array.splice(delete_index, 1);
@@ -3971,10 +3976,11 @@ function cookie_investigator(account_cookies,
     }
     
     
-    function verification_epoch_results(are_usernames_present) {
+    function verification_epoch_results(are_usernames_present, bool_pwd_box_present) {
 	console.log("APPU DEBUG: Verification Epoch, Is user still logged-in? " + 
 		    (are_usernames_present ? "YES" : "NO"));
 	verification_are_usernames_present = are_usernames_present;
+	verification_bool_pwd_box_present = bool_pwd_box_present;
 	// If not, then login and terminate.
     }
     
@@ -4217,13 +4223,12 @@ function cookie_investigator(account_cookies,
 
 	    if (are_usernames_present) {
 		console.log("APPU DEBUG: User is still logged-in after blocking EXAPAND-STATE-GUB-COOKIE-SET");
-		console.log("APPU DEBUG: We do NOT NEED to test any subsets of this EXPAND-STATE-GUB-COOKIE-SET: " + 
-			    JSON.stringify(disabled_cookies));
+		console.log("APPU DEBUG: We need to transfer this EXPAND-STATE-GUB-COOKIE-SET to 'suspected' array: " + 
+			    JSON.stringify(enabled_cookies_array));
 	    }
 	    else {
-		console.log("APPU DEBUG: User logged-out after blocking EXPAND-STATE-GUB-COOKIE-SET");
-		console.log("APPU DEBUG: We NEED to test subsets for this EXPAND-STATE-GUB-COOKIE-SET: " + 
-			    JSON.stringify(disabled_cookies));
+		console.log("APPU DEBUG: We do NOT NEED to transfer EXPAND-STATE-GUB-COOKIE-SET to 'suspected' array: " + 
+			    JSON.stringify(enabled_cookies_array));
 	    }
 
 	    current_cookiesets_test_attempts += 1;
@@ -5050,6 +5055,10 @@ function cookie_investigator(account_cookies,
     // Accepts:
     // tested_state: State for which we want to commit result. Could be my_state or last_non_verification_state
     // is_result_significant: true or false
+    // 
+    // Returns:
+    // false: Reset to start state has NOT happened
+    // true: Reset to start state has happened
     function new_commit_result(tested_state, is_result_significant) {
 	if (tested_state == "st_suspected_cookies_pass_test") {
 	    // do nothing
@@ -5112,6 +5121,7 @@ function cookie_investigator(account_cookies,
 		var acct_cookies = shift_llb_expand_account_cookieset_to_suspected();
 		console.log("APPU DEBUG: Detected account cookies in non-DURING cookies. Resetting to start state");
 		reset_to_start_state(acct_cookies);
+		return true;
 	    }
 	    else {
 		commit_llb_expand_nonaccount_cookieset();
@@ -5123,11 +5133,13 @@ function cookie_investigator(account_cookies,
 		console.log("APPU DEBUG: (GUB-EXPAND) Detected account cookies in non-DURING cookies." + 
 			    " Resetting to start state");
 		reset_to_start_state(acct_cookies);
+		return true;
 	    }
 	    else {
 		commit_gub_expand_nonaccount_cookieset();
 	    }
 	}
+	return false;
     }
 
     
@@ -5511,7 +5523,7 @@ function cookie_investigator(account_cookies,
 	else if (was_last_result_expected) {
 	    if (my_state == "st_verification_epoch") {
 		var rc = is_user_logged_in(verification_are_usernames_present,
-					   pending_bool_pwd_box_present,
+					   verification_bool_pwd_box_present,
 					   bool_pwd_box_should_be_present);
 		if (rc == "yes") {
 		    if (last_non_verification_state == "st_cookie_test_start") {
@@ -5528,8 +5540,13 @@ function cookie_investigator(account_cookies,
 			else if (is_result_significant == 'yes' ||
 				 is_result_significant == 'no') {
 			    is_result_significant = (is_result_significant == 'yes') ? true : false;
-			    new_commit_result(last_non_verification_state, is_result_significant);
-			    my_state = perform_state_transition(last_non_verification_state);
+			    var rc = new_commit_result(last_non_verification_state, is_result_significant);
+			    if (!rc) {
+				my_state = perform_state_transition(last_non_verification_state);
+			    }
+			    else {
+				temp_state = "st_verification_epoch";
+			    }
 			}
 			else {
 			    console.log("APPU Error: Unknown pending result significance: " + pending_result_significance);
@@ -5580,8 +5597,13 @@ function cookie_investigator(account_cookies,
 		else if (is_result_significant == 'yes' ||
 			 is_result_significant == 'no') {
 		    is_result_significant = (is_result_significant == 'yes') ? true : false;
-		    new_commit_result(my_state, is_result_significant);
-		    my_state = perform_state_transition(my_state);
+		    var rc = new_commit_result(my_state, is_result_significant);
+		    if (!rc) {
+			my_state = perform_state_transition(my_state);
+		    }
+		    else {
+			temp_state = "st_verification_epoch";
+		    }
 		}
 		else {
 		    console.log("APPU Error: Unknown result significance: " + is_result_significance);
@@ -5603,6 +5625,7 @@ function cookie_investigator(account_cookies,
 
 	if (my_state == "st_verification_epoch") {
 	    verification_are_usernames_present = undefined;
+	    verification_bool_pwd_box_present = undefined;
 	}
 
 	if (my_state == "st_verification_epoch" ||
@@ -6116,7 +6139,7 @@ function cookie_investigator(account_cookies,
 			// Either page loaded successfully and usernames found OR
 			// page not loaded successfully (but content script ran) and usernames are found
 			console.log("APPU DEBUG: WORKS-AS-EXPECTED: User is logged-in for test 'st_verification_epoch'");
-			verification_epoch_results(are_usernames_present);
+			verification_epoch_results(are_usernames_present, (num_pwd_boxes > 0));
 			was_result_expected = true;
 		    }
 		    else {
