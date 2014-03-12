@@ -2947,6 +2947,8 @@ function cookie_investigator(account_cookies,
     var my_domain = get_domain(url.split("/")[2]);
     var orig_cookie_store = {};
 
+    var verification_are_usernames_present = undefined;
+
     // Number of cookies to be dropped in each cookiesets-test BIG epoch
     // This variable goes from 1 to 'N-1' where 'N' are suspected 
     // account cookies.
@@ -3972,6 +3974,7 @@ function cookie_investigator(account_cookies,
     function verification_epoch_results(are_usernames_present) {
 	console.log("APPU DEBUG: Verification Epoch, Is user still logged-in? " + 
 		    (are_usernames_present ? "YES" : "NO"));
+	verification_are_usernames_present = are_usernames_present;
 	// If not, then login and terminate.
     }
     
@@ -4022,6 +4025,7 @@ function cookie_investigator(account_cookies,
 
 	flush_session_cookie_store();
 	store_intermediate_state();
+	return acct_cookies;
     }
 
     
@@ -4072,6 +4076,7 @@ function cookie_investigator(account_cookies,
 	
 	flush_session_cookie_store();
 	store_intermediate_state();
+	return acct_cookies;
     }
 
     function commit_gub_expand_nonaccount_cookieset() {
@@ -5046,7 +5051,6 @@ function cookie_investigator(account_cookies,
     // tested_state: State for which we want to commit result. Could be my_state or last_non_verification_state
     // is_result_significant: true or false
     function new_commit_result(tested_state, is_result_significant) {
-	var rs = "continue_testing";
 	if (tested_state == "st_suspected_cookies_pass_test") {
 	    // do nothing
 	}
@@ -5067,7 +5071,7 @@ function cookie_investigator(account_cookies,
 	    if (is_result_significant) {
 		console.log("APPU Error: Totally not expected, terminating");
 		report_fatal_error("llb-disable-nonduring-nonsignificant-result");
-		rs = "error";
+		my_state = "st_terminate";
 	    }
 	    else {
 		commit_llb_nonaccount_cookieset();
@@ -5080,14 +5084,14 @@ function cookie_investigator(account_cookies,
 	    else {
 		console.log("APPU Error: Totally not expected, terminating");
 		report_fatal_error("llb-disable-nonsignificant-result");
-		rs = "error";
+		my_state = "st_terminate";
 	    }
 	}
 	else if (tested_state == "st_GUB_cookiesets_block_DISABLED") {
 	    if (is_result_significant) {
 		console.log("APPU Error: Totally not expected, terminating");
 		report_fatal_error("gub-block-disabled-significant-result");
-		rs = "error";
+		my_state = "st_terminate";
 	    }
 	    else {
 		commit_gub_account_cookieset();
@@ -5100,12 +5104,12 @@ function cookie_investigator(account_cookies,
 	    else {
 		console.log("APPU Error: Totally not expected, terminating");
 		report_fatal_error("gub-block-disabled-nonduring-nonsignificant-result");
-		rs = "error";
+		my_state = "st_terminate";
 	    }
 	}
 	else if (tested_state == "st_expand_LLB_suspected_account_cookies") {
 	    if (is_result_significant) {
-		shift_llb_expand_account_cookieset_to_suspected();
+		var acct_cookies = shift_llb_expand_account_cookieset_to_suspected();
 		console.log("APPU DEBUG: Detected account cookies in non-DURING cookies. Resetting to start state");
 		reset_to_start_state(acct_cookies);
 	    }
@@ -5115,7 +5119,7 @@ function cookie_investigator(account_cookies,
 	}
 	else if (tested_state == "st_expand_GUB_suspected_account_cookies") {
 	    if (is_result_significant) {
-		shift_gub_expand_nonaccount_cookieset_to_suspected();
+		var acct_cookies = shift_gub_expand_nonaccount_cookieset_to_suspected();
 		console.log("APPU DEBUG: (GUB-EXPAND) Detected account cookies in non-DURING cookies." + 
 			    " Resetting to start state");
 		reset_to_start_state(acct_cookies);
@@ -5124,8 +5128,6 @@ function cookie_investigator(account_cookies,
 		commit_gub_expand_nonaccount_cookieset();
 	    }
 	}
-
-	return rs;
     }
 
     
@@ -5224,20 +5226,23 @@ function cookie_investigator(account_cookies,
 		blocked_disabled = rc1;
 	    }
 
-	    if (blocked_disabled_and_nonduring && blocked_disabled) {
+	    if (blocked_disabled_and_nonduring == "yes" && 
+		blocked_disabled == "yes") {
 		return "yes";
 	    }
 	    else {
-		if (!blocked_disabled_and_nonduring && !blocked_disabled) {
+		if (blocked_disabled_and_nonduring == "no" && 
+		    blocked_disabled == "no") {
 		    return "no";
 		}
 		else {
-		    if (!blocked_disabled_and_nonduring && blocked_disabled) {
+		    if (blocked_disabled_and_nonduring == "no" && 
+			blocked_disabled == "yes") {
 			return "expand";
 		    }
 		    else {
-			return "error"
-			    }
+			return "error";
+		    }
 		}
 	    }
 	}
@@ -5380,7 +5385,7 @@ function cookie_investigator(account_cookies,
 		return "error";
 	    }
 	    else if (rc == "no") {
-		return "yes";
+		return "possibly_yes";
 	    }
 	    else if (rc == "expand") {
 		// Last state was logged-in, no need to run verification
@@ -5427,73 +5432,65 @@ function cookie_investigator(account_cookies,
     }
 
     
-    function perform_state_transition(last_non_verification_state,
-				      my_state) {
-	// Next state is decided by following variables (possibly in combination):
-	// a. Current state: Possible values are following:
-	//        1. st_verification_epoch
-	//        2. st_cookie_test_start
-	//        3. st_start_with_no_cookies
-	//        4. st_suspected_cookies_pass_test
-	//        5. st_suspected_cookies_block_test
-	//        6. st_LLB_cookiesets_block_DISABLED_and_NONDURING
-	//        7. st_LLB_cookiesets_block_DISABLED
-	//        8. st_GUB_cookiesets_block_DISABLED_and_NONDURING
-	//        9. st_expand_LLB_suspected_account_cookies
-	//       10. st_expand_GUB_suspected_account_cookies
-	//       11. st_testing
-	//       12. st_terminate
-	// 
-	// b. Last non-verification state
-	// c. Last cookieset test result
+    function perform_state_transition(curr_state) {
 	var state_machine = {
-	    // For following states, we always switch to st_verification_epoch after their execution.
-	    "st_cookie_test_start"                           : "st_verification_epoch",                      
-	    "st_start_with_no_cookies"                       : "st_verification_epoch",        
-	    "st_suspected_cookies_pass_test"                 : "st_verification_epoch",        
-	    "st_suspected_cookies_block_test"                : "st_verification_epoch",        
-	    "st_LLB_cookiesets_block_DISABLED"               : "st_verification_epoch",        
-
-
-	    // If current-state is "st_verification_epoch" then we find out what should
-	    // be the next state by combining "st_verification_epoch" + last_non_verification_state
-	    "st_verification_epoch:st_cookie_test_start"                : "st_start_with_no_cookies",
-	    "st_verification_epoch:st_start_with_no_cookies"            : "st_suspected_cookies_pass_test",
-	    "st_verification_epoch:st_suspected_cookies_pass_test"      : "st_suspected_cookies_block_test",
-	    "st_verification_epoch:st_suspected_cookies_block_test" : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
-
-	    "st_verification_epoch:st_LLB_cookiesets_block_DISABLED" : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
-	    "st_verification_epoch:st_GUB_cookiesets_block_DISABLED" : "ATTEMPT:st_GUB_cookiesets_block_DISABLED",
-	    "st_verification_epoch:st_expand_LLB_suspected_account_cookies" : "ATTEMPT:st_expand_LLB_suspected_account_cookies",
-	    "st_verification_epoch:st_expand_GUB_suspected_account_cookies" : "ATTEMPT:st_expand_GUB_suspected_account_cookies",
-
-	    // If we are in one of the following states, then next-state depends on whether the cookieset tested
-	    // was significant according to the rules of that state.
-	    // In general, for LLB, the result is significant if user is logged-out.
-	    // In general, for GUB, the result is significant if user is logged-in.
-	    "st_GUB_cookiesets_block_DISABLED_and_NONDURING"  : "last_test_result_dependent",
-	    "st_GUB_cookiesets_block_DISABLED"                : "last_test_result_dependent",
-	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING"  : "last_test_result_dependent",
-	    "st_expand_LLB_suspected_account_cookies"         : "last_test_result_dependent",
-	    "st_expand_GUB_suspected_account_cookies"         : "last_test_result_dependent",
-	    
-	    // Combination: my_state + ":" + cookieset_test_result_significance
-	    "st_GUB_cookiesets_block_DISABLED:possibly_yes"        : "st_GUB_cookiesets_block_DISABLED_and_NONDURING",
-	    "st_GUB_cookiesets_block_DISABLED:possibly_no"         : "st_verification_epoch",
-
-	    "st_GUB_cookiesets_block_DISABLED_and_NONDURING:yes" : "ATTEMPT:st_GUB_cookiesets_block_DISABLED",
-
-	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING:possibly_yes" : "st_LLB_cookiesets_block_DISABLED",
-	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING:no"  : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
-
-	    "st_expand_LLB_suspected_account_cookies:possibly_yes"  : "st_verification_epoch",
-	    "st_expand_LLB_suspected_account_cookies:no"            : "ATTEMPT:st_expand_LLB_suspected_account_cookies",
-
-	    "st_expand_GUB_suspected_account_cookies:possibly_no"   : "st_verification_epoch",
+	    "st_cookie_test_start"                            : "st_verification_epoch",                      
+	    "st_start_with_no_cookies"                        : "st_verification_epoch",        
+	    "st_suspected_cookies_pass_test"                  : "st_suspected_cookies_block_test",        
+	    "st_suspected_cookies_block_test"                 : "st_LLB_cookiesets_block_DISABLED_and_NONDURING",        
+	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING"  : "st_LLB_cookiesets_block_DISABLED_and_NONDURING",
+	    "st_LLB_cookiesets_block_DISABLED"                : "st_LLB_cookiesets_block_DISABLED_and_NONDURING",        
+	    "st_GUB_cookiesets_block_DISABLED"                : "st_GUB_cookiesets_block_DISABLED",
+	    "st_GUB_cookiesets_block_DISABLED_and_NONDURING"  : "st_GUB_cookiesets_block_DISABLED",
+	    "st_expand_LLB_suspected_account_cookies"         : "st_expand_LLB_suspected_account_cookies",
+	    "st_expand_GUB_suspected_account_cookies"         : "st_expand_GUB_suspected_account_cookies",         
 	};
 
-	// remove the attempts state.
-	// move the attempt loop right here.
+	var nxs = state_machine[curr_state];
+
+	if (nxs == "st_LLB_cookiesets_block_DISABLED_and_NONDURING"   ||
+	    nxs == "st_GUB_cookiesets_block_DISABLED"                 ||
+	    nxs == "st_expand_LLB_suspected_account_cookies"          ||
+	    nxs == "st_expand_GUB_suspected_account_cookies") {
+	    do {
+		rc = attempt_switching_state_to(nxs);
+		
+		if (rc == "success") {
+		    return nxs;
+		}
+		else if (rc == "attempt_next_state") {
+		    if (nxs == "st_LLB_cookiesets_block_DISABLED_and_NONDURING") {
+			nxs = "st_GUB_cookiesets_block_DISABLED";
+			reset_for_gub_cookieset_testing(true);
+		    }
+		    else if (nxs == "st_GUB_cookiesets_block_DISABLED") {
+			nxs = "st_LLB_cookiesets_block_DISABLED_and_NONDURING";
+			reset_for_llb_cookieset_testing(true);
+		    }
+		    else if (nxs == "st_expand_LLB_suspected_account_cookies") {
+			nxs = "st_expand_GUB_suspected_account_cookies";
+			reset_for_gub_expand_cookies_testing(true);
+		    }
+		    else if (nxs == "st_expand_GUB_suspected_account_cookies") {
+			nxs = "st_expand_LLB_suspected_account_cookies";
+			reset_for_llb_expand_cookies_testing(true);
+		    }
+		    else {
+			console.log("APPU Error: Attempt state(" + nxs + ") should not return attempt_next_state");
+			report_fatal_error(nxs + "-returned-attempt-next-state");
+		    }
+		    continue;
+		}
+		else if (rc == "attempt_same_state") {
+		    continue;
+		}
+		else {
+		    nxs = "st_terminate";
+		    return nxs;
+		}
+	    } while(1);
+	}
+	return nxs;
     }
 
     function next_state(was_last_result_expected) {
@@ -5505,22 +5502,34 @@ function cookie_investigator(account_cookies,
 
 	was_last_result_expected = (was_last_result_expected == undefined) ? false : was_last_result_expected;
 
-	if (was_last_result_expected) {
+	if (is_cookie_testing_done()) {
+	    my_state = "st_terminate";
+	}
+	else if (my_state == "st_testing" || bool_switch_to_testing) {
+	    attempt_state = "st_testing";
+	}   
+	else if (was_last_result_expected) {
 	    if (my_state == "st_verification_epoch") {
-		var rc = is_user_logged_in(pending_are_usernames_present,
+		var rc = is_user_logged_in(verification_are_usernames_present,
 					   pending_bool_pwd_box_present,
 					   bool_pwd_box_should_be_present);
 		if (rc == "yes") {
-		    if (pending_result_significance.indexOf("possibly_") != -1) {
+		    if (last_non_verification_state == "st_cookie_test_start") {
+			my_state = "st_start_with_no_cookies";
+		    }
+		    else if (last_non_verification_state == "st_start_with_no_cookies") {
+			my_state = "st_suspected_cookies_pass_test";
+		    }
+		    else if (pending_result_significance.indexOf("possibly_") != -1) {
 			var is_result_significant = pending_result_significance.split("possibly_")[1];
 			if (is_result_significant == "expand") {
-			    bool_switch_to_expand = true;
+			    my_state = perform_state_transition("st_expand_GUB_suspected_account_cookies");
 			}
 			else if (is_result_significant == 'yes' ||
 				 is_result_significant == 'no') {
 			    is_result_significant = (is_result_significant == 'yes') ? true : false;
-			    var rc = new_commit_result(my_state, is_result_significant);
-			    // write real code --> perform_state_transition();
+			    new_commit_result(last_non_verification_state, is_result_significant);
+			    my_state = perform_state_transition(last_non_verification_state);
 			}
 			else {
 			    console.log("APPU Error: Unknown pending result significance: " + pending_result_significance);
@@ -5545,75 +5554,40 @@ function cookie_investigator(account_cookies,
 	    else {
 		var is_result_significant = decide_result_significance(my_state);
 		if (is_result_significant == "error") {
-
+		    report_fatal_error('error-result-significant-' + my_state +
+				       '-lnvs-' + last_non_verification_state);
 		}
 		else if (is_result_significant == "dont_care") {
-
+		    my_state = perform_state_transition(my_state);
 		}
 		else if (is_result_significant.indexOf('possibly_') != -1) {
-		    // next state should be verification except when
-		    // it is possibly_yes and my_state="st_GUB_cookiesets_block_DISABLED"
 		    if (my_state == "st_GUB_cookiesets_block_DISABLED" &&
 			is_result_significant == "possibly_yes") {
-			// switch to st_GUB_cookiesets_block_DISABLED_and_NONDURING
+			my_state = "st_GUB_cookiesets_block_DISABLED_and_NONDURING";
+		    }
+		    else if (my_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING" &&
+			is_result_significant == "possibly_yes") {
+			my_state = "st_LLB_cookiesets_block_DISABLED";
 		    }
 		    else {
-			// switch to st_verification_epoch
+			pending_result_significance = is_result_significant;
+			my_state = "st_verification_epoch";
 		    }
 		}
 		else if (is_result_significant == "expand") {
-		    bool_switch_to_expand = true;
+		    my_state = perform_state_transition("st_expand_GUB_suspected_account_cookies");
 		}
 		else if (is_result_significant == 'yes' ||
 			 is_result_significant == 'no') {
 		    is_result_significant = (is_result_significant == 'yes') ? true : false;
-		    var rc = new_commit_result(my_state, is_result_significant);
-		    // write real code --> perform_state_transition();
+		    new_commit_result(my_state, is_result_significant);
+		    my_state = perform_state_transition(my_state);
 		}
 		else {
 		    console.log("APPU Error: Unknown result significance: " + is_result_significance);
 		    report_fatal_error('unknown-rs-' + result_significance +
 				       '-my-state-' + my_state);
 		    my_state = "st_terminate";
-		}
-	    }
-	    
-	    // If current state is verification and if last state was any of the following then
-	    // commit result
-	    var verification_state_based_commit = {
-		"st_verification_epoch:st_suspected_cookies_pass_test"                 : true,
-		"st_verification_epoch:st_suspected_cookies_block_test"                : true,
-
-		"st_verification_epoch:st_LLB_cookiesets_block_DISABLED"               : true,
-		"st_verification_epoch:st_expand_LLB_suspected_account_cookies"        : true,
-
-		"st_verification_epoch:st_expand_GUB_suspected_account_cookies"        : true,
-		"st_verification_epoch:st_GUB_cookiesets_block_DISABLED"               : true,
-	    };
-
-	    var result_significance_based_commit = {
-		"st_LLB_cookiesets_block_DISABLED_and_NONDURING:no"         : true,
-		"st_expand_LLB_suspected_account_cookies:no"                : true,
-
-		"st_GUB_cookiesets_block_DISABLED_and_NONDURING:yes"        : true,
-		"st_expand_GUB_suspected_account_cookies:yes"               : true,
-	    };
-
-	    var curr_last_state_combo = my_state + ":" + last_non_verification_state;	    
-	    
-	    if (curr_last_state_combo in verification_state_based_commit) {
-		crrc = commit_result(last_non_verification_state);
-	    }
-	    else {
-		// result_significance: This sums up results from (possibly)last FEW states to decide
-		//                      the importance of cookieset under test.
-		//                      Sort of H0: cookieset is not important
-		//                    
-		result_significance = decide_result_significance();
-		var result_state_combo = my_state + ":" + result_significance;
-		if (result_state_combo in result_significance_based_commit ||
-		    result_significance == "force_commit") {
-		    crrc = commit_result(my_state);
 		}
 	    }
 	}
@@ -5623,172 +5597,12 @@ function cookie_investigator(account_cookies,
 	    my_state = "st_terminate";
 	}
 
-	// Next state is decided by following variables (possibly in combination):
-	// a. Current state: Possible values are following:
-	//        1. st_verification_epoch
-	//        2. st_cookie_test_start
-	//        3. st_start_with_no_cookies
-	//        4. st_suspected_cookies_pass_test
-	//        5. st_suspected_cookies_block_test
-	//        6. st_LLB_cookiesets_block_DISABLED_and_NONDURING
-	//        7. st_LLB_cookiesets_block_DISABLED
-	//        8. st_GUB_cookiesets_block_DISABLED_and_NONDURING
-	//        9. st_expand_LLB_suspected_account_cookies
-	//       10. st_expand_GUB_suspected_account_cookies
-	//       11. st_testing
-	//       12. st_terminate
-	// 
-	// b. Last non-verification state
-	// c. Last cookieset test result
-	var state_machine = {
-	    // For following states, we always switch to st_verification_epoch after their execution.
-	    "st_cookie_test_start"                           : "st_verification_epoch",                      
-	    "st_start_with_no_cookies"                       : "st_verification_epoch",        
-	    "st_suspected_cookies_pass_test"                 : "st_verification_epoch",        
-	    "st_suspected_cookies_block_test"                : "st_verification_epoch",        
-	    "st_LLB_cookiesets_block_DISABLED"               : "st_verification_epoch",        
-
-
-	    // If current-state is "st_verification_epoch" then we find out what should
-	    // be the next state by combining "st_verification_epoch" + last_non_verification_state
-	    "st_verification_epoch:st_cookie_test_start"                : "st_start_with_no_cookies",
-	    "st_verification_epoch:st_start_with_no_cookies"            : "st_suspected_cookies_pass_test",
-	    "st_verification_epoch:st_suspected_cookies_pass_test"      : "st_suspected_cookies_block_test",
-	    "st_verification_epoch:st_suspected_cookies_block_test" : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
-
-	    "st_verification_epoch:st_LLB_cookiesets_block_DISABLED" : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
-	    "st_verification_epoch:st_GUB_cookiesets_block_DISABLED" : "ATTEMPT:st_GUB_cookiesets_block_DISABLED",
-	    "st_verification_epoch:st_expand_LLB_suspected_account_cookies" : "ATTEMPT:st_expand_LLB_suspected_account_cookies",
-	    "st_verification_epoch:st_expand_GUB_suspected_account_cookies" : "ATTEMPT:st_expand_GUB_suspected_account_cookies",
-
-	    // If we are in one of the following states, then next-state depends on whether the cookieset tested
-	    // was significant according to the rules of that state.
-	    // In general, for LLB, the result is significant if user is logged-out.
-	    // In general, for GUB, the result is significant if user is logged-in.
-	    "st_GUB_cookiesets_block_DISABLED_and_NONDURING"  : "last_test_result_dependent",
-	    "st_GUB_cookiesets_block_DISABLED"                : "last_test_result_dependent",
-	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING"  : "last_test_result_dependent",
-	    "st_expand_LLB_suspected_account_cookies"         : "last_test_result_dependent",
-	    "st_expand_GUB_suspected_account_cookies"         : "last_test_result_dependent",
-	    
-	    // Combination: my_state + ":" + cookieset_test_result_significance
-	    "st_GUB_cookiesets_block_DISABLED:possibly_yes"        : "st_GUB_cookiesets_block_DISABLED_and_NONDURING",
-	    "st_GUB_cookiesets_block_DISABLED:possibly_no"         : "st_verification_epoch",
-
-	    "st_GUB_cookiesets_block_DISABLED_and_NONDURING:yes" : "ATTEMPT:st_GUB_cookiesets_block_DISABLED",
-
-	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING:possibly_yes" : "st_LLB_cookiesets_block_DISABLED",
-	    "st_LLB_cookiesets_block_DISABLED_and_NONDURING:no"  : "ATTEMPT:st_LLB_cookiesets_block_DISABLED_and_NONDURING",
-
-	    "st_expand_LLB_suspected_account_cookies:possibly_yes"  : "st_verification_epoch",
-	    "st_expand_LLB_suspected_account_cookies:no"            : "ATTEMPT:st_expand_LLB_suspected_account_cookies",
-
-	    "st_expand_GUB_suspected_account_cookies:possibly_no"   : "st_verification_epoch",
-	};
-	
-	var attempt_state = undefined; 
-
-	if (!was_last_result_expected || crrc == "error") {
-	    my_state = "st_terminate";
-	}
-	else if (is_cookie_testing_done()) {
-	    my_state = "st_terminate";
-	}
-	else if (my_state == "st_testing" || bool_switch_to_testing) {
-	    attempt_state = "st_testing";
-	}   
-	else if (my_state == "st_terminate") {
-		my_state = "st_terminate";
-	}
-	else if (bool_switch_to_expand == true) {
-	    attempt_state = "st_expand_GUB_suspected_account_cookies";
-	}
-	else if (my_state == "st_verification_epoch") {
-	    // This test has to be here. Do not move it from here.
-	    var s = "st_verification_epoch" + ":" + last_non_verification_state;
-	    if (s in state_machine) {
-		if (state_machine[s].indexOf("ATTEMPT:") == 0) {
-		    attempt_state = state_machine[s].split(":")[1];
-		}
-		else {
-		    my_state = state_machine[s];
-		}
-	    }
-	    else {
-		console.log("APPU Error: No state machine entry for: " + s);
-		my_state = "st_terminate";
-		report_fatal_error("sve-no-state-machine-entry-for-" + s);
-	    }
-	}
-	else if (state_machine[my_state] == "st_verification_epoch") {
-	    my_state = "st_verification_epoch";
-	}
-	else if (state_machine[my_state] == "last_test_result_dependent") {
-	    var s = my_state + ":" + result_significance;
-
-	    if (s in state_machine) {
-		if (state_machine[s].indexOf("ATTEMPT:") == 0) {
-		    attempt_state = state_machine[s].split(":")[1];
-		}
-		else {
-		    my_state = state_machine[s];
-		}
-	    }
-	    else {
-		console.log("APPU Error: No state machine entry for: " + s);
-		my_state = "st_terminate";
-		report_fatal_error("ltrd-no-state-machine-entry-for-" + s);
-	    }
-	}
-	else {
-	    console.log("APPU Error: All the state changing conditions mismatched");
-	    my_state = "st_terminate";
-	    report_fatal_error("next-state-cant-find-matching-condition");
-	}
-
-	if (attempt_state != undefined) {
-	    do {
-		rc = attempt_switching_state_to(attempt_state);
-		
-		if (rc == "success") {
-		    my_state = attempt_state;
-		    break;
-		}
-		else if (rc == "attempt_next_state") {
-		    if (attempt_state == "st_LLB_cookiesets_block_DISABLED_and_NONDURING") {
-			attempt_state = "st_GUB_cookiesets_block_DISABLED";
-			reset_for_gub_cookieset_testing(true);
-		    }
-		    else if (attempt_state == "st_GUB_cookiesets_block_DISABLED") {
-			attempt_state = "st_LLB_cookiesets_block_DISABLED_and_NONDURING";
-			reset_for_llb_cookieset_testing(true);
-		    }
-		    else if (attempt_state == "st_expand_LLB_suspected_account_cookies") {
-			attempt_state = "st_expand_GUB_suspected_account_cookies";
-			reset_for_gub_expand_cookies_testing(true);
-		    }
-		    else if (attempt_state == "st_expand_GUB_suspected_account_cookies") {
-			attempt_state = "st_expand_LLB_suspected_account_cookies";
-			reset_for_llb_expand_cookies_testing(true);
-		    }
-		    else {
-			console.log("APPU Error: Attempt state(" + attempt_state + ") should not return attempt_next_state");
-			report_fatal_error(attempt_state + "-returned-attempt-next-state");
-		    }
-		    continue;
-		}
-		else if (rc == "attempt_same_state") {
-		    continue;
-		}
-		else {
-		    my_state = "st_terminate";
-		    break;
-		}
-	    } while(1);
-	}
-
 	if (temp_state != "st_verification_epoch") {
 	    last_non_verification_state = temp_state;
+	}
+
+	if (my_state == "st_verification_epoch") {
+	    verification_are_usernames_present = undefined;
 	}
 
 	if (my_state == "st_verification_epoch" ||
@@ -6280,8 +6094,8 @@ function cookie_investigator(account_cookies,
 		    for (var i = 0; i < tot_uname_elems; i++) {
 			top_three_elements_with_usernames.push(present_usernames.elem_list[i]);
 		    }
-		    console.log("APPU DEBUG: Ideally these number of usernames should " +
-				"be present when user is logged-in: " + tot_uname_elems);
+		    console.log("APPU DEBUG: Ideally '" + tot_uname_elems + "' number of usernames should " +
+				"be present when user is logged-in");
 		    console.log("APPU DEBUG: Total number of password-boxes present: " + num_pwd_boxes);
 		    pending_bool_pwd_box_present_first_verification = (num_pwd_boxes > 0);
 		}

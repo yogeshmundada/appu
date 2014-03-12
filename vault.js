@@ -346,6 +346,12 @@ function vault_init() {
 
 	flush_aggregate_data();
     }
+
+    if (!pii_vault.aggregate_data.session_cookie_store) {
+	pii_vault.aggregate_data.session_cookie_store = {};
+
+	flush_aggregate_data();
+    }
 }
 
 function vault_read() {
