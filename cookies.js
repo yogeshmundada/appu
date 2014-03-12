@@ -5535,6 +5535,7 @@ function cookie_investigator(account_cookies,
 		    else if (pending_result_significance.indexOf("possibly_") != -1) {
 			var is_result_significant = pending_result_significance.split("possibly_")[1];
 			if (is_result_significant == "expand") {
+			    tot_expand_state_entered += 1;
 			    my_state = perform_state_transition("st_expand_GUB_suspected_account_cookies");
 			}
 			else if (is_result_significant == 'yes' ||
@@ -5592,6 +5593,7 @@ function cookie_investigator(account_cookies,
 		    }
 		}
 		else if (is_result_significant == "expand") {
+		    tot_expand_state_entered += 1;
 		    my_state = perform_state_transition("st_expand_GUB_suspected_account_cookies");
 		}
 		else if (is_result_significant == 'yes' ||
@@ -5854,7 +5856,7 @@ function cookie_investigator(account_cookies,
 		    // That would mean that they somehow did not get tested while going UP in
 		    // poset but actually are strict-account-cookiesets.
 		    console.log("APPU DEBUG: No member in strict account cookiesets is a " + 
-				"subset of non-account-super-cookieset: " + 
+				"subset of account-super-cookieset: " + 
 				JSON.stringify(verified_account_super_cookiesets_array[k]));
 		}
 	    }
