@@ -1167,6 +1167,11 @@ function get_all_pi_data() {
 		continue;
 	    }
 	    var values = pii_vault.aggregate_data.per_site_pi[site][field].values;
+
+	    if (!values) {
+		continue;
+	    }
+
 	    if (!(field in r)) {
 		r[field] = {};
 	    }
