@@ -2175,6 +2175,7 @@ function record_prelogin_cookies(username, domain) {
 	    return function(all_cookies) {
 		pre_login_cookies[domain] = {};
 		pre_login_cookies[domain].cookies = {};
+		pre_login_cookies[domain].username = username;
 		for (var i = 0; i < all_cookies.length; i++) {
 		    var hashed_cookie_val = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(all_cookies[i].value));
 		    var cookie_name = all_cookies[i].name;
@@ -2182,7 +2183,6 @@ function record_prelogin_cookies(username, domain) {
 		    var cookie_path = all_cookies[i].path;
 		    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
 		    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
-		    pre_login_cookies[domain].username = username;
 		    pre_login_cookies[domain].cookies[cookie_key] = hashed_cookie_val;
 		}
 	    }
@@ -2523,6 +2523,11 @@ function is_subdomain(cookie_domain, current_domain) {
 function get_account_cookies(current_url, bool_url_specific_cookies) {
     var domain = get_domain(current_url.split("/")[2]);
     var cs = pii_vault.aggregate_data.session_cookie_store[domain];
+
+    if (!cs) {
+	return undefined;
+    }
+
     var account_cookies = {};
 
     bool_url_specific_cookies = (bool_url_specific_cookies == undefined) ? false : bool_url_specific_cookies;
@@ -6838,6 +6843,8 @@ function detect_account_cookies(current_url,
     // way to distinguish between cookies. That will have to be done using hashed values.
     var account_cookies = {};
 
+    var current_domain = get_domain(current_url.split("/")[2]);
+
     var config_cookiesets = "random";
     var config_forceshut = 5;
     var config_skip_initial_states = false;
@@ -6900,7 +6907,27 @@ function detect_account_cookies(current_url,
 	}
     }
 
-    load_ci_state(current_url, continue_from_last_ci_state);
+    if (!account_cookies) {
+	get_all_cookies(current_domain, function process_cookies(all_cookies) {
+		if (all_cookies.length <= 30) {
+		    pre_login_cookies[current_domain] = {};
+		    pre_login_cookies[current_domain].cookies = {};
+		    pre_login_cookies[current_domain].username = '';
+		    detect_login_cookies(current_domain);
+		    account_cookies = get_account_cookies(current_url, false);
+		    load_ci_state(current_url, continue_from_last_ci_state);
+		}
+		else {
+		    var err_str = "APPU Error: No suspected account-cookies for: " + current_url; 
+		    console.log(err_str);
+		    print_appu_error(err_str);
+		    return;
+		}
+	    });
+    }
+    else {
+	load_ci_state(current_url, continue_from_last_ci_state);
+    }
 }
 
 

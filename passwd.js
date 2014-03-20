@@ -1467,7 +1467,6 @@ function show_appu_monitor_icon() {
 }
 
 function do_document_ready_functions() {
-    console.log("Here here: Document state: " + document.readyState);
     if (document.readyState !== "complete") {
 	if (!is_cookie_investigator_tab) {
 	    return;
@@ -1518,7 +1517,7 @@ function do_document_ready_functions() {
 	if (!is_template_processing_tab &&
 	    !is_cookie_investigator_tab) {
 	    MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
-	    
+
 	    var observer = new MutationObserver(function(mutations, observer) {
 		    var pwd_elements = $("input:password:visible");
 		    for (var i = 0; i < pwd_elements.length; i++) {

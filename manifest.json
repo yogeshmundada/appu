@@ -33,6 +33,8 @@
   "permissions": [
      "tabs",	
      "storage",	 
+     "system.cpu",	 
+     "system.memory",	 
      "unlimitedStorage",
      "cookies",
      "http://appu.gtnoise.net:5005/post_report",	 	 

@@ -1,5 +1,4 @@
 
-
 function calculate_pwd_similarity(grp_name) {
     var pwd_similarity = pii_vault.current_report.pwd_similarity;
     var pwd_groups = pii_vault.current_report.pwd_groups;
