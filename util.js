@@ -180,3 +180,27 @@ function get_url_params(url, decode) {
 	}
     return params;
 }
+
+
+function get_human_readable_size(bytes) {
+    var kb = 1024;
+    var mb = kb * kb;
+    var gb = mb * kb;
+    
+    var tot_kb = Math.floor(bytes / kb);
+    var tot_mb = Math.floor(bytes / mb);
+    var tot_gb = Math.floor(bytes / gb);
+
+    var append_text = " (" + bytes + " bytes)";
+
+    if (tot_kb == 0) {
+	return bytes + " bytes";
+    }
+    else if (tot_mb == 0) {
+	return tot_kb + " KB" + append_text;
+    }
+    else if (tot_gb == 0) {
+	return tot_mb + " MB" + append_text;
+    }
+    return tot_gb + " GB" + append_text;
+}

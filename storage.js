@@ -27,20 +27,28 @@ function init_storage_meta() {
 	});
 }
 
-function cb_print(msg) {
+function cb_print(msg, convert_to_readable) {
+    convert_to_readable = (convert_to_readable == undefined) ? false: true;
+
     if (msg == undefined) {
 	msg = "APPU DEBUG: (localStorage callback)";
     }
     return function (rc) {
         if (rc != undefined) {
-            msg += JSON.stringify(rc)
-		}
+	    if (convert_to_readable) {
+		rc = get_human_readable_size(rc);
+		msg += rc;
+	    }
+	    else {
+		msg += JSON.stringify(rc);
+	    }
+	}
         console.log(msg);
     }
 }
 
 function print_storage_size() {
-    get_storage_size(cb_print("APPU DEBUG: (localStorage callback) Local Storage Size: "));
+    get_storage_size(cb_print("APPU DEBUG: Local Storage Size: ", true));
 }
 
 function get_storage_size(cb) {

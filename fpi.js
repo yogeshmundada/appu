@@ -487,6 +487,13 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
     }
     else if ($(action).attr('type') == 'store') {
 	var pfp = curr_node.parent.fp;
+
+	if (!pfp) {
+	    // Return, some error 
+	    inform_parent(curr_node);
+	    return;
+	}
+
 	var css_selector = $.trim($(action).text());
 	var store_data = [];
 	var element;
@@ -557,6 +564,13 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
     }
     else if ($(action).attr('type') == 'combine-n-store') {
 	var pfp = curr_node.parent.fp;
+
+	if (!pfp) {
+	    // Return, some error 
+	    inform_parent(curr_node);
+	    return;
+	}
+
 	var css_selector = $.trim($(action).text());
 	var store_data = [];
 	var element;
