@@ -546,6 +546,22 @@ function is_a_setmember_subset(decimal_element, decimal_set) {
 }
 
 
+function which_setmember_is_subset(decimal_element, decimal_set) {
+    var index = decimal_set.indexOf(decimal_element);
+    if (index != -1) {
+	return index;
+    }
+
+    for (var k = 0; k < decimal_set.length; k++) {
+	var rc = find_subset_relationship(decimal_element, decimal_set[k]);
+	if (rc == 2) {
+	    // decimal_set[k] is a subset of decimal_element
+	    return k;
+	}
+    }
+    return -1;
+}
+
 function is_a_setmember_superset(decimal_element, decimal_set) {
     if(decimal_set.indexOf(decimal_element) != -1) {
 	return true;
@@ -561,6 +577,21 @@ function is_a_setmember_superset(decimal_element, decimal_set) {
     return false;
 }
 
+function which_setmember_is_superset(decimal_element, decimal_set) {
+    var index = decimal_set.indexOf(decimal_element);
+    if (index != -1) {
+	return index;
+    }
+
+    for (var k = 0; k < decimal_set.length; k++) {
+	var rc = find_subset_relationship(decimal_element, decimal_set[k]);
+	if (rc == 1) {
+	    // decimal_element is a subset of decimal_set[k]
+	    return k;
+	}
+    }
+    return -1;
+}
 
 // We can do ".indexOf()" instead of JSON.stringify because
 // element is a decimal number and set is an array of decimal numbers
@@ -653,10 +684,14 @@ function add_to_set_if_no_subset_member(cs,
 	for (var i = 0; i < superset_elements.length; i++) {
 	    var index_to_delete = decimal_cookiesets.indexOf(superset_elements[i]);
 	    decimal_cookiesets.splice(index_to_delete, 1);		
-	    cookiesets.splice(index_to_delete, 1);		
+	    if (cookiesets != undefined) {
+		cookiesets.splice(index_to_delete, 1);		
+	    }
 	}
 
-	cookiesets.push(cs);
+	if (cookiesets != undefined) {
+	    cookiesets.push(cs);
+	}
 	decimal_cookiesets.push(dec_cs);
 	return 1;
     }
@@ -1098,10 +1133,29 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 				     s_na_GUB_decimal_cookiesets,
 				     state,
 				     cookiesets_optimization_stats,
-				     curr_dc_decimal_cs,
-				     last_dc_decimal_cs_s_na_LLB,
-				     last_dc_decimal_cs_s_a_GUB) {
+				     curr_dc_decimal_cs) {
     var complete_round = false;
+
+    if (state == "expand") {
+	var new_s_na_LLB_decimal_cookiesets = [];
+	var snldc_disabled_cookiesets = [];
+
+	var new_s_a_GUB_decimal_cookiesets = [];
+	var sagdc_disabled_cookiesets = [];
+
+	for (var i = 0; i < s_na_LLB_decimal_cookiesets.length; i++) {
+	    new_s_na_LLB_decimal_cookiesets.push(s_na_LLB_decimal_cookiesets[i][1]);
+	    snldc_disabled_cookiesets.push(s_na_LLB_decimal_cookiesets[i][0]);
+	}
+
+	for (var i = 0; i < s_a_GUB_decimal_cookiesets.length; i++) {
+	    new_s_a_GUB_decimal_cookiesets.push(s_a_GUB_decimal_cookiesets[i][1]);
+	    sagdc_disabled_cookiesets.push(s_a_GUB_decimal_cookiesets[i][0]);
+	}
+
+	s_na_LLB_decimal_cookiesets = new_s_na_LLB_decimal_cookiesets;
+	s_a_GUB_decimal_cookiesets = new_s_a_GUB_decimal_cookiesets;
+    }
 
     do {
 	if (curr_bin_cs == undefined ||
@@ -1151,20 +1205,20 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	rc = is_a_setmember_superset(dec_cookieset, 
 				     s_na_LLB_decimal_cookiesets);
 	if (rc) {
-	    if ((curr_dc_decimal_cs == undefined) || 
-		(curr_dc_decimal_cs == last_dc_decimal_cs_s_na_LLB)) {
-		// This has already been tested, no point in testing again.
-		//console.log("APPU DEBUG: Skipping decimal cookieset(superset in strict-non-account cookieset): " + 
-		//	dec_cookieset);
-		if (state == "normal") {
-		    cookiesets_optimization_stats.num_llb_superset_in_non_account_cookiesets += 1;
-		    cookiesets_optimization_stats.tot_page_reloads_naive += 1;
-		}
-		
+	    if (state == "normal") {
+		cookiesets_optimization_stats.num_llb_superset_in_non_account_cookiesets += 1;
+		cookiesets_optimization_stats.tot_page_reloads_naive += 1;
 		// We are returning because of previous results.
 		// So set complete_round to false.
 		complete_round = false;
 		continue;
+	    }
+	    else {
+		var index = which_setmember_is_superset(dec_cookieset, s_na_LLB_decimal_cookiesets);
+		if (curr_dc_decimal_cs == snldc_disabled_cookiesets[index]) {
+		    console.log("Here here: Continuing as tested before, Delete me");
+		    continue;
+		}
 	    }
 	}
 	
@@ -1184,19 +1238,17 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	rc = is_a_setmember_subset(dec_cookieset, 
 				   s_a_GUB_decimal_cookiesets);
 	if (rc) {
-	    if ((curr_dc_decimal_cs == undefined) || 
-		(curr_dc_decimal_cs == last_dc_decimal_cs_s_a_GUB)) {
-		// Suppressing these cookies will cause session to be logged-out because
-		// there is already a set in s_a_GUB_decimal_cookiesets
-		// that is subset of curr_cookieset_decimal.
-		// No point in testing.
-		
-		if (state == "normal") {
-		    cookiesets_optimization_stats.num_llb_subset_in_account_super_cookiesets += 1;
-		    cookiesets_optimization_stats.tot_page_reloads_naive += 3;
-		}
-		
+	    if (state == "normal") {
+		cookiesets_optimization_stats.num_llb_subset_in_account_super_cookiesets += 1;
+		cookiesets_optimization_stats.tot_page_reloads_naive += 3;
 		continue;
+	    }
+	    else {
+		var index = which_setmember_is_subset(dec_cookieset, s_a_GUB_decimal_cookiesets);
+		if (curr_dc_decimal_cs == sagdc_disabled_cookiesets[index]) {
+		    console.log("Here here: Continuing as tested before, Delete me");
+		    continue;
+		}
 	    }
 	}
 
@@ -1223,10 +1275,29 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 					 s_na_GUB_decimal_cookiesets,
 					 state,
 					 cookiesets_optimization_stats,
-					 curr_dc_decimal_cs,
-					 last_dc_decimal_cs_s_na_LLB,
-					 last_dc_decimal_cs_s_a_GUB) {
+					 curr_dc_decimal_cs) {
     var complete_round = false;
+
+    if (state == "expand") {
+	var new_s_na_LLB_decimal_cookiesets = [];
+	var snldc_disabled_cookiesets = [];
+
+	var new_s_a_GUB_decimal_cookiesets = [];
+	var sagdc_disabled_cookiesets = [];
+
+	for (var i = 0; i < s_na_LLB_decimal_cookiesets.length; i++) {
+	    new_s_na_LLB_decimal_cookiesets.push(s_na_LLB_decimal_cookiesets[i][1]);
+	    snldc_disabled_cookiesets.push(s_na_LLB_decimal_cookiesets[i][0]);
+	}
+
+	for (var i = 0; i < s_a_GUB_decimal_cookiesets.length; i++) {
+	    new_s_a_GUB_decimal_cookiesets.push(s_a_GUB_decimal_cookiesets[i][1]);
+	    sagdc_disabled_cookiesets.push(s_a_GUB_decimal_cookiesets[i][0]);
+	}
+
+	s_na_LLB_decimal_cookiesets = new_s_na_LLB_decimal_cookiesets;
+	s_a_GUB_decimal_cookiesets = new_s_a_GUB_decimal_cookiesets;
+    }
 
     do {
 	if (curr_bin_cs == undefined ||
@@ -1282,33 +1353,37 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 	rc = is_a_setmember_subset(dec_cookieset, 
 				   s_a_GUB_decimal_cookiesets);
 	if (rc) {
-	    if ((curr_dc_decimal_cs == undefined) || 
-		(curr_dc_decimal_cs == last_dc_decimal_cs_s_a_GUB)) {
-		// Suppressing these cookies will cause session to be logged-out because
-		// there is already a set in s_a_GUB_decimal_cookiesets
-		// that is subset of curr_cookieset_decimal.
-		// No point in testing.
-		
-		if (state == "normal") {
-		    cookiesets_optimization_stats.num_gub_subset_in_account_super_cookiesets += 1;
-		    cookiesets_optimization_stats.tot_page_reloads_naive += 2;
-		}
+	    if (state == "normal") {
+		cookiesets_optimization_stats.num_llb_subset_in_account_super_cookiesets += 1;
+		cookiesets_optimization_stats.tot_page_reloads_naive += 3;
 		continue;
+	    }
+	    else {
+		var index = which_setmember_is_subset(dec_cookieset, s_a_GUB_decimal_cookiesets);
+		if (curr_dc_decimal_cs == sagdc_disabled_cookiesets[index]) {
+		    console.log("Here here: Continuing as tested before, Delete me");
+		    continue;
+		}
 	    }
 	}
 
 	rc = is_a_setmember_superset(dec_cookieset, 
 				     s_na_LLB_decimal_cookiesets);
 	if (rc) {
-	    if ((curr_dc_decimal_cs == undefined) || 
-		(curr_dc_decimal_cs == last_dc_decimal_cs_s_na_LLB)) {
-		// This cookieset has superest present in non-account cookiesets
-		// (very unlikely to happen). So no point in testing.
-		if (state == "normal") {
-		    cookiesets_optimization_stats.num_llb_superset_in_non_account_cookiesets += 1;
-		    cookiesets_optimization_stats.tot_page_reloads_naive += 2;
-		}
+	    if (state == "normal") {
+		cookiesets_optimization_stats.num_llb_superset_in_non_account_cookiesets += 1;
+		cookiesets_optimization_stats.tot_page_reloads_naive += 1;
+		// We are returning because of previous results.
+		// So set complete_round to false.
+		complete_round = false;
 		continue;
+	    }
+	    else {
+		var index = which_setmember_is_superset(dec_cookieset, s_na_LLB_decimal_cookiesets);
+		if (curr_dc_decimal_cs == snldc_disabled_cookiesets[index]) {
+		    console.log("Here here: Continuing as tested before, Delete me");
+		    continue;
+		}
 	    }
 	}
 	
@@ -3234,14 +3309,14 @@ function cookie_investigator(account_cookies,
 	var edca = undefined;
 
 	for (var i = 0; i < ns_na_LLB_cookiesets_array.length; i++) {
-	    dca = ns_na_LLB_cookiesets_array[i][0];
-	    edca = ns_na_LLB_cookiesets_array[i][1];
+	    dca = ns_na_LLB_cookiesets_array[i][0].slice(0);
+	    edca = ns_na_LLB_cookiesets_array[i][1].slice(0);
 
 	    var rc1 = convert_cookie_array_to_binary_cookieset(dca, suspected_account_cookies_array);
 	    var rc2 = convert_cookie_array_to_binary_cookieset(edca, non_suspected_account_cookies_array);
 
 	    ns_na_LLB_decimal_cookiesets.push([rc1.decimal_cookieset, 
-									       rc2.decimal_cookieset]);
+					       rc2.decimal_cookieset]);
 	}
     }
 
@@ -3255,15 +3330,14 @@ function cookie_investigator(account_cookies,
 	var edca = undefined;
 
 	for (var i = 0; i < ns_a_GUB_cookiesets_array.length; i++) {
-
-	    dca = ns_a_GUB_cookiesets_array[i][0];
-	    edca = ns_a_GUB_cookiesets_array[i][1];
+	    dca = ns_a_GUB_cookiesets_array[i][0].slice(0);
+	    edca = ns_a_GUB_cookiesets_array[i][1].slice(0);
 
 	    var rc1 = convert_cookie_array_to_binary_cookieset(dca, suspected_account_cookies_array);
 	    var rc2 = convert_cookie_array_to_binary_cookieset(edca, non_suspected_account_cookies_array);
 
 	    ns_a_GUB_decimal_cookiesets.push([rc1.decimal_cookieset, 
-									  rc2.decimal_cookieset]);
+					      rc2.decimal_cookieset]);
 	}
     }
 
@@ -3273,8 +3347,8 @@ function cookie_investigator(account_cookies,
 	var edca = undefined;
 	
 	for (var i = 0; i < old_ca.length; i++) {
-	    dca = old_ca[i][0];
-	    edca = old_ca[i][1];
+	    dca = old_ca[i][0].slice(0);
+	    edca = old_ca[i][1].slice(0);
 	    
 	    for (var j = 0; j < acct_cookies.length; j++) {
 		var c = acct_cookies[j];
@@ -4159,10 +4233,10 @@ function cookie_investigator(account_cookies,
     }
     
     function commit_llb_account_cookieset() {
-	s_a_LLB_cookiesets_array.push(pending_disabled_cookies[0]);
+	s_a_LLB_cookiesets_array.push(pending_disabled_cookies[0].slice(0));
 	s_a_LLB_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
 	
-	verified_strict_login_cookiesets_array.push(pending_enabled_cookies_array[0]);
+	verified_strict_login_cookiesets_array.push(pending_enabled_cookies_array[0].slice(0));
 	
 	var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
 	var acct_cookies = pending_disabled_cookies[0];
@@ -4180,11 +4254,11 @@ function cookie_investigator(account_cookies,
     }
 
     function commit_llb_nonaccount_cookieset() {
-	s_na_LLB_cookiesets_array.push(pending_disabled_cookies[0]);
+	s_na_LLB_cookiesets_array.push(pending_disabled_cookies[0].slice(0));
 	s_na_LLB_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
 	
 	if (pending_bool_pwd_box_present[0]) {
-	    verified_restricted_cookiesets_array.push(pending_disabled_cookies[0]);
+	    verified_restricted_cookiesets_array.push(pending_disabled_cookies[0].slice(0));
 	    console.log("APPU DEBUG: Found restrictive cookieset: " + 
 			JSON.stringify(pending_disabled_cookies[0]));
 	}
@@ -4209,7 +4283,7 @@ function cookie_investigator(account_cookies,
 
     
     function commit_llb_expand_nonaccount_cookieset() {
-	var cs_array = [disabled_cookies, expand_state_disabled_cookies];
+	var cs_array = [disabled_cookies.slice(0), expand_state_disabled_cookies.slice(0)];
 	ns_na_LLB_cookiesets_array.push(cs_array);
 
 	// Calculating binary_cookieset once again because either GUB/LLB would have caused to enter
@@ -4217,14 +4291,14 @@ function cookie_investigator(account_cookies,
 	var rc = convert_cookie_array_to_binary_cookieset(disabled_cookies, suspected_account_cookies_array);
 
 	ns_na_LLB_decimal_cookiesets.push([rc.decimal_cookieset, 
-									   pending_curr_decimal_cs]);
+					   pending_curr_decimal_cs]);
 
 	store_intermediate_state();
     }
 
     function commit_gub_account_cookieset() {
 	// User is not logged-in. We need to test subset of this GUB cookieset.
-	s_a_GUB_cookiesets_array.push(pending_disabled_cookies[0]);
+	s_a_GUB_cookiesets_array.push(pending_disabled_cookies[0].slice(0));
 	s_a_GUB_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
 	store_intermediate_state();
     }
@@ -4232,7 +4306,7 @@ function cookie_investigator(account_cookies,
     function commit_gub_nonaccount_cookieset() {
 	// User is logged in in both GUB sub states. We found a GUB optimization
 	// cookieset
-	s_na_GUB_cookiesets_array.push(pending_disabled_cookies[0]);
+	s_na_GUB_cookiesets_array.push(pending_disabled_cookies[0].slice(0));
 	s_na_GUB_decimal_cookiesets.push(pending_curr_decimal_cs[0]);
 	store_intermediate_state();
     }
@@ -4265,7 +4339,7 @@ function cookie_investigator(account_cookies,
     }
 
     function commit_gub_expand_nonaccount_cookieset() {
-	var cs_array = [disabled_cookies, expand_state_disabled_cookies];
+	var cs_array = [disabled_cookies.slice(0), expand_state_disabled_cookies.slice(0)];
 	ns_a_GUB_cookiesets_array.push(cs_array);
 
 	// Calculating binary_cookieset once again because either GUB/LLB would have caused to enter
@@ -4273,7 +4347,7 @@ function cookie_investigator(account_cookies,
 	var rc = convert_cookie_array_to_binary_cookieset(disabled_cookies, suspected_account_cookies_array);
 
 	ns_a_GUB_decimal_cookiesets.push([rc.decimal_cookieset,
-								      pending_curr_decimal_cs]);
+					  pending_curr_decimal_cs]);
 	
 	store_intermediate_state();
     }
@@ -4737,14 +4811,12 @@ function cookie_investigator(account_cookies,
 						 expand_state_num_cookies_drop_for_round, 
 						 tot_ns_cookies, 
 						 [],
-						 ns_na_LLB_decimal_cookiesets[1],
-						 ns_a_GUB_decimal_cookiesets[1],
+						 ns_na_LLB_decimal_cookiesets,
+						 ns_a_GUB_decimal_cookiesets,
 						 [],
 						 "expand",
 						 cookiesets_optimization_stats,
-						 dc_decimal_cs,
-						 ns_na_LLB_decimal_cookiesets[0],
-						 ns_a_GUB_decimal_cookiesets[0]);
+						 dc_decimal_cs);
 	    
 	    if (rc == 0) {
 		console.log("APPU DEBUG: Cookieset testing round finished for: " + 
@@ -4822,14 +4894,12 @@ function cookie_investigator(account_cookies,
 						     expand_state_num_cookies_pass_for_round, 
 						     tot_ns_cookies, 
 						     [],
-						     ns_na_LLB_decimal_cookiesets[1],
-						     ns_a_GUB_decimal_cookiesets[1],
+						     ns_na_LLB_decimal_cookiesets,
+						     ns_a_GUB_decimal_cookiesets,
 						     [],
 						     "expand",
 						     cookiesets_optimization_stats,
-						     dc_decimal_cs,
-						     ns_na_LLB_decimal_cookiesets[0],
-						     ns_a_GUB_decimal_cookiesets[0]);
+						     dc_decimal_cs);
 	    
 	    if (rc == 0) {
 		console.log("APPU DEBUG: EXPAND-STATE-GUB Cookieset testing round finished for: " + 
@@ -5674,18 +5744,36 @@ function cookie_investigator(account_cookies,
 	console.log("");
 	console.log("APPU DEBUG: COOKIESETS INFORMATION");
 	if (!has_error_occurred) {
+	    // First find a set from s_a_GUB_decimal_cookiesets such that
+	    // no element in that set is a subset of any other element.
+	    // In short, get LB_s_a_GUB_decimal_cookiesets from s_a_GUB_decimal_cookiesets
+	    // where LB: Lower Bounds in s_a_GUB_decimal_cookiesets
+	    var LB_s_a_GUB_decimal_cookiesets = [];
+	    var LB_s_a_GUB_cookiesets_array = [];
 	    for (var k = 0; k < s_a_GUB_decimal_cookiesets.length; k++) {
-		var rc = is_a_setmember_subset(s_a_GUB_decimal_cookiesets[k], 
+		add_to_set_if_no_subset_member(s_a_GUB_cookiesets_array[k], 
+					       LB_s_a_GUB_cookiesets_array, 
+					       LB_s_a_GUB_decimal_cookiesets, 
+					       suspected_account_cookies_array,
+					       s_a_GUB_decimal_cookiesets[k]);
+	    }
+
+	    for (var k = 0; k < LLB_s_a_GUB_decimal_cookiesets.length; k++) {
+		var rc = is_a_setmember_subset(LB_s_a_GUB_decimal_cookiesets[k], 
 					       s_a_LLB_decimal_cookiesets);
 		if (!rc) {
-		    // If I start seeing a lot of cookiesets getting printing in the following
-		    // statement, then I will have to write code to shift them to
-		    // s_a_LLB_cookiesets_array.
-		    // That would mean that they somehow did not get tested while going UP in
-		    // poset but actually are strict-account-cookiesets.
-		    console.log("APPU DEBUG: No member in strict account cookiesets is a " + 
-				"subset of account-super-cookieset: " + 
-				JSON.stringify(s_a_GUB_cookiesets_array[k]));
+		    // This means that I need to transfer this element from s_a_GUB_decimal_cookiesets
+		    // to s_a_LLB_decimal_cookiesets
+		    
+		    console.log("APPU DEBUG: Transferring cookieset from s_a_GUB to s_a_LLB: " + 
+				JSON.stringify(LB_s_a_GUB_cookiesets_array[k]));
+
+		    var delete_index = s_a_GUB_decimal_cookiesets.indexOf(LB_s_a_GUB_decimal_cookiesets[k]);
+		    s_a_GUB_decimal_cookiesets.splice(delete_index, 1);
+		    s_a_GUB_cookiesets_array.splice(delete_index, 1);
+		    
+		    s_a_LLB_decimal_cookiesets.push(LB_s_a_GUB_decimal_cookiesets[k]);
+		    s_a_LLB_cookiesets_array.push(LB_s_a_GUB_cookiesets_array[k]);
 		}
 	    }
 	}
