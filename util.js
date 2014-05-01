@@ -24,7 +24,7 @@ function print_appu_error(err_str) {
 }
 
 
-//Only useful for reading extension specific files
+// Only useful for reading extension specific files
 function read_file(filename) {
     var url = chrome.extension.getURL(filename);
     var request = new XMLHttpRequest();
