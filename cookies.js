@@ -713,35 +713,35 @@ function print_cookie_investigation_state(url) {
 	var num_cookies_drop_for_round = state[url]["num_cookies_drop_for_round"];
 	var num_cookies_pass_for_round = state[url]["num_cookies_pass_for_round"];
 
-	var curr_binary_ca        = state[url]["curr_binary_ca"];
+	var curr_llb_cookieset_array        = state[url]["curr_llb_cookieset_array"];
 	var curr_binary_cs        = undefined;
 
-	if (curr_binary_ca) {
-	    curr_binary_cs = convert_cookie_array_to_binary_cookieset(curr_binary_ca, 
+	if (curr_llb_cookieset_array) {
+	    curr_binary_cs = convert_cookie_array_to_binary_cookieset(curr_llb_cookieset_array, 
 								      suspected_account_cookies_array);
 	}
 
-	var curr_gub_binary_ca    = state[url]["curr_gub_binary_ca"];
+	var curr_gub_cookieset_array    = state[url]["curr_gub_cookieset_array"];
 	var curr_gub_binary_cs    = undefined; 
 
-	if (curr_gub_binary_ca) {
-	    curr_gub_binary_cs = convert_cookie_array_to_binary_cookieset(curr_gub_binary_ca, 
+	if (curr_gub_cookieset_array) {
+	    curr_gub_binary_cs = convert_cookie_array_to_binary_cookieset(curr_gub_cookieset_array, 
 									  suspected_account_cookies_array);
 	}
 
-	var next_binary_ca        = state[url]["next_binary_ca"];
+	var next_llb_cookieset_array        = state[url]["next_llb_cookieset_array"];
 	var next_binary_cs        = undefined;
 
-	if (next_binary_ca) {
-	    next_binary_cs = convert_cookie_array_to_binary_cookieset(next_binary_ca, 
+	if (next_llb_cookieset_array) {
+	    next_binary_cs = convert_cookie_array_to_binary_cookieset(next_llb_cookieset_array, 
 								      suspected_account_cookies_array);
 	}
 
-	var next_gub_binary_ca    = state[url]["next_gub_binary_ca"];
+	var next_gub_cookieset_array    = state[url]["next_gub_cookieset_array"];
 	var next_gub_binary_cs    = undefined; 
 
-	if (next_gub_binary_ca) {
-	    next_gub_binary_cs = convert_cookie_array_to_binary_cookieset(next_gub_binary_ca, 
+	if (next_gub_cookieset_array) {
+	    next_gub_binary_cs = convert_cookie_array_to_binary_cookieset(next_gub_cookieset_array, 
 									  suspected_account_cookies_array);
 	}
 
@@ -766,26 +766,26 @@ function print_cookie_investigation_state(url) {
 	console.log("APPU DEBUG: Last num_cookies_drop_for_round " + num_cookies_drop_for_round);
 	console.log("APPU DEBUG: Last num_cookies_pass_for_round " + num_cookies_pass_for_round);
 
-	if (curr_binary_ca) {
-	    console.log("APPU DEBUG: curr_binary_ca: "       + JSON.stringify(curr_binary_ca));
+	if (curr_llb_cookieset_array) {
+	    console.log("APPU DEBUG: curr_llb_cookieset_array: "       + JSON.stringify(curr_llb_cookieset_array));
 	    console.log("APPU DEBUG: curr_binary_cs: "       + JSON.stringify(curr_binary_cs.binary_cookieset));
 	    console.log("APPU DEBUG: curr_decimal_cs: "      + JSON.stringify(curr_binary_cs.decimal_cookieset));
 	}
 
-	if (curr_gub_binary_ca) {
-	    console.log("APPU DEBUG: curr_gub_binary_ca: "   + JSON.stringify(curr_gub_binary_ca));
+	if (curr_gub_cookieset_array) {
+	    console.log("APPU DEBUG: curr_gub_cookieset_array: "   + JSON.stringify(curr_gub_cookieset_array));
 	    console.log("APPU DEBUG: curr_gub_binary_cs: "   + JSON.stringify(curr_gub_binary_cs.binary_cookieset));
 	    console.log("APPU DEBUG: curr_gub_decimal_cs: "  + JSON.stringify(curr_gub_binary_cs.decimal_cookieset));
 	}
 
-	if (next_binary_ca) {
-	    console.log("APPU DEBUG: next_binary_ca: "       + JSON.stringify(next_binary_ca));
+	if (next_llb_cookieset_array) {
+	    console.log("APPU DEBUG: next_llb_cookieset_array: "       + JSON.stringify(next_llb_cookieset_array));
 	    console.log("APPU DEBUG: next_binary_cs: "       + JSON.stringify(next_binary_cs.binary_cookieset));
 	    console.log("APPU DEBUG: next_decimal_cs: "      + JSON.stringify(next_binary_cs.decimal_cookieset));
 	}
 
-	if (next_gub_binary_ca) {
-	    console.log("APPU DEBUG: next_gub_binary_ca: "   + JSON.stringify(next_gub_binary_ca));
+	if (next_gub_cookieset_array) {
+	    console.log("APPU DEBUG: next_gub_cookieset_array: "   + JSON.stringify(next_gub_cookieset_array));
 	    console.log("APPU DEBUG: next_gub_binary_cs: "   + JSON.stringify(next_gub_binary_cs.binary_cookieset));
 	    console.log("APPU DEBUG: next_gub_decimal_cs: "  + JSON.stringify(next_gub_binary_cs.decimal_cookieset));
 	}
@@ -970,7 +970,8 @@ function print_cookie_investigation_state(url) {
 }
 
 // Following is to be invoked as:
-// load_cookie_investigation_state("https://google.com/", search_for_cookieset("https://google.com/", ["https://.google.com/:TEST_COOKIE1"]));
+// load_cookie_investigation_state("https://google.com/", 
+//                                 search_for_cookieset("https://google.com/", ["https://.google.com/:TEST_COOKIE1"]));
 // Used to test if the cookieset has already been tested or not.
 function search_for_cookieset(url, cookieset) {
     return function(state) {
@@ -1039,37 +1040,37 @@ function search_for_cookieset(url, cookieset) {
 		    tot_time_since_last_lo_change);
 
 	for (var i = 0; i < on_disk_s_a_LLB_cookiesets_array.length; i++) {
-	    if (JSON.stringify(on_disk_s_a_LLB_cookiesets_array[i].sort()) == JSON.stringify(cookieset.sort())) {
+	    if (cookieset.sort().compare(on_disk_s_a_LLB_cookiesets_array[i].sort())) {
 		console.log("APPU DEBUG: Cookieset present in on_disk_s_a_LLB_cookiesets_array at index: " + i);
 	    }
 	}
 
 	for (var i = 0; i < on_disk_s_na_LLB_cookiesets_array.length; i++) {
-	    if (JSON.stringify(on_disk_s_na_LLB_cookiesets_array[i].sort()) == JSON.stringify(cookieset.sort())) {
+	    if (cookieset.sort().compare(on_disk_s_na_LLB_cookiesets_array[i].sort())) {
 		console.log("APPU DEBUG: Cookieset present in on_disk_s_na_LLB_cookiesets_array at index: " + i);
 	    }
 	}
 
 	for (var i = 0; i < on_disk_s_a_GUB_cookiesets_array.length; i++) {
-	    if (JSON.stringify(on_disk_s_a_GUB_cookiesets_array[i].sort()) == JSON.stringify(cookieset.sort())) {
+	    if (cookieset.sort().compare(on_disk_s_a_GUB_cookiesets_array[i].sort())) {
 		console.log("APPU DEBUG: Cookieset present in on_disk_s_a_GUB_cookiesets_array at index: " + i);
 	    }
 	}
 
 	for (var i = 0; i < on_disk_s_na_GUB_cookiesets_array.length; i++) {
-	    if (JSON.stringify(on_disk_s_na_GUB_cookiesets_array[i].sort()) == JSON.stringify(cookieset.sort())) {
+	    if (cookieset.sort().compare(on_disk_s_na_GUB_cookiesets_array[i].sort())) {
 		console.log("APPU DEBUG: Cookieset present in on_disk_s_na_GUB_cookiesets_array at index: " + i);
 	    }
 	}
 
 	for (var i = 0; i < on_disk_ns_na_LLB_cookiesets_array.length; i++) {
-	    if (JSON.stringify(on_disk_ns_na_LLB_cookiesets_array[i].sort()) == JSON.stringify(cookieset.sort())) {
+	    if (cookieset.sort().compare(on_disk_ns_na_LLB_cookiesets_array[i].sort())) {
 		console.log("APPU DEBUG: Cookieset present in on_disk_ns_na_LLB_cookiesets_array at index: " + i);
 	    }
 	}
 
 	for (var i = 0; i < on_disk_ns_a_GUB_cookiesets_array.length; i++) {
-	    if (JSON.stringify(on_disk_ns_a_GUB_cookiesets_array[i].sort()) == JSON.stringify(cookieset.sort())) {
+	    if (cookieset.sort().compare(on_disk_ns_a_GUB_cookiesets_array[i].sort())) {
 		console.log("APPU DEBUG: Cookieset present in on_disk_ns_a_GUB_cookiesets_array at index: " + i);
 	    }
 	}
@@ -2138,11 +2139,11 @@ function cookie_investigator(account_cookies,
     // ******************  START --------- COOKIES & COOKIESETS VARIABLES ------
     //
     // Sets to keep track of suspected and non-suspected cookies
-    var suspected_account_cookies_array = Object.keys(account_cookies);
+    var suspected_account_cookies_array = Object.keys(account_cookies).sort();
     var tot_cookies = suspected_account_cookies_array.length;
 
     var non_suspected_cookies = get_non_account_cookies(my_domain, suspected_account_cookies_array);
-    var non_suspected_account_cookies_array = Object.keys(non_suspected_cookies);
+    var non_suspected_account_cookies_array = Object.keys(non_suspected_cookies).sort();
     var tot_ns_cookies = non_suspected_account_cookies_array.length;
 
     // All cookiesets arrays to classify each cookieset into one of the following:
@@ -2577,8 +2578,7 @@ function cookie_investigator(account_cookies,
 		}
 
 
-		if (JSON.stringify(suspected_account_cookies_array.sort()) == 
-		    JSON.stringify(pcs.suspected_account_cookies_array.sort())) {
+		if (suspected_account_cookies_array.sort().compare(pcs.suspected_account_cookies_array.sort())) {
 		    console.log("APPU DEBUG: Looks like suspected_account_cookies_array is unchanged");
 		    if (pcs.num_cookies_drop_for_round &&
 			pcs.num_cookies_pass_for_round) {
@@ -2593,9 +2593,9 @@ function cookie_investigator(account_cookies,
 		    var pcs_next_gub_binary_cs = undefined;
 		    var pcs_curr_gub_binary_cs = undefined;
 
-		    if (pcs.next_binary_ca != undefined) {
-			if (pcs.next_binary_ca.length == num_cookies_drop_for_round) {
-			    pcs_next_binary_cs = convert_cookie_array_to_binary_cookieset(pcs.next_binary_ca, 
+		    if (pcs.next_llb_cookieset_array != undefined) {
+			if (pcs.next_llb_cookieset_array.length == num_cookies_drop_for_round) {
+			    pcs_next_binary_cs = convert_cookie_array_to_binary_cookieset(pcs.next_llb_cookieset_array, 
 											  suspected_account_cookies_array);
 			    pcs_next_binary_cs = pcs_next_binary_cs.binary_cookieset;
 
@@ -2604,7 +2604,7 @@ function cookie_investigator(account_cookies,
 				var nba = convert_binary_cookieset_to_cookie_array(pcs_next_binary_cs, 
 										   suspected_account_cookies_array);
 				console.log("Here here: Delete me, verification check, nba: " + JSON.stringify(nba));
-				if (JSON.stringify(nba.sort()) == JSON.stringify(pcs.next_binary_ca)) {
+				if (nba.sort().compare(pcs.next_llb_cookieset_array.sort())) {
 				    console.log("Here here: Delete me, pcs_next_binary_cs is correct");
 				}
 				else {
@@ -2615,13 +2615,13 @@ function cookie_investigator(account_cookies,
 			else {
 			    console.log("APPU DEBUG: Not generating pcs_next_binary_cs because length mismatch" +
 					", num_drop = " + num_cookies_drop_for_round + 
-					", pcs.next_binary_ca.length = " + pcs.next_binary_ca.length);
+					", pcs.next_llb_cookieset_array.length = " + pcs.next_llb_cookieset_array.length);
 			}
 		    }
 
-		    if (pcs.curr_binary_ca != undefined) {
-			if (pcs.curr_binary_ca.length == num_cookies_drop_for_round) {
-			    pcs_curr_binary_cs = convert_cookie_array_to_binary_cookieset(pcs.curr_binary_ca, 
+		    if (pcs.curr_llb_cookieset_array != undefined) {
+			if (pcs.curr_llb_cookieset_array.length == num_cookies_drop_for_round) {
+			    pcs_curr_binary_cs = convert_cookie_array_to_binary_cookieset(pcs.curr_llb_cookieset_array, 
 											  suspected_account_cookies_array);
 			    pcs_curr_binary_cs = pcs_curr_binary_cs.binary_cookieset;
 			    {
@@ -2629,7 +2629,7 @@ function cookie_investigator(account_cookies,
 				var cba = convert_binary_cookieset_to_cookie_array(pcs_curr_binary_cs, 
 										   suspected_account_cookies_array);
 				console.log("Here here: Delete me, verification check, cba: " + JSON.stringify(cba));
-				if (JSON.stringify(cba.sort()) == JSON.stringify(pcs.curr_binary_ca)) {
+				if (cba.sort().compare(pcs.curr_llb_cookieset_array.sort())) {
 				    console.log("Here here: Delete me, pcs_curr_binary_cs is correct");
 				}
 				else {
@@ -2640,13 +2640,13 @@ function cookie_investigator(account_cookies,
 			else {
 			    console.log("APPU DEBUG: Not generating pcs_curr_binary_cs because length mismatch" +
 					", num_drop = " + num_cookies_drop_for_round + 
-					", pcs.curr_binary_ca.length = " + pcs.curr_binary_ca.length);
+					", pcs.curr_llb_cookieset_array.length = " + pcs.curr_llb_cookieset_array.length);
 			}
 		    }
 
-		    if (pcs.next_gub_binary_ca != undefined) {
-			if ((tot_cookies - pcs.next_gub_binary_ca.length) == num_cookies_pass_for_round) {
-			    pcs_next_gub_binary_cs = convert_cookie_array_to_binary_cookieset(pcs.next_gub_binary_ca, 
+		    if (pcs.next_gub_cookieset_array != undefined) {
+			if ((tot_cookies - pcs.next_gub_cookieset_array.length) == num_cookies_pass_for_round) {
+			    pcs_next_gub_binary_cs = convert_cookie_array_to_binary_cookieset(pcs.next_gub_cookieset_array, 
 											      suspected_account_cookies_array);
 			    pcs_next_gub_binary_cs = pcs_next_gub_binary_cs.binary_cookieset;
 			    {
@@ -2654,7 +2654,7 @@ function cookie_investigator(account_cookies,
 				var ngba = convert_binary_cookieset_to_cookie_array(pcs_next_gub_binary_cs, 
 										    suspected_account_cookies_array);
 				console.log("Here here: Delete me, verification check, ngba: " + JSON.stringify(ngba));
-				if (JSON.stringify(ngba.sort()) == JSON.stringify(pcs.next_gub_binary_ca)) {
+				if (ngba.sort().compare(pcs.next_gub_cookieset_array.sort())) {
 				    console.log("Here here: Delete me, pcs_next_gub_binary_cs is correct");
 				}
 				else {
@@ -2665,14 +2665,14 @@ function cookie_investigator(account_cookies,
 			else {
 			    console.log("APPU DEBUG: Not generating pcs_next_gub_binary_cs because length mismatch" +
 					", num_pass = " + num_cookies_pass_for_round + 
-					", (tot_cookies - pcs.next_gub_binary_ca.length) = " + 
-					(tot_cookies - pcs.next_binary_ca.length));
+					", (tot_cookies - pcs.next_gub_cookieset_array.length) = " + 
+					(tot_cookies - pcs.next_llb_cookieset_array.length));
 			}
 		    }
 
-		    if (pcs.curr_gub_binary_ca != undefined) {
-			if ((tot_cookies - pcs.curr_gub_binary_ca.length) == num_cookies_pass_for_round) {
-			    pcs_curr_gub_binary_cs = convert_cookie_array_to_binary_cookieset(pcs.curr_gub_binary_ca, 
+		    if (pcs.curr_gub_cookieset_array != undefined) {
+			if ((tot_cookies - pcs.curr_gub_cookieset_array.length) == num_cookies_pass_for_round) {
+			    pcs_curr_gub_binary_cs = convert_cookie_array_to_binary_cookieset(pcs.curr_gub_cookieset_array, 
 											      suspected_account_cookies_array);
 			    pcs_curr_gub_binary_cs = pcs_curr_gub_binary_cs.binary_cookieset;
 			    {
@@ -2680,7 +2680,7 @@ function cookie_investigator(account_cookies,
 				var cgba = convert_binary_cookieset_to_cookie_array(pcs_curr_gub_binary_cs, 
 										    suspected_account_cookies_array);
 				console.log("Here here: Delete me, verification check, cgba: " + JSON.stringify(cgba));
-				if (JSON.stringify(cgba.sort()) == JSON.stringify(pcs.curr_gub_binary_ca)) {
+				if (cgba.sort().compare(pcs.curr_gub_cookieset_array.sort())) {
 				    console.log("Here here: Delete me, pcs_curr_gub_binary_cs is correct");
 				}
 				else {
@@ -2691,8 +2691,8 @@ function cookie_investigator(account_cookies,
 			else {
 			    console.log("APPU DEBUG: Not generating pcs_next_gub_binary_cs because length mismatch" +
 					", num_pass = " + num_cookies_pass_for_round + 
-					", (tot_cookies - pcs.curr_gub_binary_ca.length) = " + 
-					(tot_cookies - pcs.curr_binary_ca.length));
+					", (tot_cookies - pcs.curr_gub_cookieset_array.length) = " + 
+					(tot_cookies - pcs.curr_llb_cookieset_array.length));
 			}
 		    }
 
@@ -2705,8 +2705,8 @@ function cookie_investigator(account_cookies,
 			console.log("APPU DEBUG: Changing curr_binary_cs using on-disk next_binary_cs");
 			console.log("APPU DEBUG: curr_binary_cs (deciaml = " + curr_decimal_cs + "): " + 
 				    JSON.stringify(curr_binary_cs));
-			console.log("APPU DEBUG: On disk next_binary_ca: " + 
-				    JSON.stringify(pcs.next_binary_ca));
+			console.log("APPU DEBUG: On disk next_llb_cookieset_array: " + 
+				    JSON.stringify(pcs.next_llb_cookieset_array));
 			console.log("APPU DEBUG: On disk next_binary_cs: " + 
 				    JSON.stringify(pcs_next_binary_cs));
 		    }
@@ -2719,8 +2719,8 @@ function cookie_investigator(account_cookies,
 			console.log("APPU DEBUG: Changing curr_binary_cs using on-disk curr_binary_cs");
 			console.log("APPU DEBUG: Restoring curr_binary_cs (decimal = " + curr_decimal_cs + "): "   + 
 				    JSON.stringify(curr_binary_cs));
-			console.log("APPU DEBUG: On disk curr_binary_ca: " + 
-				    JSON.stringify(pcs.curr_binary_ca));
+			console.log("APPU DEBUG: On disk curr_llb_cookieset_array: " + 
+				    JSON.stringify(pcs.curr_llb_cookieset_array));
 			console.log("APPU DEBUG: On disk curr_binary_cs: "  + 
 				    JSON.stringify(pcs_curr_binary_cs));
 		    }
@@ -2734,8 +2734,8 @@ function cookie_investigator(account_cookies,
 			console.log("APPU DEBUG: Changing curr_gub_binary_cs using on-disk next_gub_binary_cs");
 			console.log("APPU DEBUG: curr_gub_binary_cs (deciaml = " + curr_gub_decimal_cs + "): " + 
 				    JSON.stringify(curr_gub_binary_cs));
-			console.log("APPU DEBUG: On disk next_gub_binary_ca: " + 
-				    JSON.stringify(pcs.next_gub_binary_ca));
+			console.log("APPU DEBUG: On disk next_gub_cookieset_array: " + 
+				    JSON.stringify(pcs.next_gub_cookieset_array));
 			console.log("APPU DEBUG: On disk next_gub_binary_cs: " + 
 				    JSON.stringify(pcs_next_gub_binary_cs));
 		    }
@@ -2748,8 +2748,8 @@ function cookie_investigator(account_cookies,
 			console.log("APPU DEBUG: Changing curr_gub_binary_cs using on-disk curr_gub_binary_cs");
 			console.log("APPU DEBUG: Restoring curr_gub_binary_cs (decimal = " + curr_gub_decimal_cs + "): "   + 
 				    JSON.stringify(curr_gub_binary_cs));
-			console.log("APPU DEBUG: On disk curr_gub_binary_ca: " + 
-				    JSON.stringify(pcs.curr_gub_binary_ca));
+			console.log("APPU DEBUG: On disk curr_gub_cookieset_array: " + 
+				    JSON.stringify(pcs.curr_gub_cookieset_array));
 			console.log("APPU DEBUG: On disk curr_gub_binary_cs: "  + 
 				    JSON.stringify(pcs_curr_gub_binary_cs));
 		    }
@@ -2852,45 +2852,61 @@ function cookie_investigator(account_cookies,
 	console.log(suspected_account_cookies_array[i]);
     }
 
-    console.log("APPU DEBUG: Trying to increment num_cookies_drop_for_round");
-    increment_num_cookies_drop_or_pass("st_LLB_cookiesets_block_DISABLED_and_NONDURING");
-    console.log("APPU DEBUG: After reading state from the disk, incremented num_cookies_drop_for_round: " + 
-		num_cookies_drop_for_round);
+//     console.log("APPU DEBUG: Trying to increment num_cookies_drop_for_round");
+//     increment_num_cookies_drop_or_pass("st_LLB_cookiesets_block_DISABLED_and_NONDURING");
+//     console.log("APPU DEBUG: After reading state from the disk, incremented num_cookies_drop_for_round: " + 
+// 		num_cookies_drop_for_round);
 
-    console.log("APPU DEBUG: Trying to increment num_cookies_pass_for_round");
-    increment_num_cookies_drop_or_pass("st_GUB_cookiesets_block_DISABLED");
-    console.log("APPU DEBUG: After reading state from the disk, incremented num_cookies_pass_for_round: " + 
-		num_cookies_pass_for_round);
+//     console.log("APPU DEBUG: Trying to increment num_cookies_pass_for_round");
+//     increment_num_cookies_drop_or_pass("st_GUB_cookiesets_block_DISABLED");
+//     console.log("APPU DEBUG: After reading state from the disk, incremented num_cookies_pass_for_round: " + 
+// 		num_cookies_pass_for_round);
 
-    function increment_num_cookies_drop_or_pass(state) {
-	var rc = undefined;
-	do {
-	    // This code should increase num_cookies_drop_for_round 
-	    rc = attempt_switching_state_to(state);
-	} while (rc != "success" &&
-		 rc != "error" &&
-		 rc != "done");
+//     curr_binary_cs = generate_previous_binary_cookieset_X(curr_binary_cs.slice(0), 1);
+//     curr_gub_binary_cs = generate_previous_binary_cookieset_X(curr_gub_binary_cs.slice(0), 0);
+
+//     if (curr_binary_cs == null) {
+// 	curr_binary_cs = undefined;
+//     }
+//     if (curr_gub_binary_cs == null) {
+// 	curr_gub_binary_cs = undefined;
+//     }
+
+//     console.log("APPU DEBUG: curr_binary_cs after calling increment_num_cookies_drop_or_pass: " + 
+// 		JSON.stringify(curr_binary_cs));
+//     console.log("APPU DEBUG: curr_gub_binary_cs after calling increment_num_cookies_drop_or_pass: " + 
+// 		JSON.stringify(curr_gub_binary_cs));
+
+
+//     function increment_num_cookies_drop_or_pass(state) {
+// 	var rc = undefined;
+// 	do {
+// 	    // This code should increase num_cookies_drop_for_round 
+// 	    rc = attempt_switching_state_to(state);
+// 	} while (rc != "success" &&
+// 		 rc != "error" &&
+// 		 rc != "done");
 	
-	if (rc != "success") {
-	    my_state = "st_terminate";
-	    if (rc == "error") {
-		has_error_occurred = true;
-	    }
-	}
+// 	if (rc != "success") {
+// 	    my_state = "st_terminate";
+// 	    if (rc == "error") {
+// 		has_error_occurred = true;
+// 	    }
+// 	}
 	
-	curr_binary_cs = undefined;
-	curr_decimal_cs = undefined;
-	disabled_cookies = [];
+// 	// curr_binary_cs = undefined;
+// 	// curr_decimal_cs = undefined;
+// 	disabled_cookies = [];
 
-	pending_are_usernames_present = undefined;
-	pending_disabled_cookies = undefined;
-	pending_enabled_cookies_array = undefined;
-	pending_curr_decimal_cs = undefined;
-	pending_bool_pwd_box_present = undefined;
-	pending_result_significance = undefined;
-	pending_bool_pwd_box_present_first_verification = undefined;
-	pending_bool_pwd_box_present_suspected_block = undefined;
-    }
+// 	pending_are_usernames_present = undefined;
+// 	pending_disabled_cookies = undefined;
+// 	pending_enabled_cookies_array = undefined;
+// 	pending_curr_decimal_cs = undefined;
+// 	pending_bool_pwd_box_present = undefined;
+// 	pending_result_significance = undefined;
+// 	pending_bool_pwd_box_present_first_verification = undefined;
+// 	pending_bool_pwd_box_present_suspected_block = undefined;
+//     }
 
 
     function cookie_investigator_closed() {
@@ -2921,10 +2937,10 @@ function cookie_investigator(account_cookies,
 	}
 
 	offload_cookie_investigation_state(my_url, {
-		"curr_binary_ca"           : cba,
-		    "curr_gub_binary_ca"   : cgba,
-		    "next_binary_ca" : undefined,
-		    "next_gub_binary_ca" : undefined,
+		"curr_llb_cookieset_array"           : cba,
+		    "curr_gub_cookieset_array"   : cgba,
+		    "next_llb_cookieset_array" : undefined,
+		    "next_gub_cookieset_array" : undefined,
 		    "cookiesets_optimization_stats" : cookiesets_optimization_stats,
 		    "tot_time_taken" : tt,
 		    "tot_bytes_sent" : tbs,
@@ -2965,12 +2981,14 @@ function cookie_investigator(account_cookies,
 	for (var i = 0; i < acct_cookies.length; i++) {
 	    if (suspected_account_cookies_array.indexOf(acct_cookies[i]) == -1) {
 		suspected_account_cookies_array.push(acct_cookies[i]);
+		suspected_account_cookies_array.sort();
 		tot_cookies += 1;
 	    }
 
 	    var delete_index = non_suspected_account_cookies_array.indexOf(acct_cookies[i]);
 	    if (delete_index != -1) {
 		non_suspected_account_cookies_array.splice(delete_index, 1);
+		non_suspected_account_cookies_array.sort();
 		tot_ns_cookies -= 1;
 	    }
 	}
@@ -6121,6 +6139,53 @@ function detect_account_cookies(current_url,
 }
 
 
+function advance_to_next_cookieset(url) {
+    function invoke_cookie_investigator_web_worker(cookie_investigation_state) {
+	var url_wo_paramters = url.replace(/\?.*/,'');
+	var cis_key = "Cookie Investigation State:" + url_wo_paramters; 
+
+	if (!cookie_investigation_state) {
+	    console.log("APPU DEBUG: No cookie_investigation_state for url: " + 
+			url);
+	    return;
+	}
+
+	if (cookie_investigation_state[cis_key]["next_llb_cookieset_array"] != undefined &&
+	    cookie_investigation_state[cis_key]["next_gub_cookieset_array"] != undefined) {
+	    console.log("APPU DEBUG: Both next_gub_cookieset_array and next_llb_cookieset_array are not undefined: " + 
+			url);
+	    return;
+	}
+
+	var csg = new Worker('cookieset_generator.js');
+	
+	csg.onmessage = (function(url, cookie_investigation_state) {
+		return function(event) {
+		    var msg = event.data;
+		    
+		    if (msg.status == 'success') {
+			var modified_cookie_investigation_state = msg.modified_cookie_investigation_state;
+			console.log("APPU DEBUG: Going to write modified cookie investigation state for url: " + 
+				    url);
+			modify_cookie_investigation_state(url, modified_cookie_investigation_state);    
+		    }
+		    else {
+			console.log("APPU Error: Incorrect status from cookieset generator worker: " + 
+				    JSON.stringify(msg));
+		    }
+		}
+	    })(url, cookie_investigation_state);
+
+	csg.postMessage({
+		'url' : url,
+		    'cookie_investigation_state' : cookie_investigation_state
+	    });
+    }
+    
+    load_cookie_investigation_state(url, invoke_cookie_investigator_web_worker);
+}
+
+
 // ALL TEST FUNCTIONS & HELPING CODE
 // Basic commands:
 // Test specific cookies:
@@ -6688,7 +6753,7 @@ function test_replace_with_cookies_from_shadow_cookie_store(details) {
     console.log("APPU DEBUG: Number of cookies constructed from my test_shadow_cookie_store: " + 
 		my_cookies.length + ", URL: " + details.url);
 
-    if (JSON.stringify(my_cookies.sort()) == JSON.stringify(original_cookie_array.sort())) {
+    if (my_cookies.sort().compare(original_cookie_array.sort())) {
 	console.log("APPU DEBUG: Cookies match, Everything works - 1");
     }
     else {

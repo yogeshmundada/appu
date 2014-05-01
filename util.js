@@ -204,3 +204,16 @@ function get_human_readable_size(bytes) {
     }
     return tot_gb + " GB" + append_text;
 }
+
+
+// From: http://stackoverflow.com/questions/3036588/comparing-two-array-of-strings-in-javascript
+Array.prototype.compare = function(arr) {
+    if (this.length != arr.length) return false;
+    for (var i = 0; i < arr.length; i++) {
+        if (this[i].compare) { 
+            if (!this[i].compare(arr[i])) return false;
+        }
+        if (this[i] !== arr[i]) return false;
+    }
+    return true;
+}

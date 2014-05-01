@@ -60,6 +60,11 @@ var fpi_metadata = {};
 //asynchronously hashing passwords for you .. a million times.
 var hashing_workers = {};
 
+//Next cookieset generator workers
+//To keep track of background "Web workers" that are
+//working to get next cookiesets
+var cookieset_generator_workers = {};
+
 //Record cookie_names temporarily when user attempts to login
 //to a site. After the login is successful, check which new
 //cookies are added or which cookies have been modified.
