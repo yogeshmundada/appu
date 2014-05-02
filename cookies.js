@@ -2981,17 +2981,18 @@ function cookie_investigator(account_cookies,
 	for (var i = 0; i < acct_cookies.length; i++) {
 	    if (suspected_account_cookies_array.indexOf(acct_cookies[i]) == -1) {
 		suspected_account_cookies_array.push(acct_cookies[i]);
-		suspected_account_cookies_array.sort();
 		tot_cookies += 1;
 	    }
 
 	    var delete_index = non_suspected_account_cookies_array.indexOf(acct_cookies[i]);
 	    if (delete_index != -1) {
 		non_suspected_account_cookies_array.splice(delete_index, 1);
-		non_suspected_account_cookies_array.sort();
 		tot_ns_cookies -= 1;
 	    }
 	}
+
+	suspected_account_cookies_array.sort();
+	non_suspected_account_cookies_array.sort();
 
 	last_non_verification_state = "st_cookie_test_start";
 
@@ -3026,7 +3027,6 @@ function cookie_investigator(account_cookies,
 	    console.log("Here here: Some error, unnecessary s_na_GUB detected");
 	}
 
-
 	// Re-generate decimal cookiesets for retesting-optimization arrays
 	generate_s_na_LLB_decimal_cookiesets();
 	generate_s_a_GUB_decimal_cookiesets();
@@ -3058,32 +3058,45 @@ function cookie_investigator(account_cookies,
 
 	bool_expand_state_initialized = false;
 
+	if (last_non_expand_state == "st_LLB_cookiesets_block_DISABLED") {
+	    var rccs = convert_cookie_array_to_binary_cookieset(disabled_cookies, suspected_account_cookies_array);
+	    curr_binary_cs  = generate_previous_binary_cookieset_X(rccs.binary_cookieset.slice(0), 1);
+
+	    if (curr_binary_cs != null) {
+		curr_decimal_cs = binary_array_to_decimal(curr_binary_cs);
+	    }
+	    else {
+		curr_binary_cs  = undefined;
+		curr_decimal_cs  = undefined;
+	    }
+	}
+
+	if (last_non_expand_state == "st_GUB_cookiesets_block_DISABLED_and_NONDURING") {
+	    var rccs = convert_cookie_array_to_binary_cookieset(disabled_cookies, suspected_account_cookies_array);
+	    curr_gub_binary_cs = generate_previous_binary_cookieset_X(rccs.binary_cookieset.slice(0), 0);
+	    if (curr_gub_binary_cs != null) {
+		curr_gub_decimal_cs = binary_array_to_decimal(curr_gub_binary_cs);
+	    }
+	    else {
+		curr_gub_binary_cs  = undefined;
+		curr_gub_decimal_cs  = undefined;
+	    }
+	}
+
+	last_non_expand_state = "";
+
 	enabled_cookies_array = [];
 	disabled_cookies = [];
 	expand_state_disabled_cookies = [];
 
 	binary_cookiesets = [];
 	decimal_cookiesets = [];
-
-// 	if (last_non_expand_state != "st_LLB_cookiesets_block_DISABLED") {
-// 	    num_cookies_drop_for_round = 1;
-// 	}
-
-// 	if (last_non_expand_state != "st_GUB_cookiesets_block_DISABLED_and_NONDURING") {
-// 	    num_cookies_pass_for_round = 1;
-// 	}
-
-	last_non_expand_state = "";
-	
-	curr_binary_cs = undefined;
-	curr_decimal_cs = undefined;
-	curr_gub_binary_cs = undefined;
-	curr_gub_decimal_cs = undefined;
 	
 	curr_expand_state_binary_cs = undefined;
 	curr_expand_state_decimal_cs = undefined;
 	curr_expand_state_gub_binary_cs = undefined;
 	curr_expand_state_gub_decimal_cs = undefined;
+
 	expand_state_num_cookies_drop_for_round = 1;
 	expand_state_num_cookies_pass_for_round = 1;
 
@@ -6169,8 +6182,12 @@ function advance_to_next_cookieset(url) {
 				    url);
 			modify_cookie_investigation_state(url, modified_cookie_investigation_state);    
 		    }
+		    else if (msg.status == 'error') {
+			console.log("APPU Error: Error status from cookieset generator worker: " + 
+				    JSON.stringify(msg));
+		    }
 		    else {
-			console.log("APPU Error: Incorrect status from cookieset generator worker: " + 
+			console.log("APPU DEBUG: Message from cookieset generator worker: " + 
 				    JSON.stringify(msg));
 		    }
 		}

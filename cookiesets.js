@@ -743,7 +743,8 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 				     s_na_GUB_decimal_cookiesets,
 				     state,
 				     cookiesets_optimization_stats,
-				     curr_dc_decimal_cs) {
+				     curr_dc_decimal_cs,
+				     stop_after_minutes) {
     var complete_round = false;
     var start_time = parseInt(new Date().getTime() / 1000);
     var current_time = undefined;
@@ -781,6 +782,18 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 			tot_explored_cookiesets);
 	    start_time = parseInt(new Date().getTime() / 1000);
 	    current_time = parseInt(new Date().getTime() / 1000);
+	    if (stop_after_minutes != undefined &&
+		tot_minutes > stop_after_minutes) {
+		console.log("APPU DEBUG: Time spent(" + tot_minutes + ") exceeds stop_after_minutes(" + 
+			    stop_after_minutes + "), so returning");
+		var rv = {
+		    binary_cookieset: bin_cookieset,
+		    decimal_cookieset: dec_cookieset
+		};
+
+		console.log("APPU DEBUG: Returning current cookiesets: " + JSON.stringify(rv));
+		return rv;
+	    }
 	}
 
 	if (curr_bin_cs == undefined ||
@@ -880,7 +893,7 @@ function get_next_binary_cookieset_X(curr_bin_cs,
 	return {
 	    binary_cookieset: bin_cookieset,
 		decimal_cookieset: dec_cookieset
-		}
+		};
     } while(1);
     
     return -1;
@@ -900,7 +913,8 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 					 s_na_GUB_decimal_cookiesets,
 					 state,
 					 cookiesets_optimization_stats,
-					 curr_dc_decimal_cs) {
+					 curr_dc_decimal_cs,
+					 stop_after_minutes) {
     var complete_round = false;
     var start_time = parseInt(new Date().getTime() / 1000);
     var current_time = undefined;
@@ -938,6 +952,17 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 			tot_explored_cookiesets);
 	    start_time = parseInt(new Date().getTime() / 1000);
 	    current_time = parseInt(new Date().getTime() / 1000);
+	    if (stop_after_minutes != undefined &&
+		tot_minutes > stop_after_minutes) {
+		console.log("APPU DEBUG: Time spent(" + tot_minutes + ") exceeds stop_after_minutes(" + 
+			    stop_after_minutes + "), so returning");
+		var rv = {
+		    binary_cookieset: bin_cookieset,
+		    decimal_cookieset: dec_cookieset
+		};
+		console.log("APPU DEBUG: Returning current cookiesets: " + JSON.stringify(rv));
+		return rv;
+	    }
 	}
 
 	if (curr_bin_cs == undefined ||
@@ -1030,7 +1055,7 @@ function get_next_gub_binary_cookieset_X(curr_bin_cs,
 	return {
 	    binary_cookieset: bin_cookieset,
 		decimal_cookieset: dec_cookieset
-		}
+		};
     } while(1);
     
     return -1;
