@@ -355,6 +355,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "am_i_active") {
 	if (sender.tab) {
+	    console.log("Here here: Delete me: Received 'am_i_active' from: " + sender.tab.id);
 	    chrome.tabs.query( { active: true }, (function(sender_tab_id, sendResponse) {
 			return function(active_tabs) {
 			    var response_sent = false; 
@@ -438,10 +439,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    cit.pageload_timeout = undefined;
 		}
 
+		var page_is_not_loaded = (!cit.get_page_load_success());
 		var are_usernames_present = cit.are_usernames_present(message.present_usernames);
 		if (are_usernames_present == false &&
-		    message.total_time < (cit.get_page_load_time() * 3)) {
-		    console.log("APPU DEBUG: User does not seem to be logged-in." + 
+		    message.total_time < (cit.get_page_load_time() * 3) &&
+		    page_is_not_loaded == true) {
+		    console.log("APPU DEBUG: User does not seem to be logged-in and page is not completely loaded." + 
 				" Waiting for 3 times the normal page load time: " + 
 				(cit.get_page_load_time() * 1.5) + " ms");
 		    window.setTimeout(function(){
@@ -545,14 +548,29 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    var cit = cookie_investigating_tabs[sender.tab.id];
 
 	    if (message.curr_epoch_id == cit.get_epoch_id()) {
+
+		if (message.url != cit.get_url() &&
+		    cit.get_state() != "st_cookie_test_start") {
+		    // Here here: Delete this block
+		    console.log("APPU DEBUG: URL mismatch ........ ");
+		    console.log("APPU DEBUG: Expected URL: " + cit.get_url());
+		    console.log("APPU DEBUG: Current URL: "  + message.url);
+		    if (get_domain(message.url.split('/')[2]) == "att.com") {
+			// Here here: Delete this block
+			if (cit.get_state() == "st_expand_GUB_suspected_account_cookies") {
+			    //return;
+			}
+		    }
+		}
+
 		console.log("APPU DEBUG: Setting page load success for EPOCH-ID: " + 
 			    message.curr_epoch_id +
 			    " (page_load_time: " + message.page_load_time + " ms)");
-
+		
 		if (cit.get_epoch_id() == 1) {
 		    cit.set_page_load_time(message.page_load_time);
 		}
-
+		
 		cit.set_page_load_success(true);
 		if (cit.pageload_timeout != undefined) {
 		    window.clearInterval(cit.pageload_timeout);
@@ -561,8 +579,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		
 		if (cit.get_state() == 'st_cookie_test_start') {
 		    console.log("----------------------------------------");
-		    process_last_epoch(sender.tab.id, undefined, undefined)
-			}
+		    process_last_epoch(sender.tab.id, undefined, undefined);
+		}
 		else {
 		    // We test here that user is still logged into the web application.
 		    console.log("Here here: Calling check_usernames_for_cookie_investigation(), EPOCH-ID: " + 

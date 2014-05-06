@@ -1498,6 +1498,7 @@ function do_document_ready_functions() {
 	clearInterval(is_site_loaded);
 	var message = {};
 	message.type = "am_i_active";
+	message.URL = document.URL;
 	chrome.extension.sendMessage("", message, function (r) {
 		if (r.am_i_active) {
 		    window_focused(undefined);
@@ -1508,7 +1509,7 @@ function do_document_ready_functions() {
 
 	message = {};
 	message.type = "page_is_loaded";
-	message.url = document.domain;
+	message.url = document.URL;
 	message.curr_epoch_id = curr_epoch_id;
 	message.page_load_time = page_load_time;
 	chrome.extension.sendMessage("", message, is_status_active);
