@@ -135,44 +135,48 @@ function pii_send_report(report_number) {
     wr.current_report = report;
 
     try {
-	$.post(server_url + "post_report", JSON.stringify(wr), 
-	       function(report, report_number) {
-		   return function(data, status) {
-		       var is_processed = false;
-		       stats_message = /Report processed successfully/;
-		       is_processed = (stats_message.exec(data) != null);
-		       
-		       if (is_processed) {
-			   // Report successfully sent. Update the actual send time.
-			   report.actual_report_send_time = new Date();
-			   console.log("APPU INFO: Report '" + report.reportid 
-				       + "'  is successfully sent to the server at: " 
-				       + report.actual_report_send_time);
-			   vault_write("past_reports", pii_vault.past_reports);
-			   if (report_number in delivery_attempts) {
-			       delete delivery_attempts[report_number];
-			   }
-		       }
-		       else if (data == "Duplicate Entry") {
-			   // Report successfully sent. Update the actual send time.
-			   report.actual_report_send_time = new Date();
-			   console.log("APPU INFO: Report '" + report.reportid
-				       + "'  is duplicate entry at the server. Not going to send it again. ");
-			   vault_write("past_reports", pii_vault.past_reports);
-			   if (report_number in delivery_attempts) {
-			       delete delivery_attempts[report_number];
-			   }
-		       }
-		   };
-	       }(report, report_number))
+	$.ajax({ 
+		type: "POST",
+		    contentType: 'application/json',
+		    url: server_url + "post_report", 
+		    data: JSON.stringify(wr), 
+		    success: function(report, report_number) {
+		    return function(data, status) {
+			var is_processed = false;
+			stats_message = /Report processed successfully/;
+			is_processed = (stats_message.exec(data) != null);
+			
+			if (is_processed) {
+			    // Report successfully sent. Update the actual send time.
+			    report.actual_report_send_time = new Date();
+			    console.log("APPU INFO: Report '" + report.reportid 
+					+ "'  is successfully sent to the server at: " 
+					+ report.actual_report_send_time);
+			    vault_write("past_reports", pii_vault.past_reports);
+			    if (report_number in delivery_attempts) {
+				delete delivery_attempts[report_number];
+			    }
+			}
+			else if (data == "Duplicate Entry") {
+			    // Report successfully sent. Update the actual send time.
+			    report.actual_report_send_time = new Date();
+			    console.log("APPU INFO: Report '" + report.reportid
+					+ "'  is duplicate entry at the server. Not going to send it again. ");
+			    vault_write("past_reports", pii_vault.past_reports);
+			    if (report_number in delivery_attempts) {
+				delete delivery_attempts[report_number];
+			    }
+			}
+		    };
+		}(report, report_number)})
 	    .error(function(report, report_number) {
-		       return function(data, status) {
-			   print_appu_error("Appu Error: Error while posting 'periodic report' to the server: " 
-					    + (new Date()));
-			   report.send_attempts.push(new Date());
-			   vault_write("past_reports", pii_vault.past_reports);
-		       }
-		   }(report, report_number));
+		    return function(data, status) {
+			print_appu_error("Appu Error: Error while posting 'periodic report' to the server: " 
+					 + (new Date()));
+			report.send_attempts.push(new Date());
+			vault_write("past_reports", pii_vault.past_reports);
+		    }
+		}(report, report_number));
     }
     catch (e) {
 	print_appu_error("Appu Error: Error while posting 'periodic report' to the server: " + (new Date()));

@@ -73,7 +73,7 @@ var cookieset_generator_workers = {};
 var pre_login_cookies = {};
 
 var server_url = "http://appu.gtnoise.net:5005/";
-// var server_url = "http://192.168.56.101:59000/";
+//var server_url = "http://192.168.56.101:59000/";
 
 // BIG EXECUTION START
 
@@ -1034,14 +1034,33 @@ function make_user_approved_always(site) {
 
 //chrome.webRequest.onAuthRequired.addListener(onauthrequired_cb, {urls: ["<all_urls>"]});
 
-// function print_all_response_headers(details) {
-//     console.log("Here here: " + JSON.stringify(details.responseHeaders));
-// }
+function print_all_response_headers(details) {
+    for (var i = 0; i < details.responseHeaders.length; i++) {
+	if (details.responseHeaders[i].name == "Strict-Transport-Security") {
+	    console.log("XXXXXXXXXX Here here(" + details.url.split("/")[2] + "): " + JSON.stringify(details.responseHeaders[i]));
+	    break;
+	}
+    }
+}
 
-// chrome.webRequest.onHeadersReceived.addListener(print_all_response_headers, {
-// 	"urls": ["<all_urls>"]
-// 	    },
-//     ["blocking", "responseHeaders"]);
+chrome.webRequest.onHeadersReceived.addListener(print_all_response_headers, {
+	"urls": ["<all_urls>"]
+	    },
+    ["blocking", "responseHeaders"]);
+
+
+chrome.webRequest.onBeforeSendHeaders.addListener(
+						  function(details) {
+						      for (var i = 0; i < details.requestHeaders.length; ++i) {
+							  if (details.requestHeaders[i].name == "Strict-Transport-Security") {
+	    console.log("YYYYYYYYY Here here(" + details.url.split("/")[2] + "): " + JSON.stringify(details.requestHeaders[i]));
+							      break;
+							  }
+						      }
+						      return {requestHeaders: details.requestHeaders};
+						  },
+						  {urls: ["<all_urls>"]},
+						  ["blocking", "requestHeaders"]);
 
 // function print_result(msg) {
 //     return function (rc) {

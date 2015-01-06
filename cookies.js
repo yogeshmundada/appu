@@ -285,6 +285,8 @@ function print_all_cookies(domain) {
 		    catch(e) {
 			cookie_val = all_cookies[i].value;
 		    }
+		    // cookie_val = all_cookies[i].value;
+
 
 		    var msg = sprintf("Cookie-key: '%s', " + 
 				      "\n\tValue-Length: %3d, " + 
@@ -1219,8 +1221,13 @@ function dump_to_browser_cookie_store(backup_store, cb) {
 
     for (var i = 0; i < all_cookies.length; i++) {
 	var set_cookie_obj = {};
+	if (all_cookies[i].name == "Y" && all_cookies[i].domain == ".yahoo.com") {
+	    all_cookies[i].secure = true;
+	}
+
 	var my_url = all_cookies[i].secure ? "https://" : "http://";
 	my_url += all_cookies[i].domain;
+
 	set_cookie_obj.url = my_url;
 	set_cookie_obj.name = all_cookies[i].name;
 	set_cookie_obj.value = all_cookies[i].value;
@@ -1646,7 +1653,12 @@ function terminate_cookie_investigating_tab(tab_id) {
     chrome.webRequest.onHeadersReceived.removeListener(http_response_cb);
 
     delete cookie_investigating_tabs[tab_id];
-    chrome.tabs.remove(tab_id);
+    try {
+	chrome.tabs.remove(tab_id);
+    }
+    catch(err) {
+	console.log("APPU Error: Got error while closing tab-id(" + tab_id + "): " + err);
+    }
 }
 
 
@@ -2234,7 +2246,8 @@ function cookie_investigator(account_cookies,
 			     config_forceshut,
 			     config_skip_initial_states,
 			     config_start_params,
-			     config_do_not_use_shadow_cookie_store) {
+			     config_do_not_use_shadow_cookie_store,
+			     config_known_results_for_cookiesets) {
     // Metadata
     var my_url = url;
     var my_domain = get_domain(my_url.split("/")[2]);
@@ -2967,6 +2980,46 @@ function cookie_investigator(account_cookies,
 	}
     }
 
+    if (config_known_results_for_cookiesets != undefined) {
+	var ckrfc = config_known_results_for_cookiesets;
+
+	if (ckrfc.s_a_LLB_cookiesets_array != undefined) {
+	    for (var o = 0; o < ckrfc.s_a_LLB_cookiesets_array.length; o++) {
+		var kn_ck_array = ckrfc.s_a_LLB_cookiesets_array[o].slice(0).sort();
+		var found_it = false;
+		for (var p = 0; p < s_a_LLB_cookiesets_array.length; p++) {
+		    var ck_array = s_a_LLB_cookiesets_array[p].slice(0).sort();
+		    if (ck_array.compare(kn_ck_array)) {
+			found_it = true;
+			break;
+		    }
+		}
+		if (!found_it) {
+		    s_a_LLB_cookiesets_array.push(kn_ck_array);
+		    generate_s_a_LLB_decimal_cookiesets();
+		}
+	    }
+	}
+	
+	if (ckrfc.s_a_GUB_cookiesets_array != undefined) {
+	    for (var o = 0; o < ckrfc.s_a_GUB_cookiesets_array.length; o++) {
+		var kn_ck_array = ckrfc.s_a_GUB_cookiesets_array[o].slice(0).sort();
+		var found_it = false;
+		for (var p = 0; p < s_a_GUB_cookiesets_array.length; p++) {
+		    var ck_array = s_a_GUB_cookiesets_array[p].slice(0).sort();
+		    if (ck_array.compare(kn_ck_array)) {
+			found_it = true;
+			break;
+		    }
+		}
+		if (!found_it) {
+		    s_a_GUB_cookiesets_array.push(kn_ck_array);
+		    generate_s_a_GUB_decimal_cookiesets();
+		}
+	    }
+	}
+    }
+
     console.log("APPU DEBUG: Suspected account cookies: " + suspected_account_cookies_array.length);
     for (var i = 0; i < suspected_account_cookies_array.length; i++) {
 	console.log(suspected_account_cookies_array[i]);
@@ -3606,6 +3659,9 @@ function cookie_investigator(account_cookies,
 	    dump_to_browser_cookie_store(to_be_restored_cookies, cb_populated_browser_cookie_store);
 	}
 	delete_all_cookies(my_domain, repopulate_browser_cookie_store);
+// 	if (my_domain == "comast.com") {
+// 	    delete_all_cookies("comcast.net");
+// 	}
     }
 
 
@@ -5107,6 +5163,7 @@ function cookie_investigator(account_cookies,
 			    last_non_expand_state = last_non_verification_state;
 			    tot_expand_state_entered += 1;
 			    my_state = perform_state_transition("st_expand_GUB_suspected_account_cookies");
+			    // my_state = perform_state_transition("st_expand_LLB_suspected_account_cookies");
 			}
 			else if (is_result_significant == 'yes' ||
 				 is_result_significant == 'no') {
@@ -5166,6 +5223,7 @@ function cookie_investigator(account_cookies,
 		    last_non_expand_state = my_state;
 		    tot_expand_state_entered += 1;
 		    my_state = perform_state_transition("st_expand_GUB_suspected_account_cookies");
+		    // my_state = perform_state_transition("st_expand_LLB_suspected_account_cookies");
 		}
 		else if (is_result_significant == 'yes' ||
 			 is_result_significant == 'no') {
@@ -5389,7 +5447,13 @@ function cookie_investigator(account_cookies,
 
 	console.log("");
 	console.log("APPU DEBUG: TIME INFORMATION");
+
 	var ci_end_time = new Date();
+
+	if (last_cookieset_test_time == undefined) {
+	    last_cookieset_test_time = ci_end_time;
+	}
+
 	var cg_time_taken = tot_time_since_last_lo_change + (ci_end_time.getTime() - 
 					    last_cookieset_test_time.getTime())/1000;
 	console.log("APPU DEBUG: Total time in generating cookiesets since last change to equation: " + 
@@ -5438,6 +5502,8 @@ function cookie_investigator(account_cookies,
 	    }
 	}
 
+	num_all_cookies = Object.keys(get_domain_cookies(my_url)).length;
+	console.log("APPU DEBUG: Total cookies: " + num_all_cookies);
 	console.log("APPU DEBUG: Total suspected cookies: " + tot_cookies);
 	console.log("APPU DEBUG: Total times expand-state entered: " + tot_expand_state_entered);	
 	console.log("APPU DEBUG: Total expand cookiesets tested overall: " + tot_expand_state_cookiesets_tested_overall);	
@@ -5456,6 +5522,7 @@ function cookie_investigator(account_cookies,
 	}
 
 	var cookie_aliases = {};
+	var used_aliases = [];
 	var logout_equation = "";
 	
 	console.log("APPU DEBUG: Number of account-cookiesets: " + 
@@ -5478,7 +5545,20 @@ function cookie_investigator(account_cookies,
 		for (var u = 0; u < cs_names.length; u++) {
 		    var fields = cs_names[u].split(":");
 		    var cookie_alias = fields[fields.length - 1];
-		    cookie_aliases[cs_names[u]] = cookie_alias;
+		    if (used_aliases.indexOf(cookie_alias) == -1) {
+			cookie_aliases[cs_names[u]] = cookie_alias;
+		    }
+		    else {
+			for (var i = 0; i < 1000; i++) {
+			    var ck_as = cookie_alias + i;
+			    if (used_aliases.indexOf(ck_as) == -1) {
+				cookie_alias = ck_as;
+				cookie_aliases[cs_names[u]] = cookie_alias;
+				break;
+			    }
+			}
+		    }
+
 		    if (u != 0) {
 			logout_equation += " && ";
 		    }
@@ -5506,23 +5586,28 @@ function cookie_investigator(account_cookies,
 	console.log("");
 	console.log("APPU DEBUG: COOKIE ATTRIBUTES: HTTPONLY, SECURE ");	    
 	for (var ca in cookie_aliases) {
-	    var is_secure = undefined; 
-	    try {
-		is_secure = cs.cookies[ca].secure;
+	    if (cs.cookies[ca] != undefined) {
+		var is_secure = undefined; 
+		try {
+		    is_secure = cs.cookies[ca].secure;
+		}
+		catch (e) {
+		    console.log("Here here: exception: " + JSON.stringify(e));
+		}
+		
+		if (is_secure != undefined) {
+		    is_secure = (is_secure == true) ? "T" : "F";
+		}
+		var is_httponly = cs.cookies[ca].httpOnly;
+		if (is_httponly != undefined) {
+		    is_httponly = (is_httponly == true) ? "T" : "F";
+		}
+		console.log("APPU DEBUG: " + cookie_aliases[ca] + " (H: " 
+			    + is_httponly +", S: " + is_secure + ")");
 	    }
-	    catch (e) {
-		console.log("Here here: exception: " + JSON.stringify(e));
+	    else {
+		console.log("APPU DEBUG: " + cookie_aliases[ca] + " (Cookie seems to be deleted)");
 	    }
-
-	    if (is_secure != undefined) {
-		is_secure = (is_secure == true) ? "T" : "F";
-	    }
-	    var is_httponly = cs.cookies[ca].httpOnly;
-	    if (is_httponly != undefined) {
-		is_httponly = (is_httponly == true) ? "T" : "F";
-	    }
-	    console.log("APPU DEBUG: " + cookie_aliases[ca] + " (H: " 
-			+ is_httponly +", S: " + is_secure + ")");
 	}
 
 	console.log("");
@@ -6457,7 +6542,8 @@ function detect_account_cookies(current_url,
 				opt_config_skip_initial_states,
 				opt_start_params,
 				opt_open_new_window,
-				opt_do_not_use_shadow_cookie_store) {
+				opt_do_not_use_shadow_cookie_store,
+				opt_known_results_for_cookiesets) {
     // This returns an object with keys: domain + path + ":" + cookie_name and
     // value as hashed cookie value. Because the HTTP requests only have cookie names
     // and cookie names can be repeated often (as seen in google's case), there is no
@@ -6471,6 +6557,7 @@ function detect_account_cookies(current_url,
     var config_skip_initial_states = false;
     var config_open_new_window = false;
     var config_do_not_use_shadow_cookie_store = false;
+    var config_known_results_for_cookiesets = false;
 
     // opt_config_forceshut will be time in minutes after which the cookie-investigation tab
     // would get closed. If not specified, default values is '5' minutes.
@@ -6493,6 +6580,10 @@ function detect_account_cookies(current_url,
 
     if (opt_do_not_use_shadow_cookie_store != undefined) {
 	config_do_not_use_shadow_cookie_store = opt_do_not_use_shadow_cookie_store;
+    }
+
+    if (opt_known_results_for_cookiesets != undefined) {
+	config_known_results_for_cookiesets = opt_known_results_for_cookiesets;
     }
 
     if (cookie_names == undefined) {
@@ -6519,7 +6610,8 @@ function detect_account_cookies(current_url,
 						config_forceshut, 
 						config_skip_initial_states,
 						config_start_params,
-						config_do_not_use_shadow_cookie_store);
+						config_do_not_use_shadow_cookie_store,
+						config_known_results_for_cookiesets);
 	
 	if (ret_functions != -1) {
 	    open_cookie_slave_tab(current_url, 
@@ -6534,7 +6626,8 @@ function detect_account_cookies(current_url,
 	}
     }
     
-    if (!account_cookies) {
+    if (!account_cookies ||
+	Object.keys(account_cookies).length == 0) {
 	get_all_cookies(current_domain, function process_cookies(all_cookies) {
 		if (all_cookies.length <= 30) {
 		    // This forces all cookies to be marked as account-cookies
@@ -7421,4 +7514,162 @@ function test_comcast_cookie_set(val) {
 		console.log("Here here: Success: " + JSON.stringify(rc));
 	    }
 	});
+}
+
+function test_att_com() {
+    var current_url = "https://www.att.com/olam/showWirelessDashboardAction.myworld";
+
+    var shift_as_suspected = [
+			      "http://www.att.com/:PD_STATEFUL_93301f62-6d1b-11e0-a40a-00215ad3a3f0",
+			      "http://www.att.com/:EDOCSSESSIONID",
+			      "http://www.att.com/:stack",
+			      "http://www.att.com/:PD_STATEFUL_93404518-6d1b-11e0-ba11-00215ad3a3f0",
+			      ];
+
+    for (var i = 0; i < shift_as_suspected.length; i++) {
+	if (shift_as_suspected[i] in pii_vault.aggregate_data.session_cookie_store["att.com"].cookies) {
+	    pii_vault.aggregate_data.session_cookie_store["att.com"].cookies[shift_as_suspected[i]].is_part_of_account_cookieset = true;
+	}
+    }
+    flush_aggregate_data();
+
+    var opt_known_results_for_cookiesets = {};
+
+    opt_known_results_for_cookiesets.s_a_LLB_cookiesets_array = [];
+    var known_llb_account_disabled_cookies = [
+					      ["http://www.att.com/:EDOCSSESSIONID"],
+					      ["http://www.att.com/:stack"],					      
+					      ["https://www.att.com/:PD-S-SESSION-ID",
+					       "https://.att.com/:PD-ID"],
+// 					      ["http://myattdx03.att.com/:JSESSIONID",
+// 					       "https://.att.com/:PD-ID"],
+					      ];
+
+    for (var j = 0; j < known_llb_account_disabled_cookies.length; j++) {
+	var curr_array = known_llb_account_disabled_cookies[j].slice(0);
+	opt_known_results_for_cookiesets.s_a_LLB_cookiesets_array.push(curr_array);
+    }
+
+//     var known_gub_account_enabled_cookies = [
+// 					     [
+// 					      "http://www.att.com/:PD_STATEFUL_94438114-6d1b-11e0-b329-00215ad3a3f0",
+// 					      "http://www.att.com/:PD_STATEFUL_942b3ea6-6d1b-11e0-adef-00215ad3a3f0",
+// 					      "http://www.att.com/:EDOCSSESSIONID",
+// 					      "http://www.att.com/:stack",
+// 					      ],
+// 					     ["http://www.att.com/:PD_STATEFUL_94438114-6d1b-11e0-b329-00215ad3a3f0",
+// 					      "http://myattp2w86.att.com/:JSESSIONID",
+// 					      "http://www.att.com/:EDOCSSESSIONID",
+// 					      "http://www.att.com/:stack",
+// 					      ], 
+// 					     ];
+
+//     opt_known_results_for_cookiesets.s_a_GUB_cookiesets_array = [];
+
+
+
+//     account_cookies = get_account_cookies(current_url, false);
+
+//     for (var j = 0; j < known_gub_account_enabled_cookies.length; j++) {
+// 	var curr_array = known_gub_account_enabled_cookies[j];
+// 	var final_array = [];
+// 	for (ck in account_cookies) {
+// 	    if (curr_array.indexOf(ck) == -1) {
+// 		final_array.push(ck);
+// 	    }
+// 	}
+// 	opt_known_results_for_cookiesets.s_a_GUB_cookiesets_array.push(final_array);
+//     }
+
+    detect_account_cookies(current_url, 
+			   undefined, 
+			   "all", 
+			   180, 
+			   undefined, 
+			   undefined, 
+			   true,
+			   false,
+			   opt_known_results_for_cookiesets);
+}
+
+
+function test_combiusa() {
+    var current_url = "https://www.combiusa.com/myaccount.asp";
+
+    var opt_known_results_for_cookiesets = {};
+
+    opt_known_results_for_cookiesets.s_a_LLB_cookiesets_array = [];
+    var known_llb_account_disabled_cookies = [
+					      ["http://www.combiusa.com/:slt"],
+					      ];
+
+    for (var j = 0; j < known_llb_account_disabled_cookies.length; j++) {
+	var curr_array = known_llb_account_disabled_cookies[j].slice(0);
+	opt_known_results_for_cookiesets.s_a_LLB_cookiesets_array.push(curr_array);
+    }
+
+    detect_account_cookies(current_url, 
+			   undefined, 
+			   "all", 
+			   180, 
+			   undefined, 
+			   undefined, 
+			   true,
+			   false,
+			   opt_known_results_for_cookiesets);
+}
+
+
+function test_modelroundup() {
+    var current_url = "https://www.modelroundup.com/myaccount.asp";
+
+    var opt_known_results_for_cookiesets = {};
+
+    opt_known_results_for_cookiesets.s_a_LLB_cookiesets_array = [];
+    var known_llb_account_disabled_cookies = [
+					      ["http://www.modelroundup.com/:slt"],
+					      ];
+
+    for (var j = 0; j < known_llb_account_disabled_cookies.length; j++) {
+	var curr_array = known_llb_account_disabled_cookies[j].slice(0);
+	opt_known_results_for_cookiesets.s_a_LLB_cookiesets_array.push(curr_array);
+    }
+
+    detect_account_cookies(current_url, 
+			   undefined, 
+			   "all", 
+			   180, 
+			   undefined, 
+			   undefined, 
+			   true,
+			   false,
+			   opt_known_results_for_cookiesets);
+}
+
+// e.g. "www", "niagarafaucets"
+// e.g. "shop", "timeout"
+function test_volusion_site(prefix, sn) {
+    var current_url = "https://" + prefix + "." + sn + ".com/myaccount.asp";
+
+    var opt_known_results_for_cookiesets = {};
+
+    opt_known_results_for_cookiesets.s_a_LLB_cookiesets_array = [];
+    var known_llb_account_disabled_cookies = [
+					      ["http://" + prefix + "." + sn + ".com/:slt"],
+					      ];
+
+    for (var j = 0; j < known_llb_account_disabled_cookies.length; j++) {
+	var curr_array = known_llb_account_disabled_cookies[j].slice(0);
+	opt_known_results_for_cookiesets.s_a_LLB_cookiesets_array.push(curr_array);
+    }
+
+    detect_account_cookies(current_url, 
+			   undefined, 
+			   "all", 
+			   180, 
+			   undefined, 
+			   undefined, 
+			   true,
+			   false,
+			   opt_known_results_for_cookiesets);
 }

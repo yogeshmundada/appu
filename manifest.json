@@ -1,8 +1,7 @@
 {
   "name": "Appu",
-  "version": "0.5.11",
+  "version": "0.5.14",
   "description": "Reduce your personal information footprint across the web",
-  "update_url": "http://appu.gtnoise.net/devel_builds/updates.xml",
   "icons": {
     "128" : "images/appu_new128.png",
     "16"  : "images/appu_new16.png",
@@ -37,6 +36,7 @@
      "system.memory",	 
      "unlimitedStorage",
      "cookies",
+     "*://*/",
      "http://appu.gtnoise.net:5005/post_report",	 	 
      "http://192.168.56.101:59000/",	 	 
      "webRequest",

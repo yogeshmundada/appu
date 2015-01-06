@@ -1066,12 +1066,13 @@ function check_if_username_present(usernames, operation_mode, check_only_visible
 	var pos = $(elements_with_usernames[i]).offset();
 	var h = $(elements_with_usernames[i]).height();
 	var w = $(elements_with_usernames[i]).width();
-	if (pos.top > 200 && pos.left > 200) {
-	    continue;
-	}
-	if ((pos.top+h) > 200 && (pos.left+w) > 200) {
-	    continue;
-	}
+// 	if (pos.top > 200 && pos.left > 200) {
+// 	    continue;
+// 	}
+// 	if ((pos.top+h) > 200 && (pos.left+w) > 200) {
+// 	    continue;
+// 	}
+
 	elements_with_usernames_within_range = elements_with_usernames_within_range.add($(elements_with_usernames[i]));
     }
 
