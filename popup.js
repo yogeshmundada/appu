@@ -100,6 +100,54 @@ function show_menu(response) {
     }
 }
 
+function find_auth_cookies() {
+    chrome.extension.sendMessage("", {
+	'type' : 'find-auth-cookies',
+    });
+    self.close();
+    return false;
+}
+
+function backup_cookies() {
+    chrome.extension.sendMessage("", {
+	'type' : 'backup-cookies',
+    });
+    self.close();
+    return false;
+}
+
+function restore_cookies() {
+    chrome.extension.sendMessage("", {
+	'type' : 'restore-cookies',
+    });
+    self.close();
+    return false;
+}
+
+function compare_cookies() {
+    chrome.extension.sendMessage("", {
+	'type' : 'compare-auth-cookies',
+    });
+    self.close();
+    return false;
+}
+
+function delete_cookies() {
+    chrome.extension.sendMessage("", {
+	'type' : 'delete-cookies',
+    });
+    self.close();
+    return false;
+}
+
+function print_auth_cookies() {
+    chrome.extension.sendMessage("", {
+	'type' : 'print-auth-cookies',
+    });
+    self.close();
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
     $("#disable").on("click", function() { disable();});
@@ -111,6 +159,13 @@ document.addEventListener('DOMContentLoaded', function () {
     $("#footprint").on("click", footprint); 
     $("#about").on("click", about); 
     $("#feedback").on("click", send_feedback); 
+
+    $("#find-auth-cookies").on("click", find_auth_cookies); 
+    $("#backup-cookies").on("click", backup_cookies); 
+    $("#restore-cookies").on("click", restore_cookies); 
+    $("#compare-cookies").on("click", compare_cookies); 
+    $("#delete-cookies").on("click", delete_cookies); 
+    $("#print-auth-cookies").on("click", print_auth_cookies); 
 
     $("#sign-in").on("click", sign_in); 
     $("#sign-out").on("click", sign_out); 

@@ -482,6 +482,73 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	console.log("APPU DEBUG: Recording prelogin cookies for: " + message.domain);
 	record_prelogin_cookies('', message.domain);
     }
+    else if (message.type == "find-auth-cookies") {
+	console.log("APPU DEBUG: Got message: " + message.type);
+	chrome.tabs.query({
+		active: true
+		    }, 
+	    function (tab) {
+		detect_account_cookies(tab[0].url, undefined, "all", 180, undefined, undefined, true, true)
+	    });
+    }
+    else if (message.type == "backup-cookies") {
+	console.log("APPU DEBUG: Got message: " + message.type);
+	chrome.tabs.query({
+		active: true
+		    }, 
+	    function (tab) {
+		var d = get_domain(tab[0].url.split("/")[2]);
+		console.log("APPU DEBUG: URL: " + JSON.stringify(d));
+		cookie_store_offload(d, d, tab[0].url);
+	    });
+    }
+    else if (message.type == "restore-cookies") {
+	console.log("APPU DEBUG: Got message: " + message.type);
+	chrome.tabs.query({
+		active: true
+		    }, 
+	    function (tab) {
+		var d = get_domain(tab[0].url.split("/")[2]);
+		console.log("APPU DEBUG: URL: " + JSON.stringify(d));
+		cookie_store_load(d, false, function (cs) {
+			dump_to_browser_cookie_store(cs["CookieStore:" + d]["backup_store"]);
+			chrome.tabs.sendMessage(tab[0].id, {
+				type: "goto-url", 
+				    url: cs["CookieStore:" + d]["url"]
+				    }); 
+		    });
+	    });
+    }
+    else if (message.type == "compare-auth-cookies") {
+	console.log("APPU DEBUG: Got message: " + message.type);
+	chrome.tabs.query({
+		active: true
+		    }, 
+	    function (tab) {
+		var d = get_domain(tab[0].url.split("/")[2]);
+		compare_auth_cookies(d);
+	    });
+    }
+    else if (message.type == "delete-cookies") {
+	console.log("APPU DEBUG: Got message: " + message.type);
+	chrome.tabs.query({
+		active: true
+		    }, 
+	    function (tab) {
+		var d = get_domain(tab[0].url.split("/")[2]);
+		delete_all_cookies(d);
+	    });
+    }
+    else if (message.type == "print-auth-cookies") {
+	console.log("APPU DEBUG: Got message: " + message.type);
+	chrome.tabs.query({
+		active: true
+		    }, 
+	    function (tab) {
+		var d = get_domain(tab[0].url.split("/")[2]);
+		print_auth_cookies(d);
+	    });
+    }
     else if (message.type == "check_passwd_reuse") {
 	if (sender.tab && (sender.tab.id in cookie_investigating_tabs)) {
 	    return;

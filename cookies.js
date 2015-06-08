@@ -336,6 +336,59 @@ function print_all_cookies(domain) {
     get_all_cookies(domain, cb_cookies);
 }
 
+function print_auth_cookies(domain) {
+    read_from_local_storage("Auth-Cookie-Equation:" + domain, function(acd) {
+	    acd = acd["Auth-Cookie-Equation:" + domain];
+
+	    for (var k in acd) {
+		console.log("APPU DEBUG: Key: " + k + ", value: " + acd[k]);
+	    }
+	});
+}
+
+function compare_auth_cookies(domain) {
+    read_from_local_storage("Auth-Cookie-Equation:" + domain, function(acd) {
+	    acd = acd["Auth-Cookie-Equation:" + domain];
+	    var f = {};
+
+	    for (var ck in acd) {
+		f[ck] = false;
+	    }
+
+	    var cb_cookies = (function(domain) {
+		    return function(all_cookies) {
+			for (var i = 0; i < all_cookies.length; i++) {
+			    var cookie_str = "";
+			    var cookie_name = all_cookies[i].name;
+			    var cookie_domain = all_cookies[i].domain;
+			    var cookie_path = all_cookies[i].path;
+			    var cookie_protocol = (all_cookies[i].secure) ? "https://" : "http://";
+			    var cookie_key = cookie_protocol + cookie_domain + cookie_path + ":" + cookie_name;
+			    cookie_val = all_cookies[i].value;
+
+			    if (cookie_key in acd) {
+				f[cookie_key] = true;
+				if (acd[cookie_key] == cookie_val) {
+				    console.log("APPU DEBUG: Values matched for auth-cookie: " + cookie_key);
+				}
+				else {
+				    console.log("APPU DEBUG: Values DID NOT match for auth-cookie: " + cookie_key);
+				}
+			    }
+			}
+
+			for (var ck in f) {
+			    if (f[ck] == false) {
+				console.log("APPU DEBUG: Did not find auth-cookie: " + ck);
+			    }
+			}
+		    }
+		})(domain);
+	    
+	    get_all_cookies(domain, cb_cookies);
+	});
+}
+
 
 // Print all the cookies whose value contain one of the names in PI store.
 // Only fields with tags "usernameXXX" and "emailXXX" are checked.
@@ -1135,17 +1188,29 @@ function reset_nonduring_account_cookies(url) {
     flush_session_cookie_store();
 }
 
-function cookie_store_offload(domain, offload_name) {
+function cookie_store_offload(domain, offload_name, url) {
     console.log("APPU DEBUG: Storing cookie store for: " + domain);
     var cookie_store = {};
-    get_browser_cookie_store_copy(domain, cookie_store, function(backup_store){
+
+    if (url == undefined) {
+	url = "";
+    }
+
+    get_browser_cookie_store_copy(domain, cookie_store, function(backup_store) {
 	    var data = {};
 	    if (offload_name != undefined) {
-		data["CookieStore:" + offload_name] = backup_store;
+		data["CookieStore:" + offload_name] = {
+		    'backup_store' : backup_store,
+		    'url' : url,
+		};
 	    }
 	    else {
-		data["CookieStore:" + domain] = backup_store;
+		data["CookieStore:" + domain] =  {
+		    'backup_store' : backup_store,
+		    'url' : url,
+		};
 	    }
+
 	    write_to_local_storage(data);
 	});
 }
@@ -1163,8 +1228,8 @@ function cookie_store_load(domain, bool_restore_to_browser_cookie_store, cb_load
 	}
     }
     else {
-	cb = function(cookie_store) {
-	    dump_to_browser_cookie_store(cookie_store["CookieStore:" + domain]);
+	cb = function(cs) {
+	    dump_to_browser_cookie_store(cs["CookieStore:" + domain]["backup_store"]);
 	}
     }
     
@@ -1462,6 +1527,7 @@ function detect_login_cookies(domain, cb_after_login_cookie_detection) {
 			login_state_cookies.cookies[cookie_key] = {};
 			login_state_cookies.cookies[cookie_key].cookie_class = 'before';
 			login_state_cookies.cookies[cookie_key].hashed_cookie_val = hashed_cookie_val;
+			login_state_cookies.cookies[cookie_key].value = all_cookies[i].value;
 			login_state_cookies.cookies[cookie_key].is_part_of_account_cookieset = false;
 			login_state_cookies.cookies[cookie_key].current_state = 'present';
 			login_state_cookies.cookies[cookie_key].httpOnly = cookie_http_only;
@@ -1474,6 +1540,7 @@ function detect_login_cookies(domain, cb_after_login_cookie_detection) {
 			login_state_cookies.cookies[cookie_key].cookie_class = 'during';
 			login_state_cookies.cookies[cookie_key].is_part_of_account_cookieset = false;
 			login_state_cookies.cookies[cookie_key].hashed_cookie_val = hashed_cookie_val;
+			login_state_cookies.cookies[cookie_key].value = all_cookies[i].value;
 			login_state_cookies.cookies[cookie_key].current_state = 'present';
 			login_state_cookies.cookies[cookie_key].httpOnly = cookie_http_only;
 			login_state_cookies.cookies[cookie_key].secure = cookie_secure;
@@ -1591,6 +1658,7 @@ function cookie_change_detected(change_info) {
 		    is_part_of_account_cookieset == true) {
 			pvadcs[domain].cookies[cookie_key].current_state = 'changed';
 			pvadcs[domain].cookies[cookie_key].hashed_cookie_val = hashed_cookie_val;
+			pvadcs[domain].cookies[cookie_key].value = change_info.cookie.value;
 		}
 		else {
 		    if (pvadcs[domain].cookies[cookie_key] == undefined) {
@@ -1605,6 +1673,7 @@ function cookie_change_detected(change_info) {
 		    }
 
 		    pvadcs[domain].cookies[cookie_key].hashed_cookie_val = hashed_cookie_val;
+		    pvadcs[domain].cookies[cookie_key].value = change_info.cookie.value;
 		}
 		flush_session_cookie_store();
 	    }
@@ -1789,11 +1858,13 @@ function get_account_cookies(current_url, bool_url_specific_cookies) {
 		if (is_subdomain(c, current_url)) {
 		    account_cookies[c] = {};
 		    account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
+		    account_cookies[c].value = cs.cookies[c].value; 
 		}
 	    }
 	    else {
 		account_cookies[c] = {};
 		account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
+		account_cookies[c].value = cs.cookies[c].value; 
 	    }
 	}
     }
@@ -1824,6 +1895,7 @@ function get_non_account_cookies(domain, suspected_account_cookies_array) {
 	     cs.cookies[c].is_part_of_account_cookieset == undefined)) {
 	    non_account_cookies[c] = {};
 	    non_account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
+	    non_account_cookies[c].value = cs.cookies[c].value; 
 	}
     }
 
@@ -1844,6 +1916,7 @@ function get_selective_account_cookies(current_url, cookie_names) {
 		c.split(":")[2] == cookie_names[i]) {
 		account_cookies[c] = {};
 		account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
+		account_cookies[c].value = cs.cookies[c].value; 
 		break;
 	    }
 	}
@@ -1868,6 +1941,7 @@ function get_domain_cookies(current_url) {
 
 	account_cookies[c] = {};
 	account_cookies[c].hashed_value = cs.cookies[c].hashed_cookie_val; 
+	account_cookies[c].value = cs.cookies[c].value; 
     }
 
     return account_cookies;
@@ -5524,6 +5598,7 @@ function cookie_investigator(account_cookies,
 	var cookie_aliases = {};
 	var used_aliases = [];
 	var logout_equation = "";
+	var login_equation = "BooleanMinimize[!(";
 	
 	console.log("APPU DEBUG: Number of account-cookiesets: " + 
 		    s_a_LLB_cookiesets_array.length);
@@ -5536,12 +5611,14 @@ function cookie_investigator(account_cookies,
 			    JSON.stringify(cs_names));
 		if (!first_time) {
 		    logout_equation += " || ";
+		    login_equation += " || ";
 		}
 		else {
 		    first_time = false;
 		}
 
 		logout_equation += "(";
+		login_equation += "(";
 		for (var u = 0; u < cs_names.length; u++) {
 		    var fields = cs_names[u].split(":");
 		    var cookie_alias = fields[fields.length - 1];
@@ -5561,16 +5638,21 @@ function cookie_investigator(account_cookies,
 
 		    if (u != 0) {
 			logout_equation += " && ";
+			login_equation += " && ";
 		    }
 		    logout_equation += "~" + cookie_alias;
+		    login_equation += "!" + cookie_alias;
 		}
 		logout_equation += ")";
+		login_equation += ")";
 	    }
 	}
 	else {
 	    logout_equation = "Not detected yet";
 	}
 	
+	login_equation += ")]";
+
 	var cs = pii_vault.aggregate_data.session_cookie_store[my_domain];
 	cs.logout_equation = logout_equation;
 	cs.cookie_aliases = cookie_aliases;
@@ -5583,10 +5665,13 @@ function cookie_investigator(account_cookies,
 	    console.log("APPU DEBUG: " + cookie_aliases[ca] + ": " + ca);
 	}
 
+	var acl = "";
+	var auth_cookies_all = {};
 	console.log("");
 	console.log("APPU DEBUG: COOKIE ATTRIBUTES: HTTPONLY, SECURE ");	    
 	for (var ca in cookie_aliases) {
 	    if (cs.cookies[ca] != undefined) {
+		auth_cookies_all[ca] = cs.cookies[ca].value;
 		var is_secure = undefined; 
 		try {
 		    is_secure = cs.cookies[ca].secure;
@@ -5604,15 +5689,25 @@ function cookie_investigator(account_cookies,
 		}
 		console.log("APPU DEBUG: " + cookie_aliases[ca] + " (H: " 
 			    + is_httponly +", S: " + is_secure + ")");
+		acl += (cookie_aliases[ca] + " (H: " + is_httponly +", S: " + is_secure + "), ");
 	    }
 	    else {
 		console.log("APPU DEBUG: " + cookie_aliases[ca] + " (Cookie seems to be deleted)");
 	    }
 	}
 
+
+	var auth_cookies_data = {};
+	auth_cookies_data["Auth-Cookie-Equation:" + my_domain] = auth_cookies_all;
+	write_to_local_storage(auth_cookies_data);
+
+
+	console.log("APPU DEBUG: " + acl);	    
+
 	console.log("");
 	if (!has_error_occurred) {
 	    console.log("APPU DEBUG: Complete logout-equation: " + logout_equation);
+	    console.log("APPU DEBUG: Complete login-equation: " + login_equation);
 	}
 	else {
 	    console.log("APPU DEBUG: Partial logout-equation: " + logout_equation);
