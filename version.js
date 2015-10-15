@@ -183,6 +183,14 @@ function update_specific_changes(last_version) {
 	pii_vault.password_hashes = {};
 	vault_write("password_hashes", pii_vault.password_hashes);
     }
+
+    if (last_version < '0.5.18') {
+	console.log("APPU DEBUG: Update specific changes(<0.5.18). Creating 'files_uploaded' entries");
+	pii_vault.current_report.files_uploaded = {};
+	flush_selective_entries("current_report", ["files_uploaded"]);
+	pii_vault.aggregate_data.files_uploaded = {};
+	flush_selective_entries("aggregate_data", ["files_uploaded"]);
+    }
 }
 
 

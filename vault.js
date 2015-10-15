@@ -31,6 +31,7 @@ var on_disk_values = {
     ],
     "current_report" : [
 	"initialize_time",
+	"files_uploaded",
 	"reportid",
 	"deviceid",
 	"report_modified",
@@ -75,6 +76,7 @@ var on_disk_values = {
     ],
     "aggregate_data" : [
 	"session_cookie_store",		
+	"files_uploaded",
 	"current_loggedin_state",
 	"initialized_time",
 	"num_viewed",

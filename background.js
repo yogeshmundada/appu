@@ -75,7 +75,24 @@ var pre_login_cookies = {};
 var server_url = "http://appu.gtnoise.net:5005/";
 //var server_url = "http://192.168.56.101:59000/";
 
+var usernames_in_tab = {};
+
 // BIG EXECUTION START
+
+window.addEventListener("message", receiveMessage, false);
+function receiveMessage(event) {
+    console.log("DELETE ME: Got message from: " + JSON.stringify(event.data));
+}
+
+function get_lat_lon(address) {
+    $("#google_maps")[0].contentWindow.postMessage({
+	    'address': address,
+		'chrome-ext': "chrome-extension://" + ext_id,
+		}, "*")
+}
+
+//$("#google_maps")
+
 
 vault_read();
 fpi_metadata_read();
@@ -275,6 +292,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		is_template_processing_tab = true;
 	    }
 
+	    usernames_in_tab[sender.tab.id] = false;
+
 	    sendResponse({
 		    'epoch_id' : epoch_id,
 			'is_cookie_investigator_tab' : is_cookie_investigator_tab,
@@ -353,6 +372,24 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    // 		", at: " + domain);
 	}
     }
+    else if (message.type == "file_uploaded") {
+	var domain = get_domain(message.domain);
+
+	if (!(domain in pii_vault.current_report.files_uploaded)) {
+	    pii_vault.current_report.files_uploaded[domain] = [];
+	}
+	if (!(domain in pii_vault.aggregate_data.files_uploaded)) {
+	    pii_vault.aggregate_data.files_uploaded[domain] = [];
+	}
+
+	var anon_fu_data = [message.domain, message.file_type, message.file_size];
+	pii_vault.current_report.files_uploaded[domain].push(anon_fu_data);
+	flush_selective_entries("current_report", ["files_uploaded"]);
+
+	var fu_data = [message.domain, message.file_name, message.file_type, message.file_size];
+	pii_vault.aggregate_data.files_uploaded[domain].push(fu_data);	
+	flush_selective_entries("aggregate_data", ["files_uploaded"]);
+    }
     else if (message.type == "am_i_active") {
 	if (sender.tab) {
 	    console.log("Here here: Delete me: Received 'am_i_active' from: " + sender.tab.id);
@@ -400,15 +437,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    //print_all_cookies(get_domain(domain), "LOGIN_COMPLETE");
 		    detect_login_cookies(get_domain(domain));
 		}
-		
-		var pi_usernames = get_all_usernames();
-		if (pi_usernames.length > 0) {
-		    console.log("Here here: Sending command to detect usernames");
-		    chrome.tabs.sendMessage(sender.tab.id, {
-			    'type' : "check-if-username-present",
-				'usernames' : pi_usernames,
-				});
-		}
+	       
 	    }
 	}
     }
@@ -461,19 +490,50 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	}
 	else {
+	    if (tot_detected_unames > 0) {
+		console.log("APPU DEBUG: On domain(" + message.domain + ") Tabid: " + sender.tab.id);
+		usernames_in_tab[sender.tab.id] = true;
+	    }
 	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected(invisible? " +
 			message.invisible_check_invoked + "): " + 
 			tot_detected_unames);
 	    for (var uname in message.present_usernames.frequency) {
-		console.log("APPU DEBUG: Username: " + uname + ", Frequency: " + message.present_usernames.frequency[uname]);
+		// console.log("APPU DEBUG: Username: " + uname + ", Frequency: " + message.present_usernames.frequency[uname]);
 	    }
 	    for (var i = 0; i < message.present_usernames.elem_list.length; i++) {
 		var pos = message.present_usernames.elem_list[i];
-		console.log("APPU DEBUG: Element(top: "+ pos.top +", left: "+ pos.left +")");
+		// console.log("APPU DEBUG: Element(top: "+ pos.top +", left: "+ pos.left +")");
+	    }
+
+	    var pi = {};
+	    pi['names'] = get_pi_names();
+	    pi['phones'] = get_pi_phones();
+	    pi['ssns'] = get_pi_ssns();
+	    pi['ccns'] = get_pi_ccns();
+	    pi['addresses'] = get_pi_addresses();
+	    pi['emails'] = get_pi_emails();
+	    pi['birthdates'] = get_pi_birthdates();
+	    pi['occupations'] = get_pi_occupations();
+	    pi['employments'] = get_pi_employments();
+	    pi['schools'] = get_pi_schools();
+	    chrome.tabs.sendMessage(sender.tab.id, {
+		    'type' : "check-if-pi-present",
+			'pi' : pi,
+			});
+	}
+    } else if (message.type == "detected_pi") {
+	message.domain = get_domain(message.domain);
+
+	console.log("DELETE ME: For domain(" + message.domain + "), following PIs were detected");
+	var present_pi = message.present_pi;
+	var present_pi_keys = Object.keys(present_pi);
+	for (i = 0; i < present_pi_keys.length; i++) {
+	    var k = present_pi_keys[i];
+	    if (present_pi[k].length > 0) {
+		console.log("DELETE ME: PI(" + k + "): " + JSON.stringify(present_pi[k]));
 	    }
 	}
-    }
-    else if (message.type == "record_prelogin_cookies") {
+    } else if (message.type == "record_prelogin_cookies") {
 	if (sender.tab && (sender.tab.id in cookie_investigating_tabs)) {
 	    return;
 	}
@@ -655,6 +715,15 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    check_usernames_for_cookie_investigation(sender.tab.id);
 		}
 	    }
+	} else {
+		var pi_usernames = get_all_usernames();
+		if (pi_usernames.length > 0) {
+		    console.log("Here here: Sending command to detect usernames");
+		    chrome.tabs.sendMessage(sender.tab.id, {
+			    'type' : "check-if-username-present",
+				'usernames' : pi_usernames,
+				});
+		}
 	}
     }
     else if (message.type == "query_status") {
@@ -693,6 +762,15 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "signed_in") {
 	if (sender.tab && !(sender.tab.id in cookie_investigating_tabs)) {
 	    var domain = get_domain(message.domain);
+
+	    if ((sender.tab.id in usernames_in_tab) && (usernames_in_tab[sender.tab.id] == true)) {
+		console.log("APPU DEBUG: CONFIRMED signed in for site: " + get_domain(message.domain));
+		message.value = 'yes';
+	    } else {
+		if (message.value != 'yes') {
+		    message.value = 'no';
+		}
+	    }
 	    
 	    if (message.value == 'yes') {
 		console.log("APPU DEBUG: Signed in for site: " + get_domain(message.domain));

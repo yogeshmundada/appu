@@ -1,6 +1,6 @@
 {
   "name": "Appu",
-  "version": "0.5.14",
+  "version": "0.5.18",
   "description": "Reduce your personal information footprint across the web",
   "icons": {
     "128" : "images/appu_new128.png",
@@ -26,6 +26,8 @@
       	      "thirdparty/sprintf-0.7-beta1.js",
 	      "thirdparty/jquery-ui-1.9.1.custom/js/jquery-1.8.2.js",
 	      "thirdparty/jquery-ui-1.9.1.custom/js/jquery-ui-1.9.1.custom.js",
+	      "thirdparty/jquery.nearest.js",	
+	      "search_pi.js",
 	      "passwd.js"]
     }
   ],
@@ -43,6 +45,9 @@
      "webRequestBlocking",
      "*://*/"
   ],
+  "sandbox": {
+      "pages": [ "maps_sandbox.html" ]
+  },
   "web_accessible_resources": [
      "images/appu_new19.png",			      
      "thirdparty/jquery-ui-1.9.1.custom/css/appuwarning/images/ui-icons_ffffff_256x240.png",

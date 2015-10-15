@@ -9,6 +9,7 @@ var last_user_interaction = undefined;
 var am_i_logged_in = false;
 var pwd_pending_warn_timeout = undefined;
 
+var pi_list = null;
 var is_site_loaded = undefined;
 
 // For cookie-investigation
@@ -16,6 +17,8 @@ var curr_epoch_id = -1;
 
 var is_cookie_investigator_tab = false;
 var is_template_processing_tab = false;
+
+var is_blacklist_check_done = false;
 
 // Total number of times when we reached document
 // in interactive state.
@@ -210,6 +213,7 @@ function is_passwd_reused(response) {
 	    return;
 	}
 
+	response.dontbugme = 'yes';
 	if(response.dontbugme == "no") {
 	    var dialog_msg = sprintf('<div id="appu-password-warning" class="appuwarning" title="Appu: Notification"><p>%s</p></div>', alrt_msg);
 	    var dialog_element = $(dialog_msg);
@@ -682,18 +686,28 @@ function get_file_metadata(evt) {
 	var lm = files[i].lastModifiedDate ? files[i].lastModifiedDate.toLocaleDateString() : 'n/a';
 	console.log("Here here: fname("+ files[i].name +"), ftype("+ files[i].type +
 		    "), fsize("+ files[i].size +"), last_modified("+ lm +")");
-	var fr = new FileReader();
 
-	fr.onload = (function(theFile) {
-		return function(e) {
-		    if (e.target.readyState == FileReader.DONE) { 
-			console.log("Here here: File content: " + e.target.result);
-		    }
-		};
-	    })(files[i]);
+	var message = {};
+	message.type = "file_uploaded";
+	message.domain = document.domain;
+	message.am_i_logged_in = am_i_logged_in;
+	message.file_name = files[i].name;
+	message.file_type = files[i].type;
+	message.file_size = files[i].size;
+	chrome.extension.sendMessage("", message);
 
-	var blob = files[i].slice(0, 1024);
-	fr.readAsBinaryString(blob);
+// 	var fr = new FileReader();
+
+// 	fr.onload = (function(theFile) {
+// 		return function(e) {
+// 		    if (e.target.readyState == FileReader.DONE) { 
+// 			console.log("Here here: File content: " + e.target.result);
+// 		    }
+// 		};
+// 	    })(files[i]);
+
+// 	var blob = files[i].slice(0, 1024);
+// 	fr.readAsBinaryString(blob);
     }
 }
 
@@ -702,6 +716,7 @@ function test_file_click(e) {
 }
 
 function is_blacklisted(response) {
+    is_blacklist_check_done = true;
     if(response.blacklisted == "no") {
 	do_not_watch_this_site = false;
 	if (!check_for_visible_pwd_elements()) {
@@ -843,6 +858,7 @@ Do you want Appu to download your personal information from this site?";
 }
 
 function show_pending_warnings(r) {
+    return;
     if(r.pending == "yes") {
 	var response = r.warnings;
 
@@ -926,6 +942,7 @@ function check_pending_warnings() {
 }
 
 function is_status_active(response) {
+    console.log("APPU DEBUG: In is_status_active()");
     if (response.lottery_setting == "participating") {
 	am_i_lottery_member = true;
     }
@@ -1044,138 +1061,7 @@ function window_unfocused(eo) {
     }
 }
 
-function check_if_username_present(usernames, operation_mode, check_only_visible) {
-    var present_usernames = {
-	frequency: {},
-	elem_list: []
-    };
 
-    console.log("APPU DEBUG: Detecting if known usernames are present on the webpage for: " + operation_mode);
-
-    check_only_visible = (check_only_visible == undefined) ? true : check_only_visible;
-    check_only_visible = (check_only_visible == true) ? ":visible" : "";
-
-    var elements_with_usernames = $();
-    for (var i = 0; i < usernames.length; i++) {
-	elements_with_usernames = elements_with_usernames.add($(":Contains('" + usernames[i] + "')" + check_only_visible));
-    }
-    elements_with_usernames = $.unique(elements_with_usernames);
-
-    var elements_with_usernames_within_range = $();
-    for (var i = 0; i < elements_with_usernames.length; i++) {
-	var pos = $(elements_with_usernames[i]).offset();
-	var h = $(elements_with_usernames[i]).height();
-	var w = $(elements_with_usernames[i]).width();
-// 	if (pos.top > 200 && pos.left > 200) {
-// 	    continue;
-// 	}
-// 	if ((pos.top+h) > 200 && (pos.left+w) > 200) {
-// 	    continue;
-// 	}
-
-	elements_with_usernames_within_range = elements_with_usernames_within_range.add($(elements_with_usernames[i]));
-    }
-
-    var elements_with_text = $();
-    for (var i = 0; i < elements_with_usernames_within_range.length; i++) {
-	var text = $.trim($(elements_with_usernames_within_range[i]).text()).toLowerCase();
-	if (text == undefined || text == "") {
-	    continue;
-	}
-	elements_with_text = elements_with_text.add($(elements_with_usernames_within_range[i]));
-    }
-
-    var elements_wo_kids = $();
-    for (var i = 0; i < elements_with_text.length; i++) {
-	var kids = $(elements_with_text[i]).children();
-	var kids_contain_username = false;
-
-	if (kids.length > 0) {
-	    for (var k = 0; k < kids.length; k++) {
-		for (var j = 0; j < usernames.length; j++) {
-		    if ($(":Contains(" + usernames[j] + ")" + check_only_visible, $(kids[k]).parent()).length > 0) {
-			kids_contain_username = true;
-			break;
-		    }
-		}
-		if (kids_contain_username) {
-		    break;
-		}
-	    }
-	}
-
-	if (!kids_contain_username) {
-	    elements_wo_kids = elements_wo_kids.add($(elements_with_text[i]));
-	}
-    }
-
-    for (var i = 0; i < usernames.length; i++) {
-	var ue = $(":Contains('" + usernames[i] + "')" + check_only_visible, $(elements_wo_kids).parent());
-	if (ue.length > 0) {
-	    if (!(usernames[i] in present_usernames.frequency)) {
-		present_usernames.frequency[usernames[i]] = 0;
-	    }
-	    present_usernames.frequency[usernames[i]] += ue.length;
-
-	    for (var r = 0; r < ue.length; r++) {
-		var pos = $(ue[r]).offset();
-
-		if (pos.top < 0 ||
-		    pos.left < 0) {
-		    continue;
-		}
-
-		var e = $.extend(true, {}, $(ue[r]));
-
-		pos.username = usernames[i];
-		pos.element = e;
-		var add_position = 0;
-		var bool_add = true;
-		var found_position = false;
-
-		for (var k = 0; k < present_usernames.elem_list.length; k++) {
-		    var curr_node = present_usernames.elem_list[k];
-		    if (curr_node.element[0] == pos.element[0]) {
-			if (curr_node.username.length < pos.username.length) {
-			    curr_node.username = pos.username;
-			}
-			bool_add = false;
-			break;
-		    }
-
-		    if ((pos.top < curr_node.top) && 
-			(pos.left < curr_node.left)) {
-			found_position = true;
-		    }
-		    else if (pos.left < curr_node.left) {
-			found_position = true;
-		    }
-
-		    if (!found_position) {
-			add_position += 1;
-		    }
-		}
-
-		if (bool_add == true) {
-		    present_usernames.elem_list.splice(add_position, 0, pos);
-		}
-	    }
-	}
-    }
-
-    var final_elem_list = [];
-    for (var i = 0; i < present_usernames.elem_list.length; i++) {
-	var curr_node = {};
-	curr_node.top = present_usernames.elem_list[i].top;
-	curr_node.left = present_usernames.elem_list[i].left;
-	curr_node.username = present_usernames.elem_list[i].username;
-
-	final_elem_list.push(curr_node);
-    }
- 
-   present_usernames.elem_list = final_elem_list;
-    return present_usernames;
-}
 
 
 //Case insensitive "contains" .. from stackoverflow with thanks
@@ -1185,6 +1071,7 @@ $.expr[":"].Contains = $.expr.createPseudo(function(arg) {
         return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
     };
 });
+
 
 //Detecting if a user has logged in or not is a bit tricky.
 //Usually if a user has logged in, then there is a link somewhere on
@@ -1361,7 +1248,9 @@ function detect_if_user_logged_in() {
 	message.domain = document.domain;
 	chrome.extension.sendMessage("", message);
 	console.log("APPU DEBUG: Sending SignIn status: YES");
-	am_i_logged_in = true;
+	//if (am_i_logged_in == false) {
+	//    am_i_logged_in = true;
+	//}
 
 	$(signout_elements).on('click.monitor_explicit_logouts', monitor_explicit_logouts);
 	$(signout_elements).on('keypress.monitor_explicit_logouts', monitor_explicit_logouts);
@@ -1467,6 +1356,10 @@ function show_appu_monitor_icon() {
     }
 }
 
+function form_submit_called(e) {
+    console.log("DELETE ME: FORM submit called");
+}
+
 function do_document_ready_functions() {
     if (document.readyState !== "complete") {
 	if (!is_cookie_investigator_tab) {
@@ -1492,6 +1385,10 @@ function do_document_ready_functions() {
 	}
     }
     
+    if (!is_blacklist_check_done) {
+	return;
+    }
+
     if (curr_epoch_id > -1) {
 	// "curr_epoch_id > -1" ensures that the "content_script_started" 
 	// message has been processed by background and answered back.
@@ -1509,6 +1406,10 @@ function do_document_ready_functions() {
 	var page_load_time = (new Date()).getTime() - page_load_start.getTime();
 
 	message = {};
+	//page_is_loaded response function is_status_active() is NOT CALLED
+	// if this is not a cookie_investigator_tab
+	// if this is not a cookie_investigator_tab, then "check-if-username-present" 
+	// message is sent by background
 	message.type = "page_is_loaded";
 	message.url = document.URL;
 	message.curr_epoch_id = curr_epoch_id;
@@ -1535,6 +1436,15 @@ function do_document_ready_functions() {
 			    $(file_inputs[i]).on('change', get_file_metadata);
 			}
 		    }
+
+		    var forms = $('form');
+		    for (var i = 0; i < forms.length; i++) {
+			if ($(forms[i]).data("form_input_is_callback_set") == undefined) {
+			    $(forms[i]).data("form_input_is_callback_set", true);
+			    $(forms[i]).submit(form_submit_called);
+			}
+		    }
+
 		});
 	    
 	    //var config = { attributes: true, childList: true, characterData: true }
@@ -1739,6 +1649,16 @@ if (document.URL.match(/.pdf$/) == null) {
 	    else if (message.type == "get-permission-to-fetch-pi") {
 		get_permission_to_fetch_pi(message.site, send_response);
 		return true;
+	    } else if (message.type == "check-if-pi-present") {
+		pi_list = message.pi;
+		present_pi = check_if_pi_present();
+
+		message.type = "detected_pi";
+		message.domain = document.domain;
+		message.present_pi = present_pi;
+
+		chrome.extension.sendMessage("", message);
+		return true;
 	    }
 	    else if (message.type == "check-if-username-present") {
 		var username_list = message.usernames;
@@ -1749,6 +1669,10 @@ if (document.URL.match(/.pdf$/) == null) {
 		if (Object.keys(present_usernames.frequency).length == 0) {
 		    present_usernames = check_if_username_present(username_list, "normal-operation", false);
 		    message.invisible_check_invoked = true;
+		}
+
+		if (Object.keys(present_usernames.frequency).length != 0) {
+		    am_i_logged_in = true;
 		}
 
 		// Even if no usernames detected, just send the message.

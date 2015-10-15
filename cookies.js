@@ -1498,7 +1498,11 @@ function detect_login_cookies(domain, cb_after_login_cookie_detection) {
 	    return function(all_cookies) {
 		console.log("APPU DEBUG: Detecting login cookies for: " + domain);
 		var login_state_cookies = {};
-		login_state_cookies.username = pre_login_cookies[domain].username;
+		if (domain in pre_login_cookies) {
+		    login_state_cookies.username = pre_login_cookies[domain].username;
+		} else {
+		    login_state_cookies.username = "";
+		}
 		login_state_cookies.cookies = {};
 
 		for (var i = 0; i < all_cookies.length; i++) {

@@ -151,6 +151,8 @@ function initialize_report() {
     // A function init_user_account_sites_entry() gives the empty value for each site
     current_report.user_account_sites = {};
 
+    current_report.files_uploaded = {};
+
     //Sites where user does not have account (but "log in" is present)
     //Once again don't enlist those sites
     current_report.num_non_user_account_sites = 0;
@@ -301,6 +303,8 @@ function initialize_aggregate_data() {
     // site_category = Type of the site
     aggregate_data.num_user_account_sites = 0;
     aggregate_data.user_account_sites = {};
+
+    current_report.files_uploaded = {};
 
     //Stats and data about sites where user browses but never logs in
     //IMPORTANT: This detailed list of sites is only maintained in aggregate stats.
