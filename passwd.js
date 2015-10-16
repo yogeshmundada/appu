@@ -1651,23 +1651,19 @@ if (document.URL.match(/.pdf$/) == null) {
 		return true;
 	    } else if (message.type == "check-if-pi-present") {
 		pi_list = message.pi;
-		present_pi = check_if_pi_present();
-
-		message.type = "detected_pi";
-		message.domain = document.domain;
-		message.present_pi = present_pi;
-
-		chrome.extension.sendMessage("", message);
+		check_if_pi_present();
 		return true;
 	    }
 	    else if (message.type == "check-if-username-present") {
 		var username_list = message.usernames;
-		present_usernames = check_if_username_present(username_list, "normal-operation");
+		var res = check_if_username_present(username_list, "normal-operation");
+		var present_usernames = res.present_usernames;
 
 		var message = {};
 		message.invisible_check_invoked = false;
 		if (Object.keys(present_usernames.frequency).length == 0) {
-		    present_usernames = check_if_username_present(username_list, "normal-operation", false);
+		    var res = check_if_username_present(username_list, "normal-operation", false);
+		    present_usernames = res.present_usernames;
 		    message.invisible_check_invoked = true;
 		}
 
@@ -1680,6 +1676,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		message.domain = document.domain;
 		message.curr_epoch_id = curr_epoch_id;
 		message.present_usernames = present_usernames;
+		message.closest_username = res.closest_username;
 		message.num_password_boxes = $("input:password:visible").length;
 		
 		chrome.extension.sendMessage("", message, function(response) {
@@ -1707,12 +1704,14 @@ if (document.URL.match(/.pdf$/) == null) {
 		else if (message.command == "check_usernames") {
 		    var username_list = message.usernames;
 		    var ud_start = new Date();
-		    present_usernames = check_if_username_present(username_list, "cookiesets-investigation");
+		    var res = check_if_username_present(username_list, "cookiesets-investigation");
+		    var present_usernames = res.present_usernames;
 		    var message = {};
 		    message.invisible_check_invoked = false;
 
 		    if (Object.keys(present_usernames.frequency).length == 0) {
-			present_usernames = check_if_username_present(username_list, "cookiesets-investigation", false);
+			res = check_if_username_present(username_list, "cookiesets-investigation", false);
+			present_usernames = res.present_usernames;
 			message.invisible_check_invoked = true;
 		    }
 
@@ -1728,6 +1727,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		    message.domain = document.domain;
 		    message.curr_epoch_id = curr_epoch_id;
 		    message.present_usernames = present_usernames;
+		    message.closest_username = res.closest_username;
 		    // message.visible_elements = get_screen_layout();
 		    message.num_password_boxes = $("input:password:visible").length;
 		    

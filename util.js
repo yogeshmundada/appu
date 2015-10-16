@@ -206,6 +206,110 @@ function get_human_readable_size(bytes) {
 }
 
 
+//// APIs to process address using Google maps
+
+function parse_address(address_components) {
+    var processed_address = {};
+
+    $.each(address_components, function (i, address_component) {
+	    if (address_component.types[0] == "street_number"){ 
+		processed_address['street_number'] = {
+		    'long_name': address_component.long_name.toLowerCase(),
+		    'short_name': address_component.short_name.toLowerCase(),
+		};
+	    } else if (address_component.types[0] == "route"){
+		processed_address['street'] = {
+		    'long_name': address_component.long_name.toLowerCase(),
+		    'short_name': address_component.short_name.toLowerCase(),
+		};
+	    } else if (address_component.types[0] == "locality"){
+		processed_address['city'] = {
+		    'long_name': address_component.long_name.toLowerCase(),
+		    'short_name': address_component.short_name.toLowerCase(),
+		};
+	    } else if (address_component.types[0] == "administrative_area_level_1"){ 
+		processed_address['state'] = {
+		    'long_name': address_component.long_name.toLowerCase(),
+		    'short_name': address_component.short_name.toLowerCase(),
+		};
+	    } else if (address_component.types[0] == "postal_code_prefix"){ 
+		processed_address['zipcode'] = {
+		    'long_name': address_component.long_name.toLowerCase(),
+		    'short_name': address_component.short_name.toLowerCase(),
+		};
+	    } else if (address_component.types[0] == "postal_code"){ 
+		processed_address['zipcode'] = {
+		    'long_name': address_component.long_name.toLowerCase(),
+		    'short_name': address_component.short_name.toLowerCase(),
+		};
+	    } else if (address_component.types[0] == "country"){ 
+		processed_address['country'] = {
+		    'long_name': address_component.long_name.toLowerCase(),
+		    'short_name': address_component.short_name.toLowerCase(),
+		};
+	    }
+	});
+
+    return processed_address;
+}
+
+var maps_subsystem_callbacks = {};
+var maps_subsystem_callback_number = 1;
+
+window.addEventListener("message", receiveMessage, false);
+function receiveMessage(event) {
+    if (event.data.type == "get-latitude-longitude-result") {
+	if (event.data.cb && maps_subsystem_callbacks[event.data.cb]) {
+	    maps_subsystem_callbacks[event.data.cb](event.data);
+	}
+    } else if (event.data.type == "compare-addresses-result") {
+	if (event.data.cb && maps_subsystem_callbacks[event.data.cb]) {
+	    maps_subsystem_callbacks[event.data.cb](event.data);
+	}
+    } else if (event.data.type == "get-address-components-result") {
+	if (event.data.cb && maps_subsystem_callbacks[event.data.cb]) {
+	    maps_subsystem_callbacks[event.data.cb](event.data);
+	}
+    }
+}
+
+function get_latitude_longitude(address, cb) {
+    maps_subsystem_callbacks[maps_subsystem_callback_number] = cb;
+    $("#google_maps")[0].contentWindow.postMessage({
+	    'type': 'get-latitude-longitude',
+	    'address': address,
+		'chrome-ext': "chrome-extension://" + ext_id,
+		'cb' : maps_subsystem_callback_number,
+		}, "*");
+    maps_subsystem_callback_number += 1;
+}
+
+function compare_addresses(a1, a2, cb) {
+    maps_subsystem_callbacks[maps_subsystem_callback_number] = cb;
+
+    $("#google_maps")[0].contentWindow.postMessage({
+	    'type': 'compare-addresses',
+	    'address_one': a1,
+	    'address_two': a2,
+		'cb': maps_subsystem_callback_number,
+		'chrome-ext': "chrome-extension://" + ext_id,
+		}, "*");
+    maps_subsystem_callback_number += 1;
+}
+
+function get_address_components(address, cb) {
+    maps_subsystem_callbacks[maps_subsystem_callback_number] = cb;
+    $("#google_maps")[0].contentWindow.postMessage({
+	    'type': 'get-address-components',
+	    'address': address,
+		'chrome-ext': "chrome-extension://" + ext_id,
+		'cb' : maps_subsystem_callback_number,
+		}, "*");
+    maps_subsystem_callback_number += 1;
+}
+
+/// Compare Arrays
+
 // From: http://stackoverflow.com/questions/3036588/comparing-two-array-of-strings-in-javascript
 Array.prototype.compare = function(arr) {
     if (this.length != arr.length) return false;

@@ -1570,7 +1570,6 @@ function get_idenfier_value(identifier) {
     return [0, undefined];
 }
 
-
 function get_all_usernames(bool_include_full_email) {
     bool_include_full_email = (bool_include_full_email == undefined) ? false : bool_include_full_email;
 
@@ -1582,17 +1581,14 @@ function get_all_usernames(bool_include_full_email) {
 			/last-name([0-9]+)/g,
 			/first-name([0-9]+)/g,
 			/email([0-9]+)/g,
-			/real-username([0-9]+)/g,
-			/real-name([0-9]+)/g,
-			/real-last-name([0-9]+)/g,
-			/real-first-name([0-9]+)/g,
-			/real-email([0-9]+)/g,
 			];
 
     var all_usernames = [];
 
     for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
+	var pi_values_key = vpfvi[pi_values];
+	var identifier = pi_values_key["identifier"];
+
 	for (var j = 0; j < name_regexes.length; j++) {
 	    if (identifier.match(name_regexes[j])) {
 		var complete_uname = pi_values;
@@ -1619,323 +1615,37 @@ function get_all_usernames(bool_include_full_email) {
 
 //Should return values with attribute whether it is
 // verified information or not.
-function get_pi_names() {
+function get_pi(pi_identifier) {
     var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
 
-    var name_regexes = [
-			/^name([0-9]+)/,
-			/last-name([0-9]+)/g,
-			/first-name([0-9]+)/g,
-			/email([0-9]+)/g,
-			/real-name([0-9]+)/g,
-			/real-last-name([0-9]+)/g,
-			/real-first-name([0-9]+)/g,
-			/real-email([0-9]+)/g,
-			];
+    var re = new RegExp(pi_identifier + "([0-9]+)$");
 
-    var pi_names = {};
+    var pi = {};
 
     for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var complete_uname = pi_values;
-		var uname = pi_values;
+	if (pi_values.length == 0) {
+	    continue;
+	}
+	var pi_values_key = vpfvi[pi_values];
+	var identifier = pi_values_key["identifier"];
 
-		if (uname.indexOf("@") != -1) {
-		    uname = uname.split("@")[0];
-		}
-		if (!(uname in pi_names) &&
-		    uname.length > 3) {
-		    pi_names[uname] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_names[uname] = "verified";
+	if (identifier.match(re) != null) {
+	    if (pi_identifier != "address") {
+		pi[pi_values] = "not-verified";
+		if (pi_values_key["verified"] == "yes") {
+		    pi[pi_values] = "verified";
 		} 
+	    } else {
+		pi[pi_values] = {
+		    "full-address": vpfvi[pi_values]["full-address"],
+		    "verified": "not-verified",
+		};
 
-		break;
+		if (pi_values_key["verified"] == "yes") {
+		    pi[pi_values] = "verified";
+		} 
 	    }
 	}
     }
-    return pi_names;
-}
-
-function get_pi_phones() {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/phone([0-9]+)/g,
-			/real-phone([0-9]+)/g,
-			];
-
-    var pi_phones = {};
-
-    for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var phone = pi_values;
-
-		if (!(phone in pi_phones)) {
-		    pi_phones[phone] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_phones[phone] = "verified";
-		} 
-
-		break;
-	    }
-	}
-    }
-    return pi_phones;
-}
-
-function get_pi_ccns() {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/ccn([0-9]+)/g,
-			];
-
-    var pi_ccns = {};
-
-    for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var ccn = pi_values;
-
-		if (!(ccn in pi_ccns)) {
-		    pi_ccns[ccn] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_ccns[ccn] = "verified";
-		} 
-
-		break;
-	    }
-	}
-    }
-    return pi_ccns;
-}
-
-function get_pi_ssns() {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/ssn([0-9]+)/g,
-			];
-
-    var pi_ssns = {};
-
-    for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var ssn = pi_values;
-
-		if (!(ssn in pi_ssns)) {
-		    pi_ssns[ssn] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_ssns[ssn] = "verified";
-		} 
-
-		break;
-	    }
-	}
-    }
-    return pi_ssns;
-}
-
-function get_pi_addresses() {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/address([0-9]+)/g,
-			/real-address([0-9]+)/g,
-			];
-
-    var pi_addresses = {};
-
-    for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var address = pi_values;
-
-		if (!(address in pi_addresses)) {
-		    pi_addresses[address] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_addresses[address] = "verified";
-		} 
-
-		break;
-	    }
-	}
-    }
-    return pi_addresses;
-}
-
-function get_pi_emails() {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/email([0-9]+)/g,
-			/real-email([0-9]+)/g,
-			];
-
-    var pi_emails = {};
-
-    for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var email = pi_values;
-
-		if (!(email in pi_emails)) {
-		    pi_emails[email] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_emails[email] = "verified";
-		} 
-
-		break;
-	    }
-	}
-    }
-    return pi_emails;
-}
-
-function get_pi_birthdates() {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/birth-date([0-9]+)/g,
-			/real-birth-date([0-9]+)/g,
-			];
-
-    var pi_birth_dates = {};
-
-    for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var birth_date = pi_values;
-
-		if (!(birth_date in pi_birth_dates)) {
-		    pi_birth_dates[birth_date] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_birth_dates[birth_date] = "verified";
-		} 
-
-		break;
-	    }
-	}
-    }
-    return pi_birth_dates;
-}
-
-
-function get_pi_occupations() {
-
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/occupation([0-9]+)/g,
-			/real-occupation([0-9]+)/g,
-			];
-
-    var pi_occupations = {};
-
-    for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var occupation = pi_values;
-
-		if (!(occupation in pi_occupations)) {
-		    pi_occupations[occupation] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_occupations[occupation] = "verified";
-		} 
-
-		break;
-	    }
-	}
-    }
-    return pi_occupations;
-}
-
-function get_pi_employments() {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/employment([0-9]+)/g,
-			/real-employment([0-9]+)/g,
-			];
-
-    var pi_employments = {};
-
-    for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var employment = pi_values;
-
-		if (!(employment in pi_employments)) {
-		    pi_employments[employment] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_employments[employment] = "verified";
-		} 
-
-		break;
-	    }
-	}
-    }
-    return pi_employments;
-}
-
-function get_pi_schools() {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/school([0-9]+)/g,
-			/real-school([0-9]+)/g,
-			];
-
-    var pi_schools = {};
-
-    for (var pi_values in vpfvi) {
-	var identifier = vpfvi[pi_values];
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var school = pi_values;
-
-		if (!(school in pi_schools)) {
-		    pi_schools[school] = "non-verified";
-		}
-
-		if (identifier.indexOf("real") > -1) {
-		    pi_schools[school] = "verified";
-		} 
-
-		break;
-	    }
-	}
-    }
-    return pi_schools;
+    return pi;
 }

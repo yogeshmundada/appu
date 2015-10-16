@@ -1,4 +1,93 @@
 
+function convert_existing_addresses_to_canonical_form() {
+    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+
+    var name_regexes = [
+			/address([0-9]+)/g,
+			/real-address([0-9]+)/g,
+			];
+
+    for (var pi_values in vpfvi) {
+	var identifier = vpfvi[pi_values];
+	if (typeof(identifier) != "string") {
+	    continue;
+	}
+	for (var j = 0; j < name_regexes.length; j++) {
+	    if (identifier.match(name_regexes[j])) {
+		var address = pi_values;
+
+		(function(address, identifier) {
+		    get_address_components(address, function(result) { 
+			    var latitude = result["latitude"];
+			    var longitude = result["longitude"];
+			    pa = parse_address(result["address-components"]); 
+			    canonical_address_attributes = [
+							    "street_number",
+							    "street",
+							    "city",
+							    "state",
+							    "zipcode",
+							    "country",
+							    ];
+			    for (var p = 0; p < canonical_address_attributes.length; p++) {
+				if (!(canonical_address_attributes[p] in pa)) {
+				    console.log("APPU ERROR: Address cannot be converted to canonical form: " + 
+						JSON.stringify(address));
+				    if (address in pii_vault.aggregate_data.pi_field_value_identifiers) {
+					delete pii_vault.aggregate_data.pi_field_value_identifiers[address];
+				    }
+				    return;
+				}
+			    }
+			    canonical_address = "street-number: " + pa["street_number"]["long_name"];
+			    canonical_address += ", street: " + pa["street"]["long_name"];
+			    canonical_address += ", city: " + pa["city"]["long_name"];
+			    canonical_address += ", state: " + pa["state"]["long_name"];
+			    canonical_address += ", zipcode: " + pa["zipcode"]["long_name"];
+			    canonical_address += ", country: " + pa["country"]["long_name"];
+			    console.log("DELETE ME: Canonical address('" + address + "'): " + canonical_address);
+
+			    if (address in pii_vault.aggregate_data.pi_field_value_identifiers) {
+				delete pii_vault.aggregate_data.pi_field_value_identifiers[address];
+			    }
+			    
+			    pii_vault.aggregate_data.pi_field_value_identifiers[canonical_address] = {
+				'identifier': identifier,
+				'verified': 'no',
+				'latitude': latitude,
+				'longitude': longitude,
+				'full-address': pa,
+				'sites': [],
+			    }
+			});
+		})(address, identifier);
+		break;
+	    }
+	}
+    }
+}
+
+function convert_pi_field_values_to_canonical_form() {
+    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+    for (var pi_values in vpfvi) {
+	var identifier = vpfvi[pi_values];
+	if (typeof(identifier) == "string") {
+	    console.log("DELETE ME: identifier: " + identifier + ", type: " + typeof(pi_values));
+
+	    if (pi_values in pii_vault.aggregate_data.pi_field_value_identifiers) {
+		delete pii_vault.aggregate_data.pi_field_value_identifiers[pi_values];
+	    }
+			    
+	    pii_vault.aggregate_data.pi_field_value_identifiers[pi_values] = {
+		'identifier': identifier,
+		'verified': 'no',
+		'sites': [],
+	    }
+	}
+    }
+}
+
+
 function remove_redundant_pi_identifiers() {
     var new_pfvi = {};
     var pfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
@@ -191,6 +280,13 @@ function update_specific_changes(last_version) {
 	pii_vault.aggregate_data.files_uploaded = {};
 	flush_selective_entries("aggregate_data", ["files_uploaded"]);
     }
+
+    if (last_version < '0.5.20') {
+	console.log("APPU DEBUG: Update specific changes(<0.5.20). Converting 'pi_field_value_identifiers' to new form");
+	convert_existing_addresses_to_canonical_form();
+	convert_pi_field_values_to_canonical_form();
+    }
+
 }
 
 

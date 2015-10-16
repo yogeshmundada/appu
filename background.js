@@ -79,21 +79,6 @@ var usernames_in_tab = {};
 
 // BIG EXECUTION START
 
-window.addEventListener("message", receiveMessage, false);
-function receiveMessage(event) {
-    console.log("DELETE ME: Got message from: " + JSON.stringify(event.data));
-}
-
-function get_lat_lon(address) {
-    $("#google_maps")[0].contentWindow.postMessage({
-	    'address': address,
-		'chrome-ext': "chrome-extension://" + ext_id,
-		}, "*")
-}
-
-//$("#google_maps")
-
-
 vault_read();
 fpi_metadata_read();
 
@@ -491,7 +476,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
 	else {
 	    if (tot_detected_unames > 0) {
-		console.log("APPU DEBUG: On domain(" + message.domain + ") Tabid: " + sender.tab.id);
+		console.log("APPU DEBUG: On domain(" + message.domain + ", closest-username: " + message.closest_username +
+			    ") Tabid: " + sender.tab.id);
 		usernames_in_tab[sender.tab.id] = true;
 	    }
 	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected(invisible? " +
@@ -506,16 +492,17 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 
 	    var pi = {};
-	    pi['names'] = get_pi_names();
-	    pi['phones'] = get_pi_phones();
-	    pi['ssns'] = get_pi_ssns();
-	    pi['ccns'] = get_pi_ccns();
-	    pi['addresses'] = get_pi_addresses();
-	    pi['emails'] = get_pi_emails();
-	    pi['birthdates'] = get_pi_birthdates();
-	    pi['occupations'] = get_pi_occupations();
-	    pi['employments'] = get_pi_employments();
-	    pi['schools'] = get_pi_schools();
+	    pi['names'] = get_pi("name");
+	    pi['phones'] = get_pi("phone");
+	    pi['ssns'] = get_pi("ssn");
+	    pi['ccns'] = get_pi("ccn");
+	    pi['addresses'] = get_pi("address");
+	    pi['emails'] = get_pi("email");
+	    pi['birthdates'] = get_pi("birth-date");
+	    pi['occupations'] = get_pi("occupation");
+	    pi['employments'] = get_pi("employment");
+	    pi['schools'] = get_pi("school");
+
 	    chrome.tabs.sendMessage(sender.tab.id, {
 		    'type' : "check-if-pi-present",
 			'pi' : pi,
