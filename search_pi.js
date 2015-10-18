@@ -249,10 +249,16 @@ function is_address_present(address) {
     return false;
 }
 
-function is_above_elment(focus_elem, test_elem) {
+function is_above_element(focus_elem, test_elem) {
     var test_elem_bottom = $(test_elem).offset().top + $(test_elem).height();
     var focus_elem_start = $(focus_elem).offset().top;
     return (test_elem_bottom <= focus_elem_start);
+}
+
+function is_on_the_left_of_elment(focus_elem, test_elem) {
+    var test_elem_right = $(test_elem).offset().left + $(test_elem).width();
+    var focus_elem_left = $(focus_elem).offset().left;
+    return (test_elem_right <= focus_elem_left);
 }
 
 // When given a couple of search strings, returns set of elements
@@ -304,9 +310,9 @@ function are_address_components_present(full_address) {
 
     for (var i = 0; i < all_matches.length; i++) {
 	var top_addr_line = all_matches[i];
-	var nearby_elem = $(top_addr_line).nearest(':visible', {tolerance: 50, sameX: true})
+	var nearby_elem = $(top_addr_line).nearest('', {tolerance: 50, sameX: true, includeSelf: true})
 	    .filter(function() { return !$.contains(this, top_addr_line); })
-	    .filter(function() { return !is_above_elment(top_addr_line, this); });
+	    .filter(function() { return !is_above_element(top_addr_line, this); });
 
 	var nearby_elem_parents = $(nearby_elem).parent();
 
@@ -333,6 +339,87 @@ function are_address_components_present(full_address) {
     }
     return false;
 }
+
+function get_common_phone_formats(phone) {
+    var p1 = phone.substring(0,3); 
+    var p2 = phone.substring(3,6); 
+    var p3 = phone.substring(6,10); 
+    
+    var pats = [];
+    pats.push(p1 + p2 + p3);
+    pats.push(p1 + " " + p2 + " " + p3);
+    pats.push(p1 + "-" + p2 + "-" + p3);
+    pats.push("(" + p1 + ") " + p2 + " " + p3);
+    pats.push("(" + p1 + ") " + p2 + p3);
+    pats.push("(" + p1 + ") " + p2 + "-" + p3);
+    
+    return pats;
+}
+
+// Returns closest element from second set for each element in first set.
+// Threshold tells amount of acceptable distance between elements.
+// Constraint is "sameX" or "sameY"
+function find_pairs_of_closest_elements(set_one, set_two, threshold, constraint) {
+    var pairs = [];
+    var samex = false;
+    var samey = false;
+    var is_it_a_preceding_element = null;
+
+    threshold = (threshold == undefined) ? 50 : threshold;
+
+    if (constraint == "sameX") {
+	samex = true;
+	is_it_a_preceding_element = is_above_element;
+    } else if (constraint == "sameY") {
+	samey = true;
+	is_it_a_preceding_element = is_on_the_left_of_elment;
+    }
+
+    for (var i = 0; i < set_one.length; i++) {
+	var ne = $(set_one[i]).nearest(set_two, {tolerance: threshold, sameX: samex, sameY: samey, includeSelf: true})
+	    .filter(function() { 
+		    if ($.contains(this, set_one[i])) {
+			return false;
+		    }
+		    if (is_it_a_preceding_element != null) {
+			return !is_it_a_preceding_element(set_one[i], this);
+		    }
+		    return true;
+		});
+
+	if (ne.length > 0) {
+	    var a = $();
+	    a = a.add(set_one[i]);
+	    a = a.add(ne);
+	    pairs.push(a);
+	}
+    }
+    return pairs;
+}
+
+
+function should_we_check_for_credit_cards() {
+    var elems_that_could_have_ccns_nearby = $();
+    var elems_with_credit_text = find_deepest_nodes_matching_text("credit", undefined, true);
+    if (elems_with_credit_text.length > 0) {
+	var elems_with_card_text = find_deepest_nodes_matching_text("card", undefined, true);
+	if (elems_with_card_text.length > 0) {
+	    var t = elems_with_card_text
+		.filter(function() { 
+			for(var q = 0; q < elems_with_credit_text.length; q++) { 
+			    if($(this).is(elems_with_credit_text[q])) { 
+				return true;
+			    }
+			} 
+			return false; 
+		    });
+
+	    elems_that_could_have_ccns_nearby = elems_that_could_have_ccns_nearby.add(t); 
+	}
+    }
+    return elems_that_could_have_ccns_nearby;
+}
+
 
 function check_if_pi_present() {
     if (pi_list == null) {
@@ -375,18 +462,7 @@ function check_if_pi_present() {
 		continue;
 	    }
 
-	    var p1 = phones[i].substring(0,3); 
-	    var p2 = phones[i].substring(3,6); 
-	    var p3 = phones[i].substring(6,10); 
-
-	    var pat1 = p1 + p2 + p3;
-	    var pat2 = p1 + " " + p2 + " " + p3;
-	    var pat3 = p1 + "-" + p2 + "-" + p3;
-	    var pat4 = "(" + p1 + ") " + p2 + " " + p3;
-	    var pat5 = "(" + p1 + ") " + p2 + p3;
-	    var pat6 = "(" + p1 + ") " + p2 + "-" + p3;
-	    
-	    var pats = [pat1, pat2, pat3, pat4, pat5, pat6];
+	    var pats = get_common_phone_formats(phones[i]);
 
 	    for (var k = 0; k < pats.length; k++) {
 		if ($(":Contains('" + pats[k] + "')").length > 0) {
@@ -420,20 +496,37 @@ function check_if_pi_present() {
 	}
     }
 
-    if ($(":Contains('credit card')").length > 0) {
+
+    var elems_that_could_have_ccns_nearby = should_we_check_for_credit_cards();
+    if (elems_that_could_have_ccns_nearby.length > 0) {
 	present_pi["ccns"] = [];
+	elems_with_ccns = $();
 	for (var i = 0; i < ccns.length; i++) {
 	    if (ccns[i].length != 4) {
 		continue;
 	    }
 
-	    var r = find_text_with_label(ccns[i], 'credit card', 100, "numbers");
+	    var r = find_deepest_nodes_matching_text(ccns[i]);
 
-	    if (r) {
-		present_pi["ccns"].push(ccns[i]);
+	    if (r.length > 0) {
+		for (var p = 0; p < elems_that_could_have_ccns_nearby.length; p++) {
+		    var e = elems_that_could_have_ccns_nearby[p];
+		    var ne = $(e).nearest(r, {includeSelf: true})
+		              .filter(function() { 
+				      if ($.contains(this, e)) {
+					  return false;
+				      }
+
+				      return !is_above_element(e, this);
+				  });
+		    if (distance_between_elements(ne, e) < 100) {
+			present_pi["ccns"].push(ccns[i]);
+		    }
+		}
 	    }
 	}
     }
+
 
     if ($(":Contains('birth')").length > 0) {
 	present_pi["birthdates"] = [];
@@ -560,130 +653,5 @@ function check_if_username_present(usernames, operation_mode, check_only_visible
     return {
 	"present_usernames": present_usernames,
 	"closest_username": closest_username,
-	    };
-
-
-//     check_only_visible = (check_only_visible == undefined) ? true : check_only_visible;
-//     check_only_visible = (check_only_visible == true) ? ":visible" : "";
-
-//     var elements_with_usernames = $();
-//     for (var i = 0; i < usernames.length; i++) {
-// 	elements_with_usernames = elements_with_usernames.add($(":Contains('" + usernames[i] + "')" + check_only_visible));
-//     }
-//     elements_with_usernames = $.unique(elements_with_usernames);
-
-//     var elements_with_usernames_within_range = $();
-//     for (var i = 0; i < elements_with_usernames.length; i++) {
-// 	var pos = $(elements_with_usernames[i]).offset();
-// 	var h = $(elements_with_usernames[i]).height();
-// 	var w = $(elements_with_usernames[i]).width();
-// // 	if (pos.top > 200 && pos.left > 200) {
-// // 	    continue;
-// // 	}
-// // 	if ((pos.top+h) > 200 && (pos.left+w) > 200) {
-// // 	    continue;
-// // 	}
-
-// 	elements_with_usernames_within_range = elements_with_usernames_within_range.add($(elements_with_usernames[i]));
-//     }
-
-//     var elements_with_text = $();
-//     for (var i = 0; i < elements_with_usernames_within_range.length; i++) {
-// 	var text = $.trim($(elements_with_usernames_within_range[i]).text()).toLowerCase();
-// 	if (text == undefined || text == "") {
-// 	    continue;
-// 	}
-// 	elements_with_text = elements_with_text.add($(elements_with_usernames_within_range[i]));
-//     }
-
-//     var elements_wo_kids = $();
-//     for (var i = 0; i < elements_with_text.length; i++) {
-// 	var kids = $(elements_with_text[i]).children();
-// 	var kids_contain_username = false;
-
-// 	if (kids.length > 0) {
-// 	    for (var k = 0; k < kids.length; k++) {
-// 		for (var j = 0; j < usernames.length; j++) {
-// 		    if ($(":Contains(" + usernames[j] + ")" + check_only_visible, $(kids[k]).parent()).length > 0) {
-// 			kids_contain_username = true;
-// 			break;
-// 		    }
-// 		}
-// 		if (kids_contain_username) {
-// 		    break;
-// 		}
-// 	    }
-// 	}
-
-// 	if (!kids_contain_username) {
-// 	    elements_wo_kids = elements_wo_kids.add($(elements_with_text[i]));
-// 	}
-//     }
-
-//     for (var i = 0; i < usernames.length; i++) {
-// 	var ue = $(":Contains('" + usernames[i] + "')" + check_only_visible, $(elements_wo_kids).parent());
-// 	if (ue.length > 0) {
-// 	    if (!(usernames[i] in present_usernames.frequency)) {
-// 		present_usernames.frequency[usernames[i]] = 0;
-// 	    }
-// 	    present_usernames.frequency[usernames[i]] += ue.length;
-
-// 	    for (var r = 0; r < ue.length; r++) {
-// 		var pos = $(ue[r]).offset();
-
-// 		if (pos.top < 0 ||
-// 		    pos.left < 0) {
-// 		    continue;
-// 		}
-
-// 		var e = $.extend(true, {}, $(ue[r]));
-
-// 		pos.username = usernames[i];
-// 		pos.element = e;
-// 		var add_position = 0;
-// 		var bool_add = true;
-// 		var found_position = false;
-
-// 		for (var k = 0; k < present_usernames.elem_list.length; k++) {
-// 		    var curr_node = present_usernames.elem_list[k];
-// 		    if (curr_node.element[0] == pos.element[0]) {
-// 			if (curr_node.username.length < pos.username.length) {
-// 			    curr_node.username = pos.username;
-// 			}
-// 			bool_add = false;
-// 			break;
-// 		    }
-
-// 		    if ((pos.top < curr_node.top) && 
-// 			(pos.left < curr_node.left)) {
-// 			found_position = true;
-// 		    }
-// 		    else if (pos.left < curr_node.left) {
-// 			found_position = true;
-// 		    }
-
-// 		    if (!found_position) {
-// 			add_position += 1;
-// 		    }
-// 		}
-
-// 		if (bool_add == true) {
-// 		    present_usernames.elem_list.splice(add_position, 0, pos);
-// 		}
-// 	    }
-// 	}
-//     }
-
-//     var final_elem_list = [];
-//     for (var i = 0; i < present_usernames.elem_list.length; i++) {
-// 	var curr_node = {};
-// 	curr_node.top = present_usernames.elem_list[i].top;
-// 	curr_node.left = present_usernames.elem_list[i].left;
-// 	curr_node.username = present_usernames.elem_list[i].username;
-
-// 	final_elem_list.push(curr_node);
-//     }
- 
-//    present_usernames.elem_list = final_elem_list;
-//     return present_usernames;
+    };
 }

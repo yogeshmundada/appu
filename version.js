@@ -285,6 +285,7 @@ function update_specific_changes(last_version) {
 	console.log("APPU DEBUG: Update specific changes(<0.5.20). Converting 'pi_field_value_identifiers' to new form");
 	convert_existing_addresses_to_canonical_form();
 	convert_pi_field_values_to_canonical_form();
+	flush_aggregate_data();
     }
 
 }
