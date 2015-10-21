@@ -1013,7 +1013,7 @@ function apply_css_selector(elements, css_selector) {
     return elements;
 }
 
-function simulate_click_worked(mutations, observer, simulate_done_timer, css_selector) {
+function test_if_simulate_click_worked(mutations, observer, simulate_done_timer, css_selector) {
     if ($(css_selector).length > 0) {
 	console.log("APPU DEBUG: Simulate click was successful");
 	observer.disconnect();
@@ -1566,7 +1566,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		window.location = message.url;
 	    }
 	    else if (message.type == "simulate-click") {
-		debugger;
+		
 		var element_to_click = apply_css_filter(apply_css_selector($(document), message.css_selector), 
 							message.css_filter);
 
@@ -1585,7 +1585,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
 		
 		var observer = new MutationObserver(function(mutations, observer) {
-			simulate_click_worked(mutations, observer, simulate_done_timer, detect_change_css);
+			test_if_simulate_click_worked(mutations, observer, simulate_done_timer, detect_change_css);
 		    });
 		
 		//var config = { attributes: true, childList: true, characterData: true }
@@ -1608,7 +1608,7 @@ if (document.URL.match(/.pdf$/) == null) {
 		    console.log("Here here: " + JSON.stringify(e));
 		}
 
-		console.log("Here here");
+		test_if_simulate_click_worked(undefined, observer, simulate_done_timer, detect_change_css);
 	    }
 	    else if (message.type == "get-html") {
 		//Adding 2 seconds delay because some sites like Google+ have data populated asynchronously.

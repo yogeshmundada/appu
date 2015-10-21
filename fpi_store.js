@@ -86,6 +86,7 @@ function sanitize_phone(phone, field, cb) {
 function sanitize_name(name, field, cb) {
     var regex_at_least_one_letter = /([a-zA-Z]+)/g;
     var n = $.trim(name);
+    n = n.replace(/\s\s+/g, ' ');
     if (n == "") {
 	return cb(null);
     }
@@ -101,7 +102,13 @@ function sanitize_name(name, field, cb) {
 
 function sanitize_address(address, field, cb) {
     get_address_components(address, function(result) {
+	    if (result["status"] == "not-ok") {
+		console.log("APPU ERROR: Google maps did not resolve address(" + 
+			    JSON.stringify(result["detailed-status"]) + "): " + address);
+		return cb(null);
+	    }
 	    if (result["total_results"] > 1) {
+		console.log("APPU ERROR: Google maps resolved multiple addresses for: " + address);
 		return cb(null);
 	    }
 	    var latitude = result["latitude"];
@@ -248,7 +255,7 @@ function sanitize_value(type, value, field, cb) {
     if (type == "name" || type == "username" || type == "email") {
 	return sanitize_name(value, field, cb);
     } else if (type == "address") {
-	return sanitize_address(value, field, cb);
+	return setTimeout(function() { sanitize_address(value, field, cb); }, 5000);
     } else if (type == "phone") {
 	return sanitize_phone(value, field, cb);
     } else if (type == "ccn") {

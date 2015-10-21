@@ -298,6 +298,11 @@ function compare_addresses(a1, a2, cb) {
 }
 
 function get_address_components(address, cb) {
+    if (cb == undefined || cb == null) {
+	cb = function (r) {
+	    console.log("APPU INFO: Result: " + JSON.stringify(r));
+	}
+    }
     maps_subsystem_callbacks[maps_subsystem_callback_number] = cb;
     $("#google_maps")[0].contentWindow.postMessage({
 	    'type': 'get-address-components',
