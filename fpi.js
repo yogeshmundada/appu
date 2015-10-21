@@ -805,6 +805,7 @@ function apply_jquery_filter(element, jquery_filter, css_selector) {
 		    /(remove-children)/,
 		    /(is_visible)/,
 		    /(find_deepest)/,
+		    /(omit-string:)(.*)/,
 		    ];
 
     for (var p = 0; p < patterns.length; p++) {
@@ -816,20 +817,26 @@ function apply_jquery_filter(element, jquery_filter, css_selector) {
 	    var rc = $(element).parents().eq(r[2]);
 	    return rc;
 	}
+	else if (r[1] == "omit-string:") {
+	    var t = $(element).text();
+	    t = t.replace(r[2], '');
+	    $(element).text(t);
+	    return $(element);
+	}
 	else if (r[1] == "remove-children") {
 	    var rc = $(element).children().remove().end();
 	    return rc;
 	}
 	else if (r[1] == "is_visible") {
 	    if ($(element).attr("appu_rendering") == "visible") {
-		return element;
+		return $(element);
 	    }
 	} else if (r[1] == "find_deepest") {
 	    var result = $(css_selector, element);
 	    if (result.length != 0) {
 		return undefined;
 	    }
-	    return element;
+	    return $(element);
 	}
     }
     return undefined;

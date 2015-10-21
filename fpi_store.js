@@ -1,4 +1,9 @@
 
+function delete_all_pi_field_value_identifiers() {
+    pii_vault.aggregate_data.pi_field_value_identifiers = {};
+    flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);    
+}
+
 //Helpful function when testing FPIs again and again
 function delete_fetched_pi(domain, force_permission) {
     delete pii_vault.aggregate_data.per_site_pi[domain];
@@ -85,6 +90,9 @@ function sanitize_name(name, field, cb) {
 	return cb(null);
     }
     if (n.match(regex_at_least_one_letter) == null) {
+	return cb(null);
+    }
+    if (n.length <= 3) {
 	return cb(null);
     }
     return cb(n, field);

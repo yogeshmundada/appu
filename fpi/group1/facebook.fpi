@@ -1,169 +1,45 @@
 <div name="facebook">
 	<action type="fetch-url">http://www.facebook.com</action>
 	
-	
 	<div name="Your account">
 		<action type="fetch-href">
 			:contains("Edit Profile"):not(:has(*))
 		</action>
-		
-		<div name="phones" type="vector">
-			<action type="fetch-dom-element">
-				td.contactInfoPhone span
+
+
+		<div name="Account Overview">
+			<action type="simulate-click" data="[name='first_name']:visible">
+				:contains("Overview"):not(:has(*))
 			</action>
-			
-			<div name="phone">
-				<action type="store">
+
+			<div name="phone list">
+				<action type="fetch-dom-element" jquery_filter="ancestor-2">
+					:contains("Phones"):not(:has(*))
 				</action>
-			</div>	 
-		</div>
-		
+				
+				<div name="phones" type="vector">
+					<action type="fetch-dom-element">
+						span:not(:has(*))
+					</action>
 
-		<div name="address" type="vector">
-			<action type="combine-n-store">
-				tr:contains("Address") td span ul li
-			</action>
-		</div>
-
-
-		
-		<div name="Basic Info">
-			<action type="fetch-dom-element">
-				div#pagelet_basic
-			</action>
-
-
-			<div name="relationship">
-	  			<action type="store">
-					tbody th:contains("Relationship Status") + td
-	  			</action>
+					<div name="verified-phone">
+						<action type="store">
+						</action>
+					</div>
+				</div>	 
 			</div>
 
+			<div name="Address Div">
+				<action type="fetch-dom-element" jquery_filter="ancestor-2">
+					:contains("Address"):not(:has(*))
+				</action>
 
-
-			<div name="anniversary-date">
-	  			<action type="store">
-					tbody th:contains("Anniversary") + td
-	  			</action>
-			</div>
-
-
-
-			<div name="birth-date">
-	  			<action type="store">
-					tbody th:contains("Birthday") + td
-	  			</action>
-			</div>
-
-
-
-			<div name="gender">
-	  			<action type="store">
-					tbody th:contains("Gender") + td
-	  			</action>
-			</div>
-
-
-
-			<div name="languages">
-	  			<action type="fetch-dom-element">
-					tbody th:contains("Languages") + td a
-	  			</action>
-				<div name="language">
-	  				<action type="combine-n-store">
-	  				</action>
+				<div name="address" type="vector">
+					<action type="combine-n-store">
+						li
+					</action>
 				</div>
 			</div>
-
-
-
-			<div name="interested-in">
-	  			<action type="store">
-					tbody th:contains("Interested In") + td
-	  			</action>
-			</div>
-
-
-
-			<div name="religious-view">
-	  			<action type="store">
-					tbody th:contains("Religious Views") + td
-	  			</action>
-			</div>
-
-
-
-			<div name="political-view">
-	  			<action type="store">
-					tbody th:contains("Political Views") + td
-	  			</action>
-			</div>
-		</div>
-
-
-
-		<div name="Current City Div">
-			<action  type="fetch-prev-dom-element">
-				div:contains('Current City'):not(:has(*))
-			</action>
-			<div name="current-city">
-	  			<action type="store">
-	  			</action>
-			</div>
-		</div>
-
-
-
-		<div name="HomeTown Div">
-			<action  type="fetch-prev-dom-element">
-				div:contains('Hometown'):not(:has(*))
-			</action>
-			<div name="hometown">
-	  			<action type="store">
-	  			</action>
-			</div>
-		</div>
-
-
-
-		<div name="Employment_Universities_Schools">
-			<action type="fetch-dom-element" jquery_filter="ancestor-3">
-				.uiHeaderTitle:contains("Work and Education")
-			</action>
-
-			<div name="Employment-div" type="vector">
-				<action type="fetch-dom-element">
-					:contains("Employer:"):not(:has(*)) + td > ul > li > div > div
-				</action>
-				<div name="employment" >
-	  				<action type="combine-n-store" ignore_default="Where have you worked?">
-						a span
-	  				</action>
-				</div>
-			</div>
-
-			<div name="University-div" type="vector">
-				<action type="fetch-dom-element">
-					:contains("College/University:"):not(:has(*)) + td > ul > 
-					li > div > div
-				</action>
-				<div name="graduate-school">
-	  				<action type="store" ignore_default="Where did you go to college?">a span
-	  				</action>
-				</div>
-			</div>
-
-			<div name="Highschool-div" type="vector">
-				<action type="fetch-dom-element">
-					:contains("High School:"):not(:has(*)) + td > ul > 
-					li > div > div
-				</action>
-				<div name="high-school">
-	  				<action type="store"  ignore_default="Where did you go to high school?">a span
-	  				</action>
-				</div>
-			</div>
-			
 		</div>
 	</div>
 
@@ -172,37 +48,34 @@
 		<action type="fetch-url">https://www.facebook.com/settings?ref=mb
 		</action>
 
-
-		<div name="name" can_be_a_null="no">
+		<div name="verified-name" can_be_a_null="no">
 			<action type="store">
 				:contains("Name"):not(:has(*)) ~ span:nth-child(4)
 			</action>
 		</div>
 
-
 		<div name="Name click">
-			<action type="simulate-click" data="[name='first_name']">
+			<action type="simulate-click" data="[name='primary_first_name']:visible">
 				:contains('Name'):not(:has(*)):first-child
 			</action>
 
-			<div name="first-name">
+			<div name="verified-first-name">
 				<action type="store" field_type="editable">
-					[name='first_name']
+					[name='primary_first_name']
 				</action>
 			</div>
 
-			<div name="last-name">
+			<div name="verified-last-name">
 				<action type="store" field_type="editable">
-					[name='last_name']
+					[name='primary_last_name']
 				</action>
 			</div>
 
-			<div name="middle-name">
+			<div name="verified-middle-name">
 				<action type="store" field_type="editable" ignore_default="Optional">
-					[name='middle_name']
+					[name='primary_middle_name']
 				</action>
 			</div>
-
 		</div>
 	</div>
 
@@ -212,19 +85,24 @@
 		</action>
 		
 		<div name="Email click">
-			<action type="simulate-click" data="div[class='fsm fwn fcg'] div label">
+			<action type="simulate-click" data=".PendingEmailSection:visible">
 				:contains('Email'):not(:has(*)):first-child
 			</action>
 			
-			<div name="emails" type="vector" can_be_a_null="no">
-				<action type="fetch-dom-element">
-					div[class='fsm fwn fcg'] div label, 
-					:contains('Facebook email:'):not(:has(*)) + td
+			<div name="email list" can_be_a_null="no">
+				<action type="fetch-dom-element" jquery_filter="ancestor-2">
+					:contains('Primary Contact'):not(:has(*))
 				</action>
 				
-				<div name="email">
-					<action type="store">
+				<div name="emails" type="vector">
+					<action type="fetch-dom-element" jquery_filter="omit-string:Use your Facebook email:">
+						label:not(:has(*))
 					</action>
+
+					<div name="email">
+						<action type="store">
+						</action>
+					</div>
 				</div>
 			</div>
 		</div>
