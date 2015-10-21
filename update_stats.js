@@ -304,7 +304,7 @@ function initialize_aggregate_data() {
     aggregate_data.num_user_account_sites = 0;
     aggregate_data.user_account_sites = {};
 
-    current_report.files_uploaded = {};
+    aggregate_data.files_uploaded = {};
 
     //Stats and data about sites where user browses but never logs in
     //IMPORTANT: This detailed list of sites is only maintained in aggregate stats.

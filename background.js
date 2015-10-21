@@ -498,10 +498,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    pi['ccns'] = get_pi("ccn");
 	    pi['addresses'] = get_pi("address");
 	    pi['emails'] = get_pi("email");
-	    pi['birthdates'] = get_pi("birth-date");
-	    pi['occupations'] = get_pi("occupation");
-	    pi['employments'] = get_pi("employment");
-	    pi['schools'] = get_pi("school");
 
 	    chrome.tabs.sendMessage(sender.tab.id, {
 		    'type' : "check-if-pi-present",
@@ -621,13 +617,13 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	var username_length = 0;
 	var reason = message.uname_results.reason;
 	if (message.uname_results.rc) {
-	    username = get_username_identifier(message.uname_results.username, true);
+	    username = get_username_identifier(message.domain, message.uname_results.username, true);
 	    username_length = message.uname_results.username.length;
 	    console.log("APPU DEBUG: Domain: " + message.domain + ", Username: " 
 			+ message.uname_results.username + ", username_identifier: " + username);
 	}
 	else {
-	    username = get_username_identifier('', true);
+	    username = 'no-username-found';
 	    username_length = 0;
 	    console.log("APPU DEBUG: Domain: " + message.domain + ", NO USERNAME FOUND, reason: " + reason 
 			+ ", username_identifier: " + username);
@@ -703,7 +699,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		}
 	    }
 	} else {
-		var pi_usernames = get_all_usernames();
+	    var pi_usernames = get_all_values_of_types(["username", "name", "email"]);
 		if (pi_usernames.length > 0) {
 		    console.log("Here here: Sending command to detect usernames");
 		    chrome.tabs.sendMessage(sender.tab.id, {

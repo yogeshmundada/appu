@@ -1,4 +1,5 @@
 
+
 function find_deepest_nodes_matching_text(text, context, is_visible) {
     var me = null;
     var filter_text = ":not(script):not(style):not(head)";

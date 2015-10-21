@@ -80,8 +80,11 @@ function convert_pi_field_values_to_canonical_form() {
 			    
 	    pii_vault.aggregate_data.pi_field_value_identifiers[pi_values] = {
 		'identifier': identifier,
+		'type' : "",
 		'verified': 'no',
 		'sites': [],
+		'additional-notes' : {},
+		'additional-values' : {},
 	    }
 	}
     }
@@ -274,18 +277,18 @@ function update_specific_changes(last_version) {
     }
 
     if (last_version < '0.5.18') {
-	console.log("APPU DEBUG: Update specific changes(<0.5.18). Creating 'files_uploaded' entries");
-	pii_vault.current_report.files_uploaded = {};
-	flush_selective_entries("current_report", ["files_uploaded"]);
-	pii_vault.aggregate_data.files_uploaded = {};
-	flush_selective_entries("aggregate_data", ["files_uploaded"]);
+// 	console.log("APPU DEBUG: Update specific changes(<0.5.18). Creating 'files_uploaded' entries");
+// 	pii_vault.current_report.files_uploaded = {};
+// 	flush_selective_entries("current_report", ["files_uploaded"]);
+// 	pii_vault.aggregate_data.files_uploaded = {};
+// 	flush_selective_entries("aggregate_data", ["files_uploaded"]);
     }
 
     if (last_version < '0.5.20') {
-	console.log("APPU DEBUG: Update specific changes(<0.5.20). Converting 'pi_field_value_identifiers' to new form");
-	convert_existing_addresses_to_canonical_form();
-	convert_pi_field_values_to_canonical_form();
-	flush_aggregate_data();
+// 	console.log("APPU DEBUG: Update specific changes(<0.5.20). Converting 'pi_field_value_identifiers' to new form");
+// 	convert_existing_addresses_to_canonical_form();
+// 	convert_pi_field_values_to_canonical_form();
+// 	flush_aggregate_data();
     }
 
 }

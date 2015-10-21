@@ -1,4 +1,11 @@
 
+
+function fpi_metadata_read() {
+    var fname = "fpi/fpi.json";
+    var buff = read_file(fname);
+    fpi_metadata = JSON.parse(buff);
+}
+
 /// Template processing code START
 // Creates a dictionary that has all PI fields mentioned in this template with
 // information such as which one of them can be null and which ones are mandatory.
@@ -558,6 +565,8 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	    site_pi_fields[curr_node.name].value = site_pi_fields[curr_node.name].value.concat(store_data);
 	    site_pi_fields[curr_node.name].filled = true;
 	    site_pi_fields[curr_node.name].processed = true;
+	} else {
+	    console.log("DELETE ME: ");
 	}
 
 	inform_parent(curr_node);
@@ -665,6 +674,8 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	    site_pi_fields[curr_node.name].value = site_pi_fields[curr_node.name].value.concat(store_data);
 	    site_pi_fields[curr_node.name].filled = true;
 	    site_pi_fields[curr_node.name].processed = true;
+	} else {
+	    console.log("DELETE ME:");
 	}
 
 	inform_parent(curr_node);
@@ -709,7 +720,7 @@ function fpi_processing_complete(tabid, site_pi_fields, domain, shut_timer) {
 	console.log("APPU DEBUG: SUCCESSFUL:: Identified all kids: " + 
 		    JSON.stringify(site_pi_fields));
 
-	store_per_site_pi_data(domain, site_pi_fields);
+	sanitize_and_store_downloaded_fpi_data(domain, site_pi_fields, "fpi");
     }
     else {
 	print_appu_error("Appu Error: Could not process FPI template for: " + domain);
@@ -788,11 +799,12 @@ function apply_data_filter(field_value, data_filter) {
     return field_value;
 }
 
-function apply_jquery_filter(element, jquery_filter) {
+function apply_jquery_filter(element, jquery_filter, css_selector) {
     var patterns = [
 		    /(ancestor)-([0-9]+)/,
 		    /(remove-children)/,
 		    /(is_visible)/,
+		    /(find_deepest)/,
 		    ];
 
     for (var p = 0; p < patterns.length; p++) {
@@ -812,6 +824,12 @@ function apply_jquery_filter(element, jquery_filter) {
 	    if ($(element).attr("appu_rendering") == "visible") {
 		return element;
 	    }
+	} else if (r[1] == "find_deepest") {
+	    var result = $(css_selector, element);
+	    if (result.length != 0) {
+		return undefined;
+	    }
+	    return element;
 	}
     }
     return undefined;
@@ -823,7 +841,7 @@ function apply_css_selector(elements, css_selector, jquery_filter) {
 	if (jquery_filter && jquery_filter != "") {
 	    var jqf_result = undefined;
 	    for (var z = 0; z < result.length; z++) {
-		var rc = apply_jquery_filter(result[z], jquery_filter);
+		var rc = apply_jquery_filter(result[z], jquery_filter, css_selector);
 		if (rc != undefined) {
 		    if (!jqf_result || jqf_result.length == 0) {
 			jqf_result = rc;
@@ -1171,481 +1189,3 @@ function fetch_fpi_template_from_server(domain) {
 }
 
 
-function get_all_pi_data() {
-    var r = {};
-    for (var site in pii_vault.aggregate_data.per_site_pi) {
-	for(var field in pii_vault.aggregate_data.per_site_pi[site]) {
-	    if (field == 'download_time' ||
-		field == 'attempted_download_time' ||
-		field == 'user_approved') {
-		continue;
-	    }
-	    var values = pii_vault.aggregate_data.per_site_pi[site][field].values;
-
-	    if (!values) {
-		continue;
-	    }
-
-	    if (!(field in r)) {
-		r[field] = {};
-	    }
-	    for (var v = 0; v < values.length; v++) {
-		if (!(values[v] in r[field])) {
-		    r[field][values[v]] = "";
-		}
-		r[field][values[v]] += site + ", ";  
-	    }
-	}
-    }
-    return r;
-}
-
-//Per site PI downloaded (aggregate_data)
-//Key: site name
-//Values: time downloaded
-// field_name --> field value
-// {
-//   'domain_name' : {
-//                     'download_time' : 'xyz',
-//                     'field_name_1' : {
-//                                       'values' : [val1, val2, val3],
-//                                       'change_type' : 'modified'/'added'/'deleted'/'no-change'
-//                                    }
-//                     'attempted_download_time' : 'xyz',
-//                     'user_approved' : 'always/seek-permission/never' 
-//                   }
-// }
-function store_per_site_pi_data(domain, site_pi_fields) {
-    domain = get_domain(domain);
-    var downloaded_fields = [];
-    var old_pi_values = (domain in pii_vault.aggregate_data.per_site_pi) ? 
-	pii_vault.aggregate_data.per_site_pi[domain] : {};
-
-    //Make it blank first.
-    pii_vault.aggregate_data.per_site_pi[domain] = {};
-
-    pii_vault.aggregate_data.per_site_pi[domain]['attempted_download_time'] = 
-	old_pi_values['attempted_download_time'];
-    pii_vault.aggregate_data.per_site_pi[domain]['user_approved'] =
-	old_pi_values['user_approved'];
-
-    var curr_site_pi = pii_vault.aggregate_data.per_site_pi[domain];
-
-    for (var field in site_pi_fields) {
-	if (site_pi_fields[field].value.length > 0) {
-	    add_field_to_per_site_pi(domain, field, site_pi_fields[field].value);
-	    if (field in old_pi_values && ('values' in old_pi_values[field])) {
-		if (curr_site_pi[field].values.sort().join(", ") == 
-		    old_pi_values[field].values.sort().join(", ")) {
-	    	    curr_site_pi[field].change_type = 'no-change';
-		}
-		else {
-	    	    curr_site_pi[field].change_type = 'modified';
-		}
-	    }
-	    else {
-		curr_site_pi[field].change_type = 'added';
-	    }
-	}
-    }
-
-    curr_site_pi.download_time = new Date();
-
-    for (var pi in old_pi_values) {
-	if (!(pi in curr_site_pi) && (old_pi_values[pi].change_type != 'deleted')) {
-	    curr_site_pi[pi] = { 
-		'values' : undefined, 
-		'change_type': 'deleted'
-	    };
-	}
-    }
-
-    console.log("APPU DEBUG: Current site pi: " + JSON.stringify(pii_vault.aggregate_data.per_site_pi[domain]));
-    flush_selective_entries("aggregate_data", ["per_site_pi"]);
-
-    for (field in curr_site_pi) {
-	if (field == 'download_time' ||
-	    field == 'attempted_download_time' ||
-	    field == 'user_approved') {
-	    continue;
-	}
-
-	var t = { 
-	    'field': field, 
-	    'change_type': curr_site_pi[field].change_type
-	}
-	if (curr_site_pi[field].values == undefined) {
-	    t.num_values = 0;
-	}
-	else {
-	    t.num_values = curr_site_pi[field].values.length;
-	}
-	downloaded_fields.push(t);
-    }
-
-    //Update current report
-    pii_vault.current_report.downloaded_pi[domain] = {
-	'download_time' : curr_site_pi.download_time,
-	'downloaded_fields' : downloaded_fields,
-    };
-    
-    //Aggregate by values on sites
-    calculate_common_fields();
-    flush_selective_entries("current_report", ["downloaded_pi"]);
-
-    for (var i = 0; i < report_tab_ids.length; i++) {
-	chrome.tabs.sendMessage(report_tab_ids[i], {
-	    type: "report-table-change-row",
-	    table_name: "downloaded_pi",
-	    mod_type: "replace",
-	    changed_row: [
-		domain,
-		curr_site_pi.download_time,
-		downloaded_fields.map(function(o) { return o.field; }).join(", "),
-	    ],
-	});
-    }
-}
-
-//This is supposed to consolidate common fields w/o revealing them.
-//It takes care of multiple field values. For eg. if name on 3 sites is Joe
-//and 2 others is John, it will create
-//name1: ["site1", "site2", "site3"]
-//name2: ["site4", "site5"]
-function calculate_common_fields() {
-    var r = get_all_pi_data();
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-    var common_fields = {};
-
-    for (f in r) {
-	for (v in r[f]) {
-	    var value_identifier = undefined;
-	    if (v in vpfvi) {
-		value_identifier = vpfvi[v];
-	    }
-	    else {
-		var j = 1;
-		var identifier_array = Object.keys(vpfvi).map(function(key){
-			return vpfvi[key];
-		    });
-		//Just to check that this identifier does not already exist.
-		while(1) {
-		    value_identifier = f + j;
-		    if (identifier_array.indexOf(value_identifier) == -1) {
-			break;
-		    }
-		    j++;
-		}
-		vpfvi[v] = value_identifier;
-	    }
-	    common_fields[value_identifier] = r[f][v].substring(0, r[f][v].length - 2 ).split(",");
-	}
-    }
- 
-    pii_vault.current_report.common_fields = common_fields;
-    flush_selective_entries("current_report", ["common_fields"]);
-    flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
-}
-
-function sanitize_phone(phones) {
-    var regex_digits = /([0-9]+)/g;
-
-    for (var i = 0; i < phones.length; i++) {
-	all_digit_sequences = phones[i].match(regex_digits);
-	var final_phone = '';
-	if (all_digit_sequences) { 
-	    for (var k = 0; k < all_digit_sequences.length; k++) {
-		final_phone += all_digit_sequences[k];
-	    }
-	    phones[i] = final_phone;
-	}
-    }
-}
-
-
-function sanitize_ccn(ccns) {
-    var regex_digits = /([0-9]+)/g;
-    for (var i = 0; i < ccns.length; i++) {
-	all_digit_sequences = ccns[i].match(regex_digits);
-	var final_ccn = '';
-	if (all_digit_sequences) { 
-	    for (var k = 0; k < all_digit_sequences.length; k++) {
-		final_ccn += all_digit_sequences[k];
-	    }
-
-	    if (final_ccn.length > 4) {
-		final_ccn = final_ccn.substr(final_ccn.length - 4, final_ccn.length);
-	    }
-
-	    var prepend_chars = Array(13).join("*");
-	    final_ccn = (prepend_chars + final_ccn);
-	    ccns[i] = final_ccn;
-	}
-    }
-}
-
-
-function sanitize_ssn(ssns) {
-    var regex_digits = /([0-9]+)/g;
-    for (var i = 0; i < ssns.length; i++) {
-	all_digit_sequences = ssns[i].match(regex_digits);
-	var final_ssn = '';
-	if (all_digit_sequences) { 
-	    for (var k = 0; k < all_digit_sequences.length; k++) {
-		final_ssn += all_digit_sequences[k];
-	    }
-
-	    if (final_ssn.length > 3) {
-		final_ssn = final_ssn.substr(final_ssn.length - 3, final_ssn.length);
-	    }
-
-	    var prepend_chars = 'xxx-xx-x';
-	    final_ssn = (prepend_chars + final_ssn);
-	    ssns[i] = final_ssn;
-	}
-    }
-}
-
-
-function sanitize_date(dates) {
-    for (var i = 0; i < dates.length; i++) {
-	var d = new Date(dates[i]);
-	var m = moment(d);
-	dates[i] = m.calendar();
-    }
-}
-
-
-function sanitize_gender(genders) {
-    for (var i = 0; i < genders.length; i++) {
-	var g = genders[i].toLowerCase();
-	if (g == 'm' || g == 'man') {
-	    g = 'male';
-	}
-	else if (g == 'f' || g == 'woman') {
-	    g = 'female';
-	}
-	genders[i] = g;
-    }
-}
-
-
-function add_field_to_per_site_pi(domain, pi_name, pi_value) {
-    pi_name = pi_name.toLowerCase();
-
-    console.log("APPU DEBUG: adding to per_site_pi, domain: " + domain + ", name:" + pi_name + ", value:" 
-		+ pi_value);
-
-    if (pi_name == "phone") {
-	sanitize_phone(pi_value);
-    }
-    if (pi_name == "ssn") {
-	sanitize_ssn(pi_value);
-    }
-    if (pi_name == "ccn") {
-	sanitize_ccn(pi_value);
-    }
-    if (pi_name == "gender") {
-	sanitize_gender(pi_value);
-    }
-    if (/.*-date/.exec(pi_name)) {
-	sanitize_date(pi_value);
-    }
-
-    //Nullify the previously existing value in case of
-    //refetch after 'X' number of days.
-    pii_vault.aggregate_data.per_site_pi[domain][pi_name] = {};
-    pii_vault.aggregate_data.per_site_pi[domain][pi_name].values = [];
-
-    var domain_pi = pii_vault.aggregate_data.per_site_pi[domain];
-    //pi_value could be an array in case of a vector
-    var new_arr = domain_pi[pi_name].values.concat(pi_value);
-
-    //eliminate duplicates.
-    //e.g. over time, if we fetch pi from same site,
-    //(for additions like addresses/ccns) then 
-    //remove duplicates.
-    unique_new_arr = new_arr.filter(function(elem, pos) {
-	return new_arr.indexOf(elem) == pos;
-    })
-
-    console.log("APPU DEBUG: Adding this data: " + unique_new_arr);
-    domain_pi[pi_name].values = unique_new_arr;
-    
-    //delete empty entries.
-    // if(domain_pi[pi_name].values.length == 0) {
-    // 	delete domain_pi[pi_name].values;
-    // } 
-}
-
-
-function fpi_metadata_read() {
-    var fname = "fpi/fpi.json";
-    var buff = read_file(fname);
-    fpi_metadata = JSON.parse(buff);
-}
-
-
-//Helpful function when testing FPIs again and again
-function delete_fetched_pi(domain, force_permission) {
-    delete pii_vault.aggregate_data.per_site_pi[domain];
-    pii_vault.aggregate_data.per_site_pi[domain] = {};
-    if ((!force_permission) && (force_permission != false)) {
-	pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
-    }
-    flush_aggregate_data();
-}
-
-
-function delete_all_fetched_pi(force_permission) {
-    var pvadpsp = pii_vault.aggregate_data.per_site_pi;
-    for (var d in pvadpsp) {
-	delete pvadpsp[d];
-	pvadpsp[d] = {};
-	if ((!force_permission) && (force_permission != false)) {
-	    pvadpsp[d].user_approved = 'always';
-	}
-    }
-    flush_aggregate_data();
-}
-
-
-// Checks if the username has identifier associated with it.
-// If there is, it returns the identifier.
-// Otherwise, creates an identifier for that username and returns it.
-function get_username_identifier(username, bool_add_if_not_present) {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-    var username_identifier_prefix = "";
-
-    bool_add_if_not_present = (bool_add_if_not_present == undefined) ? false: bool_add_if_not_present;
-
-    if (username.indexOf("@") == -1) {
-	username_identifier_prefix = "username";
-    }
-    else {
-	username_identifier_prefix = "email";
-    }
-
-    var username_identifier = undefined;
-    if (username in vpfvi) {
-	username_identifier = vpfvi[username];
-    }
-    else if (bool_add_if_not_present) {
-	var j = 1;
-	var identifier_array = Object.keys(vpfvi).map(function(key){
-		return vpfvi[key];
-	    });
-
-	//Just to check that this identifier does not already exist.
-	while(1) {
-	    username_identifier = username_identifier_prefix + j;
-	    if (identifier_array.indexOf(username_identifier) == -1) {
-		break;
-	    }
-	    j++;
-	}
-	vpfvi[username] = username_identifier;
-	flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
-    }
-    return username_identifier;
-}
-
-
-function does_username_have_identifier(username) {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-    if (username in vpfvi) {
-	return true;
-    }
-    return false;
-}
-
-// Accepts identifier like "username2" and returns it length and actual identifier-value
-function get_idenfier_value(identifier) {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-    for (var i in vpfvi) {
-	if (vpfvi[i] == identifier) {
-	    return [i.length, i];
-	}
-    }
-    return [0, undefined];
-}
-
-function get_all_usernames(bool_include_full_email) {
-    bool_include_full_email = (bool_include_full_email == undefined) ? false : bool_include_full_email;
-
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var name_regexes = [
-			/username([0-9]+)/g,
-			/^name([0-9]+)/g,
-			/last-name([0-9]+)/g,
-			/first-name([0-9]+)/g,
-			/email([0-9]+)/g,
-			];
-
-    var all_usernames = [];
-
-    for (var pi_values in vpfvi) {
-	var pi_values_key = vpfvi[pi_values];
-	var identifier = pi_values_key["identifier"];
-
-	for (var j = 0; j < name_regexes.length; j++) {
-	    if (identifier.match(name_regexes[j])) {
-		var complete_uname = pi_values;
-		var uname = pi_values;
-
-		if (uname.indexOf("@") != -1) {
-		    uname = uname.split("@")[0];
-		    if (bool_include_full_email &&
-			name_regexes[j] == "/email([0-9]+)/g" &&
-			complete_uname.length > 3) {
-			all_usernames.push(complete_uname);
-		    }
-		}
-		if (all_usernames.indexOf(uname) == -1 &&
-		    uname.length > 3) {
-		    all_usernames.push(uname);
-		}
-		break;
-	    }
-	}
-    }
-    return all_usernames;
-}
-
-//Should return values with attribute whether it is
-// verified information or not.
-function get_pi(pi_identifier) {
-    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-
-    var re = new RegExp(pi_identifier + "([0-9]+)$");
-
-    var pi = {};
-
-    for (var pi_values in vpfvi) {
-	if (pi_values.length == 0) {
-	    continue;
-	}
-	var pi_values_key = vpfvi[pi_values];
-	var identifier = pi_values_key["identifier"];
-
-	if (identifier.match(re) != null) {
-	    if (pi_identifier != "address") {
-		pi[pi_values] = "not-verified";
-		if (pi_values_key["verified"] == "yes") {
-		    pi[pi_values] = "verified";
-		} 
-	    } else {
-		pi[pi_values] = {
-		    "full-address": vpfvi[pi_values]["full-address"],
-		    "verified": "not-verified",
-		};
-
-		if (pi_values_key["verified"] == "yes") {
-		    pi[pi_values] = "verified";
-		} 
-	    }
-	}
-    }
-    return pi;
-}

@@ -13,13 +13,13 @@
 
 
 			<div name="name-div">
-	       			<action type="fetch-dom-element" jquery_filter="ancestor-0">
-					:contains('Name:'):not(:has(*))
+	       			<action type="fetch-dom-element" jquery_filter="ancestor-1">
+					span:contains('Name:'):not(:has(*))
 				</action>
 
 				<div name="name" can_be_a_null="no">
 	       				<action type="store">
-						span.ap_cnep_val
+						div:nth-child(2)
 					</action>
 				</div>
 			</div>
@@ -27,13 +27,13 @@
 
 
 			<div name="email-div">
-	       			<action type="fetch-dom-element" jquery_filter="ancestor-0">
-					:contains('E-mail:'):not(:has(*))
+	       			<action type="fetch-dom-element" jquery_filter="ancestor-1">
+					span:contains('E-mail:'):not(:has(*))
 				</action>
 
 				<div name="email" can_be_a_null="no">
 	       				<action type="store">
-						span.ap_cnep_val
+						div:nth-child(2)
 					</action>
 				</div>
 			</div>
@@ -41,13 +41,13 @@
 
 
 			<div name="phone-div">
-	       			<action type="fetch-dom-element" jquery_filter="ancestor-0">
-					:contains('Phone Number:'):not(:has(*))
+	       			<action type="fetch-dom-element" jquery_filter="ancestor-1">
+					span:contains('Phone Number:'):not(:has(*))
 				</action>
 
 				<div name="phone">
-	       				<action type="store">
-						span.ap_cnep_val
+	       				<action type="store" jquery_filter="is_visible">
+						div:nth-child(2)
 					</action>
 				</div>
 			</div>
@@ -62,26 +62,24 @@
 				a:contains("Manage Payment Options")
 			</action>
 
-
 			<div name="ccns" type="vector">
-	       			<action type="fetch-dom-element" jquery_filter="ancestor-1">
-					:contains("Number:"):not(:has(*))
+	       			<action type="fetch-dom-element">
+					.pmts-aui-credit-card-row
 				</action>
-				<div name="ccn">	
+				<div name="verified-ccn">	
 	       	    			<action type="store">
-						td:not(:contains('Number:'))
+						.pmts-instrument-acct-number-tail
 		    			</action>
 				</div>
 			</div>
 
-
 			<div name="ccn-names" type="vector">
-	       			<action type="fetch-dom-element" jquery_filter="ancestor-1">
-					:contains("Billing address"):not(:has(*))
+	       			<action type="fetch-dom-element">
+					.pmts-aui-credit-card-row
 				</action>
-				<div name="ccn-name">	
+				<div name="verified-name">	
 	       	    			<action type="store">
-						.displayAddressFullName
+						.pmts-aui-account-holder-name
 		    			</action>
 				</div>
 			</div>
@@ -89,15 +87,12 @@
 
 
 			<div name="ccn-addresses" type="vector">
-	       			<action type="fetch-dom-element" jquery_filter="ancestor-1">
-					:contains("Billing address"):not(:has(*))
+	       			<action type="fetch-dom-element">
+					.pmts-aui-credit-card-row
 				</action>
-				<div name="ccn-address">	
+				<div name="verified-address">	
 	       	    			<action type="combine-n-store">
-						.displayAddressAddressLine1, 
-						.displayAddressAddressLine2, 
-						.displayAddressCityStateOrRegionPostalCode, 
-						.displayAddressCountryName
+						.pmts-address-field
 		    			</action>
 				</div>
 			</div>

@@ -1,125 +1,136 @@
 <div name="paypal">
 	<action type="fetch-url">https://www.paypal.com/webapps/customerprofile/summary.view
 	</action>	
-				
-	<div name="nameDiv">			
-		<action type="fetch-dom-element">
-			div#name
-		</action>
-		<div name="name" can_be_a_null="no">
-			<action type="store">
-				div.details>span>span
-			</action>
-		</div>
-	</div>
-	
-	<div name="emailDiv">			
-		<action type="fetch-dom-element">
-			div.label.small:contains("Email")+
-		</action>
-		<div name="emailList" type="vector">
-			<action type="fetch-dom-element">
-				ul#email>li
-			</action>
-			
-			<div name="email" >
-				<action type="store" can_be_a_null="no">
-					span:eq(0)
-				</action>
-			</div>				
-		</div>
-	</div>
-	
-	<div name="addressDiv">			
-		<action type="fetch-dom-element">
-			div.label.small:contains("Address")+
-		</action>
-		<div name="addressList" type="vector">
-			<action type="fetch-dom-element">
-				ul#address>li
-			</action>
-			
-			<div name="address" >
-				<action type="store" can_be_a_null="no">
-					span:eq(0)
-				</action>
-			</div>				
-		</div>
-	</div>
-	
-	<div name="phoneDiv">			
-		<action type="fetch-dom-element">
-			div.label.small:contains("Phone")+
-		</action>
-		<div name="phoneList" type="vector">
-			<action type="fetch-dom-element">
-				ul#phone>li
-			</action>
-			
-			<div name="phone" can_be_a_null="no">
-				<action type="store">
-					span:eq(0)
-				</action>
-			</div>				
-		</div>
-	</div>
-	
-	<div name="ssnDiv">
-		<action type="fetch-dom-element">
-			div.label.small:contains("Tax ID number")+
 
+	<div name="redirectToAccounts">			
+		<action type="simulate-click" data="div#name strong:contains('Name'):visible">
+			a#PERSONAL_SETTINGS
 		</action>
-		<div name="ssn">
+		<div name="nameDiv">			
 			<action type="fetch-dom-element">
-				div#ssnID
+				div#name
 			</action>
-			
-			<div name="ssn">
+			<div name="verified-name" can_be_a_null="no">
 				<action type="store">
-					div.details
+					div.details>span>span
 				</action>
+			</div>
+		</div>
+
+		<div name="emailDiv">			
+			<action type="fetch-dom-element">
+				div.label.small:contains("Email")+
+			</action>
+			<div name="emailList" type="vector">
+				<action type="fetch-dom-element">
+					ul#email>li
+				</action>
+				
+				<div name="verified-email" >
+					<action type="store" can_be_a_null="no">
+						span:eq(0)
+					</action>
+				</div>				
+			</div>
+		</div>
+		
+		<div name="addressDiv">			
+			<action type="fetch-dom-element">
+				div.label.small:contains("Address")+
+			</action>
+			<div name="addressList" type="vector">
+				<action type="fetch-dom-element">
+					ul#address>li
+				</action>
+				
+				<div name="address" >
+					<action type="store" can_be_a_null="no">
+						span:eq(0)
+					</action>
+				</div>				
+			</div>
+		</div>
+		
+		<div name="phoneDiv">			
+			<action type="fetch-dom-element">
+				div.label.small:contains("Phone")+
+			</action>
+			<div name="phoneList" type="vector">
+				<action type="fetch-dom-element">
+					ul#phone>li
+				</action>
+				
+				<div name="phone" can_be_a_null="no">
+					<action type="store">
+						span:eq(0)
+					</action>
+				</div>				
+			</div>
+		</div>
+		
+		<div name="ssnDiv">
+			<action type="fetch-dom-element">
+				div.label.small:contains("Tax ID number")+
+				
+			</action>
+			<div name="ssn">
+				<action type="fetch-dom-element">
+					div#ssnID
+				</action>
+				
+				<div name="verified-ssn">
+					<action type="store" jquery_filter="remove-children">
+						div.details
+					</action>
+				</div>
 			</div>
 		</div>
 	</div>
 	
-	<div name="ccnRedirect">
-		<action type="simulate-click" data="div#creditCards">
-			a#FINANCIAL_SETTINGS
-		</action>
-		<div name="ccn-div">
-			<action type="fetch-dom-element" jquery_filter="ancestor-1">
-				strong:contains('Debit and credit cards')
+
+	<div name="GoBackToStart">
+		<action type="fetch-url">https://www.paypal.com/webapps/customerprofile/summary.view
+		</action>	
+	
+		<div name="ccnRedirect">
+			<action type="simulate-click" data="div#creditCards">
+				a#FINANCIAL_SETTINGS
 			</action>
-
-			<div name="ccn-update-link">
-				<action type="fetch-href">
-					a:contains('Update')
+			<div name="ccn-div">
+				<action type="fetch-dom-element" jquery_filter="ancestor-1">
+					strong:contains('Debit and credit cards')
 				</action>
-
-				<div name="ccns" type="vector">
-					<action type="fetch-dom-element">
-						td:nth-child(2)
-					</action>
-					<div name="ccn">
-						<action type="store">
-						</action>
-					</div>
-				</div>
-				<div name="ccn-addressField" type="vector">
-					<action type="fetch-dom-element">
-						td:nth-child(4)
-					</action>
-					<div name="ccn-address">
-						<action type="combine-n-store">
-							div.street-address,
-							span.locality,
-							span.region,
-							span.postal-code,
-							div.country-name
-						</action>
-					</div>
-				</div>
 				
+				<div name="ccn-update-link">
+					<action type="fetch-href">
+						a:contains('Update')
+					</action>
+					
+					<div name="ccns" type="vector">
+						<action type="fetch-dom-element">
+							td:nth-child(2)
+						</action>
+						<div name="verified-ccn">
+							<action type="store">
+							</action>
+						</div>
+					</div>
+					<div name="ccn-addressField" type="vector">
+						<action type="fetch-dom-element">
+							td:nth-child(4)
+						</action>
+						<div name="ccn-address">
+							<action type="combine-n-store">
+								div.street-address,
+								span.locality,
+								span.region,
+								span.postal-code,
+								div.country-name
+							</action>
+						</div>
+					</div>
+					
+				</div>
 			</div>
 		</div>
 	</div>

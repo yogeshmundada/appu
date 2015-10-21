@@ -1579,7 +1579,7 @@ if (document.URL.match(/.pdf$/) == null) {
 			var message = {};
 			message.type = "simulate_click_done";
 			chrome.extension.sendMessage("", message);
-		    }, 60 * 1000);
+		    }, 30 * 1000);
 		
 		
 		MutationObserver = window.MutationObserver || window.WebKitMutationObserver;

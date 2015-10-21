@@ -403,7 +403,7 @@ function print_cookies_with_values_containing_usernames(domain) {
 		var tot_session = 0;
 		var detected_usernames = {};
 		
-		var pi_usernames = get_all_usernames(true);
+		var pi_usernames = get_all_values_of_types(["username", "name", "email"], true);
 
 		console.log("APPU DEBUG: Printing all cookies containing usernames for: " + domain);
 		for (var i = 0; i < all_cookies.length; i++) {
@@ -1698,7 +1698,7 @@ function get_logged_in_username(domain) {
 	return [username_identifier, username_length];
     }
     var username = "";
-    var username_identifier = get_username_identifier("", true);
+    var username_identifier = get_username_identifier(domain, "", true);
     var username_length = username.length;
 
     return [username_identifier, username_length];
@@ -1953,7 +1953,7 @@ function get_domain_cookies(current_url) {
 
 
 function check_usernames_for_cookie_investigation(tab_id) {
-    var pi_usernames = get_all_usernames();
+    var pi_usernames = get_all_values_of_types(["username", "name", "email"]);
 
     if (pi_usernames.length > 0) {
 	var cit = cookie_investigating_tabs[tab_id];
