@@ -218,9 +218,9 @@ function add_single_value_to_pi_field_value_identifiers(domain, field, value, de
     if (type == "address") {
 	additional_values["full-address"] = value["pa"];
 	value = value["canonical_address"];
-    } else if (type == "name" || type == "email") {
-	additional_notes["length"] = value.length;
     }
+
+    additional_notes["length"] = value.length;
 
     if (field.match(/^verified/)) {
 	is_verified = true;
