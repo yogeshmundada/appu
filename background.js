@@ -59,6 +59,7 @@ var fpi_metadata = {};
 //To keep track of background "Web workers" that are
 //asynchronously hashing passwords for you .. a million times.
 var hashing_workers = {};
+var username_similarity_workers = {};
 
 //Next cookieset generator workers
 //To keep track of background "Web workers" that are

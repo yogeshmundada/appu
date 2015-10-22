@@ -291,6 +291,15 @@ function update_specific_changes(last_version) {
 // 	flush_aggregate_data();
     }
 
+
+    if (last_version < '0.5.24') {
+	console.log("APPU DEBUG: Update specific changes(<0.5.22). Adding username_similarity");
+	pii_vault.aggregate_data.username_similarity = {};
+	pii_vault.current_report.username_similarity = {};
+	flush_current_report();
+	flush_aggregate_data();
+    }
+
 }
 
 

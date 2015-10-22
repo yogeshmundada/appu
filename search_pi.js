@@ -253,13 +253,13 @@ function is_address_present(address) {
 function is_above_element(focus_elem, test_elem) {
     var test_elem_bottom = $(test_elem).offset().top + $(test_elem).height();
     var focus_elem_start = $(focus_elem).offset().top;
-    return (test_elem_bottom <= focus_elem_start);
+    return (test_elem_bottom < focus_elem_start);
 }
 
 function is_on_the_left_of_elment(focus_elem, test_elem) {
     var test_elem_right = $(test_elem).offset().left + $(test_elem).width();
     var focus_elem_left = $(focus_elem).offset().left;
-    return (test_elem_right <= focus_elem_left);
+    return (test_elem_right < focus_elem_left);
 }
 
 // When given a couple of search strings, returns set of elements
@@ -288,53 +288,62 @@ function are_address_components_present(full_address) {
 	street_combos.push(combo);
     }
 
-    var all_matches = $();
+    var all_street_matches = $();
     for (var i = 0; i < street_combos.length; i++) {
-	all_matches = all_matches.add(find_deepest_nodes_matching_text(street_combos[i]));
+	all_street_matches = all_street_matches.add(find_deepest_nodes_matching_text(street_combos[i]));
     }
 
-    if (all_matches.length == 0) {
+    if (all_street_matches.length == 0) {
 	return false;
     }
 
     var city_long = full_address["city"].long_name;
     var city_short = full_address["city"].short_name;
+    var all_city_matches = $();
+    all_city_matches = all_city_matches.add(find_deepest_nodes_matching_text(city_long));
+    all_city_matches = all_city_matches.add(find_deepest_nodes_matching_text(city_short));
 
     var state_long = full_address["state"].long_name;
     var state_short = full_address["state"].short_name;
+    var all_state_matches = $();
+    all_state_matches = all_state_matches.add(find_deepest_nodes_matching_text(state_long));
+    all_state_matches = all_state_matches.add(find_deepest_nodes_matching_text(state_short));
 
     var zipcode = full_address["zipcode"].long_name;
+    var all_zipcode_matches = $();
+    all_zipcode_matches = all_state_matches.add(find_deepest_nodes_matching_text(zipcode));
 
     var city_found = false;
     var state_found = false;
     var zipcode_found = false;
 
-    for (var i = 0; i < all_matches.length; i++) {
-	var top_addr_line = all_matches[i];
-	var nearby_elem = $(top_addr_line).nearest('', {tolerance: 50, sameX: true, includeSelf: true})
+    for (var i = 0; i < all_street_matches.length; i++) {
+	var top_addr_line = all_street_matches[i];
+	var nearby_zipcode_elem = $(top_addr_line).nearest(all_zipcode_matches, {tolerance: 50, sameX: true, includeSelf: true})
 	    .filter(function() { return !$.contains(this, top_addr_line); })
 	    .filter(function() { return !is_above_element(top_addr_line, this); });
 
-	var nearby_elem_parents = $(nearby_elem).parent();
-
-	if (find_deepest_nodes_matching_text(zipcode, $(nearby_elem).parent()).length > 0) {
-	    zipcode_found = true;
+	if (nearby_zipcode_elem.length > 0) {
 	    return true;
 	}
 
-	if (find_deepest_nodes_matching_text(city_long, $(nearby_elem).parent()).length > 0) {
+	var nearby_city_elem = $(top_addr_line).nearest(all_city_matches, {tolerance: 50, sameX: true, includeSelf: true})
+	    .filter(function() { return !$.contains(this, top_addr_line); })
+	    .filter(function() { return !is_above_element(top_addr_line, this); });
+
+	if (nearby_city_elem.length > 0) {
 	    city_found = true;
-	    return true;
-	} else if (find_deepest_nodes_matching_text(city_short, $(nearby_elem).parent()).length > 0) {
-	    city_found = true;
-	    return true;
 	}
 
-	if (find_deepest_nodes_matching_text(state_short, $(nearby_elem).parent()).length > 0) {
+	var nearby_state_elem = $(top_addr_line).nearest(all_state_matches, {tolerance: 50, sameX: true, includeSelf: true})
+	    .filter(function() { return !$.contains(this, top_addr_line); })
+	    .filter(function() { return !is_above_element(top_addr_line, this); });
+
+	if (nearby_state_elem.length > 0) {
 	    state_found = true;
-	    return true;
-	} else if (find_deepest_nodes_matching_text(state_long, $(nearby_elem).parent()).length > 0) {
-	    state_found = true;
+	}
+
+	if (city_found && state_found) {
 	    return true;
 	}
     }
@@ -437,10 +446,6 @@ function check_if_pi_present() {
     var addresses = Object.keys(pi_list['addresses']);
     var ssns = Object.keys(pi_list['ssns']);
     var ccns = Object.keys(pi_list['ccns']);
-    var birthdates = Object.keys(pi_list['birthdates']);
-    var occupations = Object.keys(pi_list['occupations']);
-    var employments = Object.keys(pi_list['employments']);
-    var schools = Object.keys(pi_list['schools']);
 
     present_pi["names"] = [];
     for (var i = 0; i < names.length; i++) {
@@ -520,57 +525,15 @@ function check_if_pi_present() {
 
 				      return !is_above_element(e, this);
 				  });
-		    if (distance_between_elements(ne, e) < 100) {
-			present_pi["ccns"].push(ccns[i]);
+		    if (ne.length > 0) {
+			if (distance_between_elements(ne, e) < 100) {
+			    present_pi["ccns"].push(ccns[i]);
+			}
 		    }
 		}
 	    }
 	}
     }
-
-
-    if ($(":Contains('birth')").length > 0) {
-	present_pi["birthdates"] = [];
-	for (var i = 0; i < birthdates.length; i++) {
-	    var d = new Date(birthdates[i]);
-	    var rc = find_date_with_label(d, "birth");
-
-	    if (rc == true) {
-		present_pi["birthdates"].push(birthdates[i]);
-	    }
-	}
-    }
-
-    if ($(":Contains('occupation')").length > 0) {
-	present_pi["occupations"] = [];
-	for (var i = 0; i < occupations.length; i++) {
-	    var r = find_text_with_label(occupations[i], 'occupation', 200, "string");
-	    if (r == true) {
-		present_pi["occupations"].push(occupations[i]);
-	    }
-	}
-    }    
-
-    if ($(":Contains('employment')").length > 0) {
-	present_pi["employments"] = [];
-	for (var i = 0; i < employments.length; i++) {
-	    var r = find_text_with_label(employments[i], 'employment', 200, "string");
-	    if (r == true) {
-		present_pi["employments"].push(employments[i]);
-	    }
-	}
-    }    
-
-    if ($(":Contains('school')").length > 0) {
-	present_pi["schools"] = [];
-	for (var i = 0; i < schools.length; i++) {
-	    var r = find_text_with_label(schools[i], 'school', 200, "string");
-	    if (r == true) {
-		present_pi["schools"].push(schools[i]);
-	    }
-	}
-    }    
-
 
     present_pi["addresses"] = [];
     for (var i = 0; i < addresses.length; i++) {

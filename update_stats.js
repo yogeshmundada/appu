@@ -180,6 +180,7 @@ function initialize_report() {
     //Similarity distance between each different password
     //Each entry is like {"pwd_group_0" : [{ "pwd_group_1" : 23}, { "pwd_group_2" : 14}]} 
     current_report.pwd_similarity = {};
+    current_report.username_similarity = {};
 
     //Downloaded PI from following sites
     //Each entry is like: {'site_name' : { download_time: xyz, downloaded_fields: [a, b, c]}}
@@ -329,6 +330,7 @@ function initialize_aggregate_data() {
     // }
     aggregate_data.pwd_groups = {};
     aggregate_data.pwd_similarity = {};
+    aggregate_data.username_similarity = {};
 
     //Per site PI downloaded
     //Key: site name

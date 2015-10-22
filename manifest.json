@@ -1,6 +1,6 @@
 {
   "name": "Appu",
-  "version": "0.5.20",
+  "version": "0.5.24",
   "description": "Reduce your personal information footprint across the web",
   "icons": {
     "128" : "images/appu_new128.png",

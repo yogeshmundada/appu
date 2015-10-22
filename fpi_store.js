@@ -210,12 +210,16 @@ function add_single_value_to_pi_field_value_identifiers(domain, field, value, de
     var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
     var is_verified = false;
     var type = get_pi_type(field);
+    var was_added = false;
 
     var additional_values = {};
+    var additional_notes = {};
 
     if (type == "address") {
 	additional_values["full-address"] = value["pa"];
 	value = value["canonical_address"];
+    } else if (type == "name" || type == "email") {
+	additional_notes["length"] = value.length;
     }
 
     if (field.match(/^verified/)) {
@@ -241,21 +245,26 @@ function add_single_value_to_pi_field_value_identifiers(domain, field, value, de
 	    'verified': verified,
 	    'sites': [domain],
 	    'detection-method' : [detection_method],
-	    'additional-notes' : {},
+	    'additional-notes' : additional_notes,
 	    'additional-values' : additional_values,
 	};
+
+	was_added = true;
     }
 
     flush_selective_entries("aggregate_data", ["pi_field_value_identifiers"]);
-    return value_identifier;
+    return {
+	'identifier' : value_identifier,
+	    'added' : was_added,
+	    };
 }
 
 
-function sanitize_value(type, value, field, cb) {
+function sanitize_value(wait_period, type, value, field, cb) {
     if (type == "name" || type == "username" || type == "email") {
 	return sanitize_name(value, field, cb);
     } else if (type == "address") {
-	return setTimeout(function() { sanitize_address(value, field, cb); }, 5000);
+	return setTimeout(function() { sanitize_address(value, field, cb); }, wait_period * 5000);
     } else if (type == "phone") {
 	return sanitize_phone(value, field, cb);
     } else if (type == "ccn") {
@@ -468,12 +477,16 @@ function store_fpi_data_for_site(domain, sanitized_field_values, detection_metho
 
     // calculate common_fields (current_report)
     calculate_new_common_fields_structure();
+
+    calculate_username_similarity();
+    calculate_substring_usernames();
 }
 
 // Following should be called instead of store_per_site_pi_data()
 function sanitize_and_store_downloaded_fpi_data(domain, site_pi_fields, detection_method) {
     var sanitized_field_values = {};
     var domain = get_domain(domain);
+    var wait_period = 0;
 
     var pending_sanitize_values = 0;
     for (var field in site_pi_fields) {
@@ -489,7 +502,7 @@ function sanitize_and_store_downloaded_fpi_data(domain, site_pi_fields, detectio
 	    var type = type;
 	    var field = field;
 
-	    sanitize_value(type, value_array[i], field, function(value, nf) {
+	    sanitize_value(wait_period, type, value_array[i], field, function(value, nf) {
 			    pending_sanitize_values -= 1;
 			    console.log("DELETE ME: inside here field: " + nf);
 			    if (value != null) {
@@ -502,6 +515,10 @@ function sanitize_and_store_downloaded_fpi_data(domain, site_pi_fields, detectio
 				store_fpi_data_for_site(domain, sanitized_field_values, detection_method);
 			    }
 			});
+
+	    if (type == "address") {
+		wait_period += 1;
+	    }
 	}
     }
 }
@@ -632,10 +649,112 @@ function get_pi(pi_type) {
 		};
 
 		if (is_verified) {
-		    pi[pi_value] = "verified";
+		    pi[pi_value]["verified"] = "verified";
 		} 
 	    }
 	}
     }
     return pi;
+}
+
+
+function calculate_username_similarity() {
+    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+    var adus = pii_vault.aggregate_data.username_similarity;
+    var crus = pii_vault.current_report.username_similarity;
+
+    all_usernames = [];
+
+    for (var pi_value in vpfvi) {
+	var pi_value_attributes = vpfvi[pi_value];
+	var identifier = pi_value_attributes["identifier"];
+	var type = pi_value_attributes["type"];
+	var is_verified = (pi_value_attributes["verified"] == 'yes') ? true: false;
+
+	if (type != "name" && type != "email") {
+	    continue;
+	}
+
+	all_usernames.push(pi_value);
+    }
+
+    for (var i = 0; i < all_usernames.length; i++) {
+	var name1 = all_usernames[i];
+	var identifier1 = vpfvi[name1]["identifier"];
+	for (var j = i+1; j < all_usernames.length; j++) {
+	    var name2 = all_usernames[j];
+	    var identifier2 = vpfvi[name2]["identifier"];
+
+	    var p1 = identifier1 + "-" + identifier2;
+	    var p2 = identifier2 + "-" + identifier1;
+
+	    if (p1 in adus) {
+		crus[p1] = adus[p1];
+		continue;
+	    }
+
+	    if (p2 in adus) {
+		crus[p2] = adus[p2];
+		continue;
+	    }
+
+	    var d = getEditDistance(name1, name2);
+	    adus[p1] = d;
+	    crus[p1] = d;
+	}
+    }
+
+    flush_selective_entries("current_report", ["username_similarity"]);
+    flush_selective_entries("aggregate_data", ["username_similarity"]);
+}
+
+
+function calculate_substring_usernames() {
+    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+    var adus = pii_vault.aggregate_data.username_similarity;
+    var crus = pii_vault.current_report.username_similarity;
+
+    all_usernames = [];
+
+    for (var pi_value in vpfvi) {
+	var pi_value_attributes = vpfvi[pi_value];
+	var identifier = pi_value_attributes["identifier"];
+	var type = pi_value_attributes["type"];
+	var is_verified = (pi_value_attributes["verified"] == 'yes') ? true: false;
+
+	if (type != "name" && type != "email") {
+	    continue;
+	}
+
+	all_usernames.push(pi_value);
+    }
+
+    for (var i = 0; i < all_usernames.length; i++) {
+	var name1 = all_usernames[i];
+	var identifier1 = vpfvi[name1]["identifier"];
+	for (var j = i+1; j < all_usernames.length; j++) {
+	    var name2 = all_usernames[j];
+	    var identifier2 = vpfvi[name2]["identifier"];
+
+	    if (name2.indexOf(name1) > -1) {
+		if (!("substring-names" in vpfvi[name2]["additional-notes"])) {
+		    vpfvi[name2]["additional-notes"]["substring-names"] = [];
+		}
+		if (vpfvi[name2]["additional-notes"]["substring-names"].indexOf(identifier1) == -1) {
+		    vpfvi[name2]["additional-notes"]["substring-names"].push(identifier1);
+		}
+	    }
+
+	    if (name1.indexOf(name2) > -1) {
+		if (!("substring-names" in vpfvi[name1]["additional-notes"])) {
+		    vpfvi[name1]["additional-notes"]["substring-names"] = [];
+		}
+		if (vpfvi[name1]["additional-notes"]["substring-names"].indexOf(identifier2) == -1) {
+		    vpfvi[name1]["additional-notes"]["substring-names"].push(identifier2);
+		}
+	    }
+	}
+    }
+
+    flush_aggregate_data();
 }
