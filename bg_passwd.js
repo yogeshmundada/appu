@@ -227,6 +227,10 @@ function calculate_full_hash(domain, username, pwd, pwd_strength) {
 			pii_vault.current_report.user_account_sites[hk].my_pwd_group = curr_pwd_group;
 			flush_selective_entries("current_report", ["user_account_sites"]);
 		    }
+		    if (curr_pwd_group != pii_vault.aggregate_data.user_account_sites[hk].my_pwd_group) {
+			pii_vault.aggregate_data.user_account_sites[hk].my_pwd_group = curr_pwd_group;
+			flush_selective_entries("aggregate_data", ["user_account_sites"]);
+		    }
 		    
 		    //Now verify that short hash is not colliding with other existing short hashes.
 		    //if so, then modify it by changing salt
@@ -327,18 +331,35 @@ function update_logged_in_state(state, domain, username) {
     }
     else if (state == "logged-out") {
 	pii_vault.aggregate_data.current_loggedin_state[domain].state = "logged-out";
-	delete pii_vault.aggregate_data.current_loggedin_state[domain].username;
+	pii_vault.aggregate_data.current_loggedin_state[domain].username = undefined;
     }
+
     flush_selective_entries("aggregate_data", ["current_loggedin_state"]);
 }
+
+
+function update_present_pi_names_on_domain(domain, username_list) {
+    if (pii_vault.aggregate_data.current_loggedin_state[domain].username != undefined) {
+	return;
+    }
+    var arr = username_list;
+    var longest = arr.sort(function (a, b) { return b.length - a.length; })[0];
+
+    pii_vault.aggregate_data.current_loggedin_state[domain].state = "logged-in";
+    pii_vault.aggregate_data.current_loggedin_state[domain].username = longest;
+
+    flush_selective_entries("aggregate_data", ["current_loggedin_state"]);
+}
+
 
 // This gets called only after detecting a successful login.
 // How does a successful login gets detected?
 // Absence of password box after attempting a login by entering a
 // password. 
 function vault_update_domain_passwd(domain, username, username_length, passwd, pwd_strength, is_stored, username_reason) {
-    var vpwh = pii_vault.password_hashes;
-    var vcr = pii_vault.current_report;
+    var pvph = pii_vault.password_hashes;
+    var cr = pii_vault.current_report;
+    var ad = pii_vault.aggregate_data;
 
     var hk = username + ':' + domain;
     var salt; 
@@ -349,27 +370,35 @@ function vault_update_domain_passwd(domain, username, username_length, passwd, p
     update_logged_in_state("logged-in", domain, username);
     update_user_account_sites_stats(domain, username, username_length, username_reason, is_stored);
 
-    if (hk in vpwh) {
-	salt = vpwh[hk].salt;
+    if (hk in pvph) {
+	salt = pvph[hk].salt;
 	var rc = calculate_short_hash(passwd, salt);
-	if (rc.short_hash != vpwh[hk].pwd_short_hash) {
+	if (rc.short_hash != pvph[hk].pwd_short_hash) {
 	    //This could mean that the passwords are changed
 	    recalculate_hashes = true;
 	}
 	else {
-	    if (vcr.user_account_sites[hk].my_pwd_group == "no group") {
+
+	    var curr_pwd_group = get_pwd_group(domain, username, pvph[hk].pwd_full_hash, [
+											  pwd_strength.entropy, 
+											  pwd_strength.crack_time,
+											  pwd_strength.crack_time_display
+											  ],
+					       pwd_length);
+
+	    if (cr.user_account_sites[hk].my_pwd_group == "no group") {
 		//This means that this is the first time we are logging in to this site
 		//during this report's duration.
 		//However, we have logged into this site in previous reports.
-		var curr_pwd_group = get_pwd_group(domain, username, vpwh[hk].pwd_full_hash, [
-										    pwd_strength.entropy, 
-										    pwd_strength.crack_time,
-										    pwd_strength.crack_time_display
-											      ],
-						   pwd_length);
-		
-		vcr.user_account_sites[hk].my_pwd_group = curr_pwd_group;
+		cr.user_account_sites[hk].my_pwd_group = curr_pwd_group;
 		flush_selective_entries("current_report", ["user_account_sites"]);
+	    }
+	    if (ad.user_account_sites[hk].my_pwd_group == "no group") {
+		//This means that this is the first time we are logging in to this site
+		//during this report's duration.
+		//However, we have logged into this site in previous reports.
+		ad.user_account_sites[hk].my_pwd_group = curr_pwd_group;
+		flush_selective_entries("aggregate_data", ["user_account_sites"]);
 	    }
 	}
     }
@@ -382,21 +411,37 @@ function vault_update_domain_passwd(domain, username, username_length, passwd, p
 	
 	console.log("APPU DEBUG: (calculate_new_short_hash) Added salt: " + rc.salt + " to domain: " + hk);
 	
-	vpwh[hk] = {};
-	vpwh[hk].pwd_short_hash = rc.short_hash;
-	vpwh[hk].pwd_full_hash = '';
-	vpwh[hk].salt = rc.salt;
-	vpwh[hk].initialized = new Date();
+	pvph[hk] = {};
+	pvph[hk].pwd_short_hash = rc.short_hash;
+	pvph[hk].pwd_full_hash = '';
+	pvph[hk].salt = rc.salt;
+	pvph[hk].initialized = new Date();
 	//Now calculate sha256 by iterating a million times
 	calculate_full_hash(domain, username, passwd, pwd_strength);
     }
     
-    vault_write("password_hashes", vpwh);
-    vcr.user_account_sites[hk].pwd_unchanged_duration =
-	new Date() - new Date(vpwh[hk].initialized);
+    vault_write("password_hashes", pvph);
+    cr.user_account_sites[hk].pwd_unchanged_duration =
+	new Date() - new Date(pvph[hk].initialized);
     flush_selective_entries("current_report", ["user_account_sites"]);
     
     send_user_account_site_row_to_reports(hk);
+}
+
+function predict_username(domain) {
+    var u = pii_vault.aggregate_data.current_loggedin_state[domain].username;
+
+    if (u != undefined) {
+	return {
+	    username: u,
+		username_length: u.length,
+		};
+    }
+
+    return {
+	username: undefined,
+	    username_length: 0,
+	    };
 }
 
 
@@ -407,6 +452,7 @@ function pii_check_passwd_reuse(message, sender) {
     r.initialized = 'Not sure';
     r.sites = [];
     var username = message.username;
+
     var curr_hk = username + ':' + message.domain;
 
     var pwd_strength = zxcvbn(message.passwd);
@@ -491,8 +537,8 @@ function pii_check_passwd_reuse(message, sender) {
 	    r.sites.join(", ")
 	];
 
-	pii_vault.current_report.pwd_reuse_warnings.push(new_row);
-	flush_selective_entries("current_report", ["pwd_reuse_warnings"]);
+	// pii_vault.current_report.pwd_reuse_warnings.push(new_row);
+	// flush_selective_entries("current_report", ["pwd_reuse_warnings"]);
 
 	for (var i = 0; i < report_tab_ids.length; i++) {
 	    chrome.tabs.sendMessage(report_tab_ids[i], {
@@ -548,3 +594,17 @@ function does_user_have_account(domain) {
     return false;
 }
 
+
+function print_current_logged_in_state() {
+    var pvadcls = pii_vault.aggregate_data.current_loggedin_state;
+
+    for (var d in pvadcls) {
+	var username = pvadcls[d]["username"];
+	if (username == undefined) {
+	    continue;
+	}
+	var login_state = pvadcls[d]["state"];
+	console.log("APPU DEBUG: Domain(" + login_state + "): " + d + ", Username: " + 
+		    get_idenfier_value(username)[1]);
+    }
+}

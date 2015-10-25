@@ -563,12 +563,19 @@ var username_check_id = 1;
 function check_if_username_present(usernames, operation_mode, check_only_visible) {
     var present_usernames = {
 	frequency: {},
-	elem_list: []
+	elem_list: [],
+	present_in_username_region: [],
     };
 
     var all_elements = $();
     var longest_usernames = {};
     var closest_username = null;
+
+    var scrheight = $(window).height();
+    var scrwidth = $(window).width();
+
+    scrheight = scrheight/3;
+    scrwidth = scrwidth/3;
 
     console.log("APPU DEBUG: Detecting if known usernames are present on the webpage for: " + operation_mode);
 
@@ -582,6 +589,16 @@ function check_if_username_present(usernames, operation_mode, check_only_visible
 	    present_usernames.frequency[usernames[i]] += mel;
 
 	    for (var j = 0; j < me.length; j++) {
+
+		var etop = $(me).offset().top;
+		var eleft = $(me).offset().left;
+
+		if ((etop < scrheight) || (eleft < scrwidth)) {
+		    if (present_usernames.present_in_username_region.indexOf(usernames[i]) == -1) {
+			present_usernames.present_in_username_region.push(usernames[i]);
+		    }
+		} 
+
 		var curr_id = null;
 		if ($(me[j]).data("username_check_id") == undefined) {
 		    $(me[j]).data("username_check_id", username_check_id);
@@ -612,6 +629,10 @@ function check_if_username_present(usernames, operation_mode, check_only_visible
 	if (closest_id in longest_usernames) {
 	    closest_username = longest_usernames[closest_id];
 	}
+    }
+
+    if (present_usernames.present_in_username_region.length > 0) {
+	are_usernames_present = true;
     }
 
     return {

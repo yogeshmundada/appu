@@ -413,6 +413,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "check_pending_warning") {
 	if (sender.tab) {
 	    if (!(sender.tab.id in cookie_investigating_tabs)) {
+		console.log("Here here: Got command to check for pending warning");
 		r = pii_check_pending_warning(message, sender);
 		r.id = sender.tab.id;
 		domain = r.domain;
@@ -480,6 +481,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		console.log("APPU DEBUG: On domain(" + message.domain + ", closest-username: " + message.closest_username +
 			    ") Tabid: " + sender.tab.id);
 		usernames_in_tab[sender.tab.id] = true;
+
+		if (message.present_usernames.present_in_username_region.length > 0) {
+		    update_present_pi_names_on_domain(message.domain, message.present_usernames.present_in_username_region);
+		}
 	    }
 	    console.log("APPU DEBUG: On domain(" + message.domain + ") Num usernames detected(invisible? " +
 			message.invisible_check_invoked + "): " + 
@@ -602,32 +607,19 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	console.log("APPU DEBUG: User is attempting to LOGIN in: " + message.domain);
 	console.log("APPU DEBUG: LOGIN_ATTEMPT for: " + message.domain);
 	console.log("APPU DEBUG: Username info: " + JSON.stringify(message.uname_results));
-	//print_all_cookies(message.domain, "LOGIN_ATTEMPT");
-
-	// 	console.log("Here here here: Registering for responses");
-	// 	chrome.webRequest.onHeadersReceived.addListener(cb_headers_received, {
-	// 		"urls": ["<all_urls>"],
-	// 		    "tabId": sender.tab.id
-	// 		    },
-	// 	    ["responseHeaders"]);
 
 	console.log("APPU DEBUG: (" + message.caller + ", " + message.pwd_sentmsg + 
 		    "), Value of is_password_stored: " + message.is_stored);
 
-	var username = '';
+	var username = undefined;
 	var username_length = 0;
 	var reason = message.uname_results.reason;
-	if (message.uname_results.rc) {
+
+	if (message.uname_results.rc && (typeof message.uname_results.username == "string")) {
 	    username = get_username_identifier(message.domain, message.uname_results.username, true);
 	    username_length = message.uname_results.username.length;
 	    console.log("APPU DEBUG: Domain: " + message.domain + ", Username: " 
 			+ message.uname_results.username + ", username_identifier: " + username);
-	}
-	else {
-	    username = 'no-username-found';
-	    username_length = 0;
-	    console.log("APPU DEBUG: Domain: " + message.domain + ", NO USERNAME FOUND, reason: " + reason 
-			+ ", username_identifier: " + username);
 	}
 
 	message.username = username;
@@ -1163,33 +1155,33 @@ function make_user_approved_always(site) {
 
 //chrome.webRequest.onAuthRequired.addListener(onauthrequired_cb, {urls: ["<all_urls>"]});
 
-function print_all_response_headers(details) {
-    for (var i = 0; i < details.responseHeaders.length; i++) {
-	if (details.responseHeaders[i].name == "Strict-Transport-Security") {
-	    console.log("XXXXXXXXXX Here here(" + details.url.split("/")[2] + "): " + JSON.stringify(details.responseHeaders[i]));
-	    break;
-	}
-    }
-}
+// function print_all_response_headers(details) {
+//     for (var i = 0; i < details.responseHeaders.length; i++) {
+// 	if (details.responseHeaders[i].name == "Strict-Transport-Security") {
+// 	    console.log("XXXXXXXXXX Here here(" + details.url.split("/")[2] + "): " + JSON.stringify(details.responseHeaders[i]));
+// 	    break;
+// 	}
+//     }
+// }
 
-chrome.webRequest.onHeadersReceived.addListener(print_all_response_headers, {
-	"urls": ["<all_urls>"]
-	    },
-    ["blocking", "responseHeaders"]);
+// chrome.webRequest.onHeadersReceived.addListener(print_all_response_headers, {
+// 	"urls": ["<all_urls>"]
+// 	    },
+//     ["blocking", "responseHeaders"]);
 
 
-chrome.webRequest.onBeforeSendHeaders.addListener(
-						  function(details) {
-						      for (var i = 0; i < details.requestHeaders.length; ++i) {
-							  if (details.requestHeaders[i].name == "Strict-Transport-Security") {
-	    console.log("YYYYYYYYY Here here(" + details.url.split("/")[2] + "): " + JSON.stringify(details.requestHeaders[i]));
-							      break;
-							  }
-						      }
-						      return {requestHeaders: details.requestHeaders};
-						  },
-						  {urls: ["<all_urls>"]},
-						  ["blocking", "requestHeaders"]);
+// chrome.webRequest.onBeforeSendHeaders.addListener(
+// 						  function(details) {
+// 						      for (var i = 0; i < details.requestHeaders.length; ++i) {
+// 							  if (details.requestHeaders[i].name == "Strict-Transport-Security") {
+// 	    console.log("YYYYYYYYY Here here(" + details.url.split("/")[2] + "): " + JSON.stringify(details.requestHeaders[i]));
+// 							      break;
+// 							  }
+// 						      }
+// 						      return {requestHeaders: details.requestHeaders};
+// 						  },
+// 						  {urls: ["<all_urls>"]},
+// 						  ["blocking", "requestHeaders"]);
 
 // function print_result(msg) {
 //     return function (rc) {

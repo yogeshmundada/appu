@@ -100,6 +100,25 @@ function sanitize_name(name, field, cb) {
 }
 
 
+function sanitize_name_sync(name) {
+    var regex_at_least_one_letter = /([a-zA-Z]+)/g;
+    var n = $.trim(name);
+    n = n.replace(/\s\s+/g, ' ');
+    if (n == "") {
+	return null;
+    }
+    if (n.match(regex_at_least_one_letter) == null) {
+	return null;
+    }
+    if (n.length <= 3) {
+	return null;
+    }
+    if (typeof n != "string") {
+	return null;
+    }
+    return n;
+}
+
 function sanitize_address(address, field, cb) {
     get_address_components(address, function(result) {
 	    if (result["status"] == "not-ok") {
@@ -529,25 +548,20 @@ function sanitize_and_store_downloaded_fpi_data(domain, site_pi_fields, detectio
 // Otherwise, creates an identifier for that username and returns it.
 function get_username_identifier(domain, username, bool_add_if_not_present) {
     var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
-    var username_identifier_prefix = "";
+    var field = "username";
 
     var regex_at_least_one_letter = /([a-zA-Z]+)/g;
-    var username = $.trim(username);
-    if (username == "") {
-	return null;
+    var username = sanitize_name_sync(username);
+
+    if (username == null) {
+	return undefined;
     }
-    if (username.match(regex_at_least_one_letter) == null) {
-	return null;
+
+    if (username.indexOf("@") != -1) {
+	field = "email";
     }
 
     bool_add_if_not_present = (bool_add_if_not_present == undefined) ? false: bool_add_if_not_present;
-
-    if (username.indexOf("@") == -1) {
-	username_identifier_prefix = "username";
-    }
-    else {
-	username_identifier_prefix = "email";
-    }
 
     var username_identifier = undefined;
     if (username in vpfvi) {
@@ -555,9 +569,9 @@ function get_username_identifier(domain, username, bool_add_if_not_present) {
     }
     else if (bool_add_if_not_present) {
 	username_identifier = add_single_value_to_pi_field_value_identifiers(domain, 
-									     username_identifier_prefix, 
+									     field, 
 									     username, 
-									     "active");
+									     "active")["identifier"];
     }
     return username_identifier;
 }
