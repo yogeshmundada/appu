@@ -2,8 +2,8 @@
 	<action type="fetch-url">http://www.facebook.com</action>
 	
 	<div name="Your account">
-		<action type="fetch-href">
-			:contains("Edit Profile"):not(:has(*))
+		<action type="fetch-href" jquery_filter="ancestor-1">
+			span:contains("Edit Profile"):not(:has(*))
 		</action>
 
 

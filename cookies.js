@@ -490,6 +490,7 @@ function print_sent_headers(details) {
 // sites.
 function count_all_cookies() {
     chrome.cookies.getAll({}, function(all_cookies) {
+	    console.log("DELETE ME: I got all cookies, now going to process them.");
 	    var tot_sites = 0;
 	    var tot_hostonly = 0;
 	    var tot_httponly = 0;
@@ -550,6 +551,74 @@ function count_all_cookies() {
 	    console.log("APPU DEBUG: Total Number of Cookies: " + all_cookies.length);
 	});
 }
+
+function backup_entire_cookiestore(bkupstore_name) {
+    chrome.cookies.getAll({}, function(all_cookies) {
+	    var data = {};
+	    var bn = "Entire-CookieStore";
+	    if (bkupstore_name != undefined) {
+		bn = bkupstore_name;
+	    }
+
+	    data[bn] =  {
+		'cookies' : all_cookies,
+	    };
+
+	    write_to_local_storage(data);
+	});
+}
+
+function restore_entire_cookiestore(bkupstore_name) {
+    var bn = "Entire-CookieStore";
+    if (bkupstore_name != undefined) {
+	bn = bkupstore_name;
+    }
+
+    var cb = function(cs) {
+	console.log("DELETE ME: Length: " + cs[bn].cookies.length);
+
+	dump_to_browser_cookie_store(cs[bn]);
+	console.log("APPU DEBUG: Done restoring the cookie-store ");
+    }
+    
+    read_from_local_storage(bn, cb);
+}
+
+function expunge_entire_cookiestore() {
+    chrome.cookies.getAll({}, function(all_cookies) {
+	    for (var i = 0; i < all_cookies.length; i++) {
+		var protocol = "";
+		if (all_cookies[i].secure) {
+		    protocol = "https://";
+		}
+		else {
+		    protocol = "http://";
+		}
+		var url = protocol + all_cookies[i].domain + all_cookies[i].path;
+		chrome.cookies.remove({
+			"url": url, 
+			    "name": all_cookies[i].name});
+	    }
+	    console.log("APPU DEBUG: Deleted entire cookie store");
+	});
+}
+
+function delete_entire_cookiestore_from_backup(bkupstore_name) {
+    var bn;
+    if (bkupstore_name != undefined) {
+	bn = bkupstore_name;
+    } else {
+	return;
+    }
+
+    for (var i = 0; i < storage_meta.storage_meta.length; i++) {
+	if (storage_meta.storage_meta[i].indexOf(bn) != -1) {
+	    delete_from_local_storage(storage_meta.storage_meta[i]);
+	    return;
+	}
+    }
+}
+
 
 // **** END - Dump internal status functions
 
@@ -1286,9 +1355,6 @@ function dump_to_browser_cookie_store(backup_store, cb) {
 
     for (var i = 0; i < all_cookies.length; i++) {
 	var set_cookie_obj = {};
-	if (all_cookies[i].name == "Y" && all_cookies[i].domain == ".yahoo.com") {
-	    all_cookies[i].secure = true;
-	}
 
 	var my_url = all_cookies[i].secure ? "https://" : "http://";
 	my_url += all_cookies[i].domain;

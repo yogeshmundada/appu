@@ -40,3 +40,13 @@ input[type=password] {
     display: none;
     visibility: hidden;		 			
 }
+
+#site-accounts-verification-container-div {
+    display: none;
+    visibility: hidden;		 			
+}
+
+#delete-cookies-verification-container-div {
+    display: none;
+    visibility: hidden;		 			
+}

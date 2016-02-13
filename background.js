@@ -39,6 +39,11 @@ var myfootprint_tab_ids = [];
 var template_processing_tabs = {};
 var cookie_investigating_tabs = {};
 
+var initial_login_tabs = {};
+var initial_pi_fetch_tabs = {};
+
+var appu_initialization_tab_id = undefined;
+
 // Was an undelivered report attempted to be sent in last-24 hours?
 var delivery_attempts = {};
 
@@ -74,9 +79,11 @@ var cookieset_generator_workers = {};
 var pre_login_cookies = {};
 
 var server_url = "http://appu.gtnoise.net:5005/";
-//var server_url = "http://192.168.56.101:59000/";
+// var server_url = "http://192.168.56.102:59000/";
 
 var usernames_in_tab = {};
+
+var tab_urls = {};
 
 // BIG EXECUTION START
 
@@ -136,12 +143,20 @@ if (pii_vault.config.status == "disabled") {
 pii_check_if_stats_server_up();
 
 chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
-    if (change_info.status == "complete" && tab.active) {
-	chrome.tabs.sendMessage(tab_id, {type: "you_are_active"});
-    }
+	if ("url" in change_info) {
+	    tab_urls[tab_id] = get_domain(change_info["url"].split("/")[2]);
+	}
+
+	if (change_info.status == "complete" && tab.active) {
+	    chrome.tabs.sendMessage(tab_id, {type: "you_are_active"});
+	}
 });
 
 function tab_closed_cb(tabid, removeinfo) {
+    if (tabid in tab_urls) {
+	delete tab_urls[tabid];
+    }
+
     if (tabid in cookie_investigating_tabs) {
 	cookie_investigating_tabs[tabid].tab_closed_cb();
     }
@@ -230,7 +245,9 @@ chrome.cookies.onChanged.addListener(cookie_change_detected);
 //Generic channel listener. Catch messages from contents-scripts in various tabs.
 //Also catch messages from popup.html, report.html and options.html
 chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
-    if (sign_in_status == 'not-signed-in' || pii_vault.config.status == "disabled") {
+	if (((sign_in_status == 'not-signed-in' || pii_vault.config.status == "disabled")) &&
+	    !(sender.tab && (sender.tab.id  in initial_login_tabs)) &&
+	    !(sender.tab && (sender.tab.id  in initial_pi_fetch_tabs))) {
 	// We are currently not enabled. Check if message falls in category to be ignored.
 	// if so, just return.
 	var ignore_messages = [
@@ -260,6 +277,8 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	r = pii_log_user_input_type(message);
     }
     else if (message.type == "content_script_started") {
+	console.log("APPU DEBUG: DELETE ME: content-script-started is called");
+		
 	if (sender.tab) {
 	    var epoch_id = 0;
 	    var is_cookie_investigator_tab = false;
@@ -273,8 +292,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		}
 		epoch_id = cit.get_epoch_id();
 		is_cookie_investigator_tab = true;
-	    }
-	    if (sender.tab.id in template_processing_tabs) {
+	    } else if (sender.tab.id in template_processing_tabs) {
 		is_template_processing_tab = true;
 	    }
 
@@ -598,7 +616,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		print_auth_cookies(d);
 	    });
     }
-    else if (message.type == "check_passwd_reuse") {
+    else if (message.type == "content_script_debug") {
+	console.log(message.msg);
+    }
+    else if (message.type == "check_passwd_reuse") {	
+	console.log("DELETE ME: HOHOHO check_passwd_reuse: ");
+
 	if (sender.tab && (sender.tab.id in cookie_investigating_tabs)) {
 	    return;
 	}
@@ -693,11 +716,18 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	} else {
 	    var pi_usernames = get_all_values_of_types(["username", "name", "email"]);
+	    console.log("DELETE ME: I am about to decide whether to do username check or not");
 		if (pi_usernames.length > 0) {
-		    console.log("Here here: Sending command to detect usernames");
 		    chrome.tabs.sendMessage(sender.tab.id, {
 			    'type' : "check-if-username-present",
 				'usernames' : pi_usernames,
+				'usernames_present': true,
+				});
+		} else {
+		    console.log("DELETE ME: Decided against username check");
+		    chrome.tabs.sendMessage(sender.tab.id, {
+			    'type' : "check-if-username-present",
+				'usernames_present': false,
 				});
 		}
 	}
@@ -706,6 +736,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	if (sender.tab && (sender.tab.id in cookie_investigating_tabs)) {
 	    return;
 	}
+
+// 	if (sender.tab.id) {
+// 	    tab_urls[sender.tab.id] = get_domain(message.url);
+// 	}
 
 	// 	console.log("APPU DEBUG: tabid: "+sender.tab.id+", In query status: " + 
 	// 	template_processing_tabs[sender.tab.id]);
@@ -769,25 +803,36 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		if (sender.tab && sender.tab.id in pending_pi_fetch) { 
 		    if (pending_pi_fetch[sender.tab.id] == domain) {
 			console.log("APPU DEBUG: domain: " + domain + ", tab-id: " + sender.tab.id);
-			check_if_pi_fetch_required(domain, sender.tab.id, sender.tab);		
-			pending_pi_fetch[sender.tab.id] = "";
+			var initial_fetch = false;
+			if (sender.tab.id in initial_login_tabs) {
+			    initial_fetch = true;
+			}
+			check_if_pi_fetch_required(domain, sender.tab.id, sender.tab, initial_fetch);
+			delete pending_pi_fetch[sender.tab.id];
 		    }
-		    else {
-			pending_pi_fetch[sender.tab.id] = "";
-		    }
+		}
+
+		if (sender.tab && sender.tab.id in initial_login_tabs) { 
+		    setTimeout(function() {chrome.tabs.remove(sender.tab.id)}, 60000);
+		    chrome.tabs.sendMessage(appu_initialization_tab_id, {
+			    'type': "initial-login-done",
+				"site_name": initial_login_tabs[sender.tab.id],
+				});
+		    // delete initial_login_tabs[sender.tab.id];
+		    chrome.tabs.update(appu_initialization_tab_id, {selected: true});
 		}
 	    }
 	    else if (message.value == 'no') {
 		//add_domain_to_nuas(domain);
 		if (sender.tab) {
-		    pending_pi_fetch[sender.tab.id] = "";
+		    // pending_pi_fetch[sender.tab.id] = "";
 		}
 		console.log("APPU DEBUG: NOT Signed in for site: " + get_domain(message.domain));
 	    }
 	    else if (message.value == 'unsure') {
 		//add_domain_to_nuas(domain);
 		if (sender.tab) {
-		    pending_pi_fetch[sender.tab.id] = "";
+		    // pending_pi_fetch[sender.tab.id] = "";
 		}
 		console.log("APPU DEBUG: Signed in status UNSURE: " + get_domain(message.domain));
 	    }
@@ -855,6 +900,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	sendResponse(r);
     }
     else if (message.type == "check_blacklist") {
+	console.log("DELETE ME: In check_blacklist");
 	r = pii_check_blacklisted_sites(message);
 	if (r.blacklisted == "no") {
 	    var etld = get_domain(message.domain);
@@ -875,6 +921,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	    }
 	}
+	console.log("DELETE ME: In check_blacklist, sending response!");
 	sendResponse(r);
     }
     else if (message.type == "get_report_by_number") {
@@ -1014,6 +1061,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
 	sendResponse(r);
     }
+    else if (message.type == "delete_all_cookies") {
+	r = {};
+	backup_entire_cookiestore("Appu-Initial-CookieStore");
+	expunge_entire_cookiestore();
+	sendResponse(r);
+    }
     else if (message.type == "set_appu_initialized") {
 	pii_vault.initialized = true;
 	vault_write("initialized", pii_vault.initialized);
@@ -1046,6 +1099,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	sendResponse({ 
 	    'reportnumber' : text_report_tab_ids[sender.tab.id]
 	});
+    }
+    else if (message.type == "initial_slave_login_tab_opened") {
+	initial_login_tabs[message.tabid] = message.site_name;
+	appu_initialization_tab_id = sender.tab.id;
     }
 });
 
@@ -1118,8 +1175,12 @@ function test_read() {
 function make_user_approved_always(site) {
     pii_vault.aggregate_data.per_site_pi[site] = {};
     pii_vault.aggregate_data.per_site_pi[site].user_approved = "always";
-    get_permission_and_fetch_pi(site, undefined);
+    //get_permission_and_fetch_pi(site, undefined);
+    get_permission_and_fetch_pi(site, true);
 }
+
+
+
 
 //Test code.
 // window.setTimeout(function(){
@@ -1222,3 +1283,6 @@ function make_user_approved_always(site) {
 
 // chrome.storage.local.clear(print_result("Cleaning up local storage"));
 // chrome.storage.local.getBytesInUse(null, print_result("Local storage size: "));
+
+
+

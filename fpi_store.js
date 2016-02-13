@@ -713,8 +713,15 @@ function calculate_username_similarity() {
 	    }
 
 	    var d = getEditDistance(name1, name2);
-	    adus[p1] = d;
-	    crus[p1] = d;
+	    var simil = (new difflib.SequenceMatcher(name1, name2)).ratio();
+
+	    var m = {};
+
+	    m["levenshtein-distance"] = d;
+	    m["ratcliff-obershelp-similarity"] = simil;
+
+	    adus[p1] = m;
+	    crus[p1] = m;
 	}
     }
 
@@ -772,3 +779,38 @@ function calculate_substring_usernames() {
 
     flush_aggregate_data();
 }
+
+
+
+function check_third_party_pi_leaks(details) {
+    var tabid = details.tabId;
+    var domain = get_domain(details.url.split("/")[2]);
+
+    if ((tabid in tab_urls) &&
+	(tab_urls[tabid] != null) &&
+	(domain != tab_urls[tabid])) {
+
+	for (var i = 0; i < details.requestHeaders.length; ++i) {
+	    var k = details.requestHeaders[i].name;
+	    var v = details.requestHeaders[i].value;
+	    
+	    if (k == "Referer") {
+		var params = getJsonFromUrl(v);
+		if (Object.keys(params).length > 0) {
+		    // console.log("ZZZ: Params(" + v + "): " + JSON.stringify(params));
+		}
+	    }
+
+	    if (k == "Referer" || k == "Cookie") {
+		//		console.log("YYYYYYYYY Here here(" + details.url.split("/")[2] + "): " + JSON.stringify(details.requestHeaders[i]));
+	    }
+	}
+    
+	// console.log("Third-party check(" + tab_urls[tabid] + "): HTTP Request URL: " + domain);
+    }
+    return {requestHeaders: details.requestHeaders};
+}
+
+// chrome.webRequest.onBeforeSendHeaders.addListener(check_third_party_pi_leaks,
+// 						  {urls: ["<all_urls>"]},
+// 						  ["requestHeaders"]);

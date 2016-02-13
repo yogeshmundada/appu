@@ -58,15 +58,22 @@
 	    <div class="content">
 
 		<div class="row">
-		    <div class="span4 offset4 pagination-centered" style="margin-top: 200px;">
-			<label class="checkbox">
-			    <input id="age-verification-checkbox" type="checkbox" value="">
-			    <p style="font-size: 18px">I certify that I am 18 years of age or older.</p>
-			</label>
-			<br/>
-			<br/>
-			<button id="age-verification-button" 
-				class="btn disabled btn-primary " type="button">Next</button>
+		    <div class="span8 offset1" style="margin-top: 50px;">
+			<div class="container">
+			    <div class="span12">
+				<label class="checkbox">
+				    <input style="float: left" id="age-verification-checkbox" type="checkbox" value="">
+				    <p style="font-size: 18px; float: left; margin-left: 1em">I certify that I am 18 years of age or older.</p>
+				</label>
+			    </div>
+			</div>
+			<div class="container" style="margin-top: 2em">
+			    <div class="span12">
+				<button id="age-verification-button" 
+					class="btn disabled btn-primary " type="button">Next</button>
+			    </div>
+			</div>
+
 		    </div>
 		</div>
 
@@ -78,6 +85,111 @@
 		</div>
 	    </div>
 	</div> <!-- age-verification-container -->
+
+	<div id="site-accounts-verification-container-div" class="site-accounts-verification-container">
+	    <div class="content">
+
+		<div class="row">
+		    <div class="span8 offset1" style="margin-top: 50px;">
+			<div class="container">
+			    <div class="span12">
+			    <p style="font-size: 18px">As a part of initial install, Appu would ask you to login into 
+				a few popular web applications belonging to categories such as social networking,
+				email, professional networking, financial service, and e-commerce.<br/><br/>
+				Before proceeding further, please verify that you have accounts on following
+				sites.
+			    </p>
+			    </div>
+			</div>
+			<div class="container">
+			    <div class="span12">
+			    <label class="checkbox-google">
+				<input style="float: left" id="google-account-verification-checkbox" class="site-accounts" type="checkbox" value=""><p style="float: left; margin-left: 1em">Google</p><br/><br/>
+			    </label>
+			    <label class="checkbox-facebook">
+			    <input style="float: left" id="facebook-account-verification-checkbox" class="site-accounts" type="checkbox" value=""><p style="float: left; margin-left: 1em">Facebook</p><br/><br/>
+			    </label>
+			    <label class="checkbox-paypal">
+				<input style="float: left" id="paypal-account-verification-checkbox" class="site-accounts" type="checkbox" value=""><p style="float: left; margin-left: 1em">Paypal</p><br/><br/>
+			    </label>
+			    <label class="checkbox-amazon">
+				<input style="float: left" id="amazon-account-verification-checkbox" class="site-accounts" type="checkbox" value=""><p style="float: left; margin-left: 1em">Amazon</p><br/><br/>
+			    </label>
+			    <label class="checkbox-linkedin">
+				<input style="float: left" id="linkedin-account-verification-checkbox" class="site-accounts" type="checkbox" value=""><p style="float: left; margin-left: 1em">LinkedIn</p><br/><br/>
+			    </label>
+			    </div>
+			    </div>
+			<div class="container" style="margin-top: 2em">
+			    <div class="span12">
+				<button id="site-accounts-verification-button" 
+					class="btn disabled btn-primary " type="button">Next</button>
+			    </div>
+			</div>
+		    </div>
+		</div>
+
+		<div class="row">
+
+		    <div class="span8" style="text-align: center; font-size: 36px;">
+		    </div>
+
+		</div>
+	    </div>
+	</div> <!-- site-accounts-container -->
+
+
+	<div id="delete-cookies-verification-container-div" class="delete-cookies-verification-container">
+	    <div class="content">
+
+		<div class="row">
+		    <div class="span8 offset1" style="margin-top: 50px;">
+			<div class="container">
+			    <div class="span12">
+				<p style="font-size: 18px">In the next few steps, we would request you
+				    to login into each web application listed below. 
+				    <ul style="font-size: 0.90em; margin-top: 1em">
+					<li>Facebook</li>
+					<li>Google</li>
+					<li>Linkedin</li>
+					<li>Paypal</li>
+					<li>Amazon</li>
+				    </ul>
+				    After logging in, Appu will download personal information fields 
+				    such as name, address, phone number, last-4 digits of the credit 
+				    card number, last-2 digits of the social security number from 
+				    these accounts. <br/><br/>
+				    Before proceeding further, Appu will delete ALL of your existing cookies.
+				    As a side effect of this action, you would be logged out of ALL the sites
+				    where you are currently logged in. <br/><br/>
+				    To proceed further and allow Appu to delete all the cookies, please
+				    click on the checkbox and click the Next button.
+				</p>
+				<label class="checkbox" style="margin-top: 2em; font-weight: bold">
+				    <input id="delete-cookies-verification-checkbox" type="checkbox" value=""> I agree to deleting all of the existing cookies<br/>
+				</label>
+			    </div>
+			</div>
+
+			<div class="container" style="margin-top: 1em">
+			    <div class="span12">
+
+				<button id="delete-cookies-verification-button" 
+					class="btn disabled btn-primary " type="button">Next</button>
+			    </div>
+			</div>
+		    </div>
+		</div>
+
+		<div class="row">
+
+		    <div class="span8" style="text-align: center; font-size: 36px;">
+		    </div>
+
+		</div>
+	    </div>
+	</div> <!-- cookies-deletion-container -->
+
 
 	<div id="lottery-container-div" class="lottery-container">
 	    <div class="content">

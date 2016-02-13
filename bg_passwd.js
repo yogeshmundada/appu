@@ -339,6 +339,10 @@ function update_logged_in_state(state, domain, username) {
 
 
 function update_present_pi_names_on_domain(domain, username_list) {
+    if (!(domain in pii_vault.aggregate_data.current_loggedin_state)) {
+	pii_vault.aggregate_data.current_loggedin_state[domain] = {};
+    }
+
     if (pii_vault.aggregate_data.current_loggedin_state[domain].username != undefined) {
 	return;
     }
@@ -460,6 +464,13 @@ function pii_check_passwd_reuse(message, sender) {
     var username_length = get_idenfier_value(username)[0];
     r.pwd_strength = pwd_strength;
 
+   // This is so that if there is next successful sign-in message,
+    // trigger a check_pi_fetched_required()
+    // This is more fullproof than waiting X amount of time as login may
+    // be unsuccessful in that case.
+    // However, most fullproof method is per-site login check.
+    pending_pi_fetch[sender.tab.id] = message.domain;
+ 
     for(var hk in pii_vault.password_hashes) {
 	var curr_entry = pii_vault.password_hashes[hk];
 	var rc = calculate_short_hash(message.passwd, curr_entry.salt);
@@ -550,12 +561,6 @@ function pii_check_passwd_reuse(message, sender) {
 	}
     }
 
-    // This is so that if there is next successful sign-in message,
-    // trigger a check_pi_fetched_required()
-    // This is more fullproof than waiting X amount of time as login may
-    // be unsuccessful in that case.
-    // However, most fullproof method is per-site login check.
-    pending_pi_fetch[sender.tab.id] = message.domain;
     return r;
 }
 

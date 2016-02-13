@@ -33,6 +33,22 @@ var getEditDistance = function(a, b){
     return matrix[b.length][a.length];
 };
 
+function getJsonFromUrl(url) {
+    var result = {};
+    if (url.indexOf('?') == -1) {
+	return result;
+    }
+
+    var hashes = url.slice(url.indexOf('?') + 1).split('&');
+
+    for(var i = 0; i < hashes.length; i++) {
+	h = hashes[i].split('=');
+	result[h[0]] = decodeURIComponent(h[1]);
+    }
+
+    return result;
+}
+
 
 function get_domain(curr_domain) {
     ip_addr_regex = /((?:[0-9]{1,3}\.){3}[0-9]{1,3})/;

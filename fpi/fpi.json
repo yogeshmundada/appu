@@ -14,5 +14,9 @@
  "google.com" : {
      "category" : "search-engine/social-networking/networking/email/class-1",
      "fpi" : "group1/google.fpi"
+ },
+ "linkedin.com" : {
+     "category" : "professional-networking",
+     "fpi" : "group1/linkedin.fpi"
  }
 }

@@ -174,5 +174,9 @@ function sign_out() {
 
     //This is a default user, read default values and initialize those that dont exist
     vault_read();
+
+    delete pii_vault.aggregate_data;
+    delete pii_vault.current_report;
+
     vault_init();
 }

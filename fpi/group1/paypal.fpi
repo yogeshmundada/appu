@@ -103,7 +103,7 @@
 				
 				<div name="ccn-update-link">
 					<action type="fetch-href">
-						a:contains('Update')
+						a:contains('Add my card')
 					</action>
 					
 					<div name="ccns" type="vector">

@@ -8,16 +8,16 @@ var BLOOMFILTER_SIZE = Math.pow(2, 30) * 50;
 var TOTAL_BITS = (BLOOMFILTER_SIZE * 8);
 
 // File size in bytes (10K)
-var FILE_SIZE = Math.pow(2, 10) * 10;
+var FILE_SIZE = Math.pow(2, 20) * 100;
 
 // Bloomfilter bits in each file
 var BITS_PER_FILE = FILE_SIZE * 8;
 
 // Total files in each directory
-var FILES_PER_DIR = 5120;
+var FILES_PER_DIR = 32;
 
 // Total directories
-var TOT_DIR = 1024;
+var TOT_DIR = 16;
 
 var BF_SUBDIR = "bloomfilters";
 
@@ -48,6 +48,7 @@ function get_hashed_value(pwd) {
 
 function get_bit_positions(hashes) {
     var hash_bitpos = {};
+    var check_bits = {};
 
     for (var i = 0; i < 10; i++) {
 	var hbn = BigNumber(hashes[i], 16);
@@ -69,8 +70,12 @@ function get_bit_positions(hashes) {
 	    "checked" : false,
 	    "present" : false
 	}
+
+	check_bits[i] = bit_number;
     }
-    return hash_bitpos;
+
+    return check_bits;
+    // return hash_bitpos;
 }
 
 function is_bit_set(bytenum, bitinbyte, arrbuf) {
@@ -87,52 +92,81 @@ function is_bit_set(bytenum, bitinbyte, arrbuf) {
 function check_if_pwd_in_cracked_pwd_db(pwd) {
     var hashes = get_hashed_value(pwd);
     var bitpos = get_bit_positions(hashes);
-    for (var i = 0; i < hashes.length; i++) {
-	bitpos[hashes[i]]["is_downloaded"] = false;
-	download_file(bitpos[hashes[i]]["fname"] + ".base64", "pwdbf", 
-		      bitpos[hashes[i]]["dname"], (function(hash_index, bitpos, hashes, pwd) {
-			      return function(unzip_buf, version) {
-				  var are_all_downloaded = true;
-				  bitpos[hashes[hash_index]]["is_downloaded"] = true;
-				  bitpos[hashes[hash_index]]["unzip"] = unzip_buf;
-				  bitpos[hashes[hash_index]]["version"] = version;
-				  for (var j = 0; j < hashes.length; j++) {
-				      if (bitpos[hashes[j]]["is_downloaded"] == undefined ||
-					  bitpos[hashes[j]]["is_downloaded"] == false) {
-					  are_all_downloaded = false;
-					  break;
-				      }
-				  }
-				  if (are_all_downloaded == true) {
-				      var are_all_bits_set = true;
-				      for (var j = 0; j < hashes.length; j++) {
-					  if (bitpos[hashes[j]]["version"] == undefined &&
-					      bitpos[hashes[j]]["unzip"] == undefined) {
-					      are_all_bits_set = false;
-					      break;
-					  }
-					  if (bitpos[hashes[j]]["version"] == "0.0.0") {
-					      are_all_bits_set = false;
-					      break;
-					  }
 
-					  var rc = is_bit_set(bitpos[hashes[j]]["byte_number"], 
-							      bitpos[hashes[j]]["bitpos_inside_byte"], 
-							      bitpos[hashes[j]]["unzip"]);
+    $.post(server_url + "check_cracked_pwd_db", 
+	   JSON.stringify(bitpos),
+	   function(data) {
+	       if (data.split(' ')[0] == 'Success') {
+		   var temp = data.split(' ');
+		   temp.shift();
+		   result = temp.join(' ');
+
+		   console.log("APPU DEBUG: Is password cracked: " + result);
+	       }
+	       else if (data.split(' ')[0] == 'Failed') {
+		   var temp = data.split(' ');
+		   temp.shift();
+		   reason = temp.join(' ');
+
+		   console.log("APPU DEBUG: Checking cracked pwd db failed for reason: " + reason);
+	       }
+	       else {
+		   console.log("APPU DEBUG: Checking cracked pwd db failed: Unknown Reason");
+	       }
+	   })	
+	.error(function(bitpos) {
+		return function(data, status) {
+		    print_appu_error("Appu Error: Could not check cracked pwd db for bitpos: " 
+				     + JSON.stringify(bitpos));
+		}
+	    } (bitpos));
+
+//     for (var i = 0; i < hashes.length; i++) {
+// 	bitpos[hashes[i]]["is_downloaded"] = false;
+// 	download_file(bitpos[hashes[i]]["fname"] + ".base64", "pwdbf", 
+// 		      bitpos[hashes[i]]["dname"], (function(hash_index, bitpos, hashes, pwd) {
+// 			      return function(unzip_buf, version) {
+// 				  var are_all_downloaded = true;
+// 				  bitpos[hashes[hash_index]]["is_downloaded"] = true;
+// 				  bitpos[hashes[hash_index]]["unzip"] = unzip_buf;
+// 				  bitpos[hashes[hash_index]]["version"] = version;
+// 				  for (var j = 0; j < hashes.length; j++) {
+// 				      if (bitpos[hashes[j]]["is_downloaded"] == undefined ||
+// 					  bitpos[hashes[j]]["is_downloaded"] == false) {
+// 					  are_all_downloaded = false;
+// 					  break;
+// 				      }
+// 				  }
+// 				  if (are_all_downloaded == true) {
+// 				      var are_all_bits_set = true;
+// 				      for (var j = 0; j < hashes.length; j++) {
+// 					  if (bitpos[hashes[j]]["version"] == undefined &&
+// 					      bitpos[hashes[j]]["unzip"] == undefined) {
+// 					      are_all_bits_set = false;
+// 					      break;
+// 					  }
+// 					  if (bitpos[hashes[j]]["version"] == "0.0.0") {
+// 					      are_all_bits_set = false;
+// 					      break;
+// 					  }
+
+// 					  var rc = is_bit_set(bitpos[hashes[j]]["byte_number"], 
+// 							      bitpos[hashes[j]]["bitpos_inside_byte"], 
+// 							      bitpos[hashes[j]]["unzip"]);
 					  
-					  if (rc == false) {
-					      are_all_bits_set = false;
-					      break;
-					  }
-				      }
-				      if (are_all_bits_set == true) {
-					  console.log("APPU DEBUG: Password IS cracked: " + pwd);
-				      }
-				      else {
-					  console.log("APPU DEBUG: Password is NOT cracked: " + pwd);
-				      }
-				  }
-			      }
-			  }(i, bitpos, hashes, pwd)), true);
-    }
+// 					  if (rc == false) {
+// 					      are_all_bits_set = false;
+// 					      break;
+// 					  }
+// 				      }
+// 				      if (are_all_bits_set == true) {
+// 					  console.log("APPU DEBUG: Password IS cracked: " + pwd);
+// 				      }
+// 				      else {
+// 					  console.log("APPU DEBUG: Password is NOT cracked: " + pwd);
+// 				      }
+// 				  }
+// 			      }
+// 			  }(i, bitpos, hashes, pwd)), true);
+//     }
 }

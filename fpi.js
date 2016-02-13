@@ -377,7 +377,12 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
     else if ($(action).attr('type') == 'fetch-href') {
 	var pfp = curr_node.parent.fp;
 	var css_selector = $.trim($(action).text());
-	var fetch_url = $.trim($(css_selector, pfp).attr('href'));
+	var jquery_filter = $.trim($(action).attr('jquery_filter'));
+	var elem = apply_css_selector(pfp, css_selector, jquery_filter);
+
+	//var fetch_url = $.trim($(css_selector, pfp).attr('href'));
+	var fetch_url = $.trim($(elem).attr('href'));
+
 	console.log("APPU DEBUG: Got fetch-href: " + fetch_url);
 	curr_node.fetched_url = fetch_url;
 	make_slavetab_do_work("fetch-url", curr_node, site_pi_fields, fetch_url, my_slave_tab, level);
@@ -737,6 +742,10 @@ function fpi_processing_complete(tabid, site_pi_fields, domain, shut_timer) {
 
     console.log("APPU DEBUG: This should close the FPI downloaded tab");
     chrome.tabs.remove(tabid);
+
+    if (tabid in initial_pi_fetch_tabs) {
+	delete initial_pi_fetch_tabs[tabid];
+    }
 }
 
 function inform_parent(leaf_node) {
@@ -897,7 +906,7 @@ function process_template(domain, data, my_slave_tab) {
 }
 
 
-function open_tab_inconspicuously(domain, data, sender_tab) {
+function open_tab_inconspicuously(domain, data, sender_tab, initial_fetch) {
     var sender_tab_windowId = sender_tab.windowId;
     var all_windows = undefined;
     var last_focused_window = undefined;
@@ -948,7 +957,7 @@ function open_tab_inconspicuously(domain, data, sender_tab) {
 	    flush_selective_entries("aggregate_data", ["per_site_pi"]);
 	}
 	else {
-	    open_slave_tab(domain, data, chosen_windowId, 0);
+	    open_slave_tab(domain, data, chosen_windowId, 0, initial_fetch);
 	}
     }
 
@@ -959,7 +968,7 @@ function open_tab_inconspicuously(domain, data, sender_tab) {
 }
 
 
-function open_slave_tab(domain, data, window_id, tab_index) {
+function open_slave_tab(domain, data, window_id, tab_index, initial_fetch) {
     var process_template_tabid = undefined;
     //Just some link so that appu content script runs on it.
     var default_url = 'http://google.com';
@@ -984,6 +993,10 @@ function open_slave_tab(domain, data, window_id, tab_index) {
 	    template_processing_tabs[process_template_tabid] = default_url;
 	    //console.log("APPU DEBUG: XXX tabid: " + tab.id + ", value: " + 
 	    // template_processing_tabs[tab.id]);
+
+	    if (initial_fetch == true) {
+		initial_pi_fetch_tabs[tab.id] = true;
+	    }
     
 	    //Dummy element to wait for HTML fetch
 	    var dummy_tab_id = sprintf('tab-%s', process_template_tabid);
@@ -1008,9 +1021,9 @@ function open_slave_tab(domain, data, window_id, tab_index) {
 
 /// Template processing code END
 
-function start_pi_download_process(domain, data, sender_tab) {
+function start_pi_download_process(domain, data, sender_tab, initial_fetch) {
     if (sender_tab == undefined) {
-	open_slave_tab(domain, data);
+	open_slave_tab(domain, data, undefined, undefined, initial_fetch);
     }
     else {
 	// Following will check if user has another minimized/unfocused window open.
@@ -1018,11 +1031,11 @@ function start_pi_download_process(domain, data, sender_tab) {
 	// Otherwise, it will check if user has more than 5 tabs in the current window.
 	// If so then it will create a new tab at index 0
 	// Otherwise, it will delete "attempted_download_time" and will not download PI this time.
-	open_tab_inconspicuously(domain, data, sender_tab);
+	open_tab_inconspicuously(domain, data, sender_tab, initial_fetch);
     }
 }
 
-function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab) {
+function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab, initial_fetch) {
     if (!(domain in pii_vault.aggregate_data.per_site_pi)) {
 	pii_vault.aggregate_data.per_site_pi[domain] = {};
 	flush_selective_entries("aggregate_data", ["per_site_pi"]);
@@ -1030,7 +1043,7 @@ function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab) {
 
     var curr_time = new Date();
     
-    if ('download_time' in pii_vault.aggregate_data.per_site_pi[domain]) {
+    if ('download_time' in pii_vault.aggregate_data.per_site_pi[domain] && initial_fetch != true) {
 	var last_update = new Date(pii_vault.aggregate_data.per_site_pi[domain].download_time);
 	var td = curr_time.getTime() - last_update.getTime();
 	if (td < (60 * 60 * 24 * 10 * 1000)) {
@@ -1047,7 +1060,7 @@ function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab) {
 					     .attempted_download_time);
 	var td = curr_time.getTime() - last_download_attempt.getTime();
 	//Check if its been 1 day since last download attempt
-	if (td < (60 * 60 * 24 * 1 * 1000)) {
+	if (td < (60 * 60 * 24 * 1 * 1000) && !(sender_tab_id in initial_login_tabs)) {
 	    console.log("APPU DEBUG: Not attempting PI download. Just attempted so in last 24-hours: " + domain);
 	    return;
 	}
@@ -1065,7 +1078,7 @@ function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab) {
 
     if ((domain in fpi_metadata) && 
 	(fpi_metadata[domain]["fpi"] != "not-present")) {
-	get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab);
+	get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab, initial_fetch);
     }
     else {
 	print_appu_error("Appu Error: FPI Template for domain(" + domain 
@@ -1075,14 +1088,21 @@ function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab) {
     return;
 }
 
-function get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab) {
+function get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab, initial_fetch) {
     var data = read_file("fpi/" + fpi_metadata[domain]["fpi"]);
     console.log("APPU DEBUG: Read the template for: " + domain);
 
     if (pii_vault.options.lottery_setting == "participating") {
 	pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
 	flush_selective_entries("aggregate_data", ["per_site_pi"]);
-	start_pi_download_process(domain, data, sender_tab);
+	start_pi_download_process(domain, data, sender_tab, initial_fetch);
+	return;
+    }
+
+    if (sender_tab_id in initial_login_tabs) {
+	pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'just-this-time';
+	flush_selective_entries("aggregate_data", ["per_site_pi"]);
+	start_pi_download_process(domain, data, sender_tab, initial_fetch);
 	return;
     }
 
@@ -1091,7 +1111,7 @@ function get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab) {
     if ('user_approved' in pii_vault.aggregate_data.per_site_pi[domain]) {
 	if (pii_vault.aggregate_data.per_site_pi[domain].user_approved == 'always') {
 	    //We are here, that means user has given PI download approval for this site
-	    start_pi_download_process(domain, data);
+	    start_pi_download_process(domain, data, undefined, initial_fetch);
 	    return;
 	}
 	else if (pii_vault.aggregate_data.per_site_pi[domain].user_approved == 'never') {
@@ -1109,12 +1129,12 @@ function get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab) {
 	    if (response.fetch_pi_permission == "always") {
 		pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
 		flush_selective_entries("aggregate_data", ["per_site_pi"]);
-		start_pi_download_process(domain, data);
+		start_pi_download_process(domain, data, undefined, initial_fetch);
 	    }
 	    else if (response.fetch_pi_permission == "just-this-time") {
 		pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'seek-permission';
 		flush_selective_entries("aggregate_data", ["per_site_pi"]);
-		start_pi_download_process(domain, data);
+		start_pi_download_process(domain, data, undefined, initial_fetch);
 	    }
 	    else if (response.fetch_pi_permission == "never") {
 		pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'never';

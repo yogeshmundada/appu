@@ -15,7 +15,6 @@ jQuery.fn.visibilityToggle = function() {
 	});
 }
 
-
 function check_for_enter(e) {
     if (e.which == 13) {
 	if (e.data.type == 'login') {
@@ -45,7 +44,6 @@ function show_version(response) {
 
 function handle_appu_initialized(response) {
     if (response.initialized == "yes") {
-	console.log("Here here: " + response.initialized);
 	$("#login-container-div").show();
 	$("#login-container-div").visible();
 	chrome.extension.sendMessage("", {
@@ -54,21 +52,192 @@ function handle_appu_initialized(response) {
 	    handle_current_user);
     }
     else {
-	$("#age-verification-container-div").show();
-	$("#age-verification-container-div").visible();
-	$("#sign-in-title").text("Age Verification");
-	$("#age-verification-checkbox").change(function() {
-		if(this.checked) {
-		    $("#age-verification-button").removeClass("disabled");
-		    console.log("Here here: checkbox change: " + this.checked);
-		    $("#age-verification-button").on("click", goto_lottery);
-		}
-		else {
-		    $("#age-verification-button").addClass("disabled");
-		    $("#age-verification-button").off("click", goto_lottery);
-		}
-	    });
+	age_verification_confirm();
     }
+}
+
+function age_verification_confirm() {
+    $("#age-verification-container-div").show();
+    $("#age-verification-container-div").visible();
+    $("#sign-in-title").text("Age Verification");
+    $("#age-verification-checkbox").change(function() {
+	    if (this.checked) {
+		$("#age-verification-button").removeClass("disabled");
+		console.log("Here here: checkbox change: " + this.checked);
+		$("#age-verification-button").on("click", 
+						 function() {
+						     $("#age-verification-container-div").hide();
+						     $("#age-verification-container-div").invisible();
+						     goto_login();
+						     });
+	    }
+	    else {
+		$("#age-verification-button").addClass("disabled");
+		$("#age-verification-button").off("click", function() {
+						     $("#age-verification-container-div").hide();
+						     $("#age-verification-container-div").invisible();
+						     goto_login();
+						     });
+	    }
+	});
+}
+
+function verify_accounts_exist() {
+    $("#age-verification-container-div").invisible();
+    $("#age-verification-container-div").hide();
+    
+    $("#site-accounts-verification-container-div").show();
+    $("#site-accounts-verification-container-div").visible();
+
+    $("#sign-in-title").text("Accounts Verification");
+
+    $('.site-accounts').change(function() {
+	    console.log("DELETE ME: Total length of checked: " + $(".site-accounts:checked").length);
+	    if ($(".site-accounts:checked").length == 5 ) {
+		    $("#site-accounts-verification-button").removeClass("disabled");
+		    $("#site-accounts-verification-button").on("click", cookie_deletion_verification);
+	    } else {
+		    $("#site-accounts-verification-button").addClass("disabled");
+		    $("#site-accounts-verification-button").off("click", cookie_deletion_verification);
+	    }
+	});
+
+}
+
+function cookie_deletion_verification() {
+    $("#top-status").removeClass("text-success");
+    $("#top-status").text("");
+
+    $("#site-accounts-verification-container-div").invisible();
+    $("#site-accounts-verification-container-div").hide();
+    
+    $("#delete-cookies-verification-container-div").show();
+    $("#delete-cookies-verification-container-div").visible();
+
+    $("#sign-in-title").text("Consent to Cookie-Deletion Action");
+
+    $("#delete-cookies-verification-checkbox").change(function() {
+	    if (this.checked) {
+		$("#delete-cookies-verification-button").removeClass("disabled");
+		$("#delete-cookies-verification-button").on("click", actually_delete_cookies);
+	    }
+	    else {
+		$("#delete-cookies-verification-button").addClass("disabled");
+		$("#delete-cookies-verification-button").off("click", actually_delete_cookies);
+	    }
+	});
+}
+
+function actually_delete_cookies() {
+    chrome.extension.sendMessage("", {
+	'type' : 'delete_all_cookies',
+	    }, function() {
+	    pi_to_download = "google";
+	    setTimeout(start_initial_pi_download, 5000);
+	});
+
+    $(".progress-div").show();
+    $(".progress-div").visible();
+    time = 1;
+    max = 3;
+    int = setInterval(function() {
+	    $("#progress").css("width", Math.floor(100 * time++ / max) + '%');
+	}, 1000);
+}
+
+
+pi_to_download = "";
+
+function start_initial_pi_download() {
+    $(".progress-div").hide();
+    $(".progress-div").invisible();
+
+    if (pi_to_download == "facebook") {
+	goto_facebook();
+	pi_to_download = "amazon";
+    } else if (pi_to_download == "google") {
+	goto_google();
+	pi_to_download = "facebook";
+    } else if (pi_to_download == "amazon") {
+	goto_amazon();
+	pi_to_download = "linkedin";
+    } else if (pi_to_download == "linkedin") {
+	goto_linkedin();
+	pi_to_download = "paypal";
+    } else if (pi_to_download == "paypal") {
+	goto_paypal();
+	pi_to_download = "done";
+    } else if (pi_to_download == "done") {
+	chrome.extension.sendMessage("", {
+		'type' : 'set_appu_initialized',
+		    });
+	redirect_to_check_report();
+    }
+}
+
+function goto_facebook() {
+    var login_url = "https://www.facebook.com/login/";
+    var site_name = "facebook";
+    chrome.tabs.create({ url: login_url },
+		       function(tab) {
+			   chrome.extension.sendMessage("", {
+				   'type' : 'initial_slave_login_tab_opened',
+				       'tabid': tab.id,
+				       'site_name': site_name,
+				       });
+		       });
+}
+
+function goto_google() {
+    var login_url = "https://accounts.google.com/ServiceLogin";
+    var site_name = "google";
+    chrome.tabs.create({ url: login_url },
+		       function(tab) {
+			   chrome.extension.sendMessage("", {
+				   'type' : 'initial_slave_login_tab_opened',
+				       'tabid': tab.id,
+				       'site_name': site_name,
+				       });
+		       });
+}
+
+function goto_amazon() {
+    var login_url = "https://goo.gl/qMDpb4";
+    var site_name = "amazon";
+    chrome.tabs.create({ url: login_url },
+		       function(tab) {
+			   chrome.extension.sendMessage("", {
+				   'type' : 'initial_slave_login_tab_opened',
+				       'tabid': tab.id,
+				       'site_name': site_name,
+				       });
+		       });
+}
+
+function goto_linkedin() {
+    var login_url = "https://www.linkedin.com/";
+    var site_name = "linkedin";
+    chrome.tabs.create({ url: login_url },
+		       function(tab) {
+			   chrome.extension.sendMessage("", {
+				   'type' : 'initial_slave_login_tab_opened',
+				       'tabid': tab.id,
+				       'site_name': site_name,
+				       });
+		       });
+}
+
+function goto_paypal() {
+    var login_url = "https://goo.gl/ItwTo0";
+    var site_name = "paypal";
+    chrome.tabs.create({ url: login_url },
+		       function(tab) {
+			   chrome.extension.sendMessage("", {
+				   'type' : 'initial_slave_login_tab_opened',
+				       'tabid': tab.id,
+				       'site_name': site_name,
+				       });
+		       });
 }
 
 function goto_lottery() {
@@ -100,10 +269,6 @@ function goto_login() {
 		    'lottery_setting' : 'lottery-off'
 		    });
     }
-
-    chrome.extension.sendMessage("", {
-	    'type' : 'set_appu_initialized',
-		});
     
     $("#lottery-container-div").invisible();
     $("#lottery-container-div").hide();
@@ -136,7 +301,7 @@ function redirect_to_check_report() {
     $(".progress-div").show();
     $(".progress-div").visible();
     time = 1;
-    max = 5;
+    max = 2;
     int = setInterval(function() {
 	    $("#progress").css("width", Math.floor(100 * time++ / max) + '%');
 	    time - 1 == max && function() {
@@ -187,7 +352,7 @@ chrome.extension.onMessage.addListener(function(message, sender, send_response) 
 	$("#top-status").removeClass("text-error");
 	$("#top-status").addClass("text-success");
 	$("#top-status").text(message.desc);
-	redirect_to_check_report();
+	verify_accounts_exist();
     }
     else if (message.type == "login-failure") {
 	$("#top-status").addClass("text-error");
@@ -200,11 +365,15 @@ chrome.extension.onMessage.addListener(function(message, sender, send_response) 
 	$("#top-status").removeClass("text-error");
 	$("#top-status").addClass("text-success");
 	$("#top-status").text(message.desc);
-	redirect_to_check_report();
+	verify_accounts_exist();
     }
     else if (message.type == "account-failure") {
 	$("#top-status").addClass("text-error");
 	$("#top-status").text(message.desc);
+    }
+    else if (message.type == "initial-login-done") {
+	console.log("APPU DEBUG: DELETE ME: Successfully logged-into: " + message.site_name);
+	start_initial_pi_download();
     }
 });
 
