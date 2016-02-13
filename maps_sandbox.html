@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Chrome Extension Maps API</title>
+    <style>
+    body {
+      overflow: hidden;
+      margin: 0px;
+      padding: 0px;
+      background: white;
+    }
+
+    #map {
+      height: 500px;
+      width: 500px;
+    }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script>
+	window.addEventListener("message", receiveMessage, false);
+	function receiveMessage(event) {
+	    if (event.data.type == "get-latitude-longitude") {
+	    var geocoder = new google.maps.Geocoder();
+	    var address = event.data.address;
+      
+	    geocoder.geocode( { 'address': address}, function(results, status) {
+	        if (status == google.maps.GeocoderStatus.OK) {
+	            var latitude = results[0].geometry.location.lat();
+	            var longitude = results[0].geometry.location.lng();
+	            console.log("DELETE ME: addr: " + address + ", lat: " + latitude +  ", long: " + longitude);
+	            parent.postMessage({"latitude": latitude, "longitude": longitude, "type": "get-latitude-longitude-result", "cb": event.data.cb, "status": "ok"}, "*");
+	        } else {
+	            parent.postMessage({"type": "get-latitude-longitude-result", "cb": event.data.cb, "status": "not-ok", "detailed-status": google.maps.GeocoderStatus}, "*");
+	        }
+	   });
+	   } else if (event.data.type == "compare-addresses") {
+	    var geocoder = new google.maps.Geocoder();
+	    var address_one = event.data.address_one;
+	    var address_two = event.data.address_two;
+      
+	    geocoder.geocode({ 'address': address_one}, function(results, status) {
+	        if (status == google.maps.GeocoderStatus.OK) {
+	            var latitude_one = results[0].geometry.location.lat();
+	            var longitude_one = results[0].geometry.location.lng();
+
+	            geocoder.geocode({ 'address': address_two}, function(results, status) {
+	                   if (status == google.maps.GeocoderStatus.OK) {
+	                       var latitude_two = results[0].geometry.location.lat();
+	                       var longitude_two = results[0].geometry.location.lng();
+	                       
+	                       if (latitude_one == latitude_two &&
+	                           longitude_one == longitude_two) {
+	                           parent.postMessage({"result" : "equal","type": "compare-addresses-result"}, "*");
+	                       } else {
+	                           parent.postMessage({"result" : "not-equal","type": "compare-addresses-result", "cb": event.data.cb, "status": "ok"}, "*");
+	                       }
+	                   } else {
+	                           parent.postMessage({"type": "compare-addresses-result", "cb": event.data.cb, "status": "not-ok"}, "*");
+	                   }
+                    });
+	        } 
+	   });
+	   } else if (event.data.type == "get-address-components") {
+	    var geocoder = new google.maps.Geocoder();
+	    var address = event.data.address;
+      
+	    geocoder.geocode( { 'address': address}, function(results, status) {
+	        if (status == google.maps.GeocoderStatus.OK) {
+	            var latitude = results[0].geometry.location.lat();
+	            var longitude = results[0].geometry.location.lng();
+	            var total_results = results.length;
+
+	            parent.postMessage({"address-components": results[0].address_components, "latitude": latitude, "longitude": longitude,"total_results": total_results, "type": "get-address-components-result", "cb": event.data.cb, "status": "ok"}, "*");
+	        } else {
+	            parent.postMessage({"type": "get-address-components-result", "cb": event.data.cb, "status": "not-ok", "detailed-status": google.maps.GeocoderStatus}, "*");
+	        }
+	   });
+	   }
+	}
+    </script>
+  </head>
+  <body>
+    <div id=map></div>
+  </body>
+</html>
