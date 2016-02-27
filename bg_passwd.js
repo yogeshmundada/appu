@@ -255,6 +255,16 @@ function calculate_full_hash(domain, username, pwd, pwd_strength) {
 		    vault_write("password_hashes", pii_vault.password_hashes);
 		    send_user_account_site_row_to_reports(hk);
 		}
+
+		if (pii_vault.password_hashes[hk].is_pwd_cracked == undefined) {
+		    check_if_pwd_in_cracked_pwd_db(pwd, function (result) {
+			    if (result != "failed") {
+				pii_vault.password_hashes[hk].is_pwd_cracked = result;
+				vault_write("password_hashes", pii_vault.password_hashes);
+			    }
+			});
+		}
+
 		//Now delete the entry from web workers.
 		delete hashing_workers[worker_key];
 	    }
@@ -404,6 +414,15 @@ function vault_update_domain_passwd(domain, username, username_length, passwd, p
 		ad.user_account_sites[hk].my_pwd_group = curr_pwd_group;
 		flush_selective_entries("aggregate_data", ["user_account_sites"]);
 	    }
+	}
+
+	if (pvph[hk].is_pwd_cracked == undefined) {
+	    check_if_pwd_in_cracked_pwd_db(passwd, function (result) {
+		    if (result != "failed") {
+			pii_vault.password_hashes[hk].is_pwd_cracked = result;
+			vault_write("password_hashes", pii_vault.password_hashes);
+		    }
+		});
 	}
     }
     else {

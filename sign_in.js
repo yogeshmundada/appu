@@ -60,27 +60,25 @@ function age_verification_confirm() {
     $("#age-verification-container-div").show();
     $("#age-verification-container-div").visible();
     $("#sign-in-title").text("Age Verification");
+
+    $("#age-verification-button").on("click", 
+				     function() {
+					 $("#age-verification-container-div").hide();
+					 $("#age-verification-container-div").invisible();
+					 goto_login();
+				     });
+
     $("#age-verification-checkbox").change(function() {
 	    if (this.checked) {
 		$("#age-verification-button").removeClass("disabled");
-		console.log("Here here: checkbox change: " + this.checked);
-		$("#age-verification-button").on("click", 
-						 function() {
-						     $("#age-verification-container-div").hide();
-						     $("#age-verification-container-div").invisible();
-						     goto_login();
-						     });
 	    }
 	    else {
 		$("#age-verification-button").addClass("disabled");
-		$("#age-verification-button").off("click", function() {
-						     $("#age-verification-container-div").hide();
-						     $("#age-verification-container-div").invisible();
-						     goto_login();
-						     });
 	    }
 	});
 }
+
+var initial_download_site_list = [];
 
 function verify_accounts_exist() {
     $("#age-verification-container-div").invisible();
@@ -91,14 +89,15 @@ function verify_accounts_exist() {
 
     $("#sign-in-title").text("Accounts Verification");
 
+    $("#site-accounts-verification-button").on("click", cookie_deletion_verification);
+
     $('.site-accounts').change(function() {
-	    console.log("DELETE ME: Total length of checked: " + $(".site-accounts:checked").length);
-	    if ($(".site-accounts:checked").length == 5 ) {
+	    initial_download_site_list.push($(this).attr("data-site"));
+
+	    if ($(".site-accounts:checked").length > 0 ) {
 		    $("#site-accounts-verification-button").removeClass("disabled");
-		    $("#site-accounts-verification-button").on("click", cookie_deletion_verification);
 	    } else {
 		    $("#site-accounts-verification-button").addClass("disabled");
-		    $("#site-accounts-verification-button").off("click", cookie_deletion_verification);
 	    }
 	});
 
@@ -115,15 +114,14 @@ function cookie_deletion_verification() {
     $("#delete-cookies-verification-container-div").visible();
 
     $("#sign-in-title").text("Consent to Cookie-Deletion Action");
+    $("#delete-cookies-verification-button").on("click", actually_delete_cookies);
 
     $("#delete-cookies-verification-checkbox").change(function() {
 	    if (this.checked) {
 		$("#delete-cookies-verification-button").removeClass("disabled");
-		$("#delete-cookies-verification-button").on("click", actually_delete_cookies);
 	    }
 	    else {
 		$("#delete-cookies-verification-button").addClass("disabled");
-		$("#delete-cookies-verification-button").off("click", actually_delete_cookies);
 	    }
 	});
 }
@@ -132,8 +130,9 @@ function actually_delete_cookies() {
     chrome.extension.sendMessage("", {
 	'type' : 'delete_all_cookies',
 	    }, function() {
-	    pi_to_download = "google";
-	    setTimeout(start_initial_pi_download, 5000);
+	    setTimeout(function() {
+		    start_initial_pi_download();
+		}, 5000);
 	});
 
     $(".progress-div").show();
@@ -146,33 +145,34 @@ function actually_delete_cookies() {
 }
 
 
-pi_to_download = "";
+pi_download_functions = {
+    "google": goto_google,
+    "facebook": goto_facebook,
+    "linkedin": goto_linkedin,
+    "paypal": goto_paypal,
+    "amazon": goto_amazon,
+};
 
 function start_initial_pi_download() {
-    $(".progress-div").hide();
-    $(".progress-div").invisible();
+    // $(".progress-div").hide();
+    // $(".progress-div").invisible();
 
-    if (pi_to_download == "facebook") {
-	goto_facebook();
-	pi_to_download = "amazon";
-    } else if (pi_to_download == "google") {
-	goto_google();
-	pi_to_download = "facebook";
-    } else if (pi_to_download == "amazon") {
-	goto_amazon();
-	pi_to_download = "linkedin";
-    } else if (pi_to_download == "linkedin") {
-	goto_linkedin();
-	pi_to_download = "paypal";
-    } else if (pi_to_download == "paypal") {
-	goto_paypal();
-	pi_to_download = "done";
-    } else if (pi_to_download == "done") {
+    if (initial_download_site_list.length > 0) {
+	var site = initial_download_site_list.shift();
+	pi_download_functions[site]();
+    } else {
 	chrome.extension.sendMessage("", {
 		'type' : 'set_appu_initialized',
 		    });
+
+	chrome.extension.sendMessage("", {
+		'type' : 'check_pi_in_cookies',
+		    });
+	    });
+
 	redirect_to_check_report();
     }
+
 }
 
 function goto_facebook() {
@@ -248,9 +248,9 @@ function goto_lottery() {
 	$("#lottery-container-div").visible();
 
 	$("#sign-in-title").text("Lottery Participation");
+	$("#lottery-setting-button").on("click", goto_login);
 	$('input[name=lottery-opts]').change(function() {
 		$("#lottery-setting-button").removeClass("disabled");
-		$("#lottery-setting-button").on("click", goto_login);
 	    });
 }
 
@@ -298,8 +298,8 @@ function login() {
 }
 
 function redirect_to_check_report() {
-    $(".progress-div").show();
-    $(".progress-div").visible();
+    // $(".progress-div").show();
+    // $(".progress-div").visible();
     time = 1;
     max = 2;
     int = setInterval(function() {
@@ -372,7 +372,6 @@ chrome.extension.onMessage.addListener(function(message, sender, send_response) 
 	$("#top-status").text(message.desc);
     }
     else if (message.type == "initial-login-done") {
-	console.log("APPU DEBUG: DELETE ME: Successfully logged-into: " + message.site_name);
 	start_initial_pi_download();
     }
 });

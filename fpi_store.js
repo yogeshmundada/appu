@@ -119,6 +119,94 @@ function sanitize_name_sync(name) {
     return n;
 }
 
+function sanitize_city(city, field, cb) {
+    var regex_at_least_one_letter = /([a-zA-Z]+)/g;
+    var n = $.trim(city);
+    n = n.replace(/\s\s+/g, ' ');
+    if (n == "") {
+	return cb(null);
+    }
+    if (n.match(regex_at_least_one_letter) == null) {
+	return cb(null);
+    }
+    return cb(n, field);
+}
+
+function sanitize_employment(employment, field, cb) {
+    var regex_at_least_one_letter = /([a-zA-Z]+)/g;
+    var n = $.trim(employment);
+    n = n.replace(/\s\s+/g, ' ');
+    if (n == "") {
+	return cb(null);
+    }
+    if (n.match(regex_at_least_one_letter) == null) {
+	return cb(null);
+    }
+    return cb(n, field);
+}
+
+function sanitize_occupation(occupation, field, cb) {
+    var regex_at_least_one_letter = /([a-zA-Z]+)/g;
+    var n = $.trim(occupation);
+    n = n.replace(/\s\s+/g, ' ');
+    if (n == "") {
+	return cb(null);
+    }
+    if (n.match(regex_at_least_one_letter) == null) {
+	return cb(null);
+    }
+    return cb(n, field);
+}
+
+function sanitize_birthdate(birthdate, field, cb) {
+    var n = $.trim(birthdate);
+    n = n.replace(/\s\s+/g, ' ');
+    if (n == "") {
+	return cb(null);
+    }
+    return cb(n, field);
+}
+
+function sanitize_school(school, field, cb) {
+    var regex_at_least_one_letter = /([a-zA-Z]+)/g;
+    var n = $.trim(school);
+    n = n.replace(/\s\s+/g, ' ');
+    if (n == "") {
+	return cb(null);
+    }
+    if (n.match(regex_at_least_one_letter) == null) {
+	return cb(null);
+    }
+    return cb(n, field);
+}
+
+
+function sanitize_language(language, field, cb) {
+    var regex_at_least_one_letter = /([a-zA-Z]+)/g;
+    var n = $.trim(language);
+    n = n.replace(/\s\s+/g, ' ');
+    if (n == "") {
+	return cb(null);
+    }
+    if (n.match(regex_at_least_one_letter) == null) {
+	return cb(null);
+    }
+    return cb(n, field);
+}
+
+function sanitize_zipcode(zipcode, field, cb) {
+    var regex_all_digits = /^([0-9]+)$/g;
+    var n = $.trim(zipcode);
+    n = n.replace(/\s\s+/g, ' ');
+    if (n == "") {
+	return cb(null);
+    }
+    if (n.match(regex_all_digits) == null) {
+	return cb(null);
+    }
+    return cb(n, field);
+}
+
 function sanitize_address(address, field, cb) {
     get_address_components(address, function(result) {
 	    if (result["status"] == "not-ok") {
@@ -127,8 +215,8 @@ function sanitize_address(address, field, cb) {
 		return cb(null);
 	    }
 	    if (result["total_results"] > 1) {
-		console.log("APPU ERROR: Google maps resolved multiple addresses for: " + address);
-		return cb(null);
+		console.log("APPU WARNING: Google maps resolved multiple addresses for: " + address);
+		// return cb(null);
 	    }
 	    var latitude = result["latitude"];
 	    var longitude = result["longitude"];
@@ -154,7 +242,6 @@ function sanitize_address(address, field, cb) {
 	    canonical_address += ", state: " + pa["state"]["long_name"];
 	    canonical_address += ", zipcode: " + pa["zipcode"]["long_name"];
 	    canonical_address += ", country: " + pa["country"]["long_name"];
-	    console.log("DELETE ME: Canonical address('" + address + "'): " + canonical_address);
 
 	    result["pa"] = pa;
 	    result["canonical_address"] = canonical_address;
@@ -179,6 +266,20 @@ function get_pi_type(field) {
 	return "ccn";
     } else if (field.match(/ssn/g)) {
 	return "ssn";
+    } else if (field.match(/city/g)) {
+	return "city";
+    } else if (field.match(/zipcode/g)) {
+	return "zipcode";
+    } else if (field.match(/employment/g)) {
+	return "employment";
+    } else if (field.match(/occupation/g)) {
+	return "occupation";
+    } else if (field.match(/birth-date/g)) {
+	return "birth-date";
+    } else if (field.match(/school/g)) {
+	return "school";
+    } else if (field.match(/language/g)) {
+	return "language";
     }
 }
 
@@ -290,14 +391,27 @@ function sanitize_value(wait_period, type, value, field, cb) {
 	return sanitize_ccn(value, field, cb);
     } else if (type == "ssn") {
 	return sanitize_ssn(value, field, cb);
-    } 
+    } else if (type == "city") {
+	return sanitize_city(value, field, cb);
+    } else if (type == "zipcode") {
+	return sanitize_zipcode(value, field, cb);
+    } else if (type == "employment") {
+	return sanitize_employment(value, field, cb);
+    } else if (type == "occupation") {
+	return sanitize_occupation(value, field, cb);
+    } else if (type == "birth-date") {
+	return sanitize_birthdate(value, field, cb);
+    } else if (type == "school") {
+	return sanitize_school(value, field, cb);
+    } else if (type == "language") {
+	return sanitize_language(value, field, cb);
+    }
     return null;
 }
 
 
 function flush_to_pi_field_value_identifiers(domain, sanitized_field_values, detection_method) {
     for (var field in sanitized_field_values) {
-	var type = get_pi_type(field);
 	var value_array = sanitized_field_values[field];
 	for (var i = 0; i < value_array.length; i++) {
 	    add_single_value_to_pi_field_value_identifiers(domain, field, value_array[i], detection_method);
@@ -345,7 +459,7 @@ function flush_to_per_site_pi(domain, sanitized_field_values, detection_method) 
     var old_pi_values = (domain in pii_vault.aggregate_data.per_site_pi) ? 
 	pii_vault.aggregate_data.per_site_pi[domain] : {};
 
-    //Make it blank first.
+    // Make it blank first.
     pii_vault.aggregate_data.per_site_pi[domain] = {};
 
     pii_vault.aggregate_data.per_site_pi[domain]['attempted_download_time'] = 
@@ -523,12 +637,38 @@ function sanitize_and_store_downloaded_fpi_data(domain, site_pi_fields, detectio
 
 	    sanitize_value(wait_period, type, value_array[i], field, function(value, nf) {
 			    pending_sanitize_values -= 1;
-			    console.log("DELETE ME: inside here field: " + nf);
 			    if (value != null) {
 				if (!(nf in sanitized_field_values)) {
 				    sanitized_field_values[nf] = [];
 				}
 				sanitized_field_values[nf].push(value);
+
+				if (nf.indexOf("address") > -1) {
+				    var is_verified = false;
+				    if (nf.indexOf("verified") > -1) {
+					is_verified = true;
+				    }
+				    
+				    var nf_city = "city";
+				    var nf_zipcode = "zipcode";
+				    if (is_verified) {
+					nf_city = "verified-city";
+					nf_zipcode = "verified-zipcode";
+				    }
+
+				    if (value["pa"]["city"]) {
+					if (!(nf_city in sanitized_field_values)) {
+					    sanitized_field_values[nf_city] = [];
+					}
+					sanitized_field_values[nf_city].push(value["pa"]["city"]["long_name"]);
+				    }
+				    if (value["pa"]["zipcode"]) {
+					if (!(nf_zipcode in sanitized_field_values)) {
+					    sanitized_field_values[nf_zipcode] = [];
+					}
+					sanitized_field_values[nf_zipcode].push(value["pa"]["zipcode"]["long_name"]);
+				    }
+				}
 			    }
 			    if (pending_sanitize_values <= 0) {
 				store_fpi_data_for_site(domain, sanitized_field_values, detection_method);
@@ -685,7 +825,7 @@ function calculate_username_similarity() {
 	var type = pi_value_attributes["type"];
 	var is_verified = (pi_value_attributes["verified"] == 'yes') ? true: false;
 
-	if (type != "name" && type != "email") {
+	if (type != "name" && type != "email" && type != "username") {
 	    continue;
 	}
 
@@ -743,7 +883,7 @@ function calculate_substring_usernames() {
 	var type = pi_value_attributes["type"];
 	var is_verified = (pi_value_attributes["verified"] == 'yes') ? true: false;
 
-	if (type != "name" && type != "email") {
+	if (type != "name" && type != "email" && type != "username") {
 	    continue;
 	}
 
@@ -780,7 +920,33 @@ function calculate_substring_usernames() {
     flush_aggregate_data();
 }
 
+function check_pi_in_deleted_cookies(bkup_cookiestore) {
+    read_from_local_storage(bkup_cookiestore, function(cs) {
+	    var all_cookies = cs[bkup_cookiestore]["cookies"];
 
+	    pi_types = [
+			"name",
+			"email",
+			"zipcode",
+			"city",
+			"phone",
+			"address",
+			];
+
+	    for (var i = 0; i < pi_types.length; i++) {
+		pi_val_obj_array = get_pi(pi_types[i]);
+		for (var v in pi_val_obj_array) {
+		    for (k in Object.keys(all_cookies)) {
+			if (all_cookies[k].value) {
+			    if (all_cookies[k].value.indexOf(v) != -1 && v.length > 4) {
+				console.log("DELETE ME: type: " + pi_types[i] + ", domain: " + all_cookies[k].domain + ", pi: " + v + ", cookie: " + all_cookies[k].value);
+			    }
+			}
+		    }
+		}
+	    }
+	})
+}
 
 function check_third_party_pi_leaks(details) {
     var tabid = details.tabId;

@@ -571,7 +571,6 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	    site_pi_fields[curr_node.name].filled = true;
 	    site_pi_fields[curr_node.name].processed = true;
 	} else {
-	    console.log("DELETE ME: ");
 	}
 
 	inform_parent(curr_node);
@@ -680,7 +679,6 @@ function process_action(curr_node, action, site_pi_fields, my_slave_tab, level) 
 	    site_pi_fields[curr_node.name].filled = true;
 	    site_pi_fields[curr_node.name].processed = true;
 	} else {
-	    console.log("DELETE ME:");
 	}
 
 	inform_parent(curr_node);
@@ -1102,7 +1100,7 @@ function get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab, initial_
     if (sender_tab_id in initial_login_tabs) {
 	pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'just-this-time';
 	flush_selective_entries("aggregate_data", ["per_site_pi"]);
-	start_pi_download_process(domain, data, sender_tab, initial_fetch);
+	start_pi_download_process(domain, data, undefined, initial_fetch);
 	return;
     }
 

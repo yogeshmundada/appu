@@ -20,12 +20,6 @@ function get_username_element_value(pwd_element) {
     var pwd_element_pos = $(pwd_element).offset();
     var uname_element = locate_probable_username_element();
 
-    chrome.extension.sendMessage("", {
-	    type: "content_script_debug",
-		msg: "DELETE ME: RRRR ROM 1.1: " + JSON.stringify(pwd_element),
-		});
-
-
     if (uname_element.length > 1) {
 	// First filter based on the X,Y coordinates
 	var filtered_uname_elements = undefined;
@@ -238,10 +232,6 @@ function get_password_initialized_readable(pwd_init_time) {
 
 
 function check_passwd_reuse(jevent) {
-    chrome.extension.sendMessage("", {
-	    type: "content_script_debug",
-		msg: "DELETE ME: In check_passwd_reuse()",
-	});
     if (are_usernames_present == false) {
 	if ( jevent.target.value != "" ) {
 	    var message = {};
@@ -265,11 +255,6 @@ function check_passwd_reuse(jevent) {
 	    $(jevent.target).data("is_reuse_checked", true);
 	    $(jevent.target).data("pwd_checked_for", message.passwd);
 	    
-	    chrome.extension.sendMessage("", {
-		    type: "content_script_debug",
-			msg: "DELETE ME: RRRR Setting pwd_checked_for-1: " + message.passwd,
-			});
-
 	}
     }
 }
@@ -280,10 +265,6 @@ function check_passwd_reuse(jevent) {
 //before notification is flashed.
 //In that case, show the warning as pending warning on the next page.
 function check_for_enter(e) {
-    chrome.extension.sendMessage("", {
-	    type: "content_script_debug",
-		msg: "DELETE ME: In check_for_enter()",
-	});
 
     if (e.which == 13) {
 	if ( e.target.value != "" ) {
@@ -291,19 +272,10 @@ function check_for_enter(e) {
 		$(e.target).data("is_reuse_checked", true);
 		$(e.target).data("pwd_checked_for", e.target.value);
 		
-		chrome.extension.sendMessage("", {
-			type: "content_script_debug",
-			    msg: "DELETE ME: RRRR Setting pwd_checked_for-2: " + e.target.value,
-			    });
-
 
 		var message = {};
 		message.type = "check_passwd_reuse";
 
-		chrome.extension.sendMessage("", {
-			type: "content_script_debug",
-			    msg: "DELETE ME: RRRR ROM 1: ",
-			    });
 
 		var uname_results = undefined;
 		try {
@@ -313,11 +285,6 @@ function check_for_enter(e) {
 		    uname_results = {rc: false};
 		    console.log("Error: In exception");
 		}
-
-		chrome.extension.sendMessage("", {
-			type: "content_script_debug",
-			    msg: "DELETE ME: RRRR ROM 2: ",
-			    });
 
 		message.uname_results = uname_results;
 		message.caller = "check_for_enter";
@@ -412,18 +379,8 @@ function final_password_reuse_check() {
 
     var all_passwds = $("input:password");
 
-    chrome.extension.sendMessage("", {
-	    type: "content_script_debug",
-		msg: "DELETE ME: KKKK In final_password_reuse_check(): " + all_passwds.length,
-	});
-
     try {
 	for(var i = 0; i < all_passwds.length; i++) {
-		chrome.extension.sendMessage("", {
-		    type: "content_script_debug",
-			msg: "DELETE ME: ZZZZ In final_password_reuse_check: " + all_passwds[i].value + ", visible: " + $(all_passwds[i]).is(":visible"),
-			});
-
 
             if (all_passwds[i].value != "" && 
 		($(all_passwds[i]).is(":visible") == true || 
@@ -431,10 +388,6 @@ function final_password_reuse_check() {
 		
 		if ($(all_passwds[i]).data("is_reuse_checked") == true &&
 		    $(all_passwds[i]).data("pwd_checked_for") == all_passwds[i].value) {
-		    chrome.extension.sendMessage("", {
-			    type: "content_script_debug",
-				msg: "DELETE ME: QQQQ CONT...: " + $(all_passwds[i]).data("pwd_checked_for"),
-				});
 
 		    continue;
 		}
@@ -442,12 +395,6 @@ function final_password_reuse_check() {
 		if (are_usernames_present == false) {
 		    var message = {};
 
-		    chrome.extension.sendMessage("", {
-			    type: "content_script_debug",
-				msg: "DELETE ME: In final_password_reuse_check: actuallly seching",
-				});
-
-		    
 		    message.pwd_sentmsg = $(all_passwds[i]).data("is_reuse_checked");
 		    message.type = "check_passwd_reuse";
 		    var uname_results = undefined;

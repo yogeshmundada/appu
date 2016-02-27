@@ -114,7 +114,6 @@ function test_file_click(e) {
 }
 
 function is_blacklisted(response) {
-    console.log("DELETE ME: I am here in is_blacklisted()");
     is_blacklist_check_done = true;
     if(response.blacklisted == "no") {
 	do_not_watch_this_site = false;
@@ -131,7 +130,6 @@ function is_blacklisted(response) {
 	}
 
 	//Register for password input type element. 
-	console.log("DELETE ME: registering all passwd callbacks");
 	$('body').on('focusout', 'input:password', check_passwd_reuse);
 	$('body').on('keydown', 'input:password', check_for_enter);
 	$('body').on('keyup', 'input:password', update_current_password);
@@ -274,29 +272,9 @@ function detect_text_pattern(patterns) {
     return detected_elements;
 }
 
-
-function detect_input_type_pattern(patterns) {
-    var detected_elements = $([]);
-    Object.keys(patterns).forEach(function(value, index, array) {
-	    detected_elements = detected_elements.add($(":input[value='"+ value +"']").filter(function() { 
-			if (this.tagName == "SCRIPT") {
-			    return false;
-			}
-			if (this.tagName == "NOSCRIPT") {
-			    return false;
-			}
-			return ($(this).children().length < 1); 
-		    }));
-	});
-    return detected_elements;
-}
-
-
-
 function form_submit_called(e) {
-    console.log("DELETE ME: FORM submit called");
-}
 
+}
 
 function do_document_ready_functions() {
     if (document.readyState !== "complete") {
@@ -448,18 +426,14 @@ if (document.URL.match(/.pdf$/) == null) {
     is_site_loaded = setInterval(do_document_ready_functions, 200);
     
     chrome.extension.onMessage.addListener(function(message, sender, send_response) {
-	    console.log("DELETE ME: Here here: " + JSON.stringify(message));
 	    if (((is_cookie_investigator_tab == false && is_template_processing_tab == false) && 
 		 (do_not_watch_this_site == undefined || do_not_watch_this_site == true)) ||
 		curr_epoch_id == -1) {
 		// Ignore all messages if we are not sure if this site should be monitored or not.
 		// Or if epoch-id is -1 then likely this is a message for last page and not for us.
-		console.log("DELETE ME: Here here: returning :(: template:  " + is_template_processing_tab);
-		console.log("DELETE ME: Here here: returning :(: " + curr_epoch_id);
+
 		return;
 	    }
-
-	    console.log("DELETE ME: Continuing");
 
 	    if (message.type == "report-reminder") {
 		show_report_ready_modal_dialog();
@@ -507,7 +481,6 @@ if (document.URL.match(/.pdf$/) == null) {
 		return true;
 	    }
 	    else if (message.type == "check-if-username-present") {
-		console.log("APPU DEBUG: DELETE ME: In check-if-username-present");
 		if (message.usernames_present == true) {
 		    var username_list = message.usernames;
 		    var res = check_if_username_present(username_list, "normal-operation");

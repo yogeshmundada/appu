@@ -27,7 +27,6 @@
 	        if (status == google.maps.GeocoderStatus.OK) {
 	            var latitude = results[0].geometry.location.lat();
 	            var longitude = results[0].geometry.location.lng();
-	            console.log("DELETE ME: addr: " + address + ", lat: " + latitude +  ", long: " + longitude);
 	            parent.postMessage({"latitude": latitude, "longitude": longitude, "type": "get-latitude-longitude-result", "cb": event.data.cb, "status": "ok"}, "*");
 	        } else {
 	            parent.postMessage({"type": "get-latitude-longitude-result", "cb": event.data.cb, "status": "not-ok", "detailed-status": google.maps.GeocoderStatus}, "*");

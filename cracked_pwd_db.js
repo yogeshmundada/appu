@@ -89,7 +89,7 @@ function is_bit_set(bytenum, bitinbyte, arrbuf) {
     return false;
 }
 
-function check_if_pwd_in_cracked_pwd_db(pwd) {
+function check_if_pwd_in_cracked_pwd_db(pwd, cb) {
     var hashes = get_hashed_value(pwd);
     var bitpos = get_bit_positions(hashes);
 
@@ -102,6 +102,7 @@ function check_if_pwd_in_cracked_pwd_db(pwd) {
 		   result = temp.join(' ');
 
 		   console.log("APPU DEBUG: Is password cracked: " + result);
+		   cb(result);
 	       }
 	       else if (data.split(' ')[0] == 'Failed') {
 		   var temp = data.split(' ');
@@ -109,15 +110,18 @@ function check_if_pwd_in_cracked_pwd_db(pwd) {
 		   reason = temp.join(' ');
 
 		   console.log("APPU DEBUG: Checking cracked pwd db failed for reason: " + reason);
+		   cb("failed");
 	       }
 	       else {
 		   console.log("APPU DEBUG: Checking cracked pwd db failed: Unknown Reason");
+		   cb("failed");
 	       }
 	   })	
 	.error(function(bitpos) {
 		return function(data, status) {
 		    print_appu_error("Appu Error: Could not check cracked pwd db for bitpos: " 
 				     + JSON.stringify(bitpos));
+		   cb("failed");
 		}
 	    } (bitpos));
 

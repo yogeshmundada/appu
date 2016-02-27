@@ -1,4 +1,12 @@
 
+//We did not find logout elements, so now search as per actual text.
+var signout_patterns = {
+    "Sign out" : "^Sign out$", 
+    "Sign Off" : "^Sign Off$", 
+    "? Sign out" : "\\? Sign out$", 
+    "Log Out"  : "^Log Out$", 
+    "Logout"   : "^Logout$",  
+};
 
 //If we can detect log-out links on a page then that means a user has
 //certainly logged in.
@@ -38,24 +46,10 @@ function detect_logout_links() {
     if (signout_elements.length != 0) {
 	return signout_elements;
     }
-
-    //We did not find logout elements, so now search as per actual text.
-    var signout_patterns = {
-	"Sign out" : "^Sign out$", 
-	"Sign Off" : "^Sign Off$", 
-	"? Sign out" : "\\? Sign out$", 
-	"Log Out"  : "^Log Out$", 
-	"Logout"   : "^Logout$",  
-    };
    
     //console.log("APPU DEBUG: Detecting 'log out's");
 
     signout_elements = detect_text_pattern(signout_patterns);
-
-    //Special case for sites like Facebook
-    if (signout_elements.length == 0) {
-	signout_elements = detect_input_type_pattern(signout_patterns);
-    }
 
     //Special case for sites like Dropbox....need to generalize it later
     if (signout_elements.length == 0 && (document.domain.match(/dropbox.com$/) != null)) {
@@ -84,9 +78,55 @@ function monitor_explicit_logouts(eo) {
     }
 }
 
+function detect_input_type_pattern(patterns) {
+    var detected_elements = $([]);
+    Object.keys(patterns).forEach(function(value, index, array) {
+	    detected_elements = detected_elements.add($(":input[value='"+ value +"']").filter(function() { 
+			if (this.tagName == "SCRIPT") {
+			    return false;
+			}
+			if (this.tagName == "NOSCRIPT") {
+			    return false;
+			}
+			return ($(this).children().length < 1); 
+		    }));
+	});
+    return detected_elements;
+}
+
 function detect_if_user_logged_in() {
-    var signout_elements = detect_logout_links();
-    var signin_elements = detect_login_links();
+    var signout_elements = $([]);
+    var signin_elements = $([]);
+
+    if (document.domain.match(/myaccount.google.com$/) != null) {
+	//Special case for Google
+	signout_elements = signout_elements.add($(":contains('Sign out')")
+						.filter(function() { return (this.tagName == 'A'); }));
+	signin_elements = detect_login_links();
+    } else if (document.domain.match(/facebook.com$/) != null) {
+	//Special case for Facebook
+	signout_elements = signout_elements.add($('a:contains("Messages")'));
+	signout_elements = signout_elements.add($('a:contains("Friend Requests")'));
+	signin_elements = detect_login_links();
+    } else if (document.domain.match(/amazon.com$/) != null) {
+	//Special case for Amazon
+	signout_elements = signout_elements.add($(":contains('Sign Out')")
+						.filter(function() { return (this.tagName == 'A'); }));
+	signin_elements = detect_login_links();
+    } else if (document.domain.match(/linkedin.com$/) != null) {
+	//Special case for LinkedIn
+	signout_elements = signout_elements.add($(":contains('Sign Out')")
+						.filter(function() { return (this.tagName == 'A'); }));
+	signin_elements = detect_login_links();
+    } else if (document.domain.match(/paypal.com$/) != null) {
+	//Special case for Paypal
+	signout_elements = signout_elements.add($(":contains('Log out')")
+						.filter(function() { return (this.tagName == 'A'); }));
+	signin_elements = detect_login_links();
+    } else {
+	signout_elements = detect_logout_links();
+	signin_elements = detect_login_links();
+    }
 
     if (signout_elements.length > 0 && signin_elements.length == 0) {
 	var message = {};
@@ -119,7 +159,6 @@ function detect_if_user_logged_in() {
 	console.log("APPU DEBUG: Sending SignIn status: UNSURE");
     }
 }
-
 
 
 //Detecting if a user has logged in or not is a bit tricky.

@@ -78,8 +78,13 @@ var cookieset_generator_workers = {};
 //and empty this buffer.
 var pre_login_cookies = {};
 
-var server_url = "http://appu.gtnoise.net:5005/";
+//var server_url = "https://appu.gtnoise.net:5005/";
+//var server_url = "https://woodland.cc.gt.atl.ga.us:5005/";
+var server_url = "https://woodland.noise.gatech.edu:5005/";
+// var server_url = "https://192.168.56.102:5005/";
 // var server_url = "http://192.168.56.102:59000/";
+
+// var server_url = "https://appu.gtnoise.net:5005/";
 
 var usernames_in_tab = {};
 
@@ -277,8 +282,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	r = pii_log_user_input_type(message);
     }
     else if (message.type == "content_script_started") {
-	console.log("APPU DEBUG: DELETE ME: content-script-started is called");
-		
 	if (sender.tab) {
 	    var epoch_id = 0;
 	    var is_cookie_investigator_tab = false;
@@ -396,7 +399,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     }
     else if (message.type == "am_i_active") {
 	if (sender.tab) {
-	    console.log("Here here: Delete me: Received 'am_i_active' from: " + sender.tab.id);
 	    chrome.tabs.query( { active: true }, (function(sender_tab_id, sendResponse) {
 			return function(active_tabs) {
 			    var response_sent = false; 
@@ -442,7 +444,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		    //print_all_cookies(get_domain(domain), "LOGIN_COMPLETE");
 		    detect_login_cookies(get_domain(domain));
 		}
-	       
 	    }
 	}
     }
@@ -531,13 +532,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     } else if (message.type == "detected_pi") {
 	message.domain = get_domain(message.domain);
 
-	console.log("DELETE ME: For domain(" + message.domain + "), following PIs were detected");
 	var present_pi = message.present_pi;
 	var present_pi_keys = Object.keys(present_pi);
 	for (i = 0; i < present_pi_keys.length; i++) {
 	    var k = present_pi_keys[i];
 	    if (present_pi[k].length > 0) {
-		console.log("DELETE ME: PI(" + k + "): " + JSON.stringify(present_pi[k]));
+		// console.log("DELETE ME: PI(" + k + "): " + JSON.stringify(present_pi[k]));
 	    }
 	}
     } else if (message.type == "record_prelogin_cookies") {
@@ -620,8 +620,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	console.log(message.msg);
     }
     else if (message.type == "check_passwd_reuse") {	
-	console.log("DELETE ME: HOHOHO check_passwd_reuse: ");
-
 	if (sender.tab && (sender.tab.id in cookie_investigating_tabs)) {
 	    return;
 	}
@@ -716,16 +714,14 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    }
 	} else {
 	    var pi_usernames = get_all_values_of_types(["username", "name", "email"]);
-	    console.log("DELETE ME: I am about to decide whether to do username check or not");
-		if (pi_usernames.length > 0) {
+	    if (pi_usernames.length > 0) {
 		    chrome.tabs.sendMessage(sender.tab.id, {
 			    'type' : "check-if-username-present",
 				'usernames' : pi_usernames,
 				'usernames_present': true,
 				});
 		} else {
-		    console.log("DELETE ME: Decided against username check");
-		    chrome.tabs.sendMessage(sender.tab.id, {
+		chrome.tabs.sendMessage(sender.tab.id, {
 			    'type' : "check-if-username-present",
 				'usernames_present': false,
 				});
@@ -758,7 +754,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		r.status = "process_template";
 		sendResponse(r);
 
-		$('#' + dummy_tab_id).trigger("page-is-loaded");
+		window.setTimeout(function(){
+			$('#' + dummy_tab_id).trigger("page-is-loaded");
+		    }, 3000);
 	    }
 	    else {
 		r.status = "process_template";
@@ -813,7 +811,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		}
 
 		if (sender.tab && sender.tab.id in initial_login_tabs) { 
-		    setTimeout(function() {chrome.tabs.remove(sender.tab.id)}, 60000);
+		    setTimeout(function() {chrome.tabs.remove(sender.tab.id)}, 5000);
 		    chrome.tabs.sendMessage(appu_initialization_tab_id, {
 			    'type': "initial-login-done",
 				"site_name": initial_login_tabs[sender.tab.id],
@@ -900,7 +898,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	sendResponse(r);
     }
     else if (message.type == "check_blacklist") {
-	console.log("DELETE ME: In check_blacklist");
 	r = pii_check_blacklisted_sites(message);
 	if (r.blacklisted == "no") {
 	    var etld = get_domain(message.domain);
@@ -921,7 +918,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 
 	    }
 	}
-	console.log("DELETE ME: In check_blacklist, sending response!");
 	sendResponse(r);
     }
     else if (message.type == "get_report_by_number") {
@@ -1066,6 +1062,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	backup_entire_cookiestore("Appu-Initial-CookieStore");
 	expunge_entire_cookiestore();
 	sendResponse(r);
+    }
+    else if (message.type == "check_pi_in_cookies") {
+	
     }
     else if (message.type == "set_appu_initialized") {
 	pii_vault.initialized = true;

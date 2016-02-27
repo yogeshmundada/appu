@@ -482,7 +482,6 @@ function print_redirect_information(details) {
 
 function print_sent_headers(details) {
     if (get_domain(details.url.split("/")[2]) != 'live.com') {
-	console.log("Here here: Sent headers: " + JSON.stringify(details));
     }
 }
 
@@ -490,7 +489,6 @@ function print_sent_headers(details) {
 // sites.
 function count_all_cookies() {
     chrome.cookies.getAll({}, function(all_cookies) {
-	    console.log("DELETE ME: I got all cookies, now going to process them.");
 	    var tot_sites = 0;
 	    var tot_hostonly = 0;
 	    var tot_httponly = 0;
@@ -575,7 +573,6 @@ function restore_entire_cookiestore(bkupstore_name) {
     }
 
     var cb = function(cs) {
-	console.log("DELETE ME: Length: " + cs[bn].cookies.length);
 
 	dump_to_browser_cookie_store(cs[bn]);
 	console.log("APPU DEBUG: Done restoring the cookie-store ");
@@ -1655,10 +1652,8 @@ function check_if_still_logged_in(domain) {
 	}
     }
     if (logged_in == true) {
-	// console.log("Here here: Domain: " + domain + ", Status: LOGGED-IN");
     }
     else {
-	// console.log("Here here: Domain: " + domain + ", Status: LOGGED-OUT");
     }
     return logged_in;
 }
@@ -1832,7 +1827,6 @@ function delete_set_cookie_from_HTTP_response(details) {
     var final_rh = [];
     if ("responseHeaders" in details) {
 	var rh = details.responseHeaders;
-	//console.log("Here here: (delete_set_cookie_from_HTTP_response) RequestId: " + details.requestId);
 	for (var i = 0; i < rh.length; i++) {
 	    if (rh[i].name != "set-cookie") {
 		final_rh.push(rh[i]);
@@ -1841,11 +1835,9 @@ function delete_set_cookie_from_HTTP_response(details) {
 		var cookie_name = rh[i].value.match(/(.+?)=(.*)/)[1].trim();
 		var domain = get_domain(details.url.split("/")[2]);
 		if (!is_it_a_during_cookie(domain, cookie_name)) {
-		    console.log("Here here: Letting set-cookie work for: " + cookie_name);
 		    final_rh.push(rh[i]);
 		}
 		else {
-		    console.log("Here here: BLOCKING set-cookie for: " + cookie_name);
 		    final_rh.push(rh[i]);
 		}
 	    }
@@ -2157,7 +2149,6 @@ function process_last_epoch(tab_id, present_usernames, num_pwd_boxes) {
 					    cit.content_script_started) {
 					    console.log("APPU DEBUG: Page load timeout, " + 
 							"content script started, firing username detection test");
-					    console.log("Here here: Calling check_usernames_for_cookie_investigation()");
 					    check_usernames_for_cookie_investigation(tab_id);
 					}
 				    }
@@ -2830,8 +2821,7 @@ function cookie_investigator(account_cookies,
 				cs.cookies[cookie_key].is_part_of_account_cookieset = true;
 			    }
 			    else {
-				console.log("Here here: Previously detected cookie in expand-state no longer present: " +
-					    cookie_key);
+
 			    }
 			    console.log("APPU DEBUG: Previously discovered expand-state cookie(" + cookie_key +
 					") was not present in the " +
@@ -2877,12 +2867,9 @@ function cookie_investigator(account_cookies,
 				// Delete this entire block
 				var nba = convert_binary_cookieset_to_cookie_array(pcs_next_binary_cs, 
 										   suspected_account_cookies_array);
-				console.log("Here here: Delete me, verification check, nba: " + JSON.stringify(nba));
 				if (nba.sort().compare(pcs.next_llb_cookieset_array.sort())) {
-				    console.log("Here here: Delete me, pcs_next_binary_cs is correct");
 				}
 				else {
-				    console.log("Here here: Delete me, ERROR pcs_next_binary_cs is INcorrect");
 				}
 			    }
 			}
@@ -2902,12 +2889,9 @@ function cookie_investigator(account_cookies,
 				// Delete this entire block
 				var cba = convert_binary_cookieset_to_cookie_array(pcs_curr_binary_cs, 
 										   suspected_account_cookies_array);
-				console.log("Here here: Delete me, verification check, cba: " + JSON.stringify(cba));
 				if (cba.sort().compare(pcs.curr_llb_cookieset_array.sort())) {
-				    console.log("Here here: Delete me, pcs_curr_binary_cs is correct");
 				}
 				else {
-				    console.log("Here here: Delete me, ERROR pcs_curr_binary_cs is INcorrect");
 				}
 			    }
 			}
@@ -2927,12 +2911,9 @@ function cookie_investigator(account_cookies,
 				// Delete this entire block
 				var ngba = convert_binary_cookieset_to_cookie_array(pcs_next_gub_binary_cs, 
 										    suspected_account_cookies_array);
-				console.log("Here here: Delete me, verification check, ngba: " + JSON.stringify(ngba));
 				if (ngba.sort().compare(pcs.next_gub_cookieset_array.sort())) {
-				    console.log("Here here: Delete me, pcs_next_gub_binary_cs is correct");
 				}
 				else {
-				    console.log("Here here: Delete me, ERROR pcs_next_gub_binary_cs is INcorrect");
 				}
 			    }
 			}
@@ -2953,12 +2934,10 @@ function cookie_investigator(account_cookies,
 				// Delete this entire block
 				var cgba = convert_binary_cookieset_to_cookie_array(pcs_curr_gub_binary_cs, 
 										    suspected_account_cookies_array);
-				console.log("Here here: Delete me, verification check, cgba: " + JSON.stringify(cgba));
 				if (cgba.sort().compare(pcs.curr_gub_cookieset_array.sort())) {
-				    console.log("Here here: Delete me, pcs_curr_gub_binary_cs is correct");
+
 				}
 				else {
-				    console.log("Here here: Delete me, ERROR pcs_curr_gub_binary_cs is INcorrect");
 				}
 			    }
 			}
@@ -3242,15 +3221,11 @@ function cookie_investigator(account_cookies,
 	var cba = undefined;
 	if (curr_binary_cs) {
 	    cba = convert_binary_cookieset_to_cookie_array(curr_binary_cs, suspected_account_cookies_array);
-	    console.log("Here here: Delete me, going to store cba: " + JSON.stringify(cba));
-	    console.log("Here here: Delete me, corresponding curr_binary_cs: " + JSON.stringify(curr_binary_cs));
 	}
 
 	var cgba = undefined;
 	if (curr_gub_binary_cs) {
 	    cgba = convert_binary_cookieset_to_cookie_array(curr_gub_binary_cs, suspected_account_cookies_array);
-	    console.log("Here here: Delete me, going to store cgba: " + JSON.stringify(cgba));
-	    console.log("Here here: Delete me, corresponding curr_gub_binary_cs: " + JSON.stringify(curr_gub_binary_cs));
 	}
 
 	offload_cookie_investigation_state(my_url, {
@@ -3292,7 +3267,6 @@ function cookie_investigator(account_cookies,
 
 	if (acct_cookies.length == 1 &&
 	    acct_cookies[0] == "https://chat.bankofamerica.com/hc/LPBofA2:HumanClickKEY") {
-	    console.log("Here here: Delete me, Delete this entire if block");
 	}
 
 	for (var i = 0; i < acct_cookies.length; i++) {
@@ -3338,7 +3312,6 @@ function cookie_investigator(account_cookies,
 
 	var rc = check_sanity_s_na_GUB(s_na_GUB_cookiesets_array, suspected_account_cookies_array);
 	if (!rc) {
-	    console.log("Here here: Some error, unnecessary s_na_GUB detected");
 	}
 
 	// Re-generate decimal cookiesets for retesting-optimization arrays
@@ -3792,7 +3765,6 @@ function cookie_investigator(account_cookies,
 		console.log("APPU DEBUG: Enabled during cookies in this epoch: " + 
 			    JSON.stringify(enabled_during_cookies_array));
 		if (enabled_during_cookies_array.length != num_cookies_pass_for_round) {
-		    console.log("Here here: Delete me");
 		}
 		console.log("APPU DEBUG: Enabled non-during cookies getting tested: " + 
 			    JSON.stringify(enabled_nonduring_cookies_array));
@@ -3833,7 +3805,6 @@ function cookie_investigator(account_cookies,
 
 			if (cookie_key.indexOf("BOFA_LOCALE_COOKIE") != -1 &&
 			    my_state == 'st_GUB_cookiesets_block_DISABLED') {
-			    console.log("Here here: Delete me");
 			}
 
 			if (!(cookie_key in cs.cookies)) {
@@ -3933,8 +3904,6 @@ function cookie_investigator(account_cookies,
 				Object.keys(cookie_store).length + 
 				", On-disk cookie-store length: " + all_cookies.length);
 
-		    //  console.log("Here here: shadow_cookie_store: " + 
-		    // 		     JSON.stringify(Object.keys(cookie_store)));
 
 		    if (my_state != "st_verification_epoch"                            &&
 			my_state != "st_suspected_cookies_block_test"                  &&
@@ -3965,7 +3934,6 @@ function cookie_investigator(account_cookies,
 			console.log("APPU DEBUG: Enabled during cookies in this epoch: " + 
 				    JSON.stringify(enabled_during_cookies_array));
 			if (enabled_during_cookies_array.length != num_cookies_pass_for_round) {
-			    console.log("Here here: Delete me");
 			}
 			console.log("APPU DEBUG: Enabled non-during cookies getting tested: " + 
 				    JSON.stringify(enabled_nonduring_cookies_array));
@@ -4225,7 +4193,6 @@ function cookie_investigator(account_cookies,
 	    console.log("APPU DEBUG: Am I logged-in?: " + are_usernames_present);
 
 	    if (!are_usernames_present) {
-		console.log("APPU DEBUG: Here here");
 	    }
 	    
 	    var enabled_cookies = convert_binary_cookieset_to_cookie_array(curr_binary_cs, 
@@ -4630,7 +4597,6 @@ function cookie_investigator(account_cookies,
 
 		var rc = check_sanity_s_na_GUB(test_s_na_GUB_cookiesets_array, suspected_account_cookies_array);
 		if (!rc) {
-		    console.log("Here here: Some error, unnecessary s_na_GUB detected");
 		}
 
 		console.log("APPU DEBUG: Next decimal cookieset: " + curr_gub_decimal_cs);
@@ -5747,7 +5713,6 @@ function cookie_investigator(account_cookies,
 		    is_secure = cs.cookies[ca].secure;
 		}
 		catch (e) {
-		    console.log("Here here: exception: " + JSON.stringify(e));
 		}
 		
 		if (is_secure != undefined) {
@@ -5982,7 +5947,6 @@ function cookie_investigator(account_cookies,
 			console.log("APPU Error: NOT EXPECTED: User is NOT logged-in, num-pwd-boxes("+ num_pwd_boxes 
 				    +"), for test 'st_verification_epoch'");
 			report_fatal_error("Verification-epoch-page-load-no-usernames");
-			//console.log("Here here: SHADOW_COOKIE_STORE: " + JSON.stringify(shadow_cookie_store));
 			was_result_expected = false;
 		    }
 		    else {
@@ -6315,7 +6279,6 @@ function cookie_investigator(account_cookies,
 		    cookie_struct.value = matched_entries[2].trim();
 		}
 		catch (e) {
-		    console.log("Here here: " + JSON.stringify(e));
 		}
 
 		var my_url = details.url;
@@ -6396,8 +6359,6 @@ function cookie_investigator(account_cookies,
 		if (req_epch_table[details.requestid] == epoch_id) {
 		    // Write to shadow cookie table only IF this response corresponds
 		    // on HTTP request issued in this test epoch.
-// 		    console.log("APPU DEBUG: Here here: Shadow-cookie-store: key=" + 
-// 				cookie_key + ", value=" + JSON.stringify(cookie_struct));
 		    shadow_cookie_store[cookie_key] = cookie_struct;
 		    // console.log("APPU DEBUG: In RESPONSE: SHADOW_COOKIE_STORE: " + JSON.stringify(shadow_cookie_store));
 		}
@@ -6418,7 +6379,6 @@ function cookie_investigator(account_cookies,
 	var final_cookies = {};
 	var final_cookie_str = "";
 	
-	//console.log("Here here: (cookie_delete_function) RequestId: " + details.requestId);
 	if (bool_is_cookie_testing_done) {
 	    return;
 	}
@@ -6467,13 +6427,8 @@ function cookie_investigator(account_cookies,
 	}
 	
 	if (http_request_cookies.length != 0) {
-	    console.log("Here here: Going to suppress(if present): " +
-			suspected_account_cookies_array[current_single_cookie_test_index]);
-	    //console.log("Here here: Cookies found in HTTP request");
 	    var cookie_name_value = http_request_cookies[0].value.split(";");
 	    var delete_index = -1;
-	    
-	    //console.log("Here here: Current URL: " + details.url);
 	    
 	    for (var j = 0; j < cookie_name_value.length; j++) {
 		// Lets do non-greedy matching here because cookie values
@@ -6482,8 +6437,6 @@ function cookie_investigator(account_cookies,
 		var c_name = matched_entries[1].trim();
 		var hashed_c_value = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(matched_entries[2].trim()));
 		var curr_test_cookie_name = suspected_account_cookies_array[current_single_cookie_test_index];
-		//console.log("Here here: Testing for cookie: "+ curr_test_cookie_name +", Current cookie: " + 
-		//	    c_name);
 		// To get only the cookie names. Ignore domain and path.
 		// Using pop() because what if the domain is like www.google.com:8080
 		if (c_name == curr_test_cookie_name.split(":").pop() &&
@@ -6497,10 +6450,8 @@ function cookie_investigator(account_cookies,
 	    if (delete_index != -1) {
 		var temp_array = cookie_name_value.splice(delete_index, 1);
 		final_cookie_str = cookie_name_value.join("; "); 
-		console.log("Here here: Match is found");
 	    }
 	    else {
-		console.log("Here here: Match is *NOT* found");
 		//console.log("APPU DEBUG: No cookie found to suppress in this request");
 		final_cookie_str = cookie_name_value.join("; "); 
 	    }
@@ -6510,9 +6461,7 @@ function cookie_investigator(account_cookies,
 	    };
 	    details.requestHeaders.push(cookie_element);
 	}
-	
-	
-	console.log("Here here: Going to return requestHeaders: " + JSON.stringify(details.requestHeaders));
+
 	return {requestHeaders: details.requestHeaders};
     }
     
@@ -6538,7 +6487,6 @@ function cookie_investigator(account_cookies,
     // since the server resets the cookie. This is exactly what we want to test. What is the behavior of
     // the server when a particular cookie is missing.
     function replace_with_cookies_from_shadow_cookie_store(details) {
-	// console.log("Here here: In REQUEST: SHADOW_COOKIE_STORE: " + JSON.stringify(shadow_cookie_store));
 	var original_http_request_cookies = undefined;
 	var final_cookies = {};
 	var final_cookie_str = "";
@@ -6580,7 +6528,6 @@ function cookie_investigator(account_cookies,
 	var original_cookie_array = [];
 	if (original_http_request_cookies) {
 	    original_cookie_array = original_http_request_cookies[0].value.split(";");
-	    //console.log("Here here: Number of cookies in original HTTP request: " + original_cookie_array.length);
 	}
 	
 	var curr_time = (new Date()).getTime()/1000;
@@ -6603,9 +6550,6 @@ function cookie_investigator(account_cookies,
 	    }
 	}
 	
-	// console.log("Here here: Here here here: URL: " + details.url);
-	// console.log("Here here: Cookiessssssssss:" + JSON.stringify(my_cookies));
-	
 	// console.log("APPU DEBUG: Original Cookies: " + 
 	//	    original_cookie_array.length +
 	//	    ", Length of shadow_cookie_store: " +
@@ -6625,7 +6569,6 @@ function cookie_investigator(account_cookies,
 		    // 		    console.log("APPU DEBUG: (RequestID: " + details.requestId + ")Shadow Cookie Store: " 
 		    // 				+ JSON.stringify(shadow_cookie_store));
 		}
-		//console.log("Here here: URL: " + details.url);
 	    }
 	}
 	var final_cookie_str = my_cookies.join("; "); 
@@ -6636,7 +6579,6 @@ function cookie_investigator(account_cookies,
 	};
 	
 	details.requestHeaders.push(cookie_element);
-	// console.log("Here here: Going to return requestHeaders: " + JSON.stringify(details.requestHeaders));
 	return {requestHeaders: details.requestHeaders};
     }
  
@@ -7459,7 +7401,7 @@ function test_replace_with_cookies_from_shadow_cookie_store(details) {
 
 		}
 		catch(e) {
-		    console.log("Here here: " + JSON.stringify(e));
+
 		}
 	    }
 	    if (everything_works) {
@@ -7476,7 +7418,6 @@ function test_replace_with_cookies_from_shadow_cookie_store(details) {
     };
     
     details.requestHeaders.push(cookie_element);
-    //    console.log("Here here: Going to return requestHeaders: " + JSON.stringify(details.requestHeaders));
     return {requestHeaders: details.requestHeaders};
 }
 

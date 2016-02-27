@@ -45,7 +45,6 @@ function convert_existing_addresses_to_canonical_form() {
 			    canonical_address += ", state: " + pa["state"]["long_name"];
 			    canonical_address += ", zipcode: " + pa["zipcode"]["long_name"];
 			    canonical_address += ", country: " + pa["country"]["long_name"];
-			    console.log("DELETE ME: Canonical address('" + address + "'): " + canonical_address);
 
 			    if (address in pii_vault.aggregate_data.pi_field_value_identifiers) {
 				delete pii_vault.aggregate_data.pi_field_value_identifiers[address];
@@ -72,7 +71,6 @@ function convert_pi_field_values_to_canonical_form() {
     for (var pi_values in vpfvi) {
 	var identifier = vpfvi[pi_values];
 	if (typeof(identifier) == "string") {
-	    console.log("DELETE ME: identifier: " + identifier + ", type: " + typeof(pi_values));
 
 	    if (pi_values in pii_vault.aggregate_data.pi_field_value_identifiers) {
 		delete pii_vault.aggregate_data.pi_field_value_identifiers[pi_values];
