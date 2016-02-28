@@ -770,7 +770,6 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
     }
     else if (message.type == "signed_in") {
-	console.log("DELETE ME: Here here got signed_in message: " + JSON.stringify(message));
 	if (sender.tab && !(sender.tab.id in cookie_investigating_tabs)) {
 	    var domain = get_domain(message.domain);
 

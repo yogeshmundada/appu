@@ -93,7 +93,18 @@ function verify_accounts_exist() {
     $("#site-accounts-verification-button").on("click", cookie_deletion_verification);
 
     $('.site-accounts').change(function() {
-	    initial_download_site_list.push($(this).attr("data-site"));
+	    var site_name = $(this).attr("data-site");
+	    if ($(this).attr("checked") == "checked") {
+		if (initial_download_site_list.indexOf(site_name) == -1) {
+		    initial_download_site_list.push(site_name);
+		}
+	    } else {
+		var idx = initial_download_site_list.indexOf(site_name);
+		if (idx != -1) {
+		    initial_download_site_list.splice(idx, 1);
+		}
+	    }
+
 
 	    if ($(".site-accounts:checked").length > 0 ) {
 		    $("#site-accounts-verification-button").removeClass("disabled");
