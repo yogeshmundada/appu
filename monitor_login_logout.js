@@ -98,31 +98,52 @@ function detect_if_user_logged_in() {
     var signout_elements = $([]);
     var signin_elements = $([]);
 
-    if (document.domain.match(/myaccount.google.com$/) != null) {
+    if (document.domain.match(/myaccount.google.com$/) != null || document.domain.match(/accounts.google.com$/) != null) {
 	//Special case for Google
 	signout_elements = signout_elements.add($(":contains('Sign out')")
 						.filter(function() { return (this.tagName == 'A'); }));
 	signin_elements = detect_login_links();
+
+	if ($("input:password:visible").length > 0) {
+	    signout_elements = $([]);
+	    signin_elements.push(1);
+	}
     } else if (document.domain.match(/facebook.com$/) != null) {
 	//Special case for Facebook
 	signout_elements = signout_elements.add($('a:contains("Messages")'));
 	signout_elements = signout_elements.add($('a:contains("Friend Requests")'));
 	signin_elements = detect_login_links();
+	if ($("input:password:visible").length > 0) {
+	    signout_elements = $([]);
+	    signin_elements.push(1);
+	}
     } else if (document.domain.match(/amazon.com$/) != null) {
 	//Special case for Amazon
 	signout_elements = signout_elements.add($(":contains('Sign Out')")
 						.filter(function() { return (this.tagName == 'A'); }));
 	signin_elements = detect_login_links();
+	if ($("input:password:visible").length > 0) {
+	    signout_elements = $([]);
+	    signin_elements.push(1);
+	}
     } else if (document.domain.match(/linkedin.com$/) != null) {
 	//Special case for LinkedIn
 	signout_elements = signout_elements.add($(":contains('Sign Out')")
 						.filter(function() { return (this.tagName == 'A'); }));
 	signin_elements = detect_login_links();
+	if ($("input:password:visible").length > 0) {
+	    signout_elements = $([]);
+	    signin_elements.push(1);
+	}
     } else if (document.domain.match(/paypal.com$/) != null) {
 	//Special case for Paypal
 	signout_elements = signout_elements.add($(":contains('Log out')")
 						.filter(function() { return (this.tagName == 'A'); }));
 	signin_elements = detect_login_links();
+	if ($("input:password:visible").length > 0) {
+	    signout_elements = $([]);
+	    signin_elements.push(1);
+	}
     } else {
 	signout_elements = detect_logout_links();
 	signin_elements = detect_login_links();

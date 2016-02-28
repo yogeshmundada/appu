@@ -95,6 +95,7 @@ var on_disk_values = {
 	"username_similarity",
 	"per_site_pi",
 	"pi_field_value_identifiers",
+	"pi_passively_identified",
     ],
 }
 

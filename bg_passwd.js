@@ -205,12 +205,22 @@ function calculate_full_hash(domain, username, pwd, pwd_strength) {
 	    var rc = event.data;
 	    var hk = my_username + ':' + my_domain;
 
+	    if (pii_vault.password_hashes[hk] == undefined) {
+		pii_vault.password_hashes[hk].is_full_hash_getting_calculated = false;
+		vault_write("password_hashes", pii_vault.password_hashes);
+	    }
+
 	    if (typeof rc == "string") {
 		console.log("(" + worker_key + ")Hashing worker: " + rc);
 	    }
 	    else if (rc.status == "success") {
 		console.log("(" + worker_key + ")Hashing worker, count:" + rc.count + ", passwd: " 
 			    + rc.hashed_pwd + ", time: " + rc.time + "s");
+
+		if (pii_vault.password_hashes[hk] == undefined) {
+		    console.log("DELETE ME: Delete this entire IF");
+		}
+
 		if (pii_vault.password_hashes[hk].pwd_full_hash != rc.hashed_pwd) {
 		    pii_vault.password_hashes[hk].pwd_full_hash = rc.hashed_pwd;
 
@@ -261,6 +271,14 @@ function calculate_full_hash(domain, username, pwd, pwd_strength) {
 			    if (result != "failed") {
 				pii_vault.password_hashes[hk].is_pwd_cracked = result;
 				vault_write("password_hashes", pii_vault.password_hashes);
+
+				if (hk in pii_vault.current_report.user_account_sites) {
+				    var g = pii_vault.current_report.user_account_sites[hk].my_pwd_group;
+				    if (g in pii_vault.current_report.pwd_groups) {
+					pii_vault.current_report.pwd_groups[g]["is_pwd_cracked"] = result;
+					flush_current_report();
+				    }
+				}
 			    }
 			});
 		}
@@ -359,8 +377,12 @@ function update_present_pi_names_on_domain(domain, username_list) {
     var arr = username_list;
     var longest = arr.sort(function (a, b) { return b.length - a.length; })[0];
 
+    var uname_identifier = get_username_identifier(domain, 
+						   longest,
+						   true);
+
     pii_vault.aggregate_data.current_loggedin_state[domain].state = "logged-in";
-    pii_vault.aggregate_data.current_loggedin_state[domain].username = longest;
+    pii_vault.aggregate_data.current_loggedin_state[domain].username = uname_identifier;
 
     flush_selective_entries("aggregate_data", ["current_loggedin_state"]);
 }
@@ -404,6 +426,7 @@ function vault_update_domain_passwd(domain, username, username_length, passwd, p
 		//This means that this is the first time we are logging in to this site
 		//during this report's duration.
 		//However, we have logged into this site in previous reports.
+		console.log("DELETE ME: (cr)Updating hk(" + hk + ") to group: " + curr_pwd_group);
 		cr.user_account_sites[hk].my_pwd_group = curr_pwd_group;
 		flush_selective_entries("current_report", ["user_account_sites"]);
 	    }
@@ -411,6 +434,7 @@ function vault_update_domain_passwd(domain, username, username_length, passwd, p
 		//This means that this is the first time we are logging in to this site
 		//during this report's duration.
 		//However, we have logged into this site in previous reports.
+		console.log("DELETE ME: (ad)pwd-hashes-group: Updating hk(" + hk + ") to group: " + curr_pwd_group);
 		ad.user_account_sites[hk].my_pwd_group = curr_pwd_group;
 		flush_selective_entries("aggregate_data", ["user_account_sites"]);
 	    }
@@ -421,6 +445,13 @@ function vault_update_domain_passwd(domain, username, username_length, passwd, p
 		    if (result != "failed") {
 			pii_vault.password_hashes[hk].is_pwd_cracked = result;
 			vault_write("password_hashes", pii_vault.password_hashes);
+			if (hk in pii_vault.current_report.user_account_sites) {
+			    var g = pii_vault.current_report.user_account_sites[hk].my_pwd_group;
+			    if (g in pii_vault.current_report.pwd_groups) {
+				pii_vault.current_report.pwd_groups[g]["is_pwd_cracked"] = result;
+				flush_current_report();
+			    }
+			}
 		    }
 		});
 	}
@@ -439,6 +470,7 @@ function vault_update_domain_passwd(domain, username, username_length, passwd, p
 	pvph[hk].pwd_full_hash = '';
 	pvph[hk].salt = rc.salt;
 	pvph[hk].initialized = new Date();
+	pvph[hk].is_full_hash_getting_calculated = true;
 	//Now calculate sha256 by iterating a million times
 	calculate_full_hash(domain, username, passwd, pwd_strength);
     }
@@ -500,8 +532,11 @@ function pii_check_passwd_reuse(message, sender) {
 
 		var pwd_grp = pii_vault.password_hashes[hk].my_pwd_group;
 		if (pwd_grp == undefined) {
-		    delete pii_vault.password_hashes[hk];
-		    vault_write("password_hashes", pii_vault.password_hashes);
+		    console.log("DELETE ME: Deleting password hash group: " + hk);
+		    if (pii_vault.password_hashes[hk].is_full_hash_getting_calculated == false) {
+			delete pii_vault.password_hashes[hk];
+			vault_write("password_hashes", pii_vault.password_hashes);
+		    }
 		    continue;
 		}
 		var all_sites = pii_vault.aggregate_data.pwd_groups[pwd_grp].sites;
@@ -595,6 +630,7 @@ function pii_check_pending_warning(message, sender) {
 	    r.warnings = p.pending_warnings;
 	    r.domain = p.domain;
 	    r.event_type = p.event_type;
+	    console.log("DELETE ME: Calling vault_update_domain_passwd() for: " + p.domain + ", username: " + p.username);
 	    vault_update_domain_passwd(p.domain, p.username, p.username_length, 
 				       p.passwd, p.pwd_strength, p.is_stored, p.username_reason);
 	    pending_warnings[sender.tab.id] = undefined;

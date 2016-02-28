@@ -43,6 +43,7 @@ function show_version(response) {
 }
 
 function handle_appu_initialized(response) {
+    console.log("DELETE ME: Here in handle_appu_initialized()");
     if (response.initialized == "yes") {
 	$("#login-container-div").show();
 	$("#login-container-div").visible();
@@ -126,22 +127,26 @@ function cookie_deletion_verification() {
 	});
 }
 
+function handle_coookie_delete_response(response) {
+    console.log("DELETE ME: Got cookie delete resonse");
+    start_initial_pi_download();
+}
+
 function actually_delete_cookies() {
     chrome.extension.sendMessage("", {
 	'type' : 'delete_all_cookies',
-	    }, function() {
-	    setTimeout(function() {
-		    start_initial_pi_download();
-		}, 5000);
-	});
+	    });
+
+    $("#delete-cookies-verification-container-div").invisible();
+    $("#delete-cookies-verification-container-div").hide();
 
     $(".progress-div").show();
     $(".progress-div").visible();
     time = 1;
-    max = 3;
-    int = setInterval(function() {
+    max = 5;
+    inter = setInterval(function() {
 	    $("#progress").css("width", Math.floor(100 * time++ / max) + '%');
-	}, 1000);
+	}, 50);
 }
 
 
@@ -168,11 +173,8 @@ function start_initial_pi_download() {
 	chrome.extension.sendMessage("", {
 		'type' : 'check_pi_in_cookies',
 		    });
-	    });
-
 	redirect_to_check_report();
     }
-
 }
 
 function goto_facebook() {
@@ -300,15 +302,16 @@ function login() {
 function redirect_to_check_report() {
     // $(".progress-div").show();
     // $(".progress-div").visible();
-    time = 1;
-    max = 2;
-    int = setInterval(function() {
-	    $("#progress").css("width", Math.floor(100 * time++ / max) + '%');
-	    time - 1 == max && function() {
-		clearInterval(int);
-		window.location = chrome.extension.getURL('report.html');
-	    }();
-	}, 1000);
+    window.location = chrome.extension.getURL('report.html');
+//     time = 1;
+//     max = 2;
+//     int = setInterval(function() {
+// 	    $("#progress").css("width", Math.floor(100 * time++ / max) + '%');
+// 	    time - 1 == max && function() {
+// 		clearInterval(int);
+// 		window.location = chrome.extension.getURL('report.html');
+// 	    }();
+// 	}, 1000);
 }
 
 function create_account() {
@@ -374,6 +377,10 @@ chrome.extension.onMessage.addListener(function(message, sender, send_response) 
     else if (message.type == "initial-login-done") {
 	start_initial_pi_download();
     }
+    else if (message.type == "all-cookies-deleted") {
+	handle_coookie_delete_response();
+    }
+
 });
 
 $(document).ready(function() {

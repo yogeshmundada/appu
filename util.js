@@ -199,7 +199,25 @@ function delete_keys_with_prefix(prefix_array) {
 	    }
 	}
     }
+}
 
+function print_all_users(username) {
+    var all_users = get_all_guids();
+
+    for (var k in all_users) {
+	console.log("DELETE ME: " + localStorage[k + ":current_user"]);
+    }
+}
+
+function delete_user(username) {
+    var all_users = get_all_guids();
+
+    for (var k in all_users) {
+	if (JSON.parse(localStorage[k + ":current_user"]) == username) {
+	    delete_keys_with_prefix([k]);
+	    break;
+	}
+    }
 }
 
 function print_url_params(url) {

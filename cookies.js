@@ -581,7 +581,7 @@ function restore_entire_cookiestore(bkupstore_name) {
     read_from_local_storage(bn, cb);
 }
 
-function expunge_entire_cookiestore() {
+function expunge_entire_cookiestore(cb) {
     chrome.cookies.getAll({}, function(all_cookies) {
 	    for (var i = 0; i < all_cookies.length; i++) {
 		var protocol = "";
@@ -597,6 +597,9 @@ function expunge_entire_cookiestore() {
 			    "name": all_cookies[i].name});
 	    }
 	    console.log("APPU DEBUG: Deleted entire cookie store");
+	    if (cb) {
+		cb();
+	    }
 	});
 }
 

@@ -357,6 +357,8 @@ function initialize_aggregate_data() {
     //time.
     aggregate_data.pi_field_value_identifiers = {};
 
+    aggregate_data.pi_passively_identified = {};
+
     return aggregate_data;
 }
 
@@ -595,6 +597,10 @@ function add_domain_to_uas(domain, username, username_length, username_reason) {
 
     if (domain in fpi_metadata) {
 	site_category = fpi_metadata[domain]["category"];
+    }
+
+    if (hk == "yogesh.mundada@gmail.com:eat24hours.com") {
+	console.log("DELETE ME: Adding this hk: " + hk);
     }
 
     if (!(hk in cr.user_account_sites)) {

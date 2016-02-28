@@ -1074,6 +1074,7 @@ function check_if_pi_fetch_required(domain, sender_tab_id, sender_tab, initial_f
     pii_vault.aggregate_data.per_site_pi[domain].attempted_download_time = new Date();
     flush_selective_entries("aggregate_data", ["per_site_pi"]);
 
+
     if ((domain in fpi_metadata) && 
 	(fpi_metadata[domain]["fpi"] != "not-present")) {
 	get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab, initial_fetch);
@@ -1144,73 +1145,6 @@ function get_permission_and_fetch_pi(domain, sender_tab_id, sender_tab, initial_
 }
 
 
-//This is older code when FPI fetching occurred everytime form server.
-//This code has been replaced now as FPIs are stored along with extension.
-function fetch_fpi_template_from_server(domain) {
-    wr = {};
-    wr.command = 'get_template';
-    wr.domain = domain;
 
-    try {
-	$.post(server_url + "get_template", JSON.stringify(wr), function(data) {
-	    pii_vault.aggregate_data.per_site_pi[domain].attempted_download_time = new Date();
-	    flush_selective_entries("aggregate_data", ["per_site_pi"]);
-	    
-	    if (data.toString() != 'No template present') {
-		console.log("APPU DEBUG: Got the template for: " + domain);
-		// We are here that means template is present.
-		// Attempt to fetch the PI if user has already approved it.
-		if ('user_approved' in pii_vault.aggregate_data.per_site_pi[domain]) {
-		    if (pii_vault.aggregate_data.per_site_pi[domain].user_approved == 'always') {
-			//We are here, that means user has given PI download approval for this site
-			start_pi_download_process(domain, data);
-			return;
-		    }
-		    else if (pii_vault.aggregate_data.per_site_pi[domain].user_approved == 'never') {
-			console.log("APPU DEBUG: User has already set NEVER for PI on this domain: " + domain);
-			return;
-			}
-		}
-
-		//We are here, that means that we have to seek permission from user to download PI for
-		//this site.
-		chrome.tabs.sendMessage(sender_tab_id, {
-		    'type' : "get-permission-to-fetch-pi",
-		    'site' : domain,
-		}, function(response) {
-		    if (response.fetch_pi_permission == "always") {
-			pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'always';
-			flush_selective_entries("aggregate_data", ["per_site_pi"]);
-			start_pi_download_process(domain, data);
-		    }
-		    else if (response.fetch_pi_permission == "just-this-time") {
-			pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'seek-permission';
-			flush_selective_entries("aggregate_data", ["per_site_pi"]);
-			start_pi_download_process(domain, data);
-		    }
-		    else if (response.fetch_pi_permission == "never") {
-			pii_vault.aggregate_data.per_site_pi[domain].user_approved = 'never';
-			flush_selective_entries("aggregate_data", ["per_site_pi"]);
-			console.log("APPU DEBUG: User set NEVER for PI on this domain: " + domain);
-		    }
-		});
-	    }
-	    else {
-		print_appu_error("Appu Error: FPI Template for domain(" + domain 
-				 + ") is not present on the server");
-	    }
-	})
-	.error(function(domain) {
-		return function(data, status) {
-		    print_appu_error("Appu Error: Service down, attempted to fetch template: " 
-				     + domain + ", " + status.toString() + " @ " + (new Date()));
-		   console.log("APPU DEBUG: Service down, attempted to fetch:" + domain);
-		}
-	    } (domain));
-    }
-    catch (e) {
-	console.log("Error: while fetching template(" + domain + ") from server");
-    }
-}
 
 

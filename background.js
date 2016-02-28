@@ -64,7 +64,6 @@ var fpi_metadata = {};
 //To keep track of background "Web workers" that are
 //asynchronously hashing passwords for you .. a million times.
 var hashing_workers = {};
-var username_similarity_workers = {};
 
 //Next cookieset generator workers
 //To keep track of background "Web workers" that are
@@ -78,15 +77,11 @@ var cookieset_generator_workers = {};
 //and empty this buffer.
 var pre_login_cookies = {};
 
-//var server_url = "https://appu.gtnoise.net:5005/";
-//var server_url = "https://woodland.cc.gt.atl.ga.us:5005/";
 var server_url = "https://woodland.noise.gatech.edu:5005/";
-// var server_url = "https://192.168.56.102:5005/";
-// var server_url = "http://192.168.56.102:59000/";
-
-// var server_url = "https://appu.gtnoise.net:5005/";
 
 var usernames_in_tab = {};
+
+var login_usernames_in_tab = {}
 
 var tab_urls = {};
 
@@ -160,6 +155,10 @@ chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 function tab_closed_cb(tabid, removeinfo) {
     if (tabid in tab_urls) {
 	delete tab_urls[tabid];
+    }
+
+    if (tabid in login_usernames_in_tab) {
+	delete login_usernames_in_tab[tabid];
     }
 
     if (tabid in cookie_investigating_tabs) {
@@ -641,6 +640,9 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	    username_length = message.uname_results.username.length;
 	    console.log("APPU DEBUG: Domain: " + message.domain + ", Username: " 
 			+ message.uname_results.username + ", username_identifier: " + username);
+	    login_usernames_in_tab[sender.tab.id] = get_username_identifier(message.domain, 
+									    message.uname_results.username,
+									    true);
 	}
 
 	message.username = username;
@@ -768,10 +770,11 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 	}
     }
     else if (message.type == "signed_in") {
+	console.log("DELETE ME: Here here got signed_in message: " + JSON.stringify(message));
 	if (sender.tab && !(sender.tab.id in cookie_investigating_tabs)) {
 	    var domain = get_domain(message.domain);
 
-	    if ((sender.tab.id in usernames_in_tab) && (usernames_in_tab[sender.tab.id] == true)) {
+	    if ((sender.tab.id in usernames_in_tab) && (usernames_in_tab[sender.tab.id] == true) && message.value != "no") {
 		console.log("APPU DEBUG: CONFIRMED signed in for site: " + get_domain(message.domain));
 		message.value = 'yes';
 	    } else {
@@ -789,6 +792,7 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 		
 		var hk = username_list[0] + ":" + domain;
 		if (hk in pii_vault.current_report.user_account_sites) {
+		    console.log("DELETE ME: ");
 		    pii_vault.current_report.user_account_sites[hk].pwd_unchanged_duration = 
 			get_pwd_unchanged_duration(domain, username_list[0]);
 		}
@@ -804,6 +808,10 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
 			var initial_fetch = false;
 			if (sender.tab.id in initial_login_tabs) {
 			    initial_fetch = true;
+			}
+			var login_username = "";
+			if (sender.tab.id in login_usernames_in_tab) {
+			    login_username = login_usernames_in_tab[sender.tab.id];
 			}
 			check_if_pi_fetch_required(domain, sender.tab.id, sender.tab, initial_fetch);
 			delete pending_pi_fetch[sender.tab.id];
@@ -1060,11 +1068,17 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "delete_all_cookies") {
 	r = {};
 	backup_entire_cookiestore("Appu-Initial-CookieStore");
-	expunge_entire_cookiestore();
-	sendResponse(r);
+	expunge_entire_cookiestore((function(tab_id) {
+		return function() {
+		chrome.tabs.sendMessage(tab_id, {
+			'type': "all-cookies-deleted",
+			    });
+	    }
+	    }(sender.tab.id)));
     }
     else if (message.type == "check_pi_in_cookies") {
-	
+	setTimeout(function() {check_pi_in_deleted_cookies("Appu-Initial-CookieStore");},
+		   60 * 1000 * 5);
     }
     else if (message.type == "set_appu_initialized") {
 	pii_vault.initialized = true;

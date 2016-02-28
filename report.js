@@ -10,7 +10,7 @@ var html_to_disk_tables = {
     "#per-site-account-data-table"          : "user_account_sites",
     '#password-stats-table'                 : "pwd_groups",
     '#password-edit-distance-table'         : 'pwd_similarity',
-    '#password-reuse-warnings-table'        : "pwd_reuse_warnings",
+    //    '#password-reuse-warnings-table'        : "pwd_reuse_warnings",
     '#pi-metadata-table'                    : "downloaded_pi", 
     '#pi-reuse-table'                       : "common_fields", 
     '#user-interaction-metadata-table'      : "input_fields",           
@@ -22,7 +22,7 @@ var disk_to_html_tables = {
     "user_account_sites"   :      "#per-site-account-data-table",     
     "pwd_groups"	        :      '#password-stats-table',            
     'pwd_similarity'	        :      '#password-edit-distance-table',    
-    "pwd_reuse_warnings"   :      '#password-reuse-warnings-table',   
+    //    "pwd_reuse_warnings"   :      '#password-reuse-warnings-table',   
     "downloaded_pi"        :      '#pi-metadata-table',               	    
     "common_fields"        :      '#pi-reuse-table',                  	    
     "input_fields"         :      '#user-interaction-metadata-table',
@@ -543,11 +543,11 @@ function report_received(report_number, report, do_render) {
 
     ////////// Populate Password Reuse Warnings Table
 
-    clear_table('#password-reuse-warnings-table');
-    dtTable = $('#password-reuse-warnings-table').dataTable();
-    dtTable.fnAddData(report.pwd_reuse_warnings);
-    $("#password-reuse-warnings-table_length select").val('5').trigger('change');
-    dtTable.fnSetColumnVis(4, current_report_delete_enabled);
+//     clear_table('#password-reuse-warnings-table');
+//     dtTable = $('#password-reuse-warnings-table').dataTable();
+//     dtTable.fnAddData(report.pwd_reuse_warnings);
+//     $("#password-reuse-warnings-table_length select").val('5').trigger('change');
+//     dtTable.fnSetColumnVis(4, current_report_delete_enabled);
     ////////// Populate PI Metadata Table
 
     clear_table('#pi-metadata-table');
@@ -592,6 +592,9 @@ function report_received(report_number, report, do_render) {
     for (var i = 0; i < prt_records.length; i++) {
 	var orig_value = prt_records[i][0];
 	prt_records[i][0] = "<a id='pi-field-value-" + orig_value + "' href=''>" + orig_value + "</a>";
+	var temp = prt_records[i][1];
+	prt_records[i][1] = temp["sites"].length;
+	prt_records[i].push(temp["sites"].join(", "));
     }
 
     dtTable = $('#pi-reuse-table').dataTable();
@@ -627,7 +630,7 @@ function report_received(report_number, report, do_render) {
 
 function get_value_from_identifier(identifier) {
     for (var i in current_report.pi_field_value_identifiers) {
-	if (current_report.pi_field_value_identifiers[i] == identifier) {
+	if (current_report.pi_field_value_identifiers[i]["identifier"] == identifier) {
 	    return i;
 	}
     }
@@ -705,14 +708,14 @@ function add_hooks() {
 	delete_table_entry("user_account_sites", entry_key, dtTable, row_pos);
     });
 
-    $(".delete-password-reuse-warning-entry").on("click",  function() { 
-	var dtTable = $('#password-reuse-warnings-table').dataTable();
-	var row_pos = dtTable.fnGetPosition( $(this).closest('tr')[0]);
-	var row_data = dtTable.fnGetData(row_pos);
-	var entry_key = row_data[0]; 
-	console.log("APPU DEBUG: Clicked on delete-password-reuse-warning-entry, key: " + entry_key); 
-	delete_table_entry("pwd_reuse_warnings", entry_key, dtTable, row_pos);
-    });
+//     $(".delete-password-reuse-warning-entry").on("click",  function() { 
+// 	var dtTable = $('#password-reuse-warnings-table').dataTable();
+// 	var row_pos = dtTable.fnGetPosition( $(this).closest('tr')[0]);
+// 	var row_data = dtTable.fnGetData(row_pos);
+// 	var entry_key = row_data[0]; 
+// 	console.log("APPU DEBUG: Clicked on delete-password-reuse-warning-entry, key: " + entry_key); 
+// 	delete_table_entry("pwd_reuse_warnings", entry_key, dtTable, row_pos);
+//     });
 
     $(".delete-pi-metadata-entry").on("click",  function() { 
 	var dtTable = $('#pi-metadata-table').dataTable();
@@ -976,37 +979,37 @@ document.addEventListener('DOMContentLoaded', function () {
 	"aLengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
     });
 
-    $("#password-reuse-warnings-table").dataTable({
-	"sDom": "<'row'<'span6'><'span6'>r>lft<'row'<'span6'i><'span6'p>>",
-	"sPaginationType": "bootstrap",
-	"aLengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
-	"aoColumnDefs" : [
-	    { 
-		"aTargets" : [0], 
-		"mData": 0, 
-		"bVisible" : false,
-	    },
-	    { 
-		"aTargets" : [1], 
-		"mData": 1,
-		"mRender": function(data, type, full) {
-		    if (type === "display") {
-			return format_display_date(data, true);
-		    }
-		    return data;
-		}
-	    },
-	    { "aTargets" : [2], "mData": 2},
-	    { "aTargets" : [3], "mData": 3},
-	    { 
-		"aTargets" : [4], 
-		"bSortable" : false, 
-		"sWidth" : "10px",
-		"mData": null, 
-		"sDefaultContent": '<i class="icon-trash delete-password-reuse-warning-entry"></i>' 
-	    }
-	]
-    });
+//     $("#password-reuse-warnings-table").dataTable({
+// 	"sDom": "<'row'<'span6'><'span6'>r>lft<'row'<'span6'i><'span6'p>>",
+// 	"sPaginationType": "bootstrap",
+// 	"aLengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+// 	"aoColumnDefs" : [
+// 	    { 
+// 		"aTargets" : [0], 
+// 		"mData": 0, 
+// 		"bVisible" : false,
+// 	    },
+// 	    { 
+// 		"aTargets" : [1], 
+// 		"mData": 1,
+// 		"mRender": function(data, type, full) {
+// 		    if (type === "display") {
+// 			return format_display_date(data, true);
+// 		    }
+// 		    return data;
+// 		}
+// 	    },
+// 	    { "aTargets" : [2], "mData": 2},
+// 	    { "aTargets" : [3], "mData": 3},
+// 	    { 
+// 		"aTargets" : [4], 
+// 		"bSortable" : false, 
+// 		"sWidth" : "10px",
+// 		"mData": null, 
+// 		"sDefaultContent": '<i class="icon-trash delete-password-reuse-warning-entry"></i>' 
+// 	    }
+// 	]
+//     });
 
     $("#pi-metadata-table").dataTable({
 	"sDom": "<'row'<'span6'><'span6'>r>lft<'row'<'span6'i><'span6'p>>",

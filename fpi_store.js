@@ -325,6 +325,35 @@ function get_next_identifier_of_type(type) {
     return value_identifier;
 }
 
+function add_single_value_to_pi_passively_identified(domain, field, passively_detected_pi, data_containing_pi, detection_method) {
+    var adppi = pii_vault.aggregate_data.pi_passively_identified;
+    var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
+    var type = get_pi_type(field);
+
+    if (passively_detected_pi in vpfvi) {
+	if (vpfvi[passively_detected_pi]["sites"].indexOf(domain) != -1) {
+	    return;
+	}
+    }
+
+    if (passively_detected_pi in adppi) {
+	if (adppi[passively_detected_pi]["sites"].indexOf(domain) == -1) {
+	    adppi[passively_detected_pi]["sites"].push(domain);
+	    adppi[passively_detected_pi]["detection-method"].push(detection_method);
+	    adppi[passively_detected_pi]["data-containing-pi"].push(data_containing_pi);
+	}
+    } else {
+	adppi[passively_detected_pi] = {
+	    'field': field,
+	    'type' : type,
+	    'sites': [domain],
+	    'detection-method' : [detection_method],
+	    'data-containing-pi' : [data_containing_pi],
+	};
+    }
+
+    flush_selective_entries("aggregate_data", ["pi_passively_identified"]);
+}
 
 function add_single_value_to_pi_field_value_identifiers(domain, field, value, detection_method) {
     var vpfvi = pii_vault.aggregate_data.pi_field_value_identifiers;
@@ -596,7 +625,6 @@ function calculate_new_common_fields_structure() {
     pii_vault.current_report.common_fields = common_fields;
     flush_selective_entries("current_report", ["common_fields"]);
 }
-
 
 function store_fpi_data_for_site(domain, sanitized_field_values, detection_method) {
     // add to pi_field_value_identifiers (aggregate_data)
@@ -918,34 +946,6 @@ function calculate_substring_usernames() {
     }
 
     flush_aggregate_data();
-}
-
-function check_pi_in_deleted_cookies(bkup_cookiestore) {
-    read_from_local_storage(bkup_cookiestore, function(cs) {
-	    var all_cookies = cs[bkup_cookiestore]["cookies"];
-
-	    pi_types = [
-			"name",
-			"email",
-			"zipcode",
-			"city",
-			"phone",
-			"address",
-			];
-
-	    for (var i = 0; i < pi_types.length; i++) {
-		pi_val_obj_array = get_pi(pi_types[i]);
-		for (var v in pi_val_obj_array) {
-		    for (k in Object.keys(all_cookies)) {
-			if (all_cookies[k].value) {
-			    if (all_cookies[k].value.indexOf(v) != -1 && v.length > 4) {
-				console.log("DELETE ME: type: " + pi_types[i] + ", domain: " + all_cookies[k].domain + ", pi: " + v + ", cookie: " + all_cookies[k].value);
-			    }
-			}
-		    }
-		}
-	    }
-	})
 }
 
 function check_third_party_pi_leaks(details) {
