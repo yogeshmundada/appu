@@ -184,7 +184,7 @@ function start_initial_pi_download() {
 	chrome.extension.sendMessage("", {
 		'type' : 'check_pi_in_cookies',
 		    });
-	redirect_to_check_report();
+	redirect_to_initial_survey();
     }
 }
 
@@ -310,19 +310,13 @@ function login() {
     }
 }
 
+function redirect_to_initial_survey() {
+    window.location = chrome.extension.getURL('initial_survey.html');
+}
+
+
 function redirect_to_check_report() {
-    // $(".progress-div").show();
-    // $(".progress-div").visible();
     window.location = chrome.extension.getURL('report.html');
-//     time = 1;
-//     max = 2;
-//     int = setInterval(function() {
-// 	    $("#progress").css("width", Math.floor(100 * time++ / max) + '%');
-// 	    time - 1 == max && function() {
-// 		clearInterval(int);
-// 		window.location = chrome.extension.getURL('report.html');
-// 	    }();
-// 	}, 1000);
 }
 
 function create_account() {

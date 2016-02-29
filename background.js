@@ -951,6 +951,12 @@ chrome.extension.onMessage.addListener(function(message, sender, sendResponse) {
     else if (message.type == "delete_entry") {
 	purge_report_entry(message.report_number, message.table_name, message.entry_key);
     }
+    else if (message.type == "initial-survey") {
+	pii_vault.initial_survey = message.survey;
+	vault_write("initial_survey", pii_vault.initial_survey);
+	chrome.tabs.remove(sender.tab.id);
+	chrome.tabs.create({ url: chrome.extension.getURL('report.html') });
+    }
     else if (message.type == "add_to_dontbug_list") {
 	r = pii_add_dontbug_list(message);
 	sendResponse(r);

@@ -7,6 +7,7 @@ var on_disk_values = {
 	"initialized",
 	"total_site_list",
 	"password_hashes",
+	"initial_survey",
 	"past_reports",
     ],
     "config" : [
@@ -198,6 +199,13 @@ function vault_init() {
 	console.log("vault_init(): Updated PASSWORD_HASHES in vault");
 	vault_write("password_hashes", pii_vault.password_hashes);
     }
+
+    if (!pii_vault.initial_survey) {
+	pii_vault.initial_survey = {};
+	console.log("vault_init(): Updated INITIAL_SURVEY in vault");
+	vault_write("initial_survey", pii_vault.initial_survey);
+    }
+
 
     if (!pii_vault.past_reports) {
 	pii_vault.past_reports = [];

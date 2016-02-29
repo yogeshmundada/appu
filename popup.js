@@ -67,6 +67,7 @@ function options() {
     return false;
 }
 
+
 function footprint() {
     openTab(chrome.extension.getURL('myfootprint.html'));
     self.close();
